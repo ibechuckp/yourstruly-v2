@@ -40,7 +40,7 @@ const navItems = [
   { href: '/dashboard/journalist', label: 'Video Journalist', icon: MessageSquare },
   // Phase 4+
   { href: '/dashboard/avatar', label: 'AI Avatar', icon: Bot, disabled: true },
-  { href: '/dashboard/postscripts', label: 'PostScripts', icon: Gift, disabled: true },
+  { href: '/dashboard/postscripts', label: 'PostScripts', icon: Gift },
   { href: '/dashboard/trips', label: 'Trip Planning', icon: Plane, disabled: true },
 ]
 
