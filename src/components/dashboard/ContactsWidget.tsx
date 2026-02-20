@@ -8,17 +8,25 @@ import Modal from '@/components/ui/Modal'
 interface Contact {
   id: string
   full_name: string
-  relationship: string
+  relationship_type: string
   email: string
   phone: string
 }
+
+// Hardcoded relationship types for quick widget use
+const RELATIONSHIP_OPTIONS = [
+  { category: 'Family', options: ['Mother', 'Father', 'Spouse', 'Partner', 'Son', 'Daughter', 'Brother', 'Sister', 'Grandmother', 'Grandfather', 'Aunt', 'Uncle', 'Cousin'] },
+  { category: 'Friends', options: ['Best Friend', 'Close Friend', 'Friend', 'Childhood Friend'] },
+  { category: 'Professional', options: ['Colleague', 'Boss', 'Mentor', 'Business Partner'] },
+  { category: 'Other', options: ['Neighbor', 'Other'] },
+]
 
 export default function ContactsWidget() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [count, setCount] = useState(0)
   const [showModal, setShowModal] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
-  const [newContact, setNewContact] = useState({ full_name: '', relationship: '', email: '', phone: '' })
+  const [newContact, setNewContact] = useState({ full_name: '', relationship_type: '', email: '', phone: '' })
   const supabase = createClient()
 
   useEffect(() => {
@@ -40,17 +48,25 @@ export default function ContactsWidget() {
   }
 
   const addContact = async () => {
-    if (!newContact.full_name.trim()) return
+    if (!newContact.full_name.trim() || !newContact.relationship_type) return
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    await supabase.from('contacts').insert({
+    const { error } = await supabase.from('contacts').insert({
       user_id: user.id,
-      ...newContact
+      full_name: newContact.full_name,
+      relationship_type: newContact.relationship_type,
+      email: newContact.email || null,
+      phone: newContact.phone || null,
     })
 
-    setNewContact({ full_name: '', relationship: '', email: '', phone: '' })
+    if (error) {
+      console.error('Error saving contact:', error)
+      return
+    }
+
+    setNewContact({ full_name: '', relationship_type: '', email: '', phone: '' })
     setShowAddForm(false)
     loadContacts()
   }
@@ -115,13 +131,20 @@ export default function ContactsWidget() {
                 placeholder="Name *"
                 className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
-              <input
-                type="text"
-                value={newContact.relationship}
-                onChange={(e) => setNewContact({ ...newContact, relationship: e.target.value })}
-                placeholder="Relationship (Friend, Family, etc.)"
+              <select
+                value={newContact.relationship_type}
+                onChange={(e) => setNewContact({ ...newContact, relationship_type: e.target.value })}
                 className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
+              >
+                <option value="">Select relationship *</option>
+                {RELATIONSHIP_OPTIONS.map(group => (
+                  <optgroup key={group.category} label={group.category}>
+                    {group.options.map(opt => (
+                      <option key={opt} value={opt.toLowerCase().replace(' ', '_')}>{opt}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
               <div className="grid grid-cols-2 gap-3">
                 <input
                   type="email"
@@ -164,7 +187,7 @@ export default function ContactsWidget() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-medium text-sm truncate">{contact.full_name}</p>
-                  {contact.relationship && <p className="text-gray-400 text-xs">{contact.relationship}</p>}
+                  {contact.relationship_type && <p className="text-gray-400 text-xs capitalize">{contact.relationship_type.replace('_', ' ')}</p>}
                 </div>
                 <button 
                   onClick={() => deleteContact(contact.id)}
