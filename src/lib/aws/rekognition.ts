@@ -10,13 +10,17 @@ import {
   DeleteFacesCommand,
 } from '@aws-sdk/client-rekognition'
 
-const rekognition = new RekognitionClient({
+// Check if AWS is configured
+const isAwsConfigured = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY)
+
+// Only create client if credentials exist
+const rekognition = isAwsConfigured ? new RekognitionClient({
   region: process.env.AWS_REGION || 'us-east-1',
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
-})
+}) : null
 
 const BUCKET = process.env.AWS_S3_BUCKET || process.env.NEXT_PUBLIC_SUPABASE_URL?.split('//')[1]?.split('.')[0] + '.supabase.co'
 
@@ -36,6 +40,8 @@ export async function detectLabels(
   maxLabels = 20,
   minConfidence = 70
 ): Promise<DetectedLabel[]> {
+  if (!rekognition) return []
+
   const command = new DetectLabelsCommand({
     Image: { Bytes: imageBytes },
     MaxLabels: maxLabels,
@@ -76,6 +82,8 @@ export interface DetectedFace {
 export async function detectFaces(
   imageBytes: Buffer | Uint8Array
 ): Promise<DetectedFace[]> {
+  if (!rekognition) return []
+
   const command = new DetectFacesCommand({
     Image: { Bytes: imageBytes },
     Attributes: ['ALL'],
@@ -122,6 +130,8 @@ export interface DetectedText {
 export async function detectText(
   imageBytes: Buffer | Uint8Array
 ): Promise<DetectedText[]> {
+  if (!rekognition) return []
+
   const command = new DetectTextCommand({
     Image: { Bytes: imageBytes },
   })
@@ -150,6 +160,8 @@ function getCollectionId(userId: string): string {
 }
 
 export async function ensureCollection(userId: string): Promise<void> {
+  if (!rekognition) return
+
   const collectionId = getCollectionId(userId)
   
   try {
@@ -190,6 +202,8 @@ export async function indexFace(
   contactId: string,
   imageBytes: Buffer | Uint8Array
 ): Promise<IndexedFace | null> {
+  if (!rekognition) return null
+
   await ensureCollection(userId)
 
   const command = new IndexFacesCommand({
@@ -234,6 +248,8 @@ export async function searchFaces(
   imageBytes: Buffer | Uint8Array,
   threshold = 85
 ): Promise<FaceMatch[]> {
+  if (!rekognition) return []
+
   await ensureCollection(userId)
 
   try {
@@ -269,6 +285,8 @@ export async function deleteFaceFromIndex(
   userId: string,
   faceId: string
 ): Promise<void> {
+  if (!rekognition) return
+
   const command = new DeleteFacesCommand({
     CollectionId: getCollectionId(userId),
     FaceIds: [faceId],
@@ -393,6 +411,23 @@ function generateDescription(
 export async function analyzeImage(
   imageBytes: Buffer | Uint8Array
 ): Promise<ImageAnalysis> {
+  // Return empty analysis if AWS is not configured
+  if (!rekognition) {
+    return {
+      labels: [],
+      faces: [],
+      text: [],
+      summary: {
+        category: 'everyday',
+        mood: 'neutral',
+        description: 'A captured moment',
+        peopleCount: 0,
+        hasText: false,
+        dominantLabels: [],
+      },
+    }
+  }
+
   // Run all detections in parallel
   const [labels, faces, textResults] = await Promise.all([
     detectLabels(imageBytes).catch(() => []),

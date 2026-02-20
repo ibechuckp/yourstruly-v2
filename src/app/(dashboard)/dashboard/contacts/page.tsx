@@ -17,9 +17,11 @@ interface Contact {
   relationship_type: string
   relationship_details?: string
   date_of_birth?: string
+  address?: string  // Street address for gift delivery
   city?: string
   state?: string
   country?: string
+  zipcode?: string
   notes?: string
 }
 
@@ -343,9 +345,11 @@ function ContactModal({ contact, onClose, onSave }: { contact: Contact | null; o
     relationship_type: contact?.relationship_type || '',
     relationship_details: contact?.relationship_details || '',
     date_of_birth: contact?.date_of_birth || '',
+    address: contact?.address || '',
     city: contact?.city || '',
     state: contact?.state || '',
     country: contact?.country || '',
+    zipcode: contact?.zipcode || '',
     notes: contact?.notes || '',
   })
   const [saving, setSaving] = useState(false)
@@ -365,9 +369,11 @@ function ContactModal({ contact, onClose, onSave }: { contact: Contact | null; o
       phone: form.phone || null,
       relationship_details: form.relationship_details || null,
       date_of_birth: form.date_of_birth || null,
+      address: form.address || null,
       city: form.city || null,
       state: form.state || null,
       country: form.country || null,
+      zipcode: form.zipcode || null,
       notes: form.notes || null,
     }
 
@@ -424,11 +430,13 @@ function ContactModal({ contact, onClose, onSave }: { contact: Contact | null; o
             </div>
           </div>
           <div>
-            <label className="block text-sm text-white/60 mb-1.5">Address</label>
-            <div className="grid grid-cols-3 gap-3">
-              <input value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} className="px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="City" />
-              <input value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} className="px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="State" />
-              <input value={form.country} onChange={e => setForm({ ...form, country: e.target.value })} className="px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="Country" />
+            <label className="block text-sm text-white/60 mb-1.5">Address (for gift delivery)</label>
+            <input value={form.address || ''} onChange={e => setForm({ ...form, address: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 mb-3" placeholder="123 Main Street, Apt 4" />
+            <div className="grid grid-cols-4 gap-3">
+              <input value={form.city || ''} onChange={e => setForm({ ...form, city: e.target.value })} className="px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="City" />
+              <input value={form.state || ''} onChange={e => setForm({ ...form, state: e.target.value })} className="px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="State" />
+              <input value={form.zipcode || ''} onChange={e => setForm({ ...form, zipcode: e.target.value })} className="px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="Zip" />
+              <input value={form.country || ''} onChange={e => setForm({ ...form, country: e.target.value })} className="px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="Country" />
             </div>
           </div>
           <div>
