@@ -149,7 +149,7 @@ export default function ContactsPage() {
       <div className="flex items-center gap-4 mb-8">
         <Link 
           href="/dashboard" 
-          className="p-2 bg-gray-900/80 backdrop-blur-md rounded-xl text-white/70 hover:bg-white/20 hover:text-white transition-all"
+          className="p-2 bg-gray-900/90 rounded-xl text-white/70 hover:bg-white/20 hover:text-white transition-all"
         >
           <ChevronLeft size={20} />
         </Link>
@@ -177,7 +177,7 @@ export default function ContactsPage() {
         </div>
 
         {contacts.length === 0 ? (
-          <div className="bg-gray-900/80 backdrop-blur-md rounded-2xl p-8 border border-white/10 text-center">
+          <div className="bg-gray-900/90 rounded-2xl p-8 border border-white/10 text-center">
             <p className="text-white/50 mb-4">No contacts yet</p>
             <button
               onClick={() => { setEditingContact(null); setShowContactModal(true) }}
@@ -191,7 +191,7 @@ export default function ContactsPage() {
             {contacts.map(contact => (
               <div 
                 key={contact.id} 
-                className="bg-gray-900/80 backdrop-blur-md rounded-2xl p-5 border border-white/10 hover:bg-white/15 hover:border-amber-500/30 transition-all group"
+                className="bg-gray-900/90 rounded-2xl p-5 border border-white/10 hover:bg-white/15 hover:border-amber-500/30 transition-all group"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -262,7 +262,7 @@ export default function ContactsPage() {
         </div>
 
         {pets.length === 0 ? (
-          <div className="bg-gray-900/80 backdrop-blur-md rounded-2xl p-8 border border-white/10 text-center">
+          <div className="bg-gray-900/90 rounded-2xl p-8 border border-white/10 text-center">
             <p className="text-white/50 mb-4">No pets yet</p>
             <button
               onClick={() => { setEditingPet(null); setShowPetModal(true) }}
@@ -276,7 +276,7 @@ export default function ContactsPage() {
             {pets.map(pet => (
               <div 
                 key={pet.id} 
-                className={`bg-gray-900/80 backdrop-blur-md rounded-2xl p-5 border border-white/10 hover:bg-white/15 transition-all group ${pet.is_deceased ? 'opacity-70' : 'hover:border-pink-500/30'}`}
+                className={`bg-gray-900/90 rounded-2xl p-5 border border-white/10 hover:bg-white/15 transition-all group ${pet.is_deceased ? 'opacity-70' : 'hover:border-pink-500/30'}`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">

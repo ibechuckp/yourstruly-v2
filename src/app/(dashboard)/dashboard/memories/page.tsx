@@ -86,7 +86,7 @@ export default function MemoriesPage() {
       <header className="mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="p-2 bg-gray-900/80 backdrop-blur-md rounded-xl text-white/70 hover:bg-white/20 hover:text-white transition-all">
+            <Link href="/dashboard" className="p-2 bg-gray-900/90 rounded-xl text-white/70 hover:bg-white/20 hover:text-white transition-all">
               <ChevronLeft size={20} />
             </Link>
             <div>
@@ -97,7 +97,7 @@ export default function MemoriesPage() {
 
             <div className="flex items-center gap-3">
               {/* View Mode Toggle */}
-              <div className="flex items-center bg-gray-900/80 backdrop-blur-md rounded-xl p-1">
+              <div className="flex items-center bg-gray-900/90 rounded-xl p-1">
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-amber-500 text-white' : 'text-white/50 hover:text-white'}`}
@@ -138,7 +138,7 @@ export default function MemoriesPage() {
                 className={`px-4 py-2 rounded-xl whitespace-nowrap transition-all text-sm ${
                   (cat.id === 'all' && !selectedCategory) || selectedCategory === cat.id
                     ? 'bg-amber-500 text-white'
-                    : 'bg-gray-900/80 backdrop-blur-md text-white/70 hover:bg-white/20 hover:text-white'
+                    : 'bg-gray-900/90 text-white/70 hover:bg-white/20 hover:text-white'
                 }`}
               >
                 {cat.label}
@@ -154,7 +154,7 @@ export default function MemoriesPage() {
             <div className="text-white/60">Loading memories...</div>
           </div>
         ) : memories.length === 0 ? (
-          <div className="bg-gray-900/80 backdrop-blur-md rounded-2xl p-12 border border-white/10 text-center">
+          <div className="bg-gray-900/90 rounded-2xl p-12 border border-white/10 text-center">
             <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4 mx-auto">
               <ImageIcon size={32} className="text-white/40" />
             </div>

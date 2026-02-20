@@ -255,7 +255,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
     <div className="min-h-screen p-6">
       {/* Header */}
       <header className="mb-6 flex items-center justify-between">
-        <Link href="/dashboard/memories" className="flex items-center gap-2 px-3 py-2 bg-gray-900/80 backdrop-blur-md rounded-xl text-white/70 hover:text-white transition-all border border-white/10">
+        <Link href="/dashboard/memories" className="flex items-center gap-2 px-3 py-2 bg-gray-900/90 rounded-xl text-white/70 hover:text-white transition-all border border-white/10">
           <ChevronLeft size={18} />
           <span>Back</span>
         </Link>
@@ -263,19 +263,19 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
         <div className="flex items-center gap-2">
           <button
             onClick={toggleFavorite}
-            className={`p-2.5 bg-gray-900/80 backdrop-blur-md rounded-xl transition-all border border-white/10 ${memory.is_favorite ? 'text-red-500' : 'text-white/50 hover:text-red-500'}`}
+            className={`p-2.5 bg-gray-900/90 rounded-xl transition-all border border-white/10 ${memory.is_favorite ? 'text-red-500' : 'text-white/50 hover:text-red-500'}`}
           >
             <Heart size={18} fill={memory.is_favorite ? 'currentColor' : 'none'} />
           </button>
           <button
             onClick={() => setIsEditing(true)}
-            className="p-2.5 bg-gray-900/80 backdrop-blur-md text-white/50 hover:text-white rounded-xl transition-all border border-white/10"
+            className="p-2.5 bg-gray-900/90 text-white/50 hover:text-white rounded-xl transition-all border border-white/10"
           >
             <Edit2 size={18} />
           </button>
           <button
             onClick={handleDelete}
-            className="p-2.5 bg-gray-900/80 backdrop-blur-md text-white/50 hover:text-red-500 rounded-xl transition-all border border-white/10"
+            className="p-2.5 bg-gray-900/90 text-white/50 hover:text-red-500 rounded-xl transition-all border border-white/10"
           >
             <Trash2 size={18} />
           </button>
@@ -287,7 +287,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
           {/* Main Image */}
           <div className="lg:col-span-2">
             {selectedMedia ? (
-              <div className="relative rounded-xl overflow-hidden bg-gray-900/80 backdrop-blur-md border border-white/10">
+              <div className="relative rounded-xl overflow-hidden bg-gray-900/90 border border-white/10">
                 <img
                   src={selectedMedia.file_url}
                   alt={memory.title || 'Memory'}
@@ -336,7 +336,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
                 })}
               </div>
             ) : (
-              <div className="aspect-video rounded-xl bg-gray-900/80 backdrop-blur-md border border-white/10 flex items-center justify-center">
+              <div className="aspect-video rounded-xl bg-gray-900/90 border border-white/10 flex items-center justify-center">
                 <div className="text-center">
                   <ImageIcon size={48} className="mx-auto text-white/20 mb-2" />
                   <p className="text-white/40 text-sm">No photos uploaded</p>
@@ -366,7 +366,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
           {/* Details Sidebar */}
           <div className="space-y-4">
             {/* Title & Description */}
-            <div className="bg-gray-900/80 backdrop-blur-md rounded-xl p-5 border border-white/10">
+            <div className="bg-gray-900/90 rounded-xl p-5 border border-white/10">
               <h1 className="text-xl font-semibold text-white mb-2">
                 {memory.title || 'Untitled Memory'}
               </h1>
@@ -376,7 +376,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
             </div>
 
             {/* Date & Location */}
-            <div className="bg-gray-900/80 backdrop-blur-md rounded-xl p-5 space-y-3 border border-white/10">
+            <div className="bg-gray-900/90 rounded-xl p-5 space-y-3 border border-white/10">
               {memory.memory_date && (
                 <div className="flex items-center gap-3 text-white/80">
                   <Calendar size={18} className="text-amber-500" />
@@ -393,7 +393,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
 
             {/* AI Insights */}
             {(memory.ai_summary || memory.ai_labels?.length > 0) && (
-              <div className="bg-gray-900/80 backdrop-blur-md rounded-xl p-5 border border-white/10">
+              <div className="bg-gray-900/90 rounded-xl p-5 border border-white/10">
                 <div className="flex items-center gap-2 text-amber-500 text-sm mb-3">
                   <Sparkles size={14} />
                   AI Insights
@@ -426,7 +426,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
 
             {/* Tagged People */}
             {faceTags.length > 0 && (
-              <div className="bg-gray-900/80 backdrop-blur-md rounded-xl p-5 border border-white/10">
+              <div className="bg-gray-900/90 rounded-xl p-5 border border-white/10">
                 <div className="flex items-center gap-2 text-white text-sm mb-3">
                   <User size={14} />
                   People in this photo

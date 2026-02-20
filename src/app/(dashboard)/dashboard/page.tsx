@@ -144,7 +144,7 @@ export default function DashboardPage() {
           <span className="text-white/70 text-xs">{completion}%</span>
         </div>
 
-        <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-900/80 backdrop-blur-md rounded-xl text-white/80 hover:bg-gray-800/80 transition-all border border-white/10">
+        <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-900/90 rounded-xl text-white/80 hover:bg-gray-800/80 transition-all border border-white/10">
           <Upload size={16} />
           Upload Cover
         </button>

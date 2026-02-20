@@ -160,7 +160,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
           <div className="flex items-center gap-4">
             <Link 
               href="/dashboard/albums" 
-              className="p-2 bg-gray-900/80 backdrop-blur-md rounded-xl text-white/70 hover:text-white transition-all border border-white/10"
+              className="p-2 bg-gray-900/90 rounded-xl text-white/70 hover:text-white transition-all border border-white/10"
             >
               <ChevronLeft size={20} />
             </Link>
@@ -184,14 +184,14 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
           <div className="flex items-center gap-2">
             {!album.is_smart && (
               <button
-                className="p-2.5 bg-gray-900/80 backdrop-blur-md text-white/50 hover:text-white rounded-xl transition-all border border-white/10"
+                className="p-2.5 bg-gray-900/90 text-white/50 hover:text-white rounded-xl transition-all border border-white/10"
               >
                 <Plus size={18} />
               </button>
             )}
             <button
               onClick={handleDelete}
-              className="p-2.5 bg-gray-900/80 backdrop-blur-md text-white/50 hover:text-red-500 rounded-xl transition-all border border-white/10"
+              className="p-2.5 bg-gray-900/90 text-white/50 hover:text-red-500 rounded-xl transition-all border border-white/10"
             >
               <Trash2 size={18} />
             </button>
@@ -202,7 +202,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
       {/* Memories Grid */}
       <main>
         {memories.length === 0 ? (
-          <div className="bg-gray-900/80 backdrop-blur-md rounded-2xl p-12 border border-white/10 text-center">
+          <div className="bg-gray-900/90 rounded-2xl p-12 border border-white/10 text-center">
             <ImageIcon size={48} className="text-white/20 mb-4 mx-auto" />
             <h3 className="text-lg font-medium text-white mb-2">No memories in this album</h3>
             <p className="text-white/50 mb-4">

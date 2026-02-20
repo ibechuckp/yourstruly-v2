@@ -211,7 +211,7 @@ export default function JournalistPage() {
       <header className="mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="p-2 bg-gray-900/80 backdrop-blur-md rounded-xl text-white/70 hover:bg-white/20 hover:text-white transition-all">
+            <Link href="/dashboard" className="p-2 bg-gray-900/90 rounded-xl text-white/70 hover:bg-white/20 hover:text-white transition-all">
               <ChevronLeft size={20} />
             </Link>
             <div>
@@ -236,7 +236,7 @@ export default function JournalistPage() {
             <div className="text-white/60">Loading...</div>
           </div>
         ) : sessions.length === 0 ? (
-          <div className="bg-gray-900/80 backdrop-blur-md rounded-2xl p-12 border border-white/10 text-center">
+          <div className="bg-gray-900/90 rounded-2xl p-12 border border-white/10 text-center">
             <Video size={48} className="text-white/30 mb-4 mx-auto" />
             <h3 className="text-lg font-medium text-white mb-2">No interviews yet</h3>
             <p className="text-white/50 mb-4 max-w-md mx-auto">
@@ -255,7 +255,7 @@ export default function JournalistPage() {
             {sessions.map((session) => (
               <div
                 key={session.id}
-                className="bg-gray-900/80 backdrop-blur-md rounded-2xl p-5 border border-white/10 hover:bg-white/15 transition-all"
+                className="bg-gray-900/90 rounded-2xl p-5 border border-white/10 hover:bg-white/15 transition-all"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-4">
