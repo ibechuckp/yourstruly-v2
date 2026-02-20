@@ -12,6 +12,8 @@ import ContactsWidget from '@/components/dashboard/ContactsWidget'
 import GenderWidget from '@/components/dashboard/GenderWidget'
 import ReligionWidget from '@/components/dashboard/ReligionWidget'
 import AddressWidget from '@/components/dashboard/AddressWidget'
+import OnThisDayWidget from '@/components/dashboard/OnThisDayWidget'
+import StatsWidget from '@/components/dashboard/StatsWidget'
 // CommandBar is now in DashboardShell
 import { Upload } from 'lucide-react'
 
@@ -159,6 +161,8 @@ export default function DashboardPage() {
             onUpdate={updateProfile}
           />
           <div className="w-full space-y-3">
+            <StatsWidget />
+            <OnThisDayWidget />
             <InterestsWidget 
               interests={profile?.interests || []}
               onUpdate={(v) => updateProfile('interests', v)}
@@ -231,6 +235,8 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex flex-col gap-4 w-72">
+            <StatsWidget />
+            <OnThisDayWidget />
             <ContactsWidget />
             <GenderWidget 
               gender={profile?.gender || ''}
