@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import { Calendar, Plus, Pencil } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Calendar, Plus, Pencil, Camera } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 interface Profile {
+  id: string
   full_name: string
   date_of_birth: string
   occupation: string
@@ -20,6 +22,9 @@ interface ProfileCardProps {
 export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
   const [editingField, setEditingField] = useState<string | null>(null)
   const [tempValue, setTempValue] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const supabase = createClient()
 
   const startEdit = (field: string, value: string) => {
     setEditingField(field)
@@ -33,6 +38,34 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
     }
   }
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !profile?.id) return
+
+    setUploading(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const filePath = `avatars/${profile.id}.${fileExt}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true })
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+
+      onUpdate('avatar_url', publicUrl)
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload photo')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const formatDate = (date: string) => {
     if (!date) return null
     return new Date(date).toLocaleDateString('en-US', { 
@@ -42,12 +75,12 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
     })
   }
 
-  const genderIcon = profile?.gender === 'Male' ? '♂' : profile?.gender === 'Female' ? '♀' : '⚥'
+  const genderIcon = profile?.gender === 'Male' ? '♂' : profile?.gender === 'Female' ? '♀' : profile?.gender ? '⚧' : null
 
   return (
     <div className="w-80 bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-xl rounded-3xl border border-white/20 p-6 shadow-2xl">
       {/* Gender Icon */}
-      {profile?.gender && (
+      {genderIcon && (
         <div className="flex justify-center mb-2">
           <span className="text-white/60 text-2xl">{genderIcon}</span>
         </div>
@@ -66,17 +99,39 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
 
       {/* Avatar */}
       <div className="flex justify-center my-4">
-        <div className="relative">
-          <div className="w-32 h-32 rounded-full bg-gradient-to-br from-white/20 to-white/5 border-4 border-white/30 flex items-center justify-center overflow-hidden">
+        <div className="relative group">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoUpload}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="w-32 h-32 rounded-full bg-gradient-to-br from-white/20 to-white/5 border-4 border-white/30 flex items-center justify-center overflow-hidden hover:border-white/50 transition-colors"
+          >
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+              <>
+                <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
+                  <Camera className="text-white" size={24} />
+                </div>
+              </>
             ) : (
               <div className="text-center text-white/50">
-                <Plus size={24} className="mx-auto mb-1" />
-                <span className="text-xs">Upload Photo</span>
+                {uploading ? (
+                  <span className="text-xs">Uploading...</span>
+                ) : (
+                  <>
+                    <Plus size={24} className="mx-auto mb-1" />
+                    <span className="text-xs">Upload Photo</span>
+                  </>
+                )}
               </div>
             )}
-          </div>
+          </button>
         </div>
       </div>
 
@@ -100,7 +155,7 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
         </h2>
       )}
 
-      {/* Job Title */}
+      {/* What I Do (occupation) */}
       {editingField === 'occupation' ? (
         <input
           type="text"
@@ -109,6 +164,7 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
           onBlur={saveEdit}
           onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
           autoFocus
+          placeholder="Designer, Developer, Teacher..."
           className="w-full text-center text-sm text-white/70 bg-transparent border-b border-white/30 focus:outline-none mt-2"
         />
       ) : (
@@ -116,42 +172,39 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
           onClick={() => startEdit('occupation', profile?.occupation || '')}
           className="block mx-auto mt-2 px-4 py-1 bg-white/10 rounded-full text-white/70 text-sm hover:bg-white/20 transition-colors"
         >
-          {profile?.occupation || 'Job Name'}
+          {profile?.occupation || 'What I do'}
         </button>
       )}
 
-      {/* Bio */}
-      <div className="mt-6">
-        <div className="bg-white/10 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-white/70 text-sm font-medium">Bio</span>
-            <button 
-              onClick={() => startEdit('biography', profile?.biography || '')}
-              className="text-white/50 hover:text-white"
-            >
-              <Pencil size={14} />
-            </button>
-          </div>
-          {editingField === 'biography' ? (
-            <textarea
-              value={tempValue}
-              onChange={(e) => setTempValue(e.target.value)}
-              onBlur={saveEdit}
-              autoFocus
-              rows={4}
-              className="w-full text-sm text-white/80 bg-transparent border border-white/20 rounded-lg p-2 focus:outline-none focus:border-white/40 resize-none"
-            />
-          ) : (
-            <p className="text-sm text-white/80 leading-relaxed">
-              {profile?.biography || (
-                <span className="text-white/40 flex items-center justify-center gap-2">
-                  <Plus size={16} />
-                  Add your bio
-                </span>
-              )}
-            </p>
-          )}
+      {/* Bio - Full section clickable */}
+      <div 
+        onClick={() => !editingField && startEdit('biography', profile?.biography || '')}
+        className="mt-6 bg-white/10 rounded-xl p-4 cursor-pointer hover:bg-white/15 transition-colors"
+      >
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-white/70 text-sm font-medium">Bio</span>
+          <Pencil size={14} className="text-white/50" />
         </div>
+        {editingField === 'biography' ? (
+          <textarea
+            value={tempValue}
+            onChange={(e) => setTempValue(e.target.value)}
+            onBlur={saveEdit}
+            autoFocus
+            rows={4}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full text-sm text-white/80 bg-transparent border border-white/20 rounded-lg p-2 focus:outline-none focus:border-white/40 resize-none"
+          />
+        ) : (
+          <p className="text-sm text-white/80 leading-relaxed">
+            {profile?.biography || (
+              <span className="text-white/40 flex items-center gap-2">
+                <Plus size={16} />
+                Add your bio
+              </span>
+            )}
+          </p>
+        )}
       </div>
 
       {/* Date Edit Modal */}

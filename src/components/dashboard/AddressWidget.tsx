@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { MapPin, Search, X } from 'lucide-react'
+
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''
 
 interface AddressWidgetProps {
   address: string
@@ -14,6 +16,60 @@ interface AddressWidgetProps {
 export default function AddressWidget({ address, city, state, country, onUpdate }: AddressWidgetProps) {
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState({ address, city, state, country })
+  const [coordinates, setCoordinates] = useState<[number, number] | null>(null)
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<mapboxgl.Map | null>(null)
+
+  const fullAddress = [city, state, country].filter(Boolean).join(', ')
+
+  // Geocode address to get coordinates
+  useEffect(() => {
+    if (fullAddress) {
+      fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${MAPBOX_TOKEN}&limit=1`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.features?.[0]?.center) {
+            setCoordinates(data.features[0].center as [number, number])
+          }
+        })
+        .catch(console.error)
+    }
+  }, [fullAddress])
+
+  // Initialize map
+  useEffect(() => {
+    if (!mapContainerRef.current || !coordinates) return
+    if (typeof window === 'undefined') return
+
+    // Dynamically import mapbox
+    import('mapbox-gl').then((mapboxgl) => {
+      mapboxgl.default.accessToken = MAPBOX_TOKEN
+
+      if (mapRef.current) {
+        mapRef.current.setCenter(coordinates)
+        return
+      }
+
+      mapRef.current = new mapboxgl.default.Map({
+        container: mapContainerRef.current!,
+        style: 'mapbox://styles/mapbox/dark-v11',
+        center: coordinates,
+        zoom: 10,
+        interactive: false
+      })
+
+      new mapboxgl.default.Marker({ color: '#8B5CF6' })
+        .setLngLat(coordinates)
+        .addTo(mapRef.current)
+    })
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+    }
+  }, [coordinates])
 
   const save = () => {
     onUpdate('address', form.address)
@@ -22,8 +78,6 @@ export default function AddressWidget({ address, city, state, country, onUpdate 
     onUpdate('country', form.country)
     setShowModal(false)
   }
-
-  const fullAddress = [address, city, state, country].filter(Boolean).join(', ')
 
   return (
     <div 
@@ -40,17 +94,24 @@ export default function AddressWidget({ address, city, state, country, onUpdate 
         </button>
       </div>
 
-      {/* Map Placeholder */}
-      <div className="w-full h-24 bg-gray-800/50 rounded-lg mb-3 overflow-hidden relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 to-green-900/30 flex items-center justify-center">
-          <span className="text-white/30 text-xs">🗺️ Map</span>
-        </div>
+      {/* Map */}
+      <div 
+        ref={mapContainerRef}
+        className="w-full h-24 bg-gray-800/50 rounded-lg mb-3 overflow-hidden"
+      >
+        {!coordinates && (
+          <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
+            🗺️ Map
+          </div>
+        )}
       </div>
 
       {fullAddress ? (
         <div className="flex items-start gap-2">
           <MapPin size={14} className="text-white/50 mt-0.5 shrink-0" />
-          <p className="text-white/70 text-sm leading-tight">{fullAddress}</p>
+          <p className="text-white/70 text-sm leading-tight">
+            {address && `${address}, `}{fullAddress}
+          </p>
         </div>
       ) : (
         <p className="text-white/40 text-sm">Search your address</p>

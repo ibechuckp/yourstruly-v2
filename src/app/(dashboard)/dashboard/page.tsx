@@ -15,13 +15,42 @@ import AddressWidget from '@/components/dashboard/AddressWidget'
 import CommandBar from '@/components/dashboard/CommandBar'
 import { Upload } from 'lucide-react'
 
-const backgrounds = [
-  '/backgrounds/mountains.jpg',
-  '/backgrounds/desert.jpg',
-  '/backgrounds/ocean.jpg',
-  '/backgrounds/forest.jpg',
-  '/backgrounds/space.jpg',
-]
+// Background themes based on personality/interests
+const BACKGROUNDS = {
+  mountains: { url: '/backgrounds/mountains.jpg', keywords: ['hiking', 'nature', 'adventure', 'climbing', 'outdoor', 'travel'] },
+  ocean: { url: '/backgrounds/ocean.jpg', keywords: ['beach', 'swimming', 'surfing', 'water', 'calm', 'relaxed', 'peaceful'] },
+  forest: { url: '/backgrounds/forest.jpg', keywords: ['nature', 'trees', 'green', 'meditation', 'spiritual', 'peaceful', 'gardening'] },
+  desert: { url: '/backgrounds/desert.jpg', keywords: ['warm', 'adventure', 'photography', 'minimalist', 'travel', 'exploring'] },
+  space: { url: '/backgrounds/space.jpg', keywords: ['technology', 'science', 'coding', 'futuristic', 'gaming', 'curious', 'analytical'] },
+  city: { url: '/backgrounds/city.jpg', keywords: ['urban', 'business', 'networking', 'social', 'nightlife', 'ambitious', 'career'] },
+  sunset: { url: '/backgrounds/sunset.jpg', keywords: ['romantic', 'creative', 'art', 'music', 'photography', 'optimistic', 'cheerful'] },
+}
+
+// Select background based on user profile
+function selectBackground(profile: Profile | null): string {
+  if (!profile) return BACKGROUNDS.mountains.url
+  
+  const userKeywords = [
+    ...(profile.interests || []),
+    ...(profile.personality_traits || []),
+    ...(profile.skills || []),
+  ].map(k => k.toLowerCase())
+
+  let bestMatch = 'mountains'
+  let bestScore = 0
+
+  for (const [theme, data] of Object.entries(BACKGROUNDS)) {
+    const score = data.keywords.filter(kw => 
+      userKeywords.some(uk => uk.includes(kw) || kw.includes(uk))
+    ).length
+    if (score > bestScore) {
+      bestScore = score
+      bestMatch = theme
+    }
+  }
+
+  return BACKGROUNDS[bestMatch as keyof typeof BACKGROUNDS].url
+}
 
 interface Profile {
   id: string
@@ -48,8 +77,10 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeWidget, setActiveWidget] = useState<string | null>(null)
-  const [backgroundIndex, setBackgroundIndex] = useState(0)
   const supabase = createClient()
+  
+  // AI-selected background based on profile
+  const backgroundUrl = selectBackground(profile)
 
   useEffect(() => {
     loadProfile()
@@ -123,11 +154,11 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Background Image */}
+      {/* Background Image - AI selected based on profile */}
       <div 
         className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
         style={{ 
-          backgroundImage: `url(${backgrounds[backgroundIndex]})`,
+          backgroundImage: `url(${backgroundUrl})`,
           filter: 'brightness(0.7)'
         }}
       />
@@ -163,9 +194,9 @@ export default function DashboardPage() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 flex items-center justify-center p-4 gap-6">
+        <main className="flex-1 flex items-center justify-center p-4 gap-12">
           {/* Left Sidebar */}
-          <div className={`flex flex-col gap-4 w-64 transition-all duration-500 ${activeWidget && activeWidget !== 'interests' && activeWidget !== 'skills' && activeWidget !== 'personality' && activeWidget !== 'credo' && activeWidget !== 'lifegoals' ? '-translate-x-full opacity-0' : ''}`}>
+          <div className="flex flex-col gap-4 w-72">
             <InterestsWidget 
               interests={profile?.interests || []}
               onUpdate={(v) => updateProfile('interests', v)}
@@ -205,7 +236,7 @@ export default function DashboardPage() {
           />
 
           {/* Right Sidebar */}
-          <div className={`flex flex-col gap-4 w-64 transition-all duration-500 ${activeWidget && activeWidget !== 'contacts' && activeWidget !== 'gender' && activeWidget !== 'religion' && activeWidget !== 'address' ? 'translate-x-full opacity-0' : ''}`}>
+          <div className="flex flex-col gap-4 w-72">
             <ContactsWidget />
             <div className="flex gap-4">
               <GenderWidget 
