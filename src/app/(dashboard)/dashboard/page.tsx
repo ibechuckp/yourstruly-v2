@@ -76,7 +76,6 @@ interface Profile {
 export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeWidget, setActiveWidget] = useState<string | null>(null)
   const supabase = createClient()
   
   // AI-selected background based on profile
@@ -170,7 +169,8 @@ export default function DashboardPage() {
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Top Bar */}
         <header className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-4">
+          {/* Progress - hidden on mobile */}
+          <div className="hidden md:flex items-center gap-4">
             <span className="text-white/70 text-sm">Completed by</span>
             <div className="w-48 h-2 bg-white/20 rounded-full overflow-hidden">
               <div 
@@ -182,63 +182,58 @@ export default function DashboardPage() {
           </div>
 
           {/* Logo */}
-          <div className="absolute left-1/2 -translate-x-1/2 text-center">
-            <h1 className="text-white text-3xl font-bold tracking-wider">YOURS</h1>
-            <p className="text-white text-2xl font-script -mt-2 italic">Truly</p>
+          <div className="md:absolute md:left-1/2 md:-translate-x-1/2 text-center">
+            <h1 className="text-white text-2xl md:text-3xl font-bold tracking-wider">YOURS</h1>
+            <p className="text-white text-xl md:text-2xl font-script -mt-2 italic">Truly</p>
           </div>
 
-          <button className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-lg text-white/80 hover:bg-white/20 transition-colors border border-white/20">
+          {/* Mobile progress indicator */}
+          <div className="md:hidden flex items-center gap-2">
+            <div className="w-12 h-2 bg-white/20 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full"
+                style={{ width: `${completion}%` }}
+              />
+            </div>
+            <span className="text-white/70 text-xs">{completion}%</span>
+          </div>
+
+          <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-lg text-white/80 transition-colors border border-white/20">
             <Upload size={16} />
             Upload Cover
           </button>
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 flex items-center justify-center p-4 gap-12">
-          {/* Left Sidebar */}
-          <div className="flex flex-col gap-4 w-72">
-            <InterestsWidget 
-              interests={profile?.interests || []}
-              onUpdate={(v) => updateProfile('interests', v)}
-              isActive={activeWidget === 'interests'}
-              onToggle={() => setActiveWidget(activeWidget === 'interests' ? null : 'interests')}
+        <main className="flex-1 p-4 overflow-y-auto">
+          {/* Mobile Layout */}
+          <div className="lg:hidden flex flex-col items-center gap-4 max-w-sm mx-auto pb-20">
+            <ProfileCard 
+              profile={profile}
+              onUpdate={updateProfile}
             />
-            <SkillsWidget 
-              skills={profile?.skills || []}
-              onUpdate={(v) => updateProfile('skills', v)}
-              isActive={activeWidget === 'skills'}
-              onToggle={() => setActiveWidget(activeWidget === 'skills' ? null : 'skills')}
-            />
-            <PersonalityWidget 
-              traits={profile?.personality_traits || []}
-              onUpdate={(v) => updateProfile('personality_traits', v)}
-              isActive={activeWidget === 'personality'}
-              onToggle={() => setActiveWidget(activeWidget === 'personality' ? null : 'personality')}
-            />
-            <CredoWidget 
-              credo={profile?.personal_motto || ''}
-              onUpdate={(v) => updateProfile('personal_motto', v)}
-              isActive={activeWidget === 'credo'}
-              onToggle={() => setActiveWidget(activeWidget === 'credo' ? null : 'credo')}
-            />
-            <LifeGoalsWidget 
-              goals={profile?.life_goals || []}
-              onUpdate={(v) => updateProfile('life_goals', v)}
-              isActive={activeWidget === 'lifegoals'}
-              onToggle={() => setActiveWidget(activeWidget === 'lifegoals' ? null : 'lifegoals')}
-            />
-          </div>
-
-          {/* Center Profile Card */}
-          <ProfileCard 
-            profile={profile}
-            onUpdate={updateProfile}
-          />
-
-          {/* Right Sidebar */}
-          <div className="flex flex-col gap-4 w-72">
-            <ContactsWidget />
-            <div className="flex gap-4">
+            <div className="w-full space-y-3">
+              <InterestsWidget 
+                interests={profile?.interests || []}
+                onUpdate={(v) => updateProfile('interests', v)}
+              />
+              <SkillsWidget 
+                skills={profile?.skills || []}
+                onUpdate={(v) => updateProfile('skills', v)}
+              />
+              <PersonalityWidget 
+                traits={profile?.personality_traits || []}
+                onUpdate={(v) => updateProfile('personality_traits', v)}
+              />
+              <CredoWidget 
+                credo={profile?.personal_motto || ''}
+                onUpdate={(v) => updateProfile('personal_motto', v)}
+              />
+              <LifeGoalsWidget 
+                goals={profile?.life_goals || []}
+                onUpdate={(v) => updateProfile('life_goals', v)}
+              />
+              <ContactsWidget />
               <GenderWidget 
                 gender={profile?.gender || ''}
                 onUpdate={(v) => updateProfile('gender', v)}
@@ -247,14 +242,66 @@ export default function DashboardPage() {
                 religions={profile?.religions || []}
                 onUpdate={(v) => updateProfile('religions', v)}
               />
+              <AddressWidget 
+                address={profile?.address || ''}
+                city={profile?.city || ''}
+                state={profile?.state || ''}
+                country={profile?.country || ''}
+                onUpdate={updateProfile}
+              />
             </div>
-            <AddressWidget 
-              address={profile?.address || ''}
-              city={profile?.city || ''}
-              state={profile?.state || ''}
-              country={profile?.country || ''}
-              onUpdate={updateProfile}
-            />
+          </div>
+
+          {/* Desktop Layout */}
+          <div className="hidden lg:flex items-start justify-center gap-12 isolate">
+            <div className="flex flex-col gap-4 w-72 isolate">
+              <InterestsWidget 
+                interests={profile?.interests || []}
+                onUpdate={(v) => updateProfile('interests', v)}
+              />
+              <SkillsWidget 
+                skills={profile?.skills || []}
+                onUpdate={(v) => updateProfile('skills', v)}
+              />
+              <PersonalityWidget 
+                traits={profile?.personality_traits || []}
+                onUpdate={(v) => updateProfile('personality_traits', v)}
+              />
+              <CredoWidget 
+                credo={profile?.personal_motto || ''}
+                onUpdate={(v) => updateProfile('personal_motto', v)}
+              />
+              <LifeGoalsWidget 
+                goals={profile?.life_goals || []}
+                onUpdate={(v) => updateProfile('life_goals', v)}
+              />
+            </div>
+
+            <div className="isolate">
+              <ProfileCard 
+                profile={profile}
+                onUpdate={updateProfile}
+              />
+            </div>
+
+            <div className="flex flex-col gap-4 w-72 isolate">
+              <ContactsWidget />
+              <GenderWidget 
+                gender={profile?.gender || ''}
+                onUpdate={(v) => updateProfile('gender', v)}
+              />
+              <ReligionWidget 
+                religions={profile?.religions || []}
+                onUpdate={(v) => updateProfile('religions', v)}
+              />
+              <AddressWidget 
+                address={profile?.address || ''}
+                city={profile?.city || ''}
+                state={profile?.state || ''}
+                country={profile?.country || ''}
+                onUpdate={updateProfile}
+              />
+            </div>
           </div>
         </main>
 

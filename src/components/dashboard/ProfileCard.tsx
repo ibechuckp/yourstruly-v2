@@ -42,16 +42,42 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
     const file = e.target.files?.[0]
     if (!file || !profile?.id) return
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be smaller than 5MB')
+      return
+    }
+
     setUploading(true)
     try {
-      const fileExt = file.name.split('.').pop()
-      const filePath = `avatars/${profile.id}.${fileExt}`
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const fileName = `${profile.id}-${Date.now()}.${fileExt}`
+      const filePath = `${fileName}`
 
-      const { error: uploadError } = await supabase.storage
+      // Upload to 'avatars' bucket
+      const { error: uploadError, data } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true })
+        .upload(filePath, file, { 
+          upsert: true,
+          cacheControl: '3600'
+        })
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        console.error('Upload error details:', uploadError)
+        // Check if bucket doesn't exist
+        if (uploadError.message?.includes('not found') || uploadError.message?.includes('Bucket')) {
+          alert('Storage not configured. Please create an "avatars" bucket in Supabase with public access.')
+        } else {
+          alert(`Upload failed: ${uploadError.message}`)
+        }
+        return
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
@@ -60,7 +86,7 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
       onUpdate('avatar_url', publicUrl)
     } catch (error) {
       console.error('Upload error:', error)
-      alert('Failed to upload photo')
+      alert('Failed to upload photo. Check console for details.')
     } finally {
       setUploading(false)
     }
@@ -78,7 +104,7 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
   const genderIcon = profile?.gender === 'Male' ? '♂' : profile?.gender === 'Female' ? '♀' : profile?.gender ? '⚧' : null
 
   return (
-    <div className="w-80 bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-xl rounded-3xl border border-white/20 p-6 shadow-2xl">
+    <div className="w-full lg:w-80 bg-gradient-to-b from-white/15 to-white/5 backdrop-blur-md rounded-3xl border border-white/20 p-4 sm:p-6">
       {/* Gender Icon */}
       {genderIcon && (
         <div className="flex justify-center mb-2">
@@ -170,7 +196,7 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
       ) : (
         <button 
           onClick={() => startEdit('occupation', profile?.occupation || '')}
-          className="block mx-auto mt-2 px-4 py-1 bg-white/10 rounded-full text-white/70 text-sm hover:bg-white/20 transition-colors"
+          className="block mx-auto mt-2 px-4 py-1 bg-white/10 rounded-full text-white/70 text-sm transition-colors"
         >
           {profile?.occupation || 'What I do'}
         </button>
@@ -179,7 +205,7 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
       {/* Bio - Full section clickable */}
       <div 
         onClick={() => !editingField && startEdit('biography', profile?.biography || '')}
-        className="mt-6 bg-white/10 rounded-xl p-4 cursor-pointer hover:bg-white/15 transition-colors"
+        className="mt-6 bg-white/10 rounded-xl p-4 cursor-pointer transition-colors"
       >
         <div className="flex items-center justify-between mb-2">
           <span className="text-white/70 text-sm font-medium">Bio</span>
@@ -220,7 +246,7 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
             />
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => setEditingField(null)} className="px-4 py-2 text-gray-400">Cancel</button>
-              <button onClick={saveEdit} className="px-4 py-2 bg-purple-600 text-white rounded-lg">Save</button>
+              <button onClick={saveEdit} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors">Save</button>
             </div>
           </div>
         </div>
