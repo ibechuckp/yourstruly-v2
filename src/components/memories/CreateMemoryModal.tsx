@@ -344,7 +344,7 @@ export default function CreateMemoryModal({ isOpen, onClose, onCreated }: Create
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Give this memory a name..."
-              className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
             />
           </div>
 
@@ -356,7 +356,7 @@ export default function CreateMemoryModal({ isOpen, onClose, onCreated }: Create
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What happened? How did you feel?"
               rows={3}
-              className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none transition-all"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none transition-all"
             />
           </div>
 
@@ -370,7 +370,7 @@ export default function CreateMemoryModal({ isOpen, onClose, onCreated }: Create
                   type="date"
                   value={memoryDate}
                   onChange={(e) => setMemoryDate(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
                 />
               </div>
             </div>
@@ -379,7 +379,7 @@ export default function CreateMemoryModal({ isOpen, onClose, onCreated }: Create
               <select
                 value={memoryType}
                 onChange={(e) => setMemoryType(e.target.value)}
-                className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
               >
                 {MEMORY_TYPES.map((type) => (
                   <option key={type.id} value={type.id} className="bg-gray-900">
@@ -400,7 +400,7 @@ export default function CreateMemoryModal({ isOpen, onClose, onCreated }: Create
                 value={locationName}
                 onChange={(e) => setLocationName(e.target.value)}
                 placeholder="Where was this?"
-                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
               />
             </div>
           </div>

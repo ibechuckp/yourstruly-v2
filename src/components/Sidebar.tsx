@@ -90,7 +90,7 @@ export default function Sidebar({ user, profile }: SidebarProps) {
               href={isDisabled ? '#' : item.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
                 isActive
-                  ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30'
+                  ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400'
                   : isDisabled
                   ? 'text-white/30 cursor-not-allowed'
                   : 'text-white/60 hover:bg-white/5 hover:text-white/90'

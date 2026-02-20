@@ -156,7 +156,7 @@ export default function ProfilePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="p-2 bg-gray-900/80 backdrop-blur-md rounded-xl text-white/70 hover:bg-white/20 hover:text-white transition-all border border-white/20">
+          <Link href="/dashboard" className="p-2 bg-gray-900/80 backdrop-blur-md rounded-xl text-white/70 hover:bg-white/20 hover:text-white transition-all border border-white/10">
             <ChevronLeft size={20} />
           </Link>
           <div>
@@ -268,7 +268,7 @@ function Section({ title, icon, children }: { title: string; icon: string; child
   }
   
   return (
-    <div className="bg-gray-900/80 backdrop-blur-md rounded-xl p-6 border border-white/20">
+    <div className="bg-gray-900/80 backdrop-blur-md rounded-xl p-6 border border-white/10">
       <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
         <span>{getIcon()}</span> {title}
       </h2>
@@ -286,7 +286,7 @@ function Input({ label, value, onChange, type = 'text', placeholder = '', classN
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-4 py-2.5 bg-white/5 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
+        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
       />
     </div>
   )
@@ -301,7 +301,7 @@ function Textarea({ label, value, onChange, placeholder = '', rows = 3 }: { labe
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         rows={rows}
-        className="w-full px-4 py-2.5 bg-white/5 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 resize-none transition-all"
+        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 resize-none transition-all"
       />
     </div>
   )
@@ -314,7 +314,7 @@ function Select({ label, value, onChange, options }: { label: string; value: str
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="w-full px-4 py-2.5 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
+        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
       >
         {options.map(opt => (
           <option key={opt} value={opt} className="bg-gray-900">{opt || 'Select...'}</option>
@@ -338,7 +338,7 @@ function TagInput({ label, tags, onAdd, onRemove, placeholder }: { label: string
   return (
     <div>
       <label className="block text-sm text-white/50 mb-1">{label}</label>
-      <div className="flex flex-wrap gap-2 p-3 bg-white/5 border border-white/20 rounded-xl min-h-[48px]">
+      <div className="flex flex-wrap gap-2 p-3 bg-white/5 border border-white/10 rounded-xl min-h-[48px]">
         {tags.map((tag, i) => (
           <span key={i} className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-amber-500/30 to-orange-600/30 text-amber-200 rounded-lg text-sm border border-amber-500/30">
             {tag}

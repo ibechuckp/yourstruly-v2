@@ -43,7 +43,7 @@ export default function SkillsWidget({ skills, onUpdate }: SkillsWidgetProps) {
   return (
     <>
       <div 
-        className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl border border-white/20 p-4 cursor-pointer transition-all duration-300"
+        className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-4 cursor-pointer transition-all duration-300"
         onClick={() => setShowModal(true)}
       >
         <div className="flex items-center justify-between mb-3">
@@ -83,7 +83,7 @@ export default function SkillsWidget({ skills, onUpdate }: SkillsWidgetProps) {
 
         <button
           onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
-          className="w-full mt-2 py-2 border border-dashed border-white/20 rounded-lg text-white/50 text-sm hover:bg-gray-900/80 hover:text-white/70 transition-colors flex items-center justify-center gap-2"
+          className="w-full mt-2 py-2 border border-dashed border-white/10 rounded-lg text-white/50 text-sm hover:bg-gray-900/80 hover:text-white/70 transition-colors flex items-center justify-center gap-2"
         >
           <Plus size={14} />
           Add Skills

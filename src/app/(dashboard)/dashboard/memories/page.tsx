@@ -154,7 +154,7 @@ export default function MemoriesPage() {
             <div className="text-white/60">Loading memories...</div>
           </div>
         ) : memories.length === 0 ? (
-          <div className="bg-gray-900/80 backdrop-blur-md rounded-2xl p-12 border border-white/20 text-center">
+          <div className="bg-gray-900/80 backdrop-blur-md rounded-2xl p-12 border border-white/10 text-center">
             <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4 mx-auto">
               <ImageIcon size={32} className="text-white/40" />
             </div>

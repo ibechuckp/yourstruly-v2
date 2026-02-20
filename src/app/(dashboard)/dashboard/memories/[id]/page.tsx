@@ -483,7 +483,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
               type="text"
               value={editForm.title}
               onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-              className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
             />
           </div>
           <div>
@@ -492,7 +492,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
               value={editForm.description}
               onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
               rows={3}
-              className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none transition-all"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none transition-all"
             />
           </div>
           <div>
@@ -501,7 +501,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
               type="date"
               value={editForm.memory_date}
               onChange={(e) => setEditForm({ ...editForm, memory_date: e.target.value })}
-              className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
             />
           </div>
           <div>
@@ -510,7 +510,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
               type="text"
               value={editForm.location_name}
               onChange={(e) => setEditForm({ ...editForm, location_name: e.target.value })}
-              className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
             />
           </div>
           <div className="flex gap-3 pt-4 border-t border-white/10">

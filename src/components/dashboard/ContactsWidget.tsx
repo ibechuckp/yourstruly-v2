@@ -79,7 +79,7 @@ export default function ContactsWidget() {
   return (
     <>
       <div 
-        className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl border border-white/20 p-4 cursor-pointer transition-colors"
+        className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-4 cursor-pointer transition-colors"
         onClick={() => setShowModal(true)}
       >
         <div className="flex items-center justify-between mb-3">
