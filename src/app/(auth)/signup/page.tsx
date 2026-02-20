@@ -38,48 +38,59 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
+      {/* Background */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ 
+          backgroundImage: 'url(/backgrounds/sunset.jpg)',
+          filter: 'brightness(0.6)',
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
+
+      <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">YoursTruly</h1>
-          <p className="text-purple-200">Start documenting your legacy today.</p>
+          <h1 className="text-4xl font-bold text-white mb-1 tracking-wider">YOURS</h1>
+          <p className="text-2xl text-white font-script italic -mt-1">Truly</p>
+          <p className="text-white/60 mt-2">Start documenting your legacy today.</p>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 border border-white/20">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
           <h2 className="text-2xl font-semibold text-white mb-6">Create your account</h2>
 
           <form onSubmit={handleSignup} className="space-y-4">
             <div>
-              <label className="block text-sm text-purple-200 mb-1">Full Name</label>
+              <label className="block text-sm text-white/60 mb-1">Full Name</label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
                 placeholder="John Doe"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm text-purple-200 mb-1">Email</label>
+              <label className="block text-sm text-white/60 mb-1">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
                 placeholder="you@example.com"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm text-purple-200 mb-1">Password</label>
+              <label className="block text-sm text-white/60 mb-1">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
                 placeholder="••••••••"
                 minLength={6}
                 required
@@ -87,7 +98,7 @@ export default function SignupPage() {
             </div>
 
             {error && (
-              <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-200 text-sm">
+              <div className="p-3 rounded-xl bg-red-500/20 border border-red-500/30 text-red-300 text-sm">
                 {error}
               </div>
             )}
@@ -95,15 +106,15 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+              className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold rounded-xl transition-all disabled:opacity-50"
             >
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-purple-200">
+          <p className="mt-6 text-center text-white/60">
             Already have an account?{' '}
-            <Link href="/login" className="text-purple-400 hover:text-purple-300 font-medium">
+            <Link href="/login" className="text-amber-400 hover:text-amber-300 font-medium">
               Sign in
             </Link>
           </p>

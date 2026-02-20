@@ -16,6 +16,8 @@ interface Memory {
   ai_category: string
   ai_labels: string[]
   is_favorite: boolean
+  shared_with_count?: number
+  comment_count?: number
   memory_media: {
     id: string
     file_url: string
@@ -73,13 +75,23 @@ export default function MemoryCard({ memory }: MemoryCardProps) {
         {/* Overlay Gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
-        {/* Media Count Badge */}
-        {mediaCount > 1 && (
-          <div className="absolute top-2 right-2 px-2 py-1 bg-black/60 rounded-full text-white text-xs flex items-center gap-1">
-            <Users size={12} />
-            {mediaCount}
-          </div>
-        )}
+        {/* Top Right Badges */}
+        <div className="absolute top-2 right-2 flex items-center gap-1">
+          {/* Media Count Badge */}
+          {mediaCount > 1 && (
+            <div className="px-2 py-1 bg-black/60 backdrop-blur-sm rounded-full text-white text-xs flex items-center gap-1">
+              <Users size={12} />
+              {mediaCount}
+            </div>
+          )}
+          {/* Shared Badge */}
+          {memory.shared_with_count && memory.shared_with_count > 0 && (
+            <div className="px-2 py-1 bg-amber-500/80 backdrop-blur-sm rounded-full text-white text-xs flex items-center gap-1">
+              <Users size={12} />
+              {memory.shared_with_count}
+            </div>
+          )}
+        </div>
 
         {/* Favorite Heart */}
         {memory.is_favorite && (
