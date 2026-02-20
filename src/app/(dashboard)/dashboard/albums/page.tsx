@@ -163,23 +163,23 @@ export default function AlbumsPage() {
   const years = Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - i)
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen p-6">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur-md border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="mb-6">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard/memories" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-              <ChevronLeft size={20} className="text-gray-400" />
+            <Link href="/dashboard/memories" className="p-2 bg-white/10 backdrop-blur-md rounded-xl hover:bg-white/20 transition-colors">
+              <ChevronLeft size={20} className="text-white/50" />
             </Link>
             <div>
               <h1 className="text-xl font-semibold text-white">Albums</h1>
-              <p className="text-sm text-gray-400">{albums.length} albums</p>
+              <p className="text-sm text-white/50">{albums.length} albums</p>
             </div>
           </div>
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-lg transition-colors"
           >
             <Plus size={18} />
             <span className="hidden sm:inline">New Album</span>
@@ -188,19 +188,19 @@ export default function AlbumsPage() {
       </header>
 
       {/* Albums Grid */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="text-gray-400">Loading albums...</div>
+            <div className="text-white/50">Loading albums...</div>
           </div>
         ) : albums.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
-            <FolderOpen size={48} className="text-gray-600 mb-4" />
+            <FolderOpen size={48} className="text-white/30 mb-4" />
             <h3 className="text-lg font-medium text-white mb-2">No albums yet</h3>
-            <p className="text-gray-400 mb-4">Create albums to organize your memories</p>
+            <p className="text-white/50 mb-4">Create albums to organize your memories</p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-lg transition-colors"
             >
               <Plus size={18} />
               Create your first album
@@ -242,7 +242,7 @@ export default function AlbumsPage() {
                   
                   <div className="absolute bottom-0 left-0 right-0 p-3">
                     <h3 className="text-white font-medium truncate">{album.name}</h3>
-                    <p className="text-gray-400 text-sm">{album.memory_count} memories</p>
+                    <p className="text-white/50 text-sm">{album.memory_count} memories</p>
                   </div>
                 </div>
               </Link>
@@ -258,7 +258,7 @@ export default function AlbumsPage() {
           <button
             onClick={() => { setAlbumType('manual'); setSmartType(null); }}
             className={`flex-1 py-3 rounded-xl text-sm font-medium transition-colors ${
-              albumType === 'manual' ? 'bg-amber-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
+              albumType === 'manual' ? 'bg-amber-600 text-white' : 'bg-gray-800 text-white/50 hover:text-white'
             }`}
           >
             Manual Album
@@ -266,7 +266,7 @@ export default function AlbumsPage() {
           <button
             onClick={() => setAlbumType('smart')}
             className={`flex-1 py-3 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-              albumType === 'smart' ? 'bg-amber-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
+              albumType === 'smart' ? 'bg-amber-600 text-white' : 'bg-gray-800 text-white/50 hover:text-white'
             }`}
           >
             <Sparkles size={14} />
@@ -278,7 +278,7 @@ export default function AlbumsPage() {
           /* Manual Album Form */
           <div className="space-y-4">
             <div>
-              <label className="block text-gray-400 text-sm mb-1">Album Name</label>
+              <label className="block text-white/50 text-sm mb-1">Album Name</label>
               <input
                 type="text"
                 value={newAlbum.name}
@@ -288,7 +288,7 @@ export default function AlbumsPage() {
               />
             </div>
             <div>
-              <label className="block text-gray-400 text-sm mb-1">Description (optional)</label>
+              <label className="block text-white/50 text-sm mb-1">Description (optional)</label>
               <textarea
                 value={newAlbum.description}
                 onChange={(e) => setNewAlbum({ ...newAlbum, description: e.target.value })}
@@ -300,7 +300,7 @@ export default function AlbumsPage() {
         ) : !smartType ? (
           /* Smart Album Type Selection */
           <div className="space-y-2">
-            <p className="text-gray-400 text-sm mb-4">Choose how to auto-organize:</p>
+            <p className="text-white/50 text-sm mb-4">Choose how to auto-organize:</p>
             {SMART_ALBUM_TYPES.map((type) => {
               const Icon = type.icon
               return (
@@ -314,7 +314,7 @@ export default function AlbumsPage() {
                   </div>
                   <div>
                     <p className="text-white font-medium">{type.label}</p>
-                    <p className="text-gray-400 text-sm">{type.description}</p>
+                    <p className="text-white/50 text-sm">{type.description}</p>
                   </div>
                 </button>
               )
@@ -332,7 +332,7 @@ export default function AlbumsPage() {
 
             {smartType === 'person' && (
               <div>
-                <label className="block text-gray-400 text-sm mb-2">Select Person</label>
+                <label className="block text-white/50 text-sm mb-2">Select Person</label>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {contacts.map((contact) => (
                     <button
@@ -354,7 +354,7 @@ export default function AlbumsPage() {
 
             {smartType === 'year' && (
               <div>
-                <label className="block text-gray-400 text-sm mb-2">Select Year</label>
+                <label className="block text-white/50 text-sm mb-2">Select Year</label>
                 <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
                   {years.map((year) => (
                     <button
@@ -373,7 +373,7 @@ export default function AlbumsPage() {
 
             {smartType === 'location' && (
               <div>
-                <label className="block text-gray-400 text-sm mb-1">Location Name</label>
+                <label className="block text-white/50 text-sm mb-1">Location Name</label>
                 <input
                   type="text"
                   value={smartValue}
@@ -386,7 +386,7 @@ export default function AlbumsPage() {
 
             {smartType === 'category' && (
               <div>
-                <label className="block text-gray-400 text-sm mb-2">Select Category</label>
+                <label className="block text-white/50 text-sm mb-2">Select Category</label>
                 <div className="grid grid-cols-2 gap-2">
                   {CATEGORIES.map((cat) => (
                     <button
@@ -405,7 +405,7 @@ export default function AlbumsPage() {
 
             {/* Custom name override */}
             <div>
-              <label className="block text-gray-400 text-sm mb-1">Album Name (optional)</label>
+              <label className="block text-white/50 text-sm mb-1">Album Name (optional)</label>
               <input
                 type="text"
                 value={newAlbum.name}
@@ -421,7 +421,7 @@ export default function AlbumsPage() {
         <button
           onClick={handleCreate}
           disabled={albumType === 'smart' && !smartType}
-          className="w-full mt-6 py-3 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors"
+          className="w-full mt-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors"
         >
           Create Album
         </button>

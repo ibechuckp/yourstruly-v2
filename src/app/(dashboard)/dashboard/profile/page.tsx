@@ -145,23 +145,23 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-400">Loading profile...</div>
+        <div className="text-white/50">Loading profile...</div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="min-h-screen p-6 max-w-4xl space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">My Profile</h1>
-          <p className="text-gray-400 mt-1">Tell your story. This is who you are.</p>
+          <p className="text-white/50 mt-1">Tell your story. This is who you are.</p>
         </div>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 to-orange-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
         >
           <Save size={18} />
           {saving ? 'Saving...' : 'Save Changes'}
@@ -242,7 +242,7 @@ export default function ProfilePage() {
 // Components
 function Section({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
   return (
-    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+    <div className="bg-black/40 rounded-xl p-6 border border-white/10">
       <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
         <span>{icon}</span> {title}
       </h2>
@@ -254,7 +254,7 @@ function Section({ title, icon, children }: { title: string; icon: string; child
 function Input({ label, value, onChange, type = 'text', placeholder = '', className = '' }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; className?: string }) {
   return (
     <div className={className}>
-      <label className="block text-sm text-gray-400 mb-1">{label}</label>
+      <label className="block text-sm text-white/50 mb-1">{label}</label>
       <input
         type={type}
         value={value}
@@ -269,7 +269,7 @@ function Input({ label, value, onChange, type = 'text', placeholder = '', classN
 function Textarea({ label, value, onChange, placeholder = '', rows = 3 }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; rows?: number }) {
   return (
     <div>
-      <label className="block text-sm text-gray-400 mb-1">{label}</label>
+      <label className="block text-sm text-white/50 mb-1">{label}</label>
       <textarea
         value={value}
         onChange={e => onChange(e.target.value)}
@@ -284,7 +284,7 @@ function Textarea({ label, value, onChange, placeholder = '', rows = 3 }: { labe
 function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
   return (
     <div>
-      <label className="block text-sm text-gray-400 mb-1">{label}</label>
+      <label className="block text-sm text-white/50 mb-1">{label}</label>
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
@@ -311,10 +311,10 @@ function TagInput({ label, tags, onAdd, onRemove, placeholder }: { label: string
 
   return (
     <div>
-      <label className="block text-sm text-gray-400 mb-1">{label}</label>
+      <label className="block text-sm text-white/50 mb-1">{label}</label>
       <div className="flex flex-wrap gap-2 p-2 bg-gray-800 border border-gray-700 rounded-lg min-h-[42px]">
         {tags.map((tag, i) => (
-          <span key={i} className="flex items-center gap-1 px-2 py-1 bg-purple-600/30 text-purple-300 rounded text-sm">
+          <span key={i} className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-amber-500 to-orange-600/30 text-purple-300 rounded text-sm">
             {tag}
             <button onClick={() => onRemove(i)} className="hover:text-red-400">
               <X size={14} />

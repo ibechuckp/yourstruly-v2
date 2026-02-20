@@ -22,11 +22,11 @@ interface UploadedFile {
 }
 
 const MEMORY_TYPES = [
-  { id: 'moment', label: 'Moment', icon: '📸' },
-  { id: 'milestone', label: 'Milestone', icon: '🏆' },
-  { id: 'trip', label: 'Trip', icon: '✈️' },
-  { id: 'celebration', label: 'Celebration', icon: '🎉' },
-  { id: 'everyday', label: 'Everyday', icon: '☀️' },
+  { id: 'moment', label: 'Moment' },
+  { id: 'milestone', label: 'Milestone' },
+  { id: 'trip', label: 'Trip' },
+  { id: 'celebration', label: 'Celebration' },
+  { id: 'everyday', label: 'Everyday' },
 ]
 
 export default function CreateMemoryModal({ isOpen, onClose, onCreated }: CreateMemoryModalProps) {
@@ -323,7 +323,7 @@ export default function CreateMemoryModal({ isOpen, onClose, onCreated }: Create
               >
                 {MEMORY_TYPES.map((type) => (
                   <option key={type.id} value={type.id}>
-                    {type.icon} {type.label}
+                    {type.label}
                   </option>
                 ))}
               </select>
