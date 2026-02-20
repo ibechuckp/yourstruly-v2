@@ -1,8 +1,8 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useLayoutEffect } from 'react'
+import gsap from 'gsap'
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -10,44 +10,75 @@ interface DashboardShellProps {
 
 export default function DashboardShell({ children }: DashboardShellProps) {
   const pathname = usePathname()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
   const prevPathRef = useRef(pathname)
-  const [slideDirection, setSlideDirection] = useState(1)
+  const [displayedChildren, setDisplayedChildren] = useState(children)
+  const isAnimating = useRef(false)
 
   useEffect(() => {
-    const prevPath = prevPathRef.current
-    const isGoingHome = pathname === '/dashboard' && prevPath !== '/dashboard'
+    // Skip animation on first render
+    if (prevPathRef.current === pathname || isAnimating.current) {
+      prevPathRef.current = pathname
+      setDisplayedChildren(children)
+      return
+    }
+
+    isAnimating.current = true
+    const isGoingHome = pathname === '/dashboard'
+    const slideDistance = 100
     
-    // Slide right (direction = 1) when going home
-    // Slide left (direction = -1) when navigating deeper
-    setSlideDirection(isGoingHome ? 1 : -1)
-    prevPathRef.current = pathname
-  }, [pathname])
+    // Determine direction: going home slides right, going deeper slides left
+    const exitX = isGoingHome ? slideDistance : -slideDistance
+    const enterX = isGoingHome ? -slideDistance : slideDistance
+
+    // Create timeline for smooth transition
+    const tl = gsap.timeline({
+      onComplete: () => {
+        isAnimating.current = false
+        prevPathRef.current = pathname
+      }
+    })
+
+    // Exit animation
+    tl.to(contentRef.current, {
+      x: exitX,
+      opacity: 0,
+      duration: 0.25,
+      ease: 'power2.in',
+      onComplete: () => {
+        setDisplayedChildren(children)
+      }
+    })
+
+    // Enter animation (will run after children update)
+    tl.fromTo(contentRef.current, 
+      { x: enterX, opacity: 0 },
+      { 
+        x: 0, 
+        opacity: 1, 
+        duration: 0.35,
+        ease: 'power2.out',
+      }
+    )
+
+  }, [pathname, children])
+
+  // Initial animation on mount
+  useLayoutEffect(() => {
+    if (contentRef.current) {
+      gsap.fromTo(contentRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }
+      )
+    }
+  }, [])
 
   return (
-    <div className="ml-56 min-h-screen overflow-hidden">
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={pathname}
-          initial={{ 
-            opacity: 0, 
-            x: slideDirection * -80  // Enter from opposite direction
-          }}
-          animate={{ 
-            opacity: 1, 
-            x: 0 
-          }}
-          exit={{ 
-            opacity: 0, 
-            x: slideDirection * 80  // Exit in the direction
-          }}
-          transition={{ 
-            duration: 0.3,
-            ease: [0.4, 0, 0.2, 1]  // Smooth easing
-          }}
-        >
-          {children}
-        </motion.div>
-      </AnimatePresence>
+    <div ref={containerRef} className="ml-56 min-h-screen relative">
+      <div ref={contentRef} className="will-change-transform">
+        {displayedChildren}
+      </div>
     </div>
   )
 }

@@ -1,57 +1,102 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { usePathname } from 'next/navigation'
-import { useEffect, useRef } from 'react'
+import { useRef, useEffect, ReactNode } from 'react'
+import gsap from 'gsap'
 
 interface PageTransitionProps {
-  children: React.ReactNode
+  children: ReactNode
+  className?: string
 }
 
-export default function PageTransition({ children }: PageTransitionProps) {
-  const pathname = usePathname()
-  const prevPathRef = useRef(pathname)
-  
-  // Determine slide direction based on navigation
-  const isGoingHome = pathname === '/dashboard' && prevPathRef.current !== '/dashboard'
-  const isLeavingHome = prevPathRef.current === '/dashboard' && pathname !== '/dashboard'
-  
-  useEffect(() => {
-    prevPathRef.current = pathname
-  }, [pathname])
+export default function PageTransition({ children, className = '' }: PageTransitionProps) {
+  const ref = useRef<HTMLDivElement>(null)
 
-  // Slide from right when going deeper, slide from left when going back to home
-  const variants = {
-    initial: {
-      x: isGoingHome ? -100 : 100,
-      opacity: 0,
-    },
-    animate: {
-      x: 0,
-      opacity: 1,
-    },
-    exit: {
-      x: isGoingHome ? 100 : -100,
-      opacity: 0,
-    },
-  }
+  useEffect(() => {
+    if (!ref.current) return
+
+    // Animate cards/elements within the page with stagger
+    const cards = ref.current.querySelectorAll('[data-animate]')
+    
+    if (cards.length > 0) {
+      gsap.fromTo(cards,
+        { 
+          opacity: 0, 
+          y: 30,
+          scale: 0.95
+        },
+        { 
+          opacity: 1, 
+          y: 0, 
+          scale: 1,
+          duration: 0.5,
+          stagger: 0.08,
+          ease: 'power3.out',
+        }
+      )
+    }
+  }, [])
 
   return (
-    <motion.div
-      key={pathname}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      variants={variants}
-      transition={{
-        type: 'spring',
-        stiffness: 300,
-        damping: 30,
-        duration: 0.3,
-      }}
-      className="min-h-screen"
-    >
+    <div ref={ref} className={className}>
       {children}
-    </motion.div>
+    </div>
   )
+}
+
+// Hook for animating individual elements
+export function useGsapFadeIn(delay = 0) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!ref.current) return
+
+    gsap.fromTo(ref.current,
+      { opacity: 0, y: 20 },
+      { 
+        opacity: 1, 
+        y: 0, 
+        duration: 0.5, 
+        delay,
+        ease: 'power2.out' 
+      }
+    )
+  }, [delay])
+
+  return ref
+}
+
+// Hook for hover effects
+export function useGsapHover() {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!ref.current) return
+    const el = ref.current
+
+    const handleEnter = () => {
+      gsap.to(el, { 
+        scale: 1.02, 
+        duration: 0.3, 
+        ease: 'power2.out' 
+      })
+    }
+
+    const handleLeave = () => {
+      gsap.to(el, { 
+        scale: 1, 
+        duration: 0.3, 
+        ease: 'power2.out' 
+      })
+    }
+
+    el.addEventListener('mouseenter', handleEnter)
+    el.addEventListener('mouseleave', handleLeave)
+
+    return () => {
+      el.removeEventListener('mouseenter', handleEnter)
+      el.removeEventListener('mouseleave', handleLeave)
+    }
+  }, [])
+
+  return ref
 }
