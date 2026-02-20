@@ -54,10 +54,16 @@ interface Session {
 const CATEGORIES = [
   { id: 'all', label: 'All Questions' },
   { id: 'childhood', label: 'Childhood' },
+  { id: 'teen', label: 'Teen Years' },
   { id: 'career', label: 'Career' },
   { id: 'relationships', label: 'Relationships' },
-  { id: 'wisdom', label: 'Wisdom' },
-  { id: 'general', label: 'General' },
+  { id: 'wisdom', label: 'Wisdom & Values' },
+  { id: 'general', label: 'Memories' },
+  { id: 'adversity', label: 'Challenges' },
+  { id: 'history', label: 'History' },
+  { id: 'health', label: 'Health' },
+  { id: 'spirituality', label: 'Faith' },
+  { id: 'fun', label: 'Fun & Personality' },
   { id: 'custom', label: 'My Questions' },
 ]
 

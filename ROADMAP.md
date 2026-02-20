@@ -77,21 +77,23 @@
 
 ---
 
-## Phase 3: Async Video Journalist (Week 5-7)
+## Phase 3: Async Video Journalist 🚧 IN PROGRESS
 **Goal**: Send questions, capture video responses remotely
 
 ### Deliverables
-- [ ] Question bank (suggested + custom)
-- [ ] Send question to contact (SMS via Twilio)
-- [ ] Contact receives link → records video response
-- [ ] Video stored and linked to contact
-- [ ] Whisper transcription (async job)
+- [x] Question bank (suggested + custom)
+- [x] Interview session creation
+- [x] Public interview recording page (no auth)
+- [x] Video recording with MediaRecorder API
+- [x] Video storage in Supabase
+- [ ] Send question to contact (SMS via Twilio) - needs Twilio setup
+- [ ] Whisper transcription (async job) - needs OpenAI/Whisper
 - [ ] Topic extraction from transcript
 - [ ] Interview history per contact
 - [ ] Suggested follow-up questions (AI)
 
 ### Testable
-✅ Send question to your phone → Record response → See transcribed video in app
+✅ Create interview → Copy link → Open link → Record response → See in app
 
 ---
 
