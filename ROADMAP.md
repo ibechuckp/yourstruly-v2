@@ -55,23 +55,25 @@
 
 ---
 
-## Phase 2: Memories & Timeline (Week 3-4)
+## Phase 2: Memories & Timeline ✅ COMPLETE
 **Goal**: Smart photo/video storage with timeline view
 
 ### Deliverables
-- [ ] Memory/Event creation
-- [ ] Photo/video upload to Supabase Storage
-- [ ] Date, location, people tagging
-- [ ] Timeline view (chronological)
-- [ ] Mapbox globe view (memories on map)
-- [ ] Basic smart albums:
-  - By person (manual tag)
+- [x] Memory/Event creation
+- [x] Photo/video upload to Supabase Storage
+- [x] Date, location, people tagging (face detection + manual tagging)
+- [x] Timeline view (chronological by month/year)
+- [x] Mapbox globe view (3D rotating globe with markers)
+- [x] Smart albums:
+  - By person
   - By location
   - By year
-- [ ] Gallery grid view
+  - By AI category
+- [x] Gallery grid view
+- [x] AWS Rekognition integration (labels, faces, text detection)
+- [x] AI auto-categorization and mood detection
 
-### Testable
-✅ Upload 10 photos → Tag people/locations → View on timeline → View on globe
+### Completed: 2026-02-19
 
 ---
 

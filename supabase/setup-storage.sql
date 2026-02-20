@@ -56,3 +56,27 @@ USING (bucket_id = 'memories');
 CREATE POLICY "Users can delete own memories media" ON storage.objects
 FOR DELETE TO authenticated
 USING (bucket_id = 'memories');
+
+-- ============================================
+-- VIDEOS BUCKET (for video journalist)
+-- ============================================
+
+-- Create the videos bucket (public for playback)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('videos', 'videos', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- Allow anyone to upload videos (for interview responses)
+CREATE POLICY "Anyone can upload videos" ON storage.objects
+FOR INSERT TO anon, authenticated
+WITH CHECK (bucket_id = 'videos');
+
+-- Allow public read access to videos
+CREATE POLICY "Public videos access" ON storage.objects
+FOR SELECT TO public
+USING (bucket_id = 'videos');
+
+-- Allow authenticated users to delete videos
+CREATE POLICY "Authenticated can delete videos" ON storage.objects
+FOR DELETE TO authenticated
+USING (bucket_id = 'videos');

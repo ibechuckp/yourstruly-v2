@@ -38,8 +38,9 @@ const navItems = [
   // Phase 2
   { href: '/dashboard/memories', label: 'Memories', icon: Camera },
   { href: '/dashboard/albums', label: 'Albums', icon: FolderOpen },
-  // Phase 3+
-  { href: '/dashboard/journalist', label: 'Video Journalist', icon: MessageSquare, disabled: true },
+  // Phase 3
+  { href: '/dashboard/journalist', label: 'Video Journalist', icon: MessageSquare },
+  // Phase 4+
   { href: '/dashboard/avatar', label: 'AI Avatar', icon: Bot, disabled: true },
   { href: '/dashboard/postscripts', label: 'PostScripts', icon: Gift, disabled: true },
   { href: '/dashboard/trips', label: 'Trip Planning', icon: Plane, disabled: true },
