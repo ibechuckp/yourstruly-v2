@@ -11,50 +11,38 @@ interface DashboardShellProps {
 export default function DashboardShell({ children }: DashboardShellProps) {
   const pathname = usePathname()
   const prevPath = useRef(pathname)
-  const [direction, setDirection] = useState<'left' | 'right'>('left')
+  const [direction, setDirection] = useState<1 | -1>(1)
 
   useEffect(() => {
-    // Going to home = slide right, going away from home = slide left
-    if (pathname === '/dashboard' && prevPath.current !== '/dashboard') {
-      setDirection('right')
-    } else if (prevPath.current === '/dashboard' && pathname !== '/dashboard') {
-      setDirection('left')
+    // Going to home = slide from left (-1), going away = slide from right (1)
+    if (pathname === '/dashboard') {
+      setDirection(-1)
     } else {
-      // Default: slide left (deeper navigation)
-      setDirection('left')
+      setDirection(1)
     }
     prevPath.current = pathname
   }, [pathname])
 
-  const variants = {
-    enter: (dir: 'left' | 'right') => ({
-      x: dir === 'left' ? 80 : -80,
-      opacity: 0.5,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-    },
-    exit: (dir: 'left' | 'right') => ({
-      x: dir === 'left' ? -40 : 40,
-      opacity: 0.5,
-    }),
-  }
-
   return (
-    <div className="ml-56 min-h-screen overflow-hidden isolate">
-      <AnimatePresence mode="popLayout" custom={direction}>
+    <div className="ml-56 min-h-screen overflow-hidden">
+      <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={pathname}
-          custom={direction}
-          variants={variants}
-          initial="enter"
-          animate="center"
-          exit="exit"
+          initial={{ 
+            x: direction * 50,
+            opacity: 0 
+          }}
+          animate={{ 
+            x: 0,
+            opacity: 1 
+          }}
+          exit={{ 
+            x: direction * -50,
+            opacity: 0 
+          }}
           transition={{
-            type: 'tween',
-            ease: [0.25, 0.1, 0.25, 1], // Smooth ease-out
-            duration: 0.35,
+            duration: 0.25,
+            ease: 'easeOut',
           }}
           className="min-h-screen"
         >
