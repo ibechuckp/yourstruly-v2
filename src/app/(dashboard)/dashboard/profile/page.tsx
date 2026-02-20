@@ -1,0 +1,335 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { Save, Plus, X } from 'lucide-react'
+
+interface Profile {
+  full_name: string
+  date_of_birth: string
+  gender: string
+  phone: string
+  address: string
+  city: string
+  state: string
+  country: string
+  zipcode: string
+  biography: string
+  personal_motto: string
+  personality_type: string
+  personality_traits: string[]
+  interests: string[]
+  skills: string[]
+  hobbies: string[]
+  life_goals: string[]
+  religions: string[]
+  occupation: string
+  company: string
+  favorite_quote: string
+  favorite_books: string[]
+  favorite_movies: string[]
+  favorite_music: string[]
+  favorite_foods: string[]
+}
+
+const defaultProfile: Profile = {
+  full_name: '',
+  date_of_birth: '',
+  gender: '',
+  phone: '',
+  address: '',
+  city: '',
+  state: '',
+  country: '',
+  zipcode: '',
+  biography: '',
+  personal_motto: '',
+  personality_type: '',
+  personality_traits: [],
+  interests: [],
+  skills: [],
+  hobbies: [],
+  life_goals: [],
+  religions: [],
+  occupation: '',
+  company: '',
+  favorite_quote: '',
+  favorite_books: [],
+  favorite_movies: [],
+  favorite_music: [],
+  favorite_foods: [],
+}
+
+export default function ProfilePage() {
+  const [profile, setProfile] = useState<Profile>(defaultProfile)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState('')
+  const supabase = createClient()
+
+  useEffect(() => {
+    loadProfile()
+  }, [])
+
+  const loadProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+
+    if (data) {
+      setProfile({
+        ...defaultProfile,
+        ...data,
+        date_of_birth: data.date_of_birth || '',
+        personality_traits: data.personality_traits || [],
+        interests: data.interests || [],
+        skills: data.skills || [],
+        hobbies: data.hobbies || [],
+        life_goals: data.life_goals || [],
+        religions: data.religions || [],
+        favorite_books: data.favorite_books || [],
+        favorite_movies: data.favorite_movies || [],
+        favorite_music: data.favorite_music || [],
+        favorite_foods: data.favorite_foods || [],
+      })
+    }
+    setLoading(false)
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    setMessage('')
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        ...profile,
+        date_of_birth: profile.date_of_birth || null,
+      })
+      .eq('id', user.id)
+
+    if (error) {
+      setMessage('Error saving profile')
+    } else {
+      setMessage('Profile saved!')
+      setTimeout(() => setMessage(''), 3000)
+    }
+    setSaving(false)
+  }
+
+  const updateField = (field: keyof Profile, value: string | string[]) => {
+    setProfile(prev => ({ ...prev, [field]: value }))
+  }
+
+  const addToArray = (field: keyof Profile, value: string) => {
+    if (!value.trim()) return
+    const current = (profile[field] as string[]) || []
+    if (!current.includes(value.trim())) {
+      updateField(field, [...current, value.trim()])
+    }
+  }
+
+  const removeFromArray = (field: keyof Profile, index: number) => {
+    const current = (profile[field] as string[]) || []
+    updateField(field, current.filter((_, i) => i !== index))
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-400">Loading profile...</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-4xl space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white">My Profile</h1>
+          <p className="text-gray-400 mt-1">Tell your story. This is who you are.</p>
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+        >
+          <Save size={18} />
+          {saving ? 'Saving...' : 'Save Changes'}
+        </button>
+      </div>
+
+      {message && (
+        <div className={`p-4 rounded-lg ${message.includes('Error') ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+          {message}
+        </div>
+      )}
+
+      {/* Basic Info */}
+      <Section title="Basic Information" icon="👤">
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Full Name" value={profile.full_name} onChange={v => updateField('full_name', v)} />
+          <Input label="Date of Birth" type="date" value={profile.date_of_birth} onChange={v => updateField('date_of_birth', v)} />
+          <Select label="Gender" value={profile.gender} onChange={v => updateField('gender', v)} options={['', 'Male', 'Female', 'Non-binary', 'Prefer not to say']} />
+          <Input label="Phone" type="tel" value={profile.phone} onChange={v => updateField('phone', v)} />
+        </div>
+      </Section>
+
+      {/* Location */}
+      <Section title="Location" icon="📍">
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Address" value={profile.address} onChange={v => updateField('address', v)} className="col-span-2" />
+          <Input label="City" value={profile.city} onChange={v => updateField('city', v)} />
+          <Input label="State" value={profile.state} onChange={v => updateField('state', v)} />
+          <Input label="Country" value={profile.country} onChange={v => updateField('country', v)} />
+          <Input label="Zipcode" value={profile.zipcode} onChange={v => updateField('zipcode', v)} />
+        </div>
+      </Section>
+
+      {/* About Me */}
+      <Section title="About Me" icon="✨">
+        <Textarea label="Biography" value={profile.biography} onChange={v => updateField('biography', v)} placeholder="Tell your life story..." rows={4} />
+        <Textarea label="Personal Motto / Credo" value={profile.personal_motto} onChange={v => updateField('personal_motto', v)} placeholder="What do you live by?" rows={2} />
+        <Input label="Personality Type" value={profile.personality_type} onChange={v => updateField('personality_type', v)} placeholder="e.g., INTJ, Enneagram 5" />
+      </Section>
+
+      {/* Interests & Skills */}
+      <Section title="Interests & Skills" icon="🎯">
+        <TagInput label="Interests" tags={profile.interests} onAdd={v => addToArray('interests', v)} onRemove={i => removeFromArray('interests', i)} placeholder="Add an interest..." />
+        <TagInput label="Skills" tags={profile.skills} onAdd={v => addToArray('skills', v)} onRemove={i => removeFromArray('skills', i)} placeholder="Add a skill..." />
+        <TagInput label="Hobbies" tags={profile.hobbies} onAdd={v => addToArray('hobbies', v)} onRemove={i => removeFromArray('hobbies', i)} placeholder="Add a hobby..." />
+      </Section>
+
+      {/* Life Goals */}
+      <Section title="Life Goals" icon="🚀">
+        <TagInput label="Goals & Dreams" tags={profile.life_goals} onAdd={v => addToArray('life_goals', v)} onRemove={i => removeFromArray('life_goals', i)} placeholder="Add a life goal..." />
+      </Section>
+
+      {/* Beliefs */}
+      <Section title="Beliefs & Values" icon="🙏">
+        <TagInput label="Religion / Spirituality" tags={profile.religions} onAdd={v => addToArray('religions', v)} onRemove={i => removeFromArray('religions', i)} placeholder="Add belief system..." />
+      </Section>
+
+      {/* Career */}
+      <Section title="Career" icon="💼">
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Occupation" value={profile.occupation} onChange={v => updateField('occupation', v)} />
+          <Input label="Company" value={profile.company} onChange={v => updateField('company', v)} />
+        </div>
+      </Section>
+
+      {/* Favorites */}
+      <Section title="Favorites" icon="❤️">
+        <Textarea label="Favorite Quote" value={profile.favorite_quote} onChange={v => updateField('favorite_quote', v)} placeholder="A quote that inspires you..." rows={2} />
+        <TagInput label="Favorite Books" tags={profile.favorite_books} onAdd={v => addToArray('favorite_books', v)} onRemove={i => removeFromArray('favorite_books', i)} placeholder="Add a book..." />
+        <TagInput label="Favorite Movies" tags={profile.favorite_movies} onAdd={v => addToArray('favorite_movies', v)} onRemove={i => removeFromArray('favorite_movies', i)} placeholder="Add a movie..." />
+        <TagInput label="Favorite Music" tags={profile.favorite_music} onAdd={v => addToArray('favorite_music', v)} onRemove={i => removeFromArray('favorite_music', i)} placeholder="Add artist or song..." />
+        <TagInput label="Favorite Foods" tags={profile.favorite_foods} onAdd={v => addToArray('favorite_foods', v)} onRemove={i => removeFromArray('favorite_foods', i)} placeholder="Add a food..." />
+      </Section>
+    </div>
+  )
+}
+
+// Components
+function Section({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+      <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+        <span>{icon}</span> {title}
+      </h2>
+      <div className="space-y-4">{children}</div>
+    </div>
+  )
+}
+
+function Input({ label, value, onChange, type = 'text', placeholder = '', className = '' }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; className?: string }) {
+  return (
+    <div className={className}>
+      <label className="block text-sm text-gray-400 mb-1">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+      />
+    </div>
+  )
+}
+
+function Textarea({ label, value, onChange, placeholder = '', rows = 3 }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; rows?: number }) {
+  return (
+    <div>
+      <label className="block text-sm text-gray-400 mb-1">{label}</label>
+      <textarea
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+      />
+    </div>
+  )
+}
+
+function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
+  return (
+    <div>
+      <label className="block text-sm text-gray-400 mb-1">{label}</label>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+      >
+        {options.map(opt => (
+          <option key={opt} value={opt}>{opt || 'Select...'}</option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+function TagInput({ label, tags, onAdd, onRemove, placeholder }: { label: string; tags: string[]; onAdd: (v: string) => void; onRemove: (i: number) => void; placeholder: string }) {
+  const [input, setInput] = useState('')
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      onAdd(input)
+      setInput('')
+    }
+  }
+
+  return (
+    <div>
+      <label className="block text-sm text-gray-400 mb-1">{label}</label>
+      <div className="flex flex-wrap gap-2 p-2 bg-gray-800 border border-gray-700 rounded-lg min-h-[42px]">
+        {tags.map((tag, i) => (
+          <span key={i} className="flex items-center gap-1 px-2 py-1 bg-purple-600/30 text-purple-300 rounded text-sm">
+            {tag}
+            <button onClick={() => onRemove(i)} className="hover:text-red-400">
+              <X size={14} />
+            </button>
+          </span>
+        ))}
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={tags.length === 0 ? placeholder : ''}
+          className="flex-1 min-w-[100px] bg-transparent text-white placeholder-gray-500 focus:outline-none"
+        />
+      </div>
+      <p className="text-xs text-gray-500 mt-1">Press Enter to add</p>
+    </div>
+  )
+}
