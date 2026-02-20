@@ -22,9 +22,19 @@ export default async function DashboardLayout({
     .single()
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen relative">
+      {/* Scenic Background - persists across all pages */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center -z-10"
+        style={{ 
+          backgroundImage: 'url(/backgrounds/sunset.jpg)',
+          filter: 'brightness(0.7)'
+        }}
+      />
+      <div className="fixed inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 -z-10" />
+      
       <Sidebar user={user} profile={profile} />
-      <main className="ml-64">
+      <main className="ml-56">
         {children}
       </main>
     </div>
