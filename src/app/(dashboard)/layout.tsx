@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
+import DashboardShell from '@/components/DashboardShell'
 
 export default async function DashboardLayout({
   children,
@@ -22,21 +23,25 @@ export default async function DashboardLayout({
     .single()
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative overflow-hidden">
       {/* Scenic Background - persists across all pages */}
       <div 
-        className="fixed inset-0 bg-cover bg-center -z-10"
+        className="fixed inset-0 bg-cover bg-center"
         style={{ 
           backgroundImage: 'url(/backgrounds/sunset.jpg)',
-          filter: 'brightness(0.7)'
+          filter: 'brightness(0.7)',
+          zIndex: -20,
         }}
       />
-      <div className="fixed inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 -z-10" />
+      <div 
+        className="fixed inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50"
+        style={{ zIndex: -10 }}
+      />
       
       <Sidebar user={user} profile={profile} />
-      <main className="ml-56">
+      <DashboardShell>
         {children}
-      </main>
+      </DashboardShell>
     </div>
   )
 }
