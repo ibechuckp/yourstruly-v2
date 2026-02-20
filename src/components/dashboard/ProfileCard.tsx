@@ -104,7 +104,7 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
   const genderIcon = profile?.gender === 'Male' ? '♂' : profile?.gender === 'Female' ? '♀' : profile?.gender ? '⚧' : null
 
   return (
-    <div className="w-full lg:w-80 bg-gradient-to-b from-white/15 to-white/5 backdrop-blur-md rounded-3xl border border-white/10 p-4 sm:p-6">
+    <div className="w-full lg:w-80 bg-gray-900/90 rounded-3xl border border-white/10 p-4 sm:p-6">
       {/* Gender Icon */}
       {genderIcon && (
         <div className="flex justify-center mb-2">

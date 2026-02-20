@@ -44,7 +44,7 @@ export default function InterestsWidget({ interests, onUpdate }: InterestsWidget
   return (
     <>
       <div 
-        className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-4 cursor-pointer transition-all duration-300"
+        className="bg-gray-900/90 rounded-2xl border border-white/10 p-4 cursor-pointer transition-all duration-300"
         onClick={() => setShowModal(true)}
       >
         <div className="flex items-center justify-between mb-3">
