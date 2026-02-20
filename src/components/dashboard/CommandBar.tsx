@@ -42,7 +42,7 @@ export default function CommandBar() {
 
       {/* Input Bar */}
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl border border-white/20">
+        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 bg-gray-900/80 backdrop-blur-md rounded-xl sm:rounded-2xl border border-white/20">
           <button className="text-white/50 hover:text-white transition-colors hidden sm:block">
             <Sparkles size={20} />
           </button>

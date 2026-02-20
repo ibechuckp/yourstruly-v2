@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { 
   ChevronLeft, Heart, MapPin, Calendar, Sparkles, 
-  Tag, Trash2, Edit2, X, Plus, User, Check
+  Tag, Trash2, Edit2, X, Plus, User, Check, Image as ImageIcon
 } from 'lucide-react'
 import Link from 'next/link'
 import Modal from '@/components/ui/Modal'
@@ -105,6 +105,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
       .eq('memory_id', id)
       .order('sort_order')
 
+    console.log('Loaded media:', mediaData) // Debug log
     setMedia(mediaData || [])
     if (mediaData?.length) {
       setSelectedMedia(mediaData.find(m => m.is_cover) || mediaData[0])
@@ -207,7 +208,10 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
 
     // Delete media files from storage
     for (const m of media) {
-      await supabase.storage.from('memories').remove([m.file_url.split('/memories/')[1]])
+      const key = m.file_url.split('/memories/')[1]
+      if (key) {
+        await supabase.storage.from('memories').remove([key])
+      }
     }
 
     // Delete memory (cascades to media and tags)
@@ -228,17 +232,17 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-gray-400">Loading memory...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white/60">Loading memory...</div>
       </div>
     )
   }
 
   if (!memory) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-400 mb-4">Memory not found</p>
+          <p className="text-white/60 mb-4">Memory not found</p>
           <Link href="/dashboard/memories" className="text-amber-500 hover:underline">
             Back to memories
           </Link>
@@ -248,48 +252,50 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen p-6">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur-md border-b border-gray-800">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/dashboard/memories" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-            <ChevronLeft size={20} />
-            <span>Back</span>
-          </Link>
-          
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleFavorite}
-              className={`p-2 rounded-lg transition-colors ${memory.is_favorite ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
-            >
-              <Heart size={20} fill={memory.is_favorite ? 'currentColor' : 'none'} />
-            </button>
-            <button
-              onClick={() => setIsEditing(true)}
-              className="p-2 text-gray-400 hover:text-white rounded-lg transition-colors"
-            >
-              <Edit2 size={20} />
-            </button>
-            <button
-              onClick={handleDelete}
-              className="p-2 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
-            >
-              <Trash2 size={20} />
-            </button>
-          </div>
+      <header className="mb-6 flex items-center justify-between">
+        <Link href="/dashboard/memories" className="flex items-center gap-2 px-3 py-2 bg-gray-900/80 backdrop-blur-md rounded-xl text-white/70 hover:text-white transition-all border border-white/10">
+          <ChevronLeft size={18} />
+          <span>Back</span>
+        </Link>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleFavorite}
+            className={`p-2.5 bg-gray-900/80 backdrop-blur-md rounded-xl transition-all border border-white/10 ${memory.is_favorite ? 'text-red-500' : 'text-white/50 hover:text-red-500'}`}
+          >
+            <Heart size={18} fill={memory.is_favorite ? 'currentColor' : 'none'} />
+          </button>
+          <button
+            onClick={() => setIsEditing(true)}
+            className="p-2.5 bg-gray-900/80 backdrop-blur-md text-white/50 hover:text-white rounded-xl transition-all border border-white/10"
+          >
+            <Edit2 size={18} />
+          </button>
+          <button
+            onClick={handleDelete}
+            className="p-2.5 bg-gray-900/80 backdrop-blur-md text-white/50 hover:text-red-500 rounded-xl transition-all border border-white/10"
+          >
+            <Trash2 size={18} />
+          </button>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-5xl mx-auto">
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Image */}
           <div className="lg:col-span-2">
-            {selectedMedia && (
-              <div className="relative rounded-xl overflow-hidden bg-gray-900">
+            {selectedMedia ? (
+              <div className="relative rounded-xl overflow-hidden bg-gray-900/80 backdrop-blur-md border border-white/10">
                 <img
                   src={selectedMedia.file_url}
                   alt={memory.title || 'Memory'}
                   className="w-full h-auto"
+                  onError={(e) => {
+                    console.error('Image load error:', selectedMedia.file_url)
+                    e.currentTarget.style.display = 'none'
+                  }}
                 />
                 
                 {/* Face boxes */}
@@ -329,6 +335,14 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
                   )
                 })}
               </div>
+            ) : (
+              <div className="aspect-video rounded-xl bg-gray-900/80 backdrop-blur-md border border-white/10 flex items-center justify-center">
+                <div className="text-center">
+                  <ImageIcon size={48} className="mx-auto text-white/20 mb-2" />
+                  <p className="text-white/40 text-sm">No photos uploaded</p>
+                  <p className="text-white/30 text-xs mt-1">Media: {media.length} items</p>
+                </div>
+              </div>
             )}
 
             {/* Thumbnail Strip */}
@@ -338,8 +352,8 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
                   <button
                     key={m.id}
                     onClick={() => handleSelectMedia(m)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                      selectedMedia?.id === m.id ? 'border-amber-500' : 'border-transparent hover:border-gray-600'
+                    className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${
+                      selectedMedia?.id === m.id ? 'border-amber-500' : 'border-white/10 hover:border-white/30'
                     }`}
                   >
                     <img src={m.file_url} alt="" className="w-full h-full object-cover" />
@@ -352,25 +366,25 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
           {/* Details Sidebar */}
           <div className="space-y-4">
             {/* Title & Description */}
-            <div className="bg-gray-900 rounded-xl p-4">
+            <div className="bg-gray-900/80 backdrop-blur-md rounded-xl p-5 border border-white/10">
               <h1 className="text-xl font-semibold text-white mb-2">
                 {memory.title || 'Untitled Memory'}
               </h1>
               {memory.description && (
-                <p className="text-gray-400 text-sm">{memory.description}</p>
+                <p className="text-white/60 text-sm leading-relaxed">{memory.description}</p>
               )}
             </div>
 
             {/* Date & Location */}
-            <div className="bg-gray-900 rounded-xl p-4 space-y-3">
+            <div className="bg-gray-900/80 backdrop-blur-md rounded-xl p-5 space-y-3 border border-white/10">
               {memory.memory_date && (
-                <div className="flex items-center gap-3 text-gray-300">
+                <div className="flex items-center gap-3 text-white/80">
                   <Calendar size={18} className="text-amber-500" />
                   <span className="text-sm">{formatDate(memory.memory_date)}</span>
                 </div>
               )}
               {memory.location_name && (
-                <div className="flex items-center gap-3 text-gray-300">
+                <div className="flex items-center gap-3 text-white/80">
                   <MapPin size={18} className="text-amber-500" />
                   <span className="text-sm">{memory.location_name}</span>
                 </div>
@@ -379,19 +393,19 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
 
             {/* AI Insights */}
             {(memory.ai_summary || memory.ai_labels?.length > 0) && (
-              <div className="bg-gray-900 rounded-xl p-4">
+              <div className="bg-gray-900/80 backdrop-blur-md rounded-xl p-5 border border-white/10">
                 <div className="flex items-center gap-2 text-amber-500 text-sm mb-3">
                   <Sparkles size={14} />
                   AI Insights
                 </div>
                 
                 {memory.ai_summary && (
-                  <p className="text-gray-400 text-sm mb-3">{memory.ai_summary}</p>
+                  <p className="text-white/60 text-sm mb-3">{memory.ai_summary}</p>
                 )}
 
                 {memory.ai_mood && (
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-gray-500 text-xs">Mood:</span>
+                    <span className="text-white/40 text-xs">Mood:</span>
                     <span className="px-2 py-0.5 bg-amber-600/20 text-amber-400 text-xs rounded-full capitalize">
                       {memory.ai_mood}
                     </span>
@@ -401,7 +415,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
                 {memory.ai_labels?.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {memory.ai_labels.slice(0, 8).map((label, i) => (
-                      <span key={i} className="px-2 py-0.5 bg-gray-800 text-gray-400 text-xs rounded-full">
+                      <span key={i} className="px-2 py-0.5 bg-white/10 text-white/60 text-xs rounded-full">
                         {label}
                       </span>
                     ))}
@@ -412,7 +426,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
 
             {/* Tagged People */}
             {faceTags.length > 0 && (
-              <div className="bg-gray-900 rounded-xl p-4">
+              <div className="bg-gray-900/80 backdrop-blur-md rounded-xl p-5 border border-white/10">
                 <div className="flex items-center gap-2 text-white text-sm mb-3">
                   <User size={14} />
                   People in this photo
@@ -420,10 +434,10 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
                 <div className="space-y-2">
                   {faceTags.map((tag) => (
                     <div key={tag.id} className="flex items-center justify-between">
-                      <span className="text-gray-300 text-sm">{tag.contact?.full_name}</span>
+                      <span className="text-white/80 text-sm">{tag.contact?.full_name}</span>
                       <button
                         onClick={() => handleDeleteTag(tag.id)}
-                        className="text-gray-500 hover:text-red-500 transition-colors"
+                        className="text-white/30 hover:text-red-500 transition-colors"
                       >
                         <X size={14} />
                       </button>
@@ -438,22 +452,22 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
 
       {/* Tag Face Modal */}
       <Modal isOpen={showTagModal} onClose={() => { setShowTagModal(false); setTaggingFace(null); }} title="Tag Person" maxWidth="max-w-sm" showDone={false}>
-        <p className="text-gray-400 text-sm mb-4">Who is this?</p>
+        <p className="text-white/50 text-sm mb-4">Who is this?</p>
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {contacts.map((contact) => (
             <button
               key={contact.id}
               onClick={() => handleTagFace(contact.id)}
-              className="w-full flex items-center gap-3 p-3 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors"
+              className="w-full flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors border border-white/10"
             >
-              <div className="w-8 h-8 rounded-full bg-amber-600 flex items-center justify-center text-white text-sm">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 flex items-center justify-center text-white text-sm">
                 {contact.full_name.charAt(0)}
               </div>
               <span className="text-white text-sm">{contact.full_name}</span>
             </button>
           ))}
           {contacts.length === 0 && (
-            <p className="text-gray-500 text-sm text-center py-4">
+            <p className="text-white/40 text-sm text-center py-4">
               No contacts yet. Add contacts first to tag people.
             </p>
           )}
@@ -464,46 +478,46 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
       <Modal isOpen={isEditing} onClose={() => setIsEditing(false)} title="Edit Memory" showDone={false}>
         <div className="space-y-4">
           <div>
-            <label className="block text-gray-400 text-sm mb-1">Title</label>
+            <label className="block text-white/50 text-sm mb-1">Title</label>
             <input
               type="text"
               value={editForm.title}
               onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
             />
           </div>
           <div>
-            <label className="block text-gray-400 text-sm mb-1">Description</label>
+            <label className="block text-white/50 text-sm mb-1">Description</label>
             <textarea
               value={editForm.description}
               onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
               rows={3}
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+              className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none transition-all"
             />
           </div>
           <div>
-            <label className="block text-gray-400 text-sm mb-1">Date</label>
+            <label className="block text-white/50 text-sm mb-1">Date</label>
             <input
               type="date"
               value={editForm.memory_date}
               onChange={(e) => setEditForm({ ...editForm, memory_date: e.target.value })}
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
             />
           </div>
           <div>
-            <label className="block text-gray-400 text-sm mb-1">Location</label>
+            <label className="block text-white/50 text-sm mb-1">Location</label>
             <input
               type="text"
               value={editForm.location_name}
               onChange={(e) => setEditForm({ ...editForm, location_name: e.target.value })}
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
             />
           </div>
-          <div className="flex gap-3 pt-4">
-            <button onClick={() => setIsEditing(false)} className="flex-1 py-3 text-gray-400">
+          <div className="flex gap-3 pt-4 border-t border-white/10">
+            <button onClick={() => setIsEditing(false)} className="flex-1 py-3 text-white/50 hover:text-white transition-colors">
               Cancel
             </button>
-            <button onClick={handleSaveEdit} className="flex-1 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition-colors">
+            <button onClick={handleSaveEdit} className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl transition-all">
               Save Changes
             </button>
           </div>

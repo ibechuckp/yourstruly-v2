@@ -156,7 +156,7 @@ export default function ProfilePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="p-2 bg-white/10 backdrop-blur-md rounded-xl text-white/70 hover:bg-white/20 hover:text-white transition-all border border-white/20">
+          <Link href="/dashboard" className="p-2 bg-gray-900/80 backdrop-blur-md rounded-xl text-white/70 hover:bg-white/20 hover:text-white transition-all border border-white/20">
             <ChevronLeft size={20} />
           </Link>
           <div>
@@ -268,7 +268,7 @@ function Section({ title, icon, children }: { title: string; icon: string; child
   }
   
   return (
-    <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+    <div className="bg-gray-900/80 backdrop-blur-md rounded-xl p-6 border border-white/20">
       <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
         <span>{getIcon()}</span> {title}
       </h2>

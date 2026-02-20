@@ -23,10 +23,10 @@ export default async function DashboardLayout({
     .single()
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen w-full relative overflow-x-hidden bg-gray-950">
       {/* Scenic Background - persists across all pages */}
       <div 
-        className="fixed inset-0 bg-cover bg-center"
+        className="fixed inset-0 w-full h-full bg-cover bg-center"
         style={{ 
           backgroundImage: 'url(/backgrounds/sunset.jpg)',
           filter: 'brightness(0.7)',
@@ -34,7 +34,7 @@ export default async function DashboardLayout({
         }}
       />
       <div 
-        className="fixed inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50"
+        className="fixed inset-0 w-full h-full bg-gradient-to-b from-black/30 via-transparent to-black/50"
         style={{ zIndex: -10 }}
       />
       
