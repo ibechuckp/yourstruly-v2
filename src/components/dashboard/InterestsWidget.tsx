@@ -84,7 +84,7 @@ export default function InterestsWidget({ interests, onUpdate }: InterestsWidget
 
         <button
           onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
-          className="w-full mt-2 py-2 border border-dashed border-white/20 rounded-lg text-white/50 text-sm hover:bg-white/10 hover:text-white/70 transition-colors flex items-center justify-center gap-2"
+          className="w-full mt-2 py-2 border border-dashed border-white/20 rounded-lg text-white/50 text-sm hover:bg-gray-900/80 hover:text-white/70 transition-colors flex items-center justify-center gap-2"
         >
           <Plus size={14} />
           Add Interests
@@ -100,7 +100,7 @@ export default function InterestsWidget({ interests, onUpdate }: InterestsWidget
             onChange={(e) => setCustomInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addCustom()}
             placeholder="Type custom interest..."
-            className="flex-1 px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="flex-1 px-4 py-2.5 bg-gray-900/80 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
           <button onClick={addCustom} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm transition-colors">Add</button>
         </div>
@@ -133,7 +133,7 @@ export default function InterestsWidget({ interests, onUpdate }: InterestsWidget
               <button
                 key={suggestion}
                 onClick={() => addInterest(suggestion)}
-                className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-sm rounded-full transition-colors"
+                className="px-3 py-1.5 bg-gray-900/80 hover:bg-gray-700 text-gray-300 hover:text-white text-sm rounded-full transition-colors"
               >
                 {suggestion}
               </button>

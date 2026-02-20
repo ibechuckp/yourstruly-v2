@@ -196,7 +196,7 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
       ) : (
         <button 
           onClick={() => startEdit('occupation', profile?.occupation || '')}
-          className="block mx-auto mt-2 px-4 py-1 bg-white/10 rounded-full text-white/70 text-sm transition-colors"
+          className="block mx-auto mt-2 px-4 py-1 bg-gray-900/80 rounded-full text-white/70 text-sm transition-colors"
         >
           {profile?.occupation || 'What I do'}
         </button>
@@ -205,7 +205,7 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
       {/* Bio - Full section clickable */}
       <div 
         onClick={() => !editingField && startEdit('biography', profile?.biography || '')}
-        className="mt-6 bg-white/10 rounded-xl p-4 cursor-pointer transition-colors"
+        className="mt-6 bg-gray-900/80 rounded-xl p-4 cursor-pointer transition-colors"
       >
         <div className="flex items-center justify-between mb-2">
           <span className="text-white/70 text-sm font-medium">Bio</span>
@@ -242,7 +242,7 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
               type="date"
               value={tempValue}
               onChange={(e) => setTempValue(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+              className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white"
             />
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => setEditingField(null)} className="px-4 py-2 text-gray-400">Cancel</button>

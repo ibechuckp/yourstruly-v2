@@ -63,7 +63,7 @@ export default function ReligionWidget({ religions, onUpdate }: ReligionWidgetPr
               key={r.id}
               onClick={() => toggle(r.id)}
               className={`p-3 rounded-xl flex flex-col items-center gap-1 transition-all ${
-                religions.includes(r.id) ? 'bg-amber-600 text-white ring-2 ring-amber-400' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                religions.includes(r.id) ? 'bg-amber-600 text-white ring-2 ring-amber-400' : 'bg-gray-900/80 text-gray-300 hover:bg-gray-700'
               }`}
             >
               <span className="text-2xl">{r.icon}</span>

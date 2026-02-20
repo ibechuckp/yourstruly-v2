@@ -112,7 +112,7 @@ export default function ContactsWidget() {
           <p className="text-white/40 text-sm mb-3">You have no contacts yet</p>
         )}
 
-        <div className="w-full flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg text-white/70 text-sm">
+        <div className="w-full flex items-center gap-2 px-3 py-2 bg-gray-900/80 rounded-lg text-white/70 text-sm">
           <span className="text-lg">🔗</span>
           Import Google contacts
           <span className="ml-auto text-white/30">›</span>
@@ -122,19 +122,19 @@ export default function ContactsWidget() {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Contacts" showDone={false}>
         {/* Add Contact Form */}
         {showAddForm ? (
-          <div className="mb-5 p-4 bg-gray-800/50 rounded-xl">
+          <div className="mb-5 p-4 bg-gray-900/80/50 rounded-xl">
             <div className="space-y-3">
               <input
                 type="text"
                 value={newContact.full_name}
                 onChange={(e) => setNewContact({ ...newContact, full_name: e.target.value })}
                 placeholder="Name *"
-                className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-2.5 bg-gray-900/80 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
               <select
                 value={newContact.relationship_type}
                 onChange={(e) => setNewContact({ ...newContact, relationship_type: e.target.value })}
-                className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-2.5 bg-gray-900/80 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
               >
                 <option value="">Select relationship *</option>
                 {RELATIONSHIP_OPTIONS.map(group => (
@@ -151,14 +151,14 @@ export default function ContactsWidget() {
                   value={newContact.email}
                   onChange={(e) => setNewContact({ ...newContact, email: e.target.value })}
                   placeholder="Email"
-                  className="px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="px-4 py-2.5 bg-gray-900/80 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
                 <input
                   type="tel"
                   value={newContact.phone}
                   onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
                   placeholder="Phone"
-                  className="px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="px-4 py-2.5 bg-gray-900/80 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
             </div>
@@ -181,7 +181,7 @@ export default function ContactsWidget() {
         {contacts.length > 0 ? (
           <div className="space-y-2">
             {contacts.map((contact) => (
-              <div key={contact.id} className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-xl">
+              <div key={contact.id} className="flex items-center gap-3 p-3 bg-gray-900/80/50 rounded-xl">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-medium">
                   {contact.full_name.charAt(0)}
                 </div>
@@ -203,7 +203,7 @@ export default function ContactsWidget() {
         )}
 
         {/* Import Button */}
-        <button className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-gray-800 rounded-xl text-gray-300 hover:bg-gray-700 transition-colors">
+        <button className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-gray-900/80 rounded-xl text-gray-300 hover:bg-gray-700 transition-colors">
           <span>🔗</span>
           Import Google Contacts
         </button>

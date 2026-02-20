@@ -67,7 +67,7 @@ export default function PersonalityWidget({ traits, onUpdate }: PersonalityWidge
               className={`px-4 py-2 rounded-full text-sm transition-all ${
                 traits.includes(trait) 
                   ? 'bg-amber-600 text-white ring-2 ring-amber-400' 
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  : 'bg-gray-900/80 text-gray-300 hover:bg-gray-700'
               }`}
             >
               {trait}

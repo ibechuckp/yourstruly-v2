@@ -105,7 +105,7 @@ export default function AddressWidget({ address, city, state, country, onUpdate 
         {/* Map - hide all Mapbox branding */}
         <div 
           ref={mapContainerRef}
-          className="w-full h-24 bg-gray-800/50 rounded-lg mb-3 overflow-hidden relative [&_.mapboxgl-ctrl]:!hidden [&_.mapboxgl-ctrl-logo]:!hidden [&_.mapboxgl-ctrl-attrib]:!hidden"
+          className="w-full h-24 bg-gray-900/80/50 rounded-lg mb-3 overflow-hidden relative [&_.mapboxgl-ctrl]:!hidden [&_.mapboxgl-ctrl-logo]:!hidden [&_.mapboxgl-ctrl-attrib]:!hidden"
         >
           {!coordinates && (
             <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
@@ -133,7 +133,7 @@ export default function AddressWidget({ address, city, state, country, onUpdate 
             value={form.address}
             onChange={(e) => setForm({ ...form, address: e.target.value })}
             placeholder="Street address"
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full px-4 py-3 bg-gray-900/80 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
           <div className="grid grid-cols-2 gap-3">
             <input
@@ -141,14 +141,14 @@ export default function AddressWidget({ address, city, state, country, onUpdate 
               value={form.city}
               onChange={(e) => setForm({ ...form, city: e.target.value })}
               placeholder="City"
-              className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="px-4 py-3 bg-gray-900/80 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
             <input
               type="text"
               value={form.state}
               onChange={(e) => setForm({ ...form, state: e.target.value })}
               placeholder="State"
-              className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="px-4 py-3 bg-gray-900/80 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
           <input
@@ -156,7 +156,7 @@ export default function AddressWidget({ address, city, state, country, onUpdate 
             value={form.country}
             onChange={(e) => setForm({ ...form, country: e.target.value })}
             placeholder="Country"
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full px-4 py-3 bg-gray-900/80 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
         </div>
         <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-gray-800">

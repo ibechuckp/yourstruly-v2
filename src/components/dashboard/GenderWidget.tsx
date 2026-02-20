@@ -53,7 +53,7 @@ export default function GenderWidget({ gender, onUpdate }: GenderWidgetProps) {
               key={g.id}
               onClick={() => selectGender(g.id)}
               className={`p-5 rounded-xl flex flex-col items-center gap-2 transition-all ${
-                gender === g.id ? 'bg-amber-600 text-white ring-2 ring-amber-400' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                gender === g.id ? 'bg-amber-600 text-white ring-2 ring-amber-400' : 'bg-gray-900/80 text-gray-300 hover:bg-gray-700'
               }`}
             >
               <span className="text-4xl">{g.icon}</span>

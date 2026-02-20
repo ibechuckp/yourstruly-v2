@@ -65,7 +65,7 @@ export default function CredoWidget({ credo, onUpdate }: CredoWidgetProps) {
           onChange={(e) => setTempValue(e.target.value)}
           placeholder="What's your life motto?"
           rows={3}
-          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none mb-4"
+          className="w-full px-4 py-3 bg-gray-900/80 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none mb-4"
         />
         
         <p className="text-gray-400 text-xs mb-3 uppercase tracking-wide">Or pick one:</p>
@@ -75,7 +75,7 @@ export default function CredoWidget({ credo, onUpdate }: CredoWidgetProps) {
               key={s} 
               onClick={() => setTempValue(s)} 
               className={`block w-full text-left px-4 py-3 rounded-lg text-sm transition-colors ${
-                tempValue === s ? 'bg-amber-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                tempValue === s ? 'bg-amber-600 text-white' : 'bg-gray-900/80 text-gray-300 hover:bg-gray-700'
               }`}
             >
               &ldquo;{s}&rdquo;

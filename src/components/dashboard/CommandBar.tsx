@@ -33,7 +33,7 @@ export default function CommandBar() {
           <button
             key={prompt}
             onClick={() => handlePrompt(prompt)}
-            className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white/70 text-sm rounded-full transition-colors"
+            className="px-3 py-1 bg-gray-900/80 hover:bg-white/20 text-white/70 text-sm rounded-full transition-colors"
           >
             {prompt}
           </button>
@@ -59,7 +59,7 @@ export default function CommandBar() {
           <button 
             onClick={() => setMicEnabled(!micEnabled)}
             className={`flex items-center gap-1 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm transition-colors whitespace-nowrap ${
-              micEnabled ? 'bg-red-500 text-white' : 'bg-white/10 text-white/70'
+              micEnabled ? 'bg-red-500 text-white' : 'bg-gray-900/80 text-white/70'
             }`}
           >
             <Mic size={14} />
