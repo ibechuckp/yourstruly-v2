@@ -8,7 +8,6 @@ import { User } from '@supabase/supabase-js'
 import { 
   User as UserIcon, 
   Users, 
-  Heart,
   Home,
   Settings,
   LogOut,
@@ -33,8 +32,7 @@ interface SidebarProps {
 const navItems = [
   { href: '/dashboard', label: 'Home', icon: Home },
   { href: '/dashboard/profile', label: 'My Profile', icon: UserIcon },
-  { href: '/dashboard/contacts', label: 'Contacts', icon: Users },
-  { href: '/dashboard/pets', label: 'Pets', icon: Heart },
+  { href: '/dashboard/contacts', label: 'Contacts & Pets', icon: Users },
   // Phase 2
   { href: '/dashboard/memories', label: 'Memories', icon: Camera },
   { href: '/dashboard/albums', label: 'Albums', icon: FolderOpen },
@@ -57,7 +55,7 @@ export default function Sidebar({ user, profile }: SidebarProps) {
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-56 bg-black/60 backdrop-blur-md border-r border-white/10 flex flex-col z-50 isolate">
+    <aside className="fixed left-0 top-0 h-screen w-56 bg-gray-950 border-r border-white/10 flex flex-col z-50">
       {/* Logo */}
       <div className="p-5 border-b border-white/10">
         <h1 className="text-xl font-bold text-white tracking-wide">YoursTruly</h1>
