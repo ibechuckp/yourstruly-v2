@@ -1,169 +1,234 @@
-import { createClient } from '@/lib/supabase/server'
-import Link from 'next/link'
-import { User, Users, Heart, Camera, CheckCircle2 } from 'lucide-react'
+'use client'
 
-export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user?.id)
-    .single()
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import ProfileCard from '@/components/dashboard/ProfileCard'
+import InterestsWidget from '@/components/dashboard/InterestsWidget'
+import SkillsWidget from '@/components/dashboard/SkillsWidget'
+import PersonalityWidget from '@/components/dashboard/PersonalityWidget'
+import CredoWidget from '@/components/dashboard/CredoWidget'
+import LifeGoalsWidget from '@/components/dashboard/LifeGoalsWidget'
+import ContactsWidget from '@/components/dashboard/ContactsWidget'
+import GenderWidget from '@/components/dashboard/GenderWidget'
+import ReligionWidget from '@/components/dashboard/ReligionWidget'
+import AddressWidget from '@/components/dashboard/AddressWidget'
+import CommandBar from '@/components/dashboard/CommandBar'
+import { Upload } from 'lucide-react'
 
-  const { count: contactsCount } = await supabase
-    .from('contacts')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user?.id)
+const backgrounds = [
+  '/backgrounds/mountains.jpg',
+  '/backgrounds/desert.jpg',
+  '/backgrounds/ocean.jpg',
+  '/backgrounds/forest.jpg',
+  '/backgrounds/space.jpg',
+]
 
-  const { count: petsCount } = await supabase
-    .from('pets')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user?.id)
+interface Profile {
+  id: string
+  full_name: string
+  date_of_birth: string
+  gender: string
+  biography: string
+  personal_motto: string
+  occupation: string
+  interests: string[]
+  skills: string[]
+  personality_traits: string[]
+  life_goals: string[]
+  religions: string[]
+  address: string
+  city: string
+  state: string
+  country: string
+  avatar_url: string
+  cover_image_url: string
+}
 
-  // Calculate profile completion
-  const profileFields = [
-    profile?.full_name,
-    profile?.date_of_birth,
-    profile?.biography,
-    profile?.personal_motto,
-    profile?.interests?.length > 0,
-    profile?.skills?.length > 0,
-    profile?.life_goals?.length > 0,
-  ]
-  const completedFields = profileFields.filter(Boolean).length
-  const completionPercent = Math.round((completedFields / profileFields.length) * 100)
+export default function DashboardPage() {
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [activeWidget, setActiveWidget] = useState<string | null>(null)
+  const [backgroundIndex, setBackgroundIndex] = useState(0)
+  const supabase = createClient()
+
+  useEffect(() => {
+    loadProfile()
+  }, [])
+
+  const loadProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+
+    if (data) {
+      setProfile({
+        ...data,
+        interests: data.interests || [],
+        skills: data.skills || [],
+        personality_traits: data.personality_traits || [],
+        life_goals: data.life_goals || [],
+        religions: data.religions || [],
+      })
+    }
+    setLoading(false)
+  }
+
+  const updateProfile = async (field: string, value: unknown) => {
+    if (!profile) return
+    
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    await supabase
+      .from('profiles')
+      .update({ [field]: value })
+      .eq('id', user.id)
+
+    setProfile(prev => prev ? { ...prev, [field]: value } : null)
+  }
+
+  const calculateCompletion = () => {
+    if (!profile) return 0
+    const fields = [
+      profile.full_name,
+      profile.date_of_birth,
+      profile.biography,
+      profile.personal_motto,
+      profile.occupation,
+      profile.interests?.length > 0,
+      profile.skills?.length > 0,
+      profile.personality_traits?.length > 0,
+      profile.life_goals?.length > 0,
+      profile.gender,
+      profile.religions?.length > 0,
+      profile.city || profile.country,
+    ]
+    return Math.round((fields.filter(Boolean).length / fields.length) * 100)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    )
+  }
+
+  const completion = calculateCompletion()
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white">
-          Welcome back, {profile?.full_name?.split(' ')[0] || 'Friend'}! 👋
-        </h1>
-        <p className="text-gray-400 mt-1">Let&apos;s continue documenting your life story.</p>
-      </div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+        style={{ 
+          backgroundImage: `url(${backgrounds[backgroundIndex]})`,
+          filter: 'brightness(0.7)'
+        }}
+      />
+      
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
 
-      {/* Profile Completion Card */}
-      {completionPercent < 100 && (
-        <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 rounded-2xl p-6 border border-purple-500/30">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-semibold text-white">Complete Your Profile</h2>
-              <p className="text-purple-200 text-sm">Help us understand who you are</p>
+      {/* Content */}
+      <div className="relative z-10 min-h-screen flex flex-col">
+        {/* Top Bar */}
+        <header className="flex items-center justify-between p-4">
+          <div className="flex items-center gap-4">
+            <span className="text-white/70 text-sm">Completed by</span>
+            <div className="w-48 h-2 bg-white/20 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full transition-all"
+                style={{ width: `${completion}%` }}
+              />
             </div>
-            <div className="text-3xl font-bold text-purple-400">{completionPercent}%</div>
+            <span className="text-white/70 text-sm">{completion}%</span>
           </div>
-          <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all"
-              style={{ width: `${completionPercent}%` }}
+
+          {/* Logo */}
+          <div className="absolute left-1/2 -translate-x-1/2 text-center">
+            <h1 className="text-white text-3xl font-bold tracking-wider">YOURS</h1>
+            <p className="text-white text-2xl font-script -mt-2 italic">Truly</p>
+          </div>
+
+          <button className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-lg text-white/80 hover:bg-white/20 transition-colors border border-white/20">
+            <Upload size={16} />
+            Upload Cover
+          </button>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 flex items-center justify-center p-4 gap-6">
+          {/* Left Sidebar */}
+          <div className={`flex flex-col gap-4 w-64 transition-all duration-500 ${activeWidget && activeWidget !== 'interests' && activeWidget !== 'skills' && activeWidget !== 'personality' && activeWidget !== 'credo' && activeWidget !== 'lifegoals' ? '-translate-x-full opacity-0' : ''}`}>
+            <InterestsWidget 
+              interests={profile?.interests || []}
+              onUpdate={(v) => updateProfile('interests', v)}
+              isActive={activeWidget === 'interests'}
+              onToggle={() => setActiveWidget(activeWidget === 'interests' ? null : 'interests')}
+            />
+            <SkillsWidget 
+              skills={profile?.skills || []}
+              onUpdate={(v) => updateProfile('skills', v)}
+              isActive={activeWidget === 'skills'}
+              onToggle={() => setActiveWidget(activeWidget === 'skills' ? null : 'skills')}
+            />
+            <PersonalityWidget 
+              traits={profile?.personality_traits || []}
+              onUpdate={(v) => updateProfile('personality_traits', v)}
+              isActive={activeWidget === 'personality'}
+              onToggle={() => setActiveWidget(activeWidget === 'personality' ? null : 'personality')}
+            />
+            <CredoWidget 
+              credo={profile?.personal_motto || ''}
+              onUpdate={(v) => updateProfile('personal_motto', v)}
+              isActive={activeWidget === 'credo'}
+              onToggle={() => setActiveWidget(activeWidget === 'credo' ? null : 'credo')}
+            />
+            <LifeGoalsWidget 
+              goals={profile?.life_goals || []}
+              onUpdate={(v) => updateProfile('life_goals', v)}
+              isActive={activeWidget === 'lifegoals'}
+              onToggle={() => setActiveWidget(activeWidget === 'lifegoals' ? null : 'lifegoals')}
             />
           </div>
-          <Link
-            href="/dashboard/profile"
-            className="inline-block mt-4 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            Continue Setup →
-          </Link>
-        </div>
-      )}
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/dashboard/profile" className="bg-gray-900 rounded-xl p-6 border border-gray-800 hover:border-purple-500/50 transition-colors group">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-600/20 flex items-center justify-center">
-              <User className="text-purple-400" size={24} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-400">Profile</p>
-              <p className="text-2xl font-bold text-white group-hover:text-purple-400 transition-colors">
-                {completionPercent}%
-              </p>
-            </div>
-          </div>
-        </Link>
+          {/* Center Profile Card */}
+          <ProfileCard 
+            profile={profile}
+            onUpdate={updateProfile}
+          />
 
-        <Link href="/dashboard/contacts" className="bg-gray-900 rounded-xl p-6 border border-gray-800 hover:border-blue-500/50 transition-colors group">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center">
-              <Users className="text-blue-400" size={24} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-400">Contacts</p>
-              <p className="text-2xl font-bold text-white group-hover:text-blue-400 transition-colors">
-                {contactsCount || 0}
-              </p>
-            </div>
-          </div>
-        </Link>
-
-        <Link href="/dashboard/pets" className="bg-gray-900 rounded-xl p-6 border border-gray-800 hover:border-pink-500/50 transition-colors group">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-pink-600/20 flex items-center justify-center">
-              <Heart className="text-pink-400" size={24} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-400">Pets</p>
-              <p className="text-2xl font-bold text-white group-hover:text-pink-400 transition-colors">
-                {petsCount || 0}
-              </p>
-            </div>
-          </div>
-        </Link>
-      </div>
-
-      {/* Getting Started Checklist */}
-      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-        <h2 className="text-xl font-semibold text-white mb-4">Getting Started</h2>
-        <div className="space-y-3">
-          {[
-            { done: !!profile?.full_name, label: 'Add your name', href: '/dashboard/profile' },
-            { done: !!profile?.biography, label: 'Write a short bio', href: '/dashboard/profile' },
-            { done: !!profile?.personal_motto, label: 'Set your personal motto', href: '/dashboard/profile' },
-            { done: (profile?.interests?.length || 0) > 0, label: 'Add your interests', href: '/dashboard/profile' },
-            { done: (contactsCount || 0) > 0, label: 'Add a family member or friend', href: '/dashboard/contacts' },
-            { done: (petsCount || 0) > 0, label: 'Add a pet (if you have one)', href: '/dashboard/pets' },
-          ].map((item, i) => (
-            <Link
-              key={i}
-              href={item.href}
-              className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                item.done ? 'bg-green-500/10' : 'bg-gray-800 hover:bg-gray-700'
-              }`}
-            >
-              <CheckCircle2 
-                size={20} 
-                className={item.done ? 'text-green-400' : 'text-gray-600'} 
+          {/* Right Sidebar */}
+          <div className={`flex flex-col gap-4 w-64 transition-all duration-500 ${activeWidget && activeWidget !== 'contacts' && activeWidget !== 'gender' && activeWidget !== 'religion' && activeWidget !== 'address' ? 'translate-x-full opacity-0' : ''}`}>
+            <ContactsWidget />
+            <div className="flex gap-4">
+              <GenderWidget 
+                gender={profile?.gender || ''}
+                onUpdate={(v) => updateProfile('gender', v)}
               />
-              <span className={item.done ? 'text-green-400 line-through' : 'text-white'}>
-                {item.label}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Coming Soon */}
-      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-        <h2 className="text-xl font-semibold text-white mb-4">Coming Soon</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { icon: Camera, label: 'Memories', color: 'blue' },
-            { icon: '📹', label: 'Video Journalist', color: 'purple' },
-            { icon: '🤖', label: 'AI Avatar', color: 'green' },
-            { icon: '✈️', label: 'Trip Planning', color: 'orange' },
-          ].map((item, i) => (
-            <div key={i} className="bg-gray-800/50 rounded-lg p-4 text-center">
-              <div className="text-3xl mb-2">
-                {typeof item.icon === 'string' ? item.icon : <item.icon className="mx-auto text-gray-500" />}
-              </div>
-              <p className="text-sm text-gray-400">{item.label}</p>
+              <ReligionWidget 
+                religions={profile?.religions || []}
+                onUpdate={(v) => updateProfile('religions', v)}
+              />
             </div>
-          ))}
-        </div>
+            <AddressWidget 
+              address={profile?.address || ''}
+              city={profile?.city || ''}
+              state={profile?.state || ''}
+              country={profile?.country || ''}
+              onUpdate={updateProfile}
+            />
+          </div>
+        </main>
+
+        {/* Command Bar */}
+        <CommandBar />
       </div>
     </div>
   )
