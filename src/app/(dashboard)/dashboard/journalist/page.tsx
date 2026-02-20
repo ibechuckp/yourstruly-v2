@@ -206,23 +206,23 @@ export default function JournalistPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen p-6">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur-md border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="mb-6">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-              <ChevronLeft size={20} className="text-gray-400" />
+            <Link href="/dashboard" className="p-2 bg-white/10 backdrop-blur-md rounded-xl text-white/70 hover:bg-white/20 hover:text-white transition-all">
+              <ChevronLeft size={20} />
             </Link>
             <div>
-              <h1 className="text-xl font-semibold text-white">Video Journalist</h1>
-              <p className="text-sm text-gray-400">Capture family stories remotely</p>
+              <h1 className="text-2xl font-bold text-white">Video Journalist</h1>
+              <p className="text-white/50 text-sm">Capture family stories remotely</p>
             </div>
           </div>
 
           <button
             onClick={() => setShowNewSession(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl transition-all"
           >
             <Plus size={18} />
             <span className="hidden sm:inline">New Interview</span>
@@ -230,21 +230,21 @@ export default function JournalistPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main>
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="text-gray-400">Loading...</div>
+            <div className="text-white/60">Loading...</div>
           </div>
         ) : sessions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-center">
-            <Video size={48} className="text-gray-600 mb-4" />
+          <div className="isolate bg-white/10 backdrop-blur-md rounded-2xl p-12 border border-white/20 text-center">
+            <Video size={48} className="text-white/30 mb-4 mx-auto" />
             <h3 className="text-lg font-medium text-white mb-2">No interviews yet</h3>
-            <p className="text-gray-400 mb-4 max-w-md">
+            <p className="text-white/50 mb-4 max-w-md mx-auto">
               Send questions to your family and friends, and they can record video responses from anywhere.
             </p>
             <button
               onClick={() => setShowNewSession(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl transition-all mx-auto"
             >
               <Plus size={18} />
               Start your first interview
@@ -255,25 +255,25 @@ export default function JournalistPage() {
             {sessions.map((session) => (
               <div
                 key={session.id}
-                className="bg-gray-900 rounded-xl p-4 hover:bg-gray-800/50 transition-colors"
+                className="isolate bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 hover:bg-white/15 transition-all"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-full bg-amber-600/20 flex items-center justify-center">
-                      <User size={24} className="text-amber-500" />
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                      <User size={24} className="text-white" />
                     </div>
                     <div>
-                      <h3 className="text-white font-medium">{session.title}</h3>
-                      <p className="text-gray-400 text-sm">with {session.contact?.full_name}</p>
+                      <h3 className="text-white font-semibold">{session.title}</h3>
+                      <p className="text-white/50 text-sm">with {session.contact?.full_name}</p>
                       <div className="flex items-center gap-4 mt-2">
                         <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${getStatusColor(session.status)}`}>
                           {session.status}
                         </span>
-                        <span className="text-gray-500 text-xs">
+                        <span className="text-white/40 text-xs">
                           {session.session_questions?.length} questions
                         </span>
                         {session.video_responses?.length > 0 && (
-                          <span className="text-green-500 text-xs flex items-center gap-1">
+                          <span className="text-green-400 text-xs flex items-center gap-1">
                             <Play size={12} />
                             {session.video_responses.length} responses
                           </span>
@@ -286,7 +286,7 @@ export default function JournalistPage() {
                     {session.status === 'pending' && (
                       <button
                         onClick={() => copyLink(session.access_token)}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg transition-colors"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-sm rounded-lg transition-all"
                       >
                         <ExternalLink size={14} />
                         Copy Link
@@ -294,7 +294,7 @@ export default function JournalistPage() {
                     )}
                     <Link
                       href={`/dashboard/journalist/${session.id}`}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-colors"
+                      className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition-all"
                     >
                       View
                     </Link>
@@ -303,19 +303,19 @@ export default function JournalistPage() {
 
                 {/* Video previews */}
                 {session.video_responses?.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-800">
+                  <div className="mt-4 pt-4 border-t border-white/10">
                     <div className="flex gap-3 overflow-x-auto pb-2">
                       {session.video_responses.slice(0, 4).map((video) => (
                         <div
                           key={video.id}
-                          className="flex-shrink-0 w-32 p-3 bg-gray-800 rounded-lg"
+                          className="flex-shrink-0 w-32 p-3 bg-white/5 rounded-xl"
                         >
-                          <div className="flex items-center gap-2 text-gray-400 text-xs mb-2">
+                          <div className="flex items-center gap-2 text-white/50 text-xs mb-2">
                             <Play size={12} />
                             {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
                           </div>
                           {video.ai_summary && (
-                            <p className="text-gray-300 text-xs line-clamp-2">{video.ai_summary}</p>
+                            <p className="text-white/70 text-xs line-clamp-2">{video.ai_summary}</p>
                           )}
                         </div>
                       ))}

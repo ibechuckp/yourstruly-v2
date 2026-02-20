@@ -60,13 +60,13 @@ export default function MemoriesPage() {
   }, [loadMemories])
 
   const categories = [
-    { id: 'all', label: 'All', icon: '📸' },
-    { id: 'travel', label: 'Travel', icon: '✈️' },
-    { id: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦' },
-    { id: 'celebration', label: 'Celebrations', icon: '🎉' },
-    { id: 'nature', label: 'Nature', icon: '🌿' },
-    { id: 'food', label: 'Food', icon: '🍕' },
-    { id: 'everyday', label: 'Everyday', icon: '☀️' },
+    { id: 'all', label: 'All' },
+    { id: 'travel', label: 'Travel' },
+    { id: 'family', label: 'Family' },
+    { id: 'celebration', label: 'Celebrations' },
+    { id: 'nature', label: 'Nature' },
+    { id: 'food', label: 'Food' },
+    { id: 'everyday', label: 'Everyday' },
   ]
 
   // Group memories by year/month for timeline
@@ -81,39 +81,38 @@ export default function MemoriesPage() {
   const sortedGroups = Object.keys(groupedMemories).sort().reverse()
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen p-6">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur-md border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-                <ChevronLeft size={20} className="text-gray-400" />
-              </Link>
-              <div>
-                <h1 className="text-xl font-semibold text-white">Memories</h1>
-                <p className="text-sm text-gray-400">{memories.length} moments captured</p>
-              </div>
+      <header className="mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="p-2 bg-white/10 backdrop-blur-md rounded-xl text-white/70 hover:bg-white/20 hover:text-white transition-all">
+              <ChevronLeft size={20} />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-white">Memories</h1>
+              <p className="text-white/50 text-sm">{memories.length} moments captured</p>
             </div>
+          </div>
 
             <div className="flex items-center gap-3">
               {/* View Mode Toggle */}
-              <div className="flex items-center bg-gray-800 rounded-lg p-1">
+              <div className="flex items-center bg-white/10 backdrop-blur-md rounded-xl p-1">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-amber-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                  className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-amber-500 text-white' : 'text-white/50 hover:text-white'}`}
                 >
                   <Grid size={18} />
                 </button>
                 <button
                   onClick={() => setViewMode('timeline')}
-                  className={`p-2 rounded-md transition-colors ${viewMode === 'timeline' ? 'bg-amber-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                  className={`p-2 rounded-lg transition-all ${viewMode === 'timeline' ? 'bg-amber-500 text-white' : 'text-white/50 hover:text-white'}`}
                 >
                   <List size={18} />
                 </button>
                 <button
                   onClick={() => setViewMode('globe')}
-                  className={`p-2 rounded-md transition-colors ${viewMode === 'globe' ? 'bg-amber-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                  className={`p-2 rounded-lg transition-all ${viewMode === 'globe' ? 'bg-amber-500 text-white' : 'text-white/50 hover:text-white'}`}
                 >
                   <Globe size={18} />
                 </button>
@@ -122,7 +121,7 @@ export default function MemoriesPage() {
               {/* Create Button */}
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl transition-all"
               >
                 <Plus size={18} />
                 <span className="hidden sm:inline">Add Memory</span>
@@ -136,36 +135,34 @@ export default function MemoriesPage() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id === 'all' ? null : cat.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full whitespace-nowrap transition-colors ${
+                className={`px-4 py-2 rounded-xl whitespace-nowrap transition-all text-sm ${
                   (cat.id === 'all' && !selectedCategory) || selectedCategory === cat.id
-                    ? 'bg-amber-600 text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-white/10 backdrop-blur-md text-white/70 hover:bg-white/20 hover:text-white'
                 }`}
               >
-                <span>{cat.icon}</span>
-                <span className="text-sm">{cat.label}</span>
+                {cat.label}
               </button>
             ))}
           </div>
-        </div>
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main>
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="text-gray-400">Loading memories...</div>
+            <div className="text-white/60">Loading memories...</div>
           </div>
         ) : memories.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-center">
-            <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4">
-              <ImageIcon size={32} className="text-gray-500" />
+          <div className="isolate bg-white/10 backdrop-blur-md rounded-2xl p-12 border border-white/20 text-center">
+            <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <ImageIcon size={32} className="text-white/40" />
             </div>
             <h3 className="text-lg font-medium text-white mb-2">No memories yet</h3>
-            <p className="text-gray-400 mb-4">Start capturing your life's moments</p>
+            <p className="text-white/50 mb-4">Start capturing your life's moments</p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl transition-all mx-auto"
             >
               <Plus size={18} />
               Create your first memory
