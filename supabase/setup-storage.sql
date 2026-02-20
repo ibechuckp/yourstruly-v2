@@ -26,3 +26,33 @@ USING (bucket_id = 'avatars');
 CREATE POLICY "Users can delete own avatars" ON storage.objects
 FOR DELETE TO authenticated
 USING (bucket_id = 'avatars');
+
+-- ============================================
+-- MEMORIES BUCKET
+-- ============================================
+
+-- Create the memories bucket (public)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('memories', 'memories', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- Allow authenticated users to upload memories
+CREATE POLICY "Users can upload memories" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'memories');
+
+-- Allow authenticated users to update their memories  
+CREATE POLICY "Users can update own memories media" ON storage.objects
+FOR UPDATE TO authenticated
+USING (bucket_id = 'memories')
+WITH CHECK (bucket_id = 'memories');
+
+-- Allow public read access to memories
+CREATE POLICY "Public memories access" ON storage.objects
+FOR SELECT TO public
+USING (bucket_id = 'memories');
+
+-- Allow users to delete their memories media
+CREATE POLICY "Users can delete own memories media" ON storage.objects
+FOR DELETE TO authenticated
+USING (bucket_id = 'memories');

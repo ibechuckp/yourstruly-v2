@@ -34,8 +34,9 @@ const navItems = [
   { href: '/dashboard/profile', label: 'My Profile', icon: UserIcon },
   { href: '/dashboard/contacts', label: 'Contacts', icon: Users },
   { href: '/dashboard/pets', label: 'Pets', icon: Heart },
-  // Phase 2+
-  { href: '/dashboard/memories', label: 'Memories', icon: Camera, disabled: true },
+  // Phase 2
+  { href: '/dashboard/memories', label: 'Memories', icon: Camera },
+  // Phase 3+
   { href: '/dashboard/journalist', label: 'Video Journalist', icon: MessageSquare, disabled: true },
   { href: '/dashboard/avatar', label: 'AI Avatar', icon: Bot, disabled: true },
   { href: '/dashboard/postscripts', label: 'PostScripts', icon: Gift, disabled: true },
