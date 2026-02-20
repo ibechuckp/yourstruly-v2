@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Sidebar from '@/components/Sidebar'
 
 export default async function DashboardLayout({
   children,
@@ -13,5 +14,19 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  return <>{children}</>
+  // Get profile for sidebar
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name, avatar_url')
+    .eq('id', user.id)
+    .single()
+
+  return (
+    <div className="min-h-screen bg-gray-950">
+      <Sidebar user={user} profile={profile} />
+      <main className="ml-64">
+        {children}
+      </main>
+    </div>
+  )
 }
