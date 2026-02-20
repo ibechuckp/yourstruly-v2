@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { Mic, Send, Sparkles, X, Loader2, ChevronUp, ChevronDown } from 'lucide-react'
 
 interface Message {
@@ -9,11 +9,11 @@ interface Message {
   content: string
 }
 
-const QUICK_COMMANDS = [
-  { label: 'Add a memory', command: 'I want to create a new memory' },
-  { label: 'My contacts', command: 'Show me my contacts' },
-  { label: 'PostScripts', command: 'Take me to PostScripts' },
-  { label: 'Life summary', command: 'Give me a summary of my life so far' },
+const QUICK_PROMPTS = [
+  'Add a memory',
+  'My contacts',
+  'PostScripts',
+  'Life summary',
 ]
 
 export default function CommandBar() {
@@ -25,6 +25,7 @@ export default function CommandBar() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+  const pathname = usePathname()
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -66,7 +67,8 @@ export default function CommandBar() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: trimmedInput,
-          history: messages.slice(-10), // Keep last 10 messages for context
+          history: messages.slice(-10),
+          currentPage: pathname,
         }),
       })
 
@@ -75,46 +77,31 @@ export default function CommandBar() {
       if (data.error) {
         setMessages(prev => [...prev, { 
           role: 'assistant', 
-          content: `Sorry, I encountered an error: ${data.error}` 
+          content: `I ran into an issue: ${data.error}` 
         }])
       } else {
-        // Add assistant response
         if (data.response) {
           setMessages(prev => [...prev, { role: 'assistant', content: data.response }])
         }
 
-        // Handle actions
-        if (data.action) {
-          handleAction(data.action)
+        // Handle navigation actions silently
+        if (data.action?.action === 'navigate' && data.action.path) {
+          setTimeout(() => router.push(data.action.path), 500)
         }
       }
     } catch (error) {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: 'Sorry, I couldn\'t connect to the AI service.' 
+        content: "I'm having trouble connecting right now. Try again in a moment." 
       }])
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleAction = (action: { action: string; path?: string; type?: string }) => {
-    if (action.action === 'navigate' && action.path) {
-      router.push(action.path)
-    } else if (action.action === 'create') {
-      if (action.type === 'memory') {
-        router.push('/dashboard/memories?create=true')
-      } else if (action.type === 'contact') {
-        router.push('/dashboard/contacts?create=true')
-      } else if (action.type === 'postscript') {
-        router.push('/dashboard/postscripts?create=true')
-      }
-    }
-  }
-
-  const handleQuickCommand = (command: string) => {
-    setInput(command)
-    setTimeout(() => handleSubmit(), 100)
+  const handleQuickPrompt = (prompt: string) => {
+    setInput(prompt)
+    inputRef.current?.focus()
   }
 
   const toggleVoice = () => {
@@ -151,88 +138,93 @@ export default function CommandBar() {
   }
 
   return (
-    <div className={`fixed bottom-0 left-56 right-0 z-40 transition-all duration-300 ${
-      isExpanded ? 'h-96' : 'h-auto'
-    }`}>
-      {/* Expanded Chat Area */}
+    <>
+      {/* Expanded Chat Panel - Fixed position overlay */}
       {isExpanded && (
-        <div className="absolute bottom-full left-0 right-0 h-80 bg-gray-950/95 backdrop-blur-xl border-t border-white/10 overflow-hidden flex flex-col">
-          {/* Chat Header */}
-          <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
-            <div className="flex items-center gap-2 text-white/70 text-sm">
-              <Sparkles size={14} className="text-amber-500" />
-              AI Assistant
-            </div>
-            <div className="flex items-center gap-2">
-              {messages.length > 0 && (
-                <button 
-                  onClick={clearChat}
-                  className="text-white/40 hover:text-white/70 text-xs"
-                >
-                  Clear
-                </button>
-              )}
-              <button 
-                onClick={() => setIsExpanded(false)}
-                className="text-white/40 hover:text-white/70"
-              >
-                <ChevronDown size={18} />
-              </button>
-            </div>
-          </div>
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.length === 0 ? (
-              <div className="text-center py-8">
-                <Sparkles size={32} className="mx-auto text-amber-500/50 mb-3" />
-                <p className="text-white/50 text-sm mb-4">Ask me anything about your life data</p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {QUICK_COMMANDS.map((cmd) => (
-                    <button
-                      key={cmd.label}
-                      onClick={() => handleQuickCommand(cmd.command)}
-                      className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/60 text-sm rounded-lg transition-colors"
+        <div className="fixed bottom-20 left-56 right-0 z-40">
+          <div className="max-w-2xl mx-auto px-4">
+            <div className="bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+              {/* Chat Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                <div className="flex items-center gap-2 text-white/70 text-sm">
+                  <Sparkles size={14} className="text-amber-500" />
+                  AI Assistant
+                </div>
+                <div className="flex items-center gap-3">
+                  {messages.length > 0 && (
+                    <button 
+                      onClick={clearChat}
+                      className="text-white/40 hover:text-white/70 text-xs"
                     >
-                      {cmd.label}
+                      Clear
                     </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] px-4 py-2.5 rounded-2xl ${
-                      msg.role === 'user'
-                        ? 'bg-amber-500 text-white'
-                        : 'bg-white/10 text-white/90'
-                    }`}
+                  )}
+                  <button 
+                    onClick={() => setIsExpanded(false)}
+                    className="text-white/40 hover:text-white/70"
                   >
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                  </div>
-                </div>
-              ))
-            )}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-white/10 px-4 py-2.5 rounded-2xl">
-                  <Loader2 size={16} className="animate-spin text-amber-500" />
+                    <X size={18} />
+                  </button>
                 </div>
               </div>
-            )}
-            <div ref={messagesEndRef} />
+
+              {/* Messages */}
+              <div className="max-h-80 overflow-y-auto p-4 space-y-4">
+                {messages.length === 0 ? (
+                  <div className="text-center py-6">
+                    <Sparkles size={28} className="mx-auto text-amber-500/50 mb-3" />
+                    <p className="text-white/50 text-sm mb-4">What's on your mind?</p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {QUICK_PROMPTS.map((prompt) => (
+                        <button
+                          key={prompt}
+                          onClick={() => handleQuickPrompt(prompt)}
+                          className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/60 text-sm rounded-lg transition-colors border border-white/10"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  messages.map((msg, i) => (
+                    <div
+                      key={i}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[85%] px-4 py-2.5 rounded-2xl ${
+                          msg.role === 'user'
+                            ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white'
+                            : 'bg-white/10 text-white/90 border border-white/10'
+                        }`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white/10 px-4 py-3 rounded-2xl border border-white/10">
+                      <div className="flex items-center gap-2">
+                        <Loader2 size={14} className="animate-spin text-amber-500" />
+                        <span className="text-white/50 text-sm">Thinking...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Input Bar */}
-      <div className="p-3 sm:p-4 border-t border-white/10 bg-gray-950/90 backdrop-blur-xl">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 bg-gray-900/90 rounded-xl sm:rounded-2xl border border-white/10 focus-within:border-amber-500/50 transition-colors">
+      {/* Input Bar - Fixed at bottom */}
+      <div className="fixed bottom-0 left-56 right-0 z-50 p-4 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
+        <div className="max-w-2xl mx-auto pointer-events-auto">
+          <div className="flex items-center gap-3 px-4 py-3 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg">
             <button 
               onClick={() => setIsExpanded(!isExpanded)}
               className="text-white/50 hover:text-amber-500 transition-colors"
@@ -246,15 +238,17 @@ export default function CommandBar() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-              onFocus={() => setIsExpanded(true)}
+              onFocus={() => !isExpanded && messages.length > 0 && setIsExpanded(true)}
               placeholder="Ask me anything... (⌘K)"
-              className="flex-1 bg-transparent text-white placeholder-white/40 focus:outline-none text-sm min-w-0"
+              className="flex-1 bg-transparent text-white placeholder-white/40 focus:outline-none text-sm"
             />
 
             <button 
               onClick={toggleVoice}
-              className={`flex items-center gap-1 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm transition-colors whitespace-nowrap ${
-                isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-800 text-white/70 hover:text-white'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all ${
+                isListening 
+                  ? 'bg-red-500 text-white animate-pulse' 
+                  : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
               }`}
             >
               <Mic size={14} />
@@ -264,12 +258,12 @@ export default function CommandBar() {
             <button 
               onClick={handleSubmit}
               disabled={isLoading || !input.trim()}
-              className="w-8 h-8 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full flex items-center justify-center text-white flex-shrink-0 disabled:opacity-50 transition-opacity"
+              className="w-9 h-9 bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl flex items-center justify-center text-white disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-amber-500/25"
             >
               {isLoading ? (
-                <Loader2 size={14} className="animate-spin" />
+                <Loader2 size={16} className="animate-spin" />
               ) : (
-                <Send size={14} />
+                <Send size={16} />
               )}
             </button>
           </div>
@@ -279,6 +273,6 @@ export default function CommandBar() {
           </p>
         </div>
       </div>
-    </div>
+    </>
   )
 }

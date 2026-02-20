@@ -76,8 +76,8 @@ export default function DashboardShell({ children }: DashboardShellProps) {
   }, [])
 
   return (
-    <div ref={containerRef} className="ml-56 min-h-screen relative pb-24">
-      <div ref={contentRef} className="will-change-transform">
+    <div ref={containerRef} className="ml-56 min-h-screen relative">
+      <div ref={contentRef} className="will-change-transform pb-28">
         {displayedChildren}
       </div>
       <CommandBar />
