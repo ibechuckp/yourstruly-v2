@@ -28,22 +28,22 @@ export default function DashboardShell({ children }: DashboardShellProps) {
 
   const variants = {
     enter: (dir: 'left' | 'right') => ({
-      x: dir === 'left' ? '100%' : '-100%',
-      opacity: 0,
+      x: dir === 'left' ? 80 : -80,
+      opacity: 0.5,
     }),
     center: {
       x: 0,
       opacity: 1,
     },
     exit: (dir: 'left' | 'right') => ({
-      x: dir === 'left' ? '-30%' : '30%',
-      opacity: 0,
+      x: dir === 'left' ? -40 : 40,
+      opacity: 0.5,
     }),
   }
 
   return (
     <div className="ml-56 min-h-screen overflow-hidden isolate">
-      <AnimatePresence mode="wait" custom={direction}>
+      <AnimatePresence mode="popLayout" custom={direction}>
         <motion.div
           key={pathname}
           custom={direction}
@@ -52,8 +52,9 @@ export default function DashboardShell({ children }: DashboardShellProps) {
           animate="center"
           exit="exit"
           transition={{
-            x: { type: 'spring', stiffness: 300, damping: 30 },
-            opacity: { duration: 0.2 },
+            type: 'tween',
+            ease: [0.25, 0.1, 0.25, 1], // Smooth ease-out
+            duration: 0.35,
           }}
           className="min-h-screen"
         >

@@ -144,7 +144,7 @@ export default function ContactsPage() {
 
       {/* Contacts Grid */}
       {contacts.length === 0 ? (
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-12 border border-white/20 text-center">
+        <div className="isolate bg-white/10 backdrop-blur-md rounded-2xl p-12 border border-white/20 text-center">
           <Users className="mx-auto text-white/30 mb-4" size={48} />
           <h3 className="text-xl font-semibold text-white mb-2">No contacts yet</h3>
           <p className="text-white/50 mb-6">Start adding the important people in your life.</p>
@@ -160,7 +160,7 @@ export default function ContactsPage() {
           {contacts.map(contact => (
             <div 
               key={contact.id} 
-              className="bg-white/10 backdrop-blur-xl rounded-2xl p-5 border border-white/20 hover:bg-white/15 hover:border-amber-500/30 transition-all group"
+              className="isolate bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 hover:bg-white/15 hover:border-amber-500/30 transition-all group"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
