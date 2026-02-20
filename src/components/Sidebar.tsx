@@ -55,7 +55,7 @@ export default function Sidebar({ user, profile }: SidebarProps) {
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-56 bg-gray-900/80 backdrop-blur-xl border-r border-white/10 flex flex-col z-50">
+    <aside className="fixed left-0 top-0 h-screen w-56 bg-gray-950/95 backdrop-blur-xl flex flex-col z-50">
       {/* Logo */}
       <div className="p-5 border-b border-white/10">
         <h1 className="text-xl font-bold text-white tracking-wide">YoursTruly</h1>

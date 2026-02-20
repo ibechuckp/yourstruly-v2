@@ -40,25 +40,25 @@ export default function DashboardShell({ children }: DashboardShellProps) {
       }
     })
 
-    // Exit animation
+    // Exit animation - slower for visibility
     tl.to(contentRef.current, {
       x: exitX,
       opacity: 0,
-      duration: 0.25,
-      ease: 'power2.in',
+      duration: 0.4,
+      ease: 'power2.inOut',
       onComplete: () => {
         setDisplayedChildren(children)
       }
     })
 
-    // Enter animation (will run after children update)
+    // Enter animation - smooth and visible
     tl.fromTo(contentRef.current, 
       { x: enterX, opacity: 0 },
       { 
         x: 0, 
         opacity: 1, 
-        duration: 0.35,
-        ease: 'power2.out',
+        duration: 0.5,
+        ease: 'power3.out',
       }
     )
 

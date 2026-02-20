@@ -122,7 +122,7 @@ export default function ContactsWidget() {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Contacts" showDone={false}>
         {/* Add Contact Form */}
         {showAddForm ? (
-          <div className="mb-5 p-4 bg-gray-900/80/50 rounded-xl">
+          <div className="mb-5 p-4 bg-gray-900/50 rounded-xl">
             <div className="space-y-3">
               <input
                 type="text"
@@ -181,7 +181,7 @@ export default function ContactsWidget() {
         {contacts.length > 0 ? (
           <div className="space-y-2">
             {contacts.map((contact) => (
-              <div key={contact.id} className="flex items-center gap-3 p-3 bg-gray-900/80/50 rounded-xl">
+              <div key={contact.id} className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-xl">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-medium">
                   {contact.full_name.charAt(0)}
                 </div>

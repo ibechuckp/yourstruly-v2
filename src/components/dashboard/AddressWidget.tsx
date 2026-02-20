@@ -105,7 +105,7 @@ export default function AddressWidget({ address, city, state, country, onUpdate 
         {/* Map - hide all Mapbox branding */}
         <div 
           ref={mapContainerRef}
-          className="w-full h-24 bg-gray-900/80/50 rounded-lg mb-3 overflow-hidden relative [&_.mapboxgl-ctrl]:!hidden [&_.mapboxgl-ctrl-logo]:!hidden [&_.mapboxgl-ctrl-attrib]:!hidden"
+          className="w-full h-24 bg-gray-900/50 rounded-lg mb-3 overflow-hidden relative [&_.mapboxgl-ctrl]:!hidden [&_.mapboxgl-ctrl-logo]:!hidden [&_.mapboxgl-ctrl-attrib]:!hidden"
         >
           {!coordinates && (
             <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
