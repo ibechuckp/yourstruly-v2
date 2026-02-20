@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { useRef, useEffect, useState, useLayoutEffect } from 'react'
 import gsap from 'gsap'
+import CommandBar from '@/components/dashboard/CommandBar'
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -75,10 +76,11 @@ export default function DashboardShell({ children }: DashboardShellProps) {
   }, [])
 
   return (
-    <div ref={containerRef} className="ml-56 min-h-screen relative">
+    <div ref={containerRef} className="ml-56 min-h-screen relative pb-24">
       <div ref={contentRef} className="will-change-transform">
         {displayedChildren}
       </div>
+      <CommandBar />
     </div>
   )
 }

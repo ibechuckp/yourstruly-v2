@@ -12,7 +12,7 @@ import ContactsWidget from '@/components/dashboard/ContactsWidget'
 import GenderWidget from '@/components/dashboard/GenderWidget'
 import ReligionWidget from '@/components/dashboard/ReligionWidget'
 import AddressWidget from '@/components/dashboard/AddressWidget'
-import CommandBar from '@/components/dashboard/CommandBar'
+// CommandBar is now in DashboardShell
 import { Upload } from 'lucide-react'
 
 interface Profile {
@@ -251,8 +251,6 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Command Bar */}
-      <CommandBar />
     </div>
   )
 }
