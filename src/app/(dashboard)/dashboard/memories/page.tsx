@@ -6,6 +6,7 @@ import { Plus, Image as ImageIcon, Calendar, MapPin, Sparkles, Grid, List, Globe
 import Link from 'next/link'
 import CreateMemoryModal from '@/components/memories/CreateMemoryModal'
 import MemoryCard from '@/components/memories/MemoryCard'
+import GlobeView from '@/components/memories/GlobeView'
 
 interface Memory {
   id: string
@@ -14,6 +15,8 @@ interface Memory {
   memory_date: string
   memory_type: string
   location_name: string
+  location_lat: number
+  location_lng: number
   ai_summary: string
   ai_mood: string
   ai_category: string
@@ -203,12 +206,13 @@ export default function MemoriesPage() {
             })}
           </div>
         ) : (
-          /* Globe View - Placeholder */
-          <div className="flex flex-col items-center justify-center h-96 text-center bg-gray-900 rounded-2xl">
-            <Globe size={48} className="text-gray-600 mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">Globe View</h3>
-            <p className="text-gray-400">Coming soon - see your memories on a 3D globe</p>
-          </div>
+          /* Globe View */
+          <GlobeView 
+            memories={memories} 
+            onSelectMemory={(memory) => {
+              window.location.href = `/dashboard/memories/${memory.id}`
+            }}
+          />
         )}
       </main>
 

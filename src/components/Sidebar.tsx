@@ -16,7 +16,8 @@ import {
   MessageSquare,
   Gift,
   Plane,
-  Bot
+  Bot,
+  FolderOpen
 } from 'lucide-react'
 
 interface Profile {
@@ -36,6 +37,7 @@ const navItems = [
   { href: '/dashboard/pets', label: 'Pets', icon: Heart },
   // Phase 2
   { href: '/dashboard/memories', label: 'Memories', icon: Camera },
+  { href: '/dashboard/albums', label: 'Albums', icon: FolderOpen },
   // Phase 3+
   { href: '/dashboard/journalist', label: 'Video Journalist', icon: MessageSquare, disabled: true },
   { href: '/dashboard/avatar', label: 'AI Avatar', icon: Bot, disabled: true },
