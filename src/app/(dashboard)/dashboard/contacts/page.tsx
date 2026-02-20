@@ -390,15 +390,15 @@ function ContactModal({ contact, onClose, onSave }: { contact: Contact | null; o
         <div className="space-y-4">
           <div>
             <label className="block text-sm text-white/60 mb-1.5">Full Name *</label>
-            <input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="John Doe" />
+            <input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="John Doe" />
           </div>
           <div>
             <label className="block text-sm text-white/60 mb-1.5">Relationship *</label>
-            <select value={form.relationship_type} onChange={e => setForm({ ...form, relationship_type: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50">
-              <option value="">Select...</option>
+            <select value={form.relationship_type} onChange={e => setForm({ ...form, relationship_type: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50">
+              <option value="" className="bg-gray-800">Select...</option>
               {RELATIONSHIP_OPTIONS.map(group => (
-                <optgroup key={group.category} label={group.category}>
-                  {group.options.map(opt => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
+                <optgroup key={group.category} label={group.category} className="bg-gray-800 text-white">
+                  {group.options.map(opt => <option key={opt.id} value={opt.id} className="bg-gray-800">{opt.label}</option>)}
                 </optgroup>
               ))}
             </select>
@@ -406,34 +406,34 @@ function ContactModal({ contact, onClose, onSave }: { contact: Contact | null; o
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-white/60 mb-1.5">Nickname</label>
-              <input value={form.nickname} onChange={e => setForm({ ...form, nickname: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" />
+              <input value={form.nickname} onChange={e => setForm({ ...form, nickname: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" />
             </div>
             <div>
               <label className="block text-sm text-white/60 mb-1.5">Birthday</label>
-              <input type="date" value={form.date_of_birth} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" />
+              <input type="date" value={form.date_of_birth} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-white/60 mb-1.5">Email</label>
-              <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" />
+              <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" />
             </div>
             <div>
               <label className="block text-sm text-white/60 mb-1.5">Phone</label>
-              <input type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" />
+              <input type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" />
             </div>
           </div>
           <div>
             <label className="block text-sm text-white/60 mb-1.5">Address</label>
             <div className="grid grid-cols-3 gap-3">
-              <input value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="City" />
-              <input value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="State" />
-              <input value={form.country} onChange={e => setForm({ ...form, country: e.target.value })} className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="Country" />
+              <input value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} className="px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="City" />
+              <input value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} className="px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="State" />
+              <input value={form.country} onChange={e => setForm({ ...form, country: e.target.value })} className="px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="Country" />
             </div>
           </div>
           <div>
             <label className="block text-sm text-white/60 mb-1.5">Notes</label>
-            <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none" rows={2} />
+            <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none" rows={2} />
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/10">
@@ -505,43 +505,43 @@ function PetModal({ pet, onClose, onSave }: { pet: Pet | null; onClose: () => vo
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-white/60 mb-1.5">Name *</label>
-              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" placeholder="Buddy" />
+              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" placeholder="Buddy" />
             </div>
             <div>
               <label className="block text-sm text-white/60 mb-1.5">Species *</label>
-              <select value={form.species} onChange={e => setForm({ ...form, species: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50">
-                <option value="">Select...</option>
-                {SPECIES_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              <select value={form.species} onChange={e => setForm({ ...form, species: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50">
+                <option value="" className="bg-gray-800 text-white">Select...</option>
+                {SPECIES_OPTIONS.map(s => <option key={s} value={s} className="bg-gray-800 text-white">{s}</option>)}
               </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-white/60 mb-1.5">Breed</label>
-              <input value={form.breed} onChange={e => setForm({ ...form, breed: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" placeholder="Golden Retriever" />
+              <input value={form.breed} onChange={e => setForm({ ...form, breed: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" placeholder="Golden Retriever" />
             </div>
             <div>
               <label className="block text-sm text-white/60 mb-1.5">Color</label>
-              <input value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" />
+              <input value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-white/60 mb-1.5">Date of Birth</label>
-              <input type="date" value={form.date_of_birth} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" />
+              <input type="date" value={form.date_of_birth} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" />
             </div>
             <div>
               <label className="block text-sm text-white/60 mb-1.5">Adoption Date</label>
-              <input type="date" value={form.adoption_date} onChange={e => setForm({ ...form, adoption_date: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" />
+              <input type="date" value={form.adoption_date} onChange={e => setForm({ ...form, adoption_date: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" />
             </div>
           </div>
           <div>
             <label className="block text-sm text-white/60 mb-1.5">Personality</label>
-            <textarea value={form.personality} onChange={e => setForm({ ...form, personality: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50 resize-none" rows={2} placeholder="Playful, loves belly rubs..." />
+            <textarea value={form.personality} onChange={e => setForm({ ...form, personality: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50 resize-none" rows={2} placeholder="Playful, loves belly rubs..." />
           </div>
           <div>
             <label className="block text-sm text-white/60 mb-1.5">Medical Notes</label>
-            <textarea value={form.medical_notes} onChange={e => setForm({ ...form, medical_notes: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50 resize-none" rows={2} />
+            <textarea value={form.medical_notes} onChange={e => setForm({ ...form, medical_notes: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50 resize-none" rows={2} />
           </div>
           <div className="p-4 bg-white/5 rounded-xl">
             <label className="flex items-center gap-3 cursor-pointer">
@@ -551,7 +551,7 @@ function PetModal({ pet, onClose, onSave }: { pet: Pet | null; onClose: () => vo
             {form.is_deceased && (
               <div className="mt-3">
                 <label className="block text-sm text-white/60 mb-1.5">Date of Passing</label>
-                <input type="date" value={form.date_of_passing} onChange={e => setForm({ ...form, date_of_passing: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" />
+                <input type="date" value={form.date_of_passing} onChange={e => setForm({ ...form, date_of_passing: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" />
               </div>
             )}
           </div>
