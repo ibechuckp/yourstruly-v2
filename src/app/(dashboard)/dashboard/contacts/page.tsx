@@ -191,7 +191,8 @@ export default function ContactsPage() {
             {contacts.map(contact => (
               <div 
                 key={contact.id} 
-                className="bg-gray-900/90 rounded-2xl p-5 border border-white/10 hover:bg-white/15 hover:border-amber-500/30 transition-all group"
+                className="bg-gray-900/90 rounded-2xl p-5 border border-white/10 hover:bg-white/15 hover:border-amber-500/30 transition-all group cursor-pointer"
+                onClick={() => window.location.href = `/dashboard/contacts/${contact.id}`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -203,7 +204,7 @@ export default function ContactsPage() {
                       <p className="text-amber-400 text-sm">{getRelationshipLabel(contact.relationship_type)}</p>
                     </div>
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => { setEditingContact(contact); setShowContactModal(true) }} className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-lg">
                       <Edit2 size={14} />
                     </button>
