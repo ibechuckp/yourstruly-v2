@@ -80,7 +80,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
       // Smart album - query based on criteria
       let memoriesQuery = supabase
         .from('memories')
-        .select(`*, memory_media(id, file_url, file_type, is_cover)`)
+        .select(`*`)
         .eq('user_id', user.id)
 
       const criteria = albumData.smart_criteria
@@ -109,7 +109,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
       if (memoryIds.length > 0) {
         const { data: memoriesData } = await supabase
           .from('memories')
-          .select(`*, memory_media(id, file_url, file_type, is_cover)`)
+          .select(`*`)
           .in('id', memoryIds)
           .order('memory_date', { ascending: false })
         
@@ -137,7 +137,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
     // Load all memories not in this album
     const { data } = await supabase
       .from('memories')
-      .select(`*, memory_media(id, file_url, file_type, is_cover)`)
+      .select(`*`)
       .eq('user_id', user.id)
       .order('memory_date', { ascending: false })
 

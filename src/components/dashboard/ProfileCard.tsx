@@ -1,8 +1,18 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { Calendar, Plus, Pencil, Camera } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Calendar, Plus, Pencil, Camera, Image, Users, Mail, FolderOpen, Mic } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { getCache, setCache, CACHE_KEYS } from '@/lib/cache'
+import Link from 'next/link'
+
+interface Stats {
+  memories: number
+  contacts: number
+  postscripts: number
+  albums: number
+  interviews: number
+}
 
 interface Profile {
   id: string
@@ -17,14 +27,54 @@ interface Profile {
 interface ProfileCardProps {
   profile: Profile | null
   onUpdate: (field: string, value: string) => void
+  compact?: boolean
 }
 
-export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
+export default function ProfileCard({ profile, onUpdate, compact = false }: ProfileCardProps) {
   const [editingField, setEditingField] = useState<string | null>(null)
   const [tempValue, setTempValue] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [stats, setStats] = useState<Stats>(() => getCache<Stats>(CACHE_KEYS.STATS) || { memories: 0, contacts: 0, postscripts: 0, albums: 0, interviews: 0 })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
+
+  // Load stats (with cache)
+  useEffect(() => {
+    const cachedStats = getCache<Stats>(CACHE_KEYS.STATS)
+    if (cachedStats) return // Use cached data
+    
+    const loadStats = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const [mem, con, ps, alb, int] = await Promise.all([
+        supabase.from('memories').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('contacts').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('postscripts').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('memory_albums').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('interview_sessions').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+      ])
+
+      const newStats = {
+        memories: mem.count || 0,
+        contacts: con.count || 0,
+        postscripts: ps.count || 0,
+        albums: alb.count || 0,
+        interviews: int.count || 0,
+      }
+      setStats(newStats)
+      setCache(CACHE_KEYS.STATS, newStats)
+    }
+    loadStats()
+  }, [])
+
+  const statItems = [
+    { label: 'Memories', count: stats.memories, icon: Image, href: '/dashboard/memories', color: 'text-blue-400' },
+    { label: 'Contacts', count: stats.contacts, icon: Users, href: '/dashboard/contacts', color: 'text-green-400' },
+    { label: 'PostScripts', count: stats.postscripts, icon: Mail, href: '/dashboard/postscripts', color: 'text-purple-400' },
+    { label: 'Albums', count: stats.albums, icon: FolderOpen, href: '/dashboard/albums', color: 'text-amber-400' },
+    { label: 'Interviews', count: stats.interviews, icon: Mic, href: '/dashboard/journalist', color: 'text-pink-400' },
+  ]
 
   const startEdit = (field: string, value: string) => {
     setEditingField(field)
@@ -231,6 +281,23 @@ export default function ProfileCard({ profile, onUpdate }: ProfileCardProps) {
             )}
           </p>
         )}
+      </div>
+
+      {/* Life Data Stats - Compact Row */}
+      <div className="mt-4 pt-4 border-t border-white/10">
+        <div className="flex justify-between items-center">
+          {statItems.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-white/5 transition-colors group"
+              title={item.label}
+            >
+              <item.icon size={16} className={`${item.color} group-hover:scale-110 transition-transform`} />
+              <span className="text-white font-semibold text-sm">{item.count}</span>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Date Edit Modal */}

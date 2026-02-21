@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Users, Plus, X, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { getCache, setCache, invalidateCache, CACHE_KEYS } from '@/lib/cache'
 import Modal from '@/components/ui/Modal'
 
 interface Contact {
@@ -22,29 +23,41 @@ const RELATIONSHIP_OPTIONS = [
 ]
 
 export default function ContactsWidget() {
-  const [contacts, setContacts] = useState<Contact[]>([])
-  const [count, setCount] = useState(0)
+  const [contacts, setContacts] = useState<Contact[]>(() => getCache<Contact[]>(CACHE_KEYS.CONTACTS) || [])
+  const [count, setCount] = useState(() => getCache<number>(CACHE_KEYS.CONTACTS_COUNT) || 0)
   const [showModal, setShowModal] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
   const [newContact, setNewContact] = useState({ full_name: '', relationship_type: '', email: '', phone: '' })
   const supabase = createClient()
 
   useEffect(() => {
-    loadContacts()
+    // Only fetch if cache is empty
+    const cachedContacts = getCache<Contact[]>(CACHE_KEYS.CONTACTS)
+    if (!cachedContacts) {
+      loadContacts()
+    }
   }, [])
 
   const loadContacts = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data, count } = await supabase
+    const { data, count: fetchedCount } = await supabase
       .from('contacts')
       .select('*', { count: 'exact' })
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
-    setContacts(data || [])
-    setCount(count || 0)
+    const contactsList = data || []
+    const contactsCount = fetchedCount || 0
+    
+    // Update state
+    setContacts(contactsList)
+    setCount(contactsCount)
+    
+    // Update cache
+    setCache(CACHE_KEYS.CONTACTS, contactsList)
+    setCache(CACHE_KEYS.CONTACTS_COUNT, contactsCount)
   }
 
   const addContact = async () => {
@@ -68,11 +81,19 @@ export default function ContactsWidget() {
 
     setNewContact({ full_name: '', relationship_type: '', email: '', phone: '' })
     setShowAddForm(false)
+    
+    // Invalidate cache and reload
+    invalidateCache(CACHE_KEYS.CONTACTS)
+    invalidateCache(CACHE_KEYS.CONTACTS_COUNT)
     loadContacts()
   }
 
   const deleteContact = async (id: string) => {
     await supabase.from('contacts').delete().eq('id', id)
+    
+    // Invalidate cache and reload
+    invalidateCache(CACHE_KEYS.CONTACTS)
+    invalidateCache(CACHE_KEYS.CONTACTS_COUNT)
     loadContacts()
   }
 

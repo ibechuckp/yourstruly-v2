@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { ChevronLeft, User, Bell, Shield, Download, Trash2, LogOut } from 'lucide-react'
+import { ChevronLeft, User, Bell, Shield, Download, Trash2, LogOut, Sparkles, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -23,6 +23,8 @@ export default function SettingsPage() {
   const [email, setEmail] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [generatingEmbeddings, setGeneratingEmbeddings] = useState(false)
+  const [embeddingStats, setEmbeddingStats] = useState<{ processed: number; errors: number } | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -79,6 +81,34 @@ export default function SettingsPage() {
     alert('Account deletion requested. Please contact support to complete this process.')
   }
 
+  const handleGenerateEmbeddings = async () => {
+    setGeneratingEmbeddings(true)
+    setEmbeddingStats(null)
+    setMessage('Generating AI embeddings for your content...')
+
+    try {
+      const res = await fetch('/api/embeddings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}), // Process all types
+      })
+
+      const data = await res.json()
+
+      if (data.error) {
+        setMessage(`Error: ${data.error}`)
+      } else {
+        setEmbeddingStats(data)
+        setMessage(`AI indexing complete! Processed ${data.processed} items.`)
+      }
+    } catch (error) {
+      setMessage('Failed to generate embeddings. Check your OpenAI API key.')
+    } finally {
+      setGeneratingEmbeddings(false)
+      setTimeout(() => setMessage(''), 5000)
+    }
+  }
+
   const handleExportData = async () => {
     setMessage('Preparing export...')
     
@@ -88,7 +118,7 @@ export default function SettingsPage() {
     // Fetch all user data
     const [profileRes, memoriesRes, contactsRes] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', user.id).single(),
-      supabase.from('memories').select('*, memory_media(*)').eq('user_id', user.id),
+      supabase.from('memories').select('*').eq('user_id', user.id),
       supabase.from('contacts').select('*').eq('user_id', user.id),
     ])
 
@@ -249,6 +279,47 @@ export default function SettingsPage() {
               <Download size={18} />
               Export All Data
             </button>
+          </div>
+        </section>
+
+        {/* AI Features Section */}
+        <section className="bg-gray-900/90 rounded-2xl p-6 border border-white/10">
+          <div className="flex items-center gap-3 mb-4">
+            <Sparkles size={20} className="text-amber-500" />
+            <h2 className="text-lg font-semibold text-white">AI Features</h2>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <p className="text-white mb-1">AI-Powered Search</p>
+              <p className="text-sm text-white/50 mb-3">
+                Generate AI embeddings to enable semantic search across all your memories, contacts, and life data. 
+                This allows the AI assistant to understand and recall your content naturally.
+              </p>
+              <button
+                onClick={handleGenerateEmbeddings}
+                disabled={generatingEmbeddings}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
+              >
+                {generatingEmbeddings ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={16} />
+                    Index My Content for AI
+                  </>
+                )}
+              </button>
+              {embeddingStats && (
+                <p className="text-sm text-green-400 mt-2">
+                  ✓ Indexed {embeddingStats.processed} items
+                  {embeddingStats.errors > 0 && ` (${embeddingStats.errors} errors)`}
+                </p>
+              )}
+            </div>
           </div>
         </section>
 

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Sidebar from '@/components/Sidebar'
+import TopNav from '@/components/TopNav'
 import DashboardShell from '@/components/DashboardShell'
 
 export default async function DashboardLayout({
@@ -23,7 +23,7 @@ export default async function DashboardLayout({
     .single()
 
   return (
-    <div className="min-h-screen w-full relative overflow-x-hidden">
+    <div className="h-screen w-screen relative overflow-hidden">
       {/* Scenic Background - persists across all pages */}
       <div 
         className="fixed inset-0 w-full h-full bg-cover bg-center pointer-events-none"
@@ -36,7 +36,7 @@ export default async function DashboardLayout({
         className="fixed inset-0 w-full h-full bg-gradient-to-b from-black/30 via-transparent to-black/50 pointer-events-none"
       />
       
-      <Sidebar user={user} profile={profile} />
+      <TopNav user={user} profile={profile} />
       <DashboardShell>
         {children}
       </DashboardShell>

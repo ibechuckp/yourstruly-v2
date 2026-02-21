@@ -2,18 +2,19 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { Mic, Send, Sparkles, X, Loader2, ChevronUp, ChevronDown } from 'lucide-react'
+import { Mic, Send, Sparkles, X, Loader2, ChevronUp, ChevronDown, Brain } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
+  sources?: { type: string; id: string; title: string }[]
 }
 
 const QUICK_PROMPTS = [
-  'Add a memory',
-  'My contacts',
-  'PostScripts',
-  'Life summary',
+  "What's my life story so far?",
+  'Tell me about my family',
+  'My happiest memories',
+  'Who are my closest friends?',
 ]
 
 export default function CommandBar() {
@@ -62,13 +63,13 @@ export default function CommandBar() {
     setIsExpanded(true)
 
     try {
-      const res = await fetch('/api/ai/chat', {
+      // Use the new RAG-enabled chat endpoint
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: trimmedInput,
-          history: messages.slice(-10),
-          currentPage: pathname,
+          sessionId: undefined, // Could persist across sessions
         }),
       })
 
@@ -80,14 +81,11 @@ export default function CommandBar() {
           content: `I ran into an issue: ${data.error}` 
         }])
       } else {
-        if (data.response) {
-          setMessages(prev => [...prev, { role: 'assistant', content: data.response }])
-        }
-
-        // Handle navigation actions silently
-        if (data.action?.action === 'navigate' && data.action.path) {
-          setTimeout(() => router.push(data.action.path), 500)
-        }
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: data.message,
+          sources: data.sources,
+        }])
       }
     } catch (error) {
       setMessages(prev => [...prev, { 
@@ -141,7 +139,7 @@ export default function CommandBar() {
     <>
       {/* Expanded Chat Panel - Fixed position overlay */}
       {isExpanded && (
-        <div className="fixed bottom-20 left-56 right-0 z-40">
+        <div className="fixed bottom-20 left-0 right-0 z-40">
           <div className="max-w-2xl mx-auto px-4">
             <div className="bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
               {/* Chat Header */}
@@ -200,6 +198,22 @@ export default function CommandBar() {
                         }`}
                       >
                         <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                        {/* Show sources for assistant messages */}
+                        {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-white/10">
+                            <p className="text-xs text-white/40 mb-1">Based on:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {msg.sources.slice(0, 3).map((source, j) => (
+                                <span 
+                                  key={j}
+                                  className="px-2 py-0.5 bg-white/5 rounded text-xs text-white/50"
+                                >
+                                  {source.type === 'memory' ? '📸' : source.type === 'contact' ? '👤' : source.type === 'pet' ? '🐾' : '📝'} {source.title}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))
@@ -221,8 +235,8 @@ export default function CommandBar() {
         </div>
       )}
 
-      {/* Input Bar - Fixed at bottom */}
-      <div className="fixed bottom-0 left-56 right-0 z-50 p-4 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
+      {/* Input Bar - Fixed at bottom, centered */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
         <div className="max-w-2xl mx-auto pointer-events-auto">
           <div className="flex items-center gap-3 px-4 py-3 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg">
             <button 

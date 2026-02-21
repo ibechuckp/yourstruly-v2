@@ -56,3 +56,12 @@ html, body {
 .zoom-in-95 {
   animation-name: zoom-in-95;
 }
+
+/* Hide scrollbar but allow scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

@@ -18,7 +18,7 @@ interface Memory {
   is_favorite: boolean
   shared_with_count?: number
   comment_count?: number
-  memory_media: {
+  memory_media?: {
     id: string
     file_url: string
     file_type: string

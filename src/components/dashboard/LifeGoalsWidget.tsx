@@ -38,7 +38,7 @@ export default function LifeGoalsWidget({ goals, onUpdate }: LifeGoalsWidgetProp
   return (
     <>
       <div 
-        className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 backdrop-blur-md rounded-2xl border border-amber-500/30 p-4 cursor-pointer transition-all duration-300"
+        className="bg-gray-900/90 rounded-2xl border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-all duration-300"
         onClick={() => setShowModal(true)}
       >
         <div className="flex items-center justify-between mb-2">

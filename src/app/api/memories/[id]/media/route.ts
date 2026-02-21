@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { analyzeImage } from '@/lib/aws/rekognition'
+import { detectFaces, getDominantExpression } from '@/lib/ai/faceDetection'
 
 // POST /api/memories/[id]/media - Upload media to memory
 export async function POST(
@@ -64,48 +64,34 @@ export async function POST(
     .from('memories')
     .getPublicUrl(fileName)
 
-  // Run AI analysis for images
-  let aiData = {
-    ai_labels: [],
-    ai_faces: [],
-    ai_text: [],
-    ai_processed: false,
-  }
+  // Run face detection for images (open source)
+  let detectedFaces: Array<{
+    boundingBox: { x: number; y: number; width: number; height: number }
+    confidence: number
+    embedding: number[]
+    age?: number
+    gender?: string
+    expression?: string
+  }> = []
 
   if (fileType === 'image') {
     try {
-      const analysis = await analyzeImage(buffer)
-      
-      aiData = {
-        ai_labels: analysis.labels as any,
-        ai_faces: analysis.faces as any,
-        ai_text: analysis.text as any,
-        ai_processed: true,
-      }
-
-      // Update memory with AI insights if this is the first media
-      const { data: existingMedia } = await supabase
-        .from('memory_media')
-        .select('id')
-        .eq('memory_id', memoryId)
-        .limit(1)
-
-      if (!existingMedia?.length) {
-        await supabase
-          .from('memories')
-          .update({
-            ai_summary: analysis.summary.description,
-            ai_mood: analysis.summary.mood,
-            ai_category: analysis.summary.category,
-            ai_labels: analysis.summary.dominantLabels,
-          })
-          .eq('id', memoryId)
-      }
+      const faces = await detectFaces(buffer)
+      detectedFaces = faces.map(f => ({
+        boundingBox: f.boundingBox,
+        confidence: f.confidence,
+        embedding: f.embedding,
+        age: f.age,
+        gender: f.gender,
+        expression: f.expressions ? getDominantExpression(f.expressions) : undefined,
+      }))
     } catch (e) {
-      console.error('AI analysis failed:', e)
-      // Continue without AI data
+      console.error('Face detection failed:', e)
+      // Continue without face data
     }
   }
+
+  // No XP for photo upload - only backstory earns XP
 
   // Get image dimensions (for images)
   let width = null
@@ -145,7 +131,14 @@ export async function POST(
       width,
       height,
       is_cover: isCover,
-      ...aiData,
+      ai_faces: detectedFaces.map(f => ({
+        boundingBox: f.boundingBox,
+        confidence: f.confidence,
+        age: f.age,
+        gender: f.gender,
+        expression: f.expression,
+      })),
+      ai_processed: detectedFaces.length > 0,
     })
     .select()
     .single()
@@ -155,13 +148,35 @@ export async function POST(
     return NextResponse.json({ error: 'Failed to save media' }, { status: 500 })
   }
 
+  // Store face embeddings for recognition (if faces detected)
+  if (detectedFaces.length > 0) {
+    const faceRecords = detectedFaces.map((face) => ({
+      media_id: media.id,
+      user_id: user.id,
+      box_left: face.boundingBox.x,
+      box_top: face.boundingBox.y,
+      box_width: face.boundingBox.width,
+      box_height: face.boundingBox.height,
+      confidence: Math.round(face.confidence * 100),
+      face_embedding: face.embedding,
+      age: face.age,
+      gender: face.gender,
+      expression: face.expression,
+      is_auto_detected: true,
+      is_confirmed: false,
+    }))
+
+    await supabase.from('memory_face_tags').insert(faceRecords)
+  }
+
   return NextResponse.json({ 
     media,
-    analysis: aiData.ai_processed ? {
-      labels: aiData.ai_labels,
-      faces: aiData.ai_faces,
-      text: aiData.ai_text,
-    } : null,
+    faces: detectedFaces.map(f => ({
+      boundingBox: f.boundingBox,
+      age: f.age,
+      gender: f.gender,
+      expression: f.expression,
+    })),
   })
 }
 

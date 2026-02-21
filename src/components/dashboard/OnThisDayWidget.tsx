@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getCache, setCache, CACHE_KEYS } from '@/lib/cache'
 import { Calendar, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 
@@ -17,13 +18,16 @@ interface Memory {
 }
 
 export default function OnThisDayWidget() {
-  const [memories, setMemories] = useState<Memory[]>([])
-  const [loading, setLoading] = useState(true)
+  const [memories, setMemories] = useState<Memory[]>(() => getCache<Memory[]>(CACHE_KEYS.ON_THIS_DAY) || [])
+  const [loading, setLoading] = useState(() => !getCache<Memory[]>(CACHE_KEYS.ON_THIS_DAY))
   const [currentIndex, setCurrentIndex] = useState(0)
   const supabase = createClient()
 
   useEffect(() => {
-    loadOnThisDay()
+    // Only fetch if no cache
+    if (!getCache<Memory[]>(CACHE_KEYS.ON_THIS_DAY)) {
+      loadOnThisDay()
+    }
   }, [])
 
   const loadOnThisDay = async () => {
@@ -34,18 +38,32 @@ export default function OnThisDayWidget() {
     const month = String(today.getMonth() + 1).padStart(2, '0')
     const day = String(today.getDate()).padStart(2, '0')
 
-    // Find memories from this day in any year
-    const { data } = await supabase
+    // Fetch all user memories and filter client-side for "on this day"
+    // (Supabase JS client doesn't support date::text casting for LIKE)
+    const { data, error } = await supabase
       .from('memories')
-      .select(`
-        id, title, memory_date, location_name,
-        memory_media (file_url, is_cover)
-      `)
+      .select('id, title, memory_date, location_name')
       .eq('user_id', user.id)
-      .like('memory_date', `%-${month}-${day}`)
       .order('memory_date', { ascending: false })
 
-    setMemories(data || [])
+    if (error) {
+      console.error('OnThisDay error:', error)
+      setLoading(false)
+      return
+    }
+
+    // Filter client-side for memories on this day in any year
+    const pattern = `-${month}-${day}`
+    const filtered = (data || []).filter(m => m.memory_date?.includes(pattern))
+
+    // Map to include empty media array (we're not using photos in this widget for now)
+    const memoriesWithMedia = filtered.map(m => ({
+      ...m,
+      memory_media: []
+    }))
+
+    setMemories(memoriesWithMedia)
+    setCache(CACHE_KEYS.ON_THIS_DAY, memoriesWithMedia)
     setLoading(false)
   }
 

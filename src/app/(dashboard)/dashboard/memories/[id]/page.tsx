@@ -1,13 +1,16 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import React, { useState, useEffect, use, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { 
   ChevronLeft, Heart, MapPin, Calendar, Sparkles, 
-  Tag, Trash2, Edit2, X, Plus, User, Check, Image as ImageIcon
+  Trash2, Edit2, X, Plus, Image as ImageIcon, Upload, Zap
 } from 'lucide-react'
 import Link from 'next/link'
 import Modal from '@/components/ui/Modal'
+import FaceTagger from '@/components/media/FaceTagger'
+import CaptionEditor from '@/components/media/CaptionEditor'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface Memory {
   id: string
@@ -16,8 +19,6 @@ interface Memory {
   memory_date: string
   memory_type: string
   location_name: string
-  location_lat: number
-  location_lng: number
   ai_summary: string
   ai_mood: string
   ai_category: string
@@ -33,55 +34,72 @@ interface Media {
   mime_type: string
   width: number
   height: number
-  ai_labels: any[]
-  ai_faces: any[]
   is_cover: boolean
 }
 
-interface FaceTag {
-  id: string
-  media_id: string
-  contact_id: string
-  box_left: number
-  box_top: number
-  box_width: number
-  box_height: number
-  is_confirmed: boolean
-  contact?: {
-    id: string
-    full_name: string
-  }
-}
+// Toast Component (for XP and info messages)
+function Toast({ amount, message, onComplete }: { amount?: number; message?: string; onComplete?: () => void }) {
+  useEffect(() => {
+    const timer = setTimeout(() => onComplete?.(), 2500)
+    return () => clearTimeout(timer)
+  }, [onComplete])
 
-interface Contact {
-  id: string
-  full_name: string
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -20, scale: 0.9 }}
+      className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50"
+    >
+      <div className="flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-amber-600 to-orange-600 rounded-full shadow-lg shadow-amber-500/30">
+        {amount && amount > 0 && (
+          <>
+            <motion.div animate={{ rotate: [0, -10, 10, -10, 10, 0] }} transition={{ duration: 0.5, delay: 0.2 }}>
+              <Zap size={20} className="text-white fill-white" />
+            </motion.div>
+            <span className="text-white font-bold text-lg">+{amount} XP</span>
+          </>
+        )}
+        {message && <span className="text-white/80 text-sm">{message}</span>}
+      </div>
+    </motion.div>
+  )
 }
 
 export default function MemoryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [memory, setMemory] = useState<Memory | null>(null)
   const [media, setMedia] = useState<Media[]>([])
-  const [faceTags, setFaceTags] = useState<FaceTag[]>([])
-  const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedMedia, setSelectedMedia] = useState<Media | null>(null)
-  const [showTagModal, setShowTagModal] = useState(false)
-  const [taggingFace, setTaggingFace] = useState<any>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({ title: '', description: '', memory_date: '', location_name: '' })
+  const [uploading, setUploading] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deletingMediaId, setDeletingMediaId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'faces' | 'caption'>('faces')
+  const [xpToasts, setXpToasts] = useState<Array<{ id: number; amount?: number; message?: string }>>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const toastIdRef = useRef(0)
   
   const supabase = createClient()
 
+  const showXP = (amount?: number, message?: string) => {
+    const id = toastIdRef.current++
+    setXpToasts(prev => [...prev, { id, amount, message }])
+  }
+
+  const removeToast = (id: number) => {
+    setXpToasts(prev => prev.filter(t => t.id !== id))
+  }
+
   useEffect(() => {
     loadMemory()
-    loadContacts()
   }, [id])
 
   const loadMemory = async () => {
     setLoading(true)
     
-    // Load memory
     const { data: memoryData } = await supabase
       .from('memories')
       .select('*')
@@ -98,54 +116,18 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
       })
     }
 
-    // Load media
     const { data: mediaData } = await supabase
       .from('memory_media')
       .select('*')
       .eq('memory_id', id)
       .order('sort_order')
 
-    console.log('Loaded media:', mediaData) // Debug log
     setMedia(mediaData || [])
     if (mediaData?.length) {
       setSelectedMedia(mediaData.find(m => m.is_cover) || mediaData[0])
     }
 
-    // Load face tags
-    const { data: tagData } = await supabase
-      .from('memory_face_tags')
-      .select('*, contact:contacts(id, full_name)')
-      .eq('media_id', mediaData?.[0]?.id || '')
-
-    setFaceTags(tagData || [])
     setLoading(false)
-  }
-
-  const loadContacts = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { data } = await supabase
-      .from('contacts')
-      .select('id, full_name')
-      .eq('user_id', user.id)
-      .order('full_name')
-
-    setContacts(data || [])
-  }
-
-  const loadFaceTags = async (mediaId: string) => {
-    const { data } = await supabase
-      .from('memory_face_tags')
-      .select('*, contact:contacts(id, full_name)')
-      .eq('media_id', mediaId)
-
-    setFaceTags(data || [])
-  }
-
-  const handleSelectMedia = (m: Media) => {
-    setSelectedMedia(m)
-    loadFaceTags(m.id)
   }
 
   const toggleFavorite = async () => {
@@ -175,38 +157,9 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
-  const handleTagFace = async (contactId: string) => {
-    if (!selectedMedia || !taggingFace) return
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    await supabase.from('memory_face_tags').insert({
-      media_id: selectedMedia.id,
-      user_id: user.id,
-      contact_id: contactId,
-      box_left: taggingFace.boundingBox.left,
-      box_top: taggingFace.boundingBox.top,
-      box_width: taggingFace.boundingBox.width,
-      box_height: taggingFace.boundingBox.height,
-      is_auto_detected: true,
-      is_confirmed: true,
-    })
-
-    setShowTagModal(false)
-    setTaggingFace(null)
-    loadFaceTags(selectedMedia.id)
-  }
-
-  const handleDeleteTag = async (tagId: string) => {
-    await supabase.from('memory_face_tags').delete().eq('id', tagId)
-    if (selectedMedia) loadFaceTags(selectedMedia.id)
-  }
-
   const handleDelete = async () => {
     if (!confirm('Delete this memory? This cannot be undone.')) return
 
-    // Delete media files from storage
     for (const m of media) {
       const key = m.file_url.split('/memories/')[1]
       if (key) {
@@ -214,19 +167,89 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
       }
     }
 
-    // Delete memory (cascades to media and tags)
     await supabase.from('memories').delete().eq('id', id)
-
     window.location.href = '/dashboard/memories'
+  }
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0 || !memory) return
+
+    setUploading(true)
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        
+        if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) continue
+        if (file.size > 50 * 1024 * 1024) {
+          alert(`File ${file.name} is too large (max 50MB)`)
+          continue
+        }
+
+        // Use our API that handles face detection and XP
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const res = await fetch(`/api/memories/${id}/media`, {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          
+          // Show face detection results (no XP for upload)
+          if (data.faces?.length > 0) {
+            showXP(undefined, `👤 ${data.faces.length} face${data.faces.length > 1 ? 's' : ''} detected`)
+          }
+        }
+      }
+
+      // Reload media
+      await loadMemory()
+      
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleDeleteMedia = async () => {
+    if (!deletingMediaId) return
+
+    const mediaToDelete = media.find(m => m.id === deletingMediaId)
+    if (!mediaToDelete) return
+
+    const key = mediaToDelete.file_url.split('/memories/')[1]
+    if (key) {
+      await supabase.storage.from('memories').remove([key])
+    }
+
+    await supabase.from('memory_media').delete().eq('id', deletingMediaId)
+
+    const newMedia = media.filter(m => m.id !== deletingMediaId)
+    setMedia(newMedia)
+
+    if (selectedMedia?.id === deletingMediaId) {
+      setSelectedMedia(newMedia[0] || null)
+    }
+
+    if (mediaToDelete.is_cover && newMedia.length > 0) {
+      await supabase.from('memory_media').update({ is_cover: true }).eq('id', newMedia[0].id)
+      newMedia[0].is_cover = true
+    }
+
+    setShowDeleteConfirm(false)
+    setDeletingMediaId(null)
   }
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return ''
     return new Date(dateStr).toLocaleDateString('en-US', { 
-      weekday: 'long',
-      month: 'long', 
-      day: 'numeric', 
-      year: 'numeric' 
+      weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' 
     })
   }
 
@@ -253,6 +276,18 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="min-h-screen p-6">
+      {/* Toasts */}
+      <AnimatePresence>
+        {xpToasts.map(toast => (
+          <Toast
+            key={toast.id}
+            amount={toast.amount}
+            message={toast.message}
+            onComplete={() => removeToast(toast.id)}
+          />
+        ))}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="mb-6 flex items-center justify-between">
         <Link href="/dashboard/memories" className="flex items-center gap-2 px-3 py-2 bg-gray-900/90 rounded-xl text-white/70 hover:text-white transition-all border border-white/10">
@@ -284,198 +319,189 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
 
       <main className="max-w-5xl mx-auto">
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Main Image */}
-          <div className="lg:col-span-2">
+          {/* Main Image & Face Tagging */}
+          <div className="lg:col-span-2 space-y-4">
             {selectedMedia ? (
-              <div className="relative rounded-xl overflow-hidden bg-gray-900/90 border border-white/10">
-                <img
-                  src={selectedMedia.file_url}
-                  alt={memory.title || 'Memory'}
-                  className="w-full h-auto"
-                  onError={(e) => {
-                    console.error('Image load error:', selectedMedia.file_url)
-                    e.currentTarget.style.display = 'none'
-                  }}
-                />
-                
-                {/* Face boxes */}
-                {selectedMedia.ai_faces?.map((face: any, i: number) => {
-                  const tag = faceTags.find(t => 
-                    Math.abs(t.box_left - face.boundingBox.left) < 0.05 &&
-                    Math.abs(t.box_top - face.boundingBox.top) < 0.05
-                  )
-                  
-                  return (
-                    <div
-                      key={i}
-                      className="absolute border-2 border-amber-500/70 rounded cursor-pointer hover:border-amber-500 transition-colors group"
-                      style={{
-                        left: `${face.boundingBox.left * 100}%`,
-                        top: `${face.boundingBox.top * 100}%`,
-                        width: `${face.boundingBox.width * 100}%`,
-                        height: `${face.boundingBox.height * 100}%`,
-                      }}
-                      onClick={() => {
-                        if (!tag) {
-                          setTaggingFace(face)
-                          setShowTagModal(true)
-                        }
-                      }}
-                    >
-                      {tag ? (
-                        <div className="absolute -bottom-6 left-0 px-2 py-0.5 bg-amber-600 text-white text-xs rounded whitespace-nowrap">
-                          {tag.contact?.full_name}
-                        </div>
-                      ) : (
-                        <div className="absolute -bottom-6 left-0 px-2 py-0.5 bg-gray-800 text-gray-300 text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                          Click to tag
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="aspect-video rounded-xl bg-gray-900/90 border border-white/10 flex items-center justify-center">
-                <div className="text-center">
-                  <ImageIcon size={48} className="mx-auto text-white/20 mb-2" />
-                  <p className="text-white/40 text-sm">No photos uploaded</p>
-                  <p className="text-white/30 text-xs mt-1">Media: {media.length} items</p>
+              <>
+                {/* Tab buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setActiveTab('faces')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === 'faces' 
+                        ? 'bg-amber-600 text-white' 
+                        : 'bg-gray-800 text-white/50 hover:text-white'
+                    }`}
+                  >
+                    👤 Tag People
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('caption')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === 'caption' 
+                        ? 'bg-amber-600 text-white' 
+                        : 'bg-gray-800 text-white/50 hover:text-white'
+                    }`}
+                  >
+                    ✏️ Add Story
+                  </button>
                 </div>
+
+                {/* Content based on tab */}
+                {activeTab === 'faces' ? (
+                  <FaceTagger
+                    mediaId={selectedMedia.id}
+                    imageUrl={selectedMedia.file_url}
+                    onXPEarned={showXP}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    <div className="rounded-xl overflow-hidden bg-black">
+                      <img src={selectedMedia.file_url} alt="" className="w-full" />
+                    </div>
+                    <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
+                      <CaptionEditor
+                        mediaId={selectedMedia.id}
+                        onXPEarned={showXP}
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="aspect-video flex flex-col items-center justify-center bg-gray-900/90 rounded-xl border border-white/10">
+                <ImageIcon size={48} className="text-white/30 mb-4" />
+                <p className="text-white/50 mb-4">No photos yet</p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg"
+                >
+                  <Upload size={18} />
+                  Upload Photos
+                </button>
               </div>
             )}
 
-            {/* Thumbnail Strip */}
-            {media.length > 1 && (
-              <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
-                {media.map((m) => (
+            {/* Media thumbnails */}
+            {media.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {media.map(m => (
                   <button
                     key={m.id}
-                    onClick={() => handleSelectMedia(m)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${
-                      selectedMedia?.id === m.id ? 'border-amber-500' : 'border-white/10 hover:border-white/30'
+                    onClick={() => setSelectedMedia(m)}
+                    className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                      selectedMedia?.id === m.id ? 'border-amber-500' : 'border-transparent hover:border-white/30'
                     }`}
                   >
                     <img src={m.file_url} alt="" className="w-full h-full object-cover" />
+                    {m.is_cover && (
+                      <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-amber-600 rounded-full flex items-center justify-center">
+                        <Sparkles size={10} className="text-white" />
+                      </div>
+                    )}
                   </button>
                 ))}
+                
+                {/* Add more photos button */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="flex-shrink-0 w-16 h-16 rounded-lg border-2 border-dashed border-white/20 hover:border-amber-500 flex items-center justify-center transition-colors"
+                >
+                  {uploading ? (
+                    <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Plus size={20} className="text-white/50" />
+                  )}
+                </button>
               </div>
             )}
+
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              onChange={handlePhotoUpload}
+              className="hidden"
+            />
           </div>
 
-          {/* Details Sidebar */}
+          {/* Sidebar - Memory Details */}
           <div className="space-y-4">
             {/* Title & Description */}
-            <div className="bg-gray-900/90 rounded-xl p-5 border border-white/10">
-              <h1 className="text-xl font-semibold text-white mb-2">
+            <div className="bg-gray-900/90 rounded-xl p-4 border border-white/10">
+              <h1 className="text-xl font-bold text-white mb-2">
                 {memory.title || 'Untitled Memory'}
               </h1>
+              
               {memory.description && (
-                <p className="text-white/60 text-sm leading-relaxed">{memory.description}</p>
+                <p className="text-white/70 text-sm mb-4">{memory.description}</p>
               )}
-            </div>
 
-            {/* Date & Location */}
-            <div className="bg-gray-900/90 rounded-xl p-5 space-y-3 border border-white/10">
-              {memory.memory_date && (
-                <div className="flex items-center gap-3 text-white/80">
-                  <Calendar size={18} className="text-amber-500" />
-                  <span className="text-sm">{formatDate(memory.memory_date)}</span>
-                </div>
-              )}
-              {memory.location_name && (
-                <div className="flex items-center gap-3 text-white/80">
-                  <MapPin size={18} className="text-amber-500" />
-                  <span className="text-sm">{memory.location_name}</span>
-                </div>
-              )}
+              <div className="space-y-2 text-sm">
+                {memory.memory_date && (
+                  <div className="flex items-center gap-2 text-white/60">
+                    <Calendar size={14} />
+                    {formatDate(memory.memory_date)}
+                  </div>
+                )}
+                {memory.location_name && (
+                  <div className="flex items-center gap-2 text-white/60">
+                    <MapPin size={14} />
+                    {memory.location_name}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* AI Insights */}
-            {(memory.ai_summary || memory.ai_labels?.length > 0) && (
-              <div className="bg-gray-900/90 rounded-xl p-5 border border-white/10">
-                <div className="flex items-center gap-2 text-amber-500 text-sm mb-3">
+            {(memory.ai_summary || memory.ai_mood || memory.ai_category) && (
+              <div className="bg-gray-900/90 rounded-xl p-4 border border-white/10">
+                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2 mb-3">
                   <Sparkles size={14} />
                   AI Insights
-                </div>
+                </h3>
                 
                 {memory.ai_summary && (
-                  <p className="text-white/60 text-sm mb-3">{memory.ai_summary}</p>
+                  <p className="text-white/70 text-sm mb-3">{memory.ai_summary}</p>
                 )}
-
-                {memory.ai_mood && (
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-white/40 text-xs">Mood:</span>
-                    <span className="px-2 py-0.5 bg-amber-600/20 text-amber-400 text-xs rounded-full capitalize">
+                
+                <div className="flex flex-wrap gap-2">
+                  {memory.ai_mood && (
+                    <span className="px-2 py-1 bg-purple-600/30 text-purple-300 rounded-full text-xs capitalize">
                       {memory.ai_mood}
                     </span>
-                  </div>
-                )}
-
-                {memory.ai_labels?.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {memory.ai_labels.slice(0, 8).map((label, i) => (
-                      <span key={i} className="px-2 py-0.5 bg-white/10 text-white/60 text-xs rounded-full">
-                        {label}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                  )}
+                  {memory.ai_category && (
+                    <span className="px-2 py-1 bg-blue-600/30 text-blue-300 rounded-full text-xs capitalize">
+                      {memory.ai_category}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* Tagged People */}
-            {faceTags.length > 0 && (
-              <div className="bg-gray-900/90 rounded-xl p-5 border border-white/10">
-                <div className="flex items-center gap-2 text-white text-sm mb-3">
-                  <User size={14} />
-                  People in this photo
-                </div>
-                <div className="space-y-2">
-                  {faceTags.map((tag) => (
-                    <div key={tag.id} className="flex items-center justify-between">
-                      <span className="text-white/80 text-sm">{tag.contact?.full_name}</span>
-                      <button
-                        onClick={() => handleDeleteTag(tag.id)}
-                        className="text-white/30 hover:text-red-500 transition-colors"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {/* Delete selected media */}
+            {selectedMedia && (
+              <button
+                onClick={() => {
+                  setDeletingMediaId(selectedMedia.id)
+                  setShowDeleteConfirm(true)
+                }}
+                className="w-full py-2 text-red-400 hover:text-red-300 text-sm flex items-center justify-center gap-2"
+              >
+                <Trash2 size={14} />
+                Delete this photo
+              </button>
             )}
           </div>
         </div>
       </main>
 
-      {/* Tag Face Modal */}
-      <Modal isOpen={showTagModal} onClose={() => { setShowTagModal(false); setTaggingFace(null); }} title="Tag Person" maxWidth="max-w-sm" showDone={false}>
-        <p className="text-white/50 text-sm mb-4">Who is this?</p>
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {contacts.map((contact) => (
-            <button
-              key={contact.id}
-              onClick={() => handleTagFace(contact.id)}
-              className="w-full flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors border border-white/10"
-            >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 flex items-center justify-center text-white text-sm">
-                {contact.full_name.charAt(0)}
-              </div>
-              <span className="text-white text-sm">{contact.full_name}</span>
-            </button>
-          ))}
-          {contacts.length === 0 && (
-            <p className="text-white/40 text-sm text-center py-4">
-              No contacts yet. Add contacts first to tag people.
-            </p>
-          )}
-        </div>
-      </Modal>
-
       {/* Edit Modal */}
-      <Modal isOpen={isEditing} onClose={() => setIsEditing(false)} title="Edit Memory" showDone={false}>
+      <Modal isOpen={isEditing} onClose={() => setIsEditing(false)} title="Edit Memory">
         <div className="space-y-4">
           <div>
             <label className="block text-white/50 text-sm mb-1">Title</label>
@@ -483,7 +509,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
               type="text"
               value={editForm.title}
               onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
             />
           </div>
           <div>
@@ -492,7 +518,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
               value={editForm.description}
               onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
               rows={3}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none transition-all"
+              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white resize-none"
             />
           </div>
           <div>
@@ -501,7 +527,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
               type="date"
               value={editForm.memory_date}
               onChange={(e) => setEditForm({ ...editForm, memory_date: e.target.value })}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
             />
           </div>
           <div>
@@ -510,17 +536,34 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
               type="text"
               value={editForm.location_name}
               onChange={(e) => setEditForm({ ...editForm, location_name: e.target.value })}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
             />
           </div>
-          <div className="flex gap-3 pt-4 border-t border-white/10">
-            <button onClick={() => setIsEditing(false)} className="flex-1 py-3 text-white/50 hover:text-white transition-colors">
-              Cancel
-            </button>
-            <button onClick={handleSaveEdit} className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl transition-all">
-              Save Changes
-            </button>
-          </div>
+          <button
+            onClick={handleSaveEdit}
+            className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium"
+          >
+            Save Changes
+          </button>
+        </div>
+      </Modal>
+
+      {/* Delete Confirm Modal */}
+      <Modal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Delete Photo">
+        <p className="text-white/70 mb-6">Are you sure you want to delete this photo?</p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowDeleteConfirm(false)}
+            className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDeleteMedia}
+            className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+          >
+            Delete
+          </button>
         </div>
       </Modal>
     </div>

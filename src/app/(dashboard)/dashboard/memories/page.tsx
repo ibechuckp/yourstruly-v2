@@ -22,7 +22,7 @@ interface Memory {
   ai_category: string
   ai_labels: string[]
   is_favorite: boolean
-  memory_media: {
+  memory_media?: {
     id: string
     file_url: string
     file_type: string

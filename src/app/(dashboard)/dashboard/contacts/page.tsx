@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Edit2, Trash2, X, Users, ChevronLeft, Calendar, MapPin, Phone, Mail, Heart } from 'lucide-react'
+import { Plus, Edit2, Trash2, X, Users, ChevronLeft, Calendar, MapPin, Phone, Mail, Heart, Search } from 'lucide-react'
 import Link from 'next/link'
 
 // ============================================
@@ -95,7 +95,22 @@ export default function ContactsPage() {
   const [showPetModal, setShowPetModal] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [editingPet, setEditingPet] = useState<Pet | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const supabase = createClient()
+
+  // Filter contacts based on search and category
+  const filteredContacts = contacts.filter(contact => {
+    const matchesSearch = !searchQuery || 
+      contact.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contact.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contact.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    const matchesCategory = !selectedCategory || 
+      RELATIONSHIP_OPTIONS.find(g => g.category === selectedCategory)?.options.some(o => o.id === contact.relationship_type)
+    
+    return matchesSearch && matchesCategory
+  })
 
   useEffect(() => {
     loadData()
@@ -165,7 +180,7 @@ export default function ContactsPage() {
           <div className="flex items-center gap-3">
             <Users size={20} className="text-amber-400" />
             <h2 className="text-lg font-semibold text-white">People</h2>
-            <span className="text-white/40 text-sm">({contacts.length})</span>
+            <span className="text-white/40 text-sm">({filteredContacts.length} of {contacts.length})</span>
           </div>
           <button
             onClick={() => { setEditingContact(null); setShowContactModal(true) }}
@@ -174,6 +189,48 @@ export default function ContactsPage() {
             <Plus size={16} />
             Add Contact
           </button>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-5">
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-md">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+            <input
+              type="text"
+              placeholder="Search contacts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-900/90 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-amber-500/50"
+            />
+          </div>
+
+          {/* Category Filter Buttons */}
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                !selectedCategory 
+                  ? 'bg-amber-500 text-white' 
+                  : 'bg-gray-900/90 text-white/60 hover:text-white border border-white/10'
+              }`}
+            >
+              All
+            </button>
+            {RELATIONSHIP_OPTIONS.map(group => (
+              <button
+                key={group.category}
+                onClick={() => setSelectedCategory(selectedCategory === group.category ? null : group.category)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                  selectedCategory === group.category
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-gray-900/90 text-white/60 hover:text-white border border-white/10'
+                }`}
+              >
+                {group.category}
+              </button>
+            ))}
+          </div>
         </div>
 
         {contacts.length === 0 ? (
@@ -186,9 +243,19 @@ export default function ContactsPage() {
               Add Your First Contact
             </button>
           </div>
+        ) : filteredContacts.length === 0 ? (
+          <div className="bg-gray-900/90 rounded-2xl p-8 border border-white/10 text-center">
+            <p className="text-white/50 mb-2">No contacts match your search</p>
+            <button
+              onClick={() => { setSearchQuery(''); setSelectedCategory(null) }}
+              className="text-amber-400 hover:text-amber-300 text-sm"
+            >
+              Clear filters
+            </button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {contacts.map(contact => (
+            {filteredContacts.map(contact => (
               <div 
                 key={contact.id} 
                 className="bg-gray-900/90 rounded-2xl p-5 border border-white/10 hover:bg-white/15 hover:border-amber-500/30 transition-all group cursor-pointer"

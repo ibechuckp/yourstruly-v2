@@ -103,7 +103,7 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
     if (memoryIds.length > 0) {
       const { data: memoriesData } = await supabase
         .from('memories')
-        .select('id, title, memory_date, memory_media(file_url, is_cover)')
+        .select('id, title, memory_date')
         .in('id', memoryIds)
         .order('memory_date', { ascending: false })
         .limit(10)
