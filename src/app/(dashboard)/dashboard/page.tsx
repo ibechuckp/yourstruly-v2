@@ -34,11 +34,11 @@ const TYPE_CONFIG: Record<string, { icon: string; label: string; color: 'yellow'
 
 // Fixed tile positions (no reflow on expand)
 const TILE_POSITIONS = [
-  { col: 0, row: 0, rotate: -2 },
-  { col: 1, row: 0, rotate: 1.5 },
-  { col: 2, row: 0, rotate: -1 },
-  { col: 0, row: 1, rotate: 2 },
-  { col: 1, row: 1, rotate: -1.5 },
+  { col: 0, row: 0, rotate: 0 },
+  { col: 1, row: 0, rotate: 0 },
+  { col: 2, row: 0, rotate: 0 },
+  { col: 0, row: 1, rotate: 0 },
+  { col: 1, row: 1, rotate: 0 },
 ]
 
 export default function DashboardPage() {
@@ -475,7 +475,7 @@ export default function DashboardPage() {
               </motion.div>
 
               {/* Fixed-position tile grid (no reflow) */}
-              <div className="relative" style={{ width: 720, height: 420 }}>
+              <div className="relative mx-auto" style={{ width: 816, height: 468 }}>
                 <AnimatePresence>
                   {prompts.slice(0, 5).map((prompt, i) => {
                     const config = TYPE_CONFIG[prompt.type] || TYPE_CONFIG.memory_prompt
@@ -486,9 +486,9 @@ export default function DashboardPage() {
                     const isContact = isContactPrompt(prompt.type)
 
                     // Fixed position based on grid
-                    const tileWidth = 210
-                    const tileHeight = 180
-                    const gap = 20
+                    const tileWidth = 240
+                    const tileHeight = 210
+                    const gap = 24
                     const left = pos.col * (tileWidth + gap)
                     const top = pos.row * (tileHeight + gap)
 
@@ -507,12 +507,15 @@ export default function DashboardPage() {
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                         onClick={() => !isExpanded && setExpandedId(prompt.id)}
-                        className={`bubble-tile absolute cursor-pointer ${isExpanded ? 'shadow-2xl' : ''}`}
+                        draggable={false}
+                        className={`bubble-tile absolute ${isExpanded ? 'shadow-2xl' : ''}`}
                         style={{ 
                           left, 
                           top,
-                          width: isExpanded ? 320 : tileWidth,
+                          width: isExpanded ? 360 : tileWidth,
                           minHeight: isExpanded ? 'auto' : tileHeight,
+                          cursor: isExpanded ? 'default' : 'pointer',
+                          userSelect: 'none',
                         }}
                       >
                         {/* Colored accent bar */}
@@ -723,6 +726,76 @@ export default function DashboardPage() {
                                     >
                                       {uploadingPhotos ? `Uploading ${bulkPhotos.length} photos...` : `Upload ${bulkPhotos.length} Photos`}
                                     </button>
+                                  </div>
+                                ) : isContact && prompt.missingField ? (
+                                  /* Contact missing info - show specific field input */
+                                  <div className="space-y-3">
+                                    <div className="text-sm text-gray-500 mb-2">
+                                      Fill in {contactName}'s {prompt.missingField.replace(/_/g, ' ')}:
+                                    </div>
+                                    
+                                    {prompt.missingField === 'birth_date' || prompt.missingField === 'date_of_birth' ? (
+                                      <input
+                                        type="date"
+                                        value={textValue}
+                                        onChange={(e) => setTextValue(e.target.value)}
+                                        className="w-full p-3 bg-[#406A56]/5 border border-[#406A56]/10 rounded-xl text-gray-800 focus:outline-none focus:border-[#406A56]/30"
+                                      />
+                                    ) : prompt.missingField === 'phone' ? (
+                                      <input
+                                        type="tel"
+                                        value={textValue}
+                                        onChange={(e) => setTextValue(e.target.value)}
+                                        placeholder="(555) 123-4567"
+                                        className="w-full p-3 bg-[#406A56]/5 border border-[#406A56]/10 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#406A56]/30"
+                                      />
+                                    ) : prompt.missingField === 'email' ? (
+                                      <input
+                                        type="email"
+                                        value={textValue}
+                                        onChange={(e) => setTextValue(e.target.value)}
+                                        placeholder="email@example.com"
+                                        className="w-full p-3 bg-[#406A56]/5 border border-[#406A56]/10 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#406A56]/30"
+                                      />
+                                    ) : prompt.missingField === 'contact_info' ? (
+                                      <div className="space-y-2">
+                                        <input
+                                          type="tel"
+                                          value={textValue.split('|')[0] || ''}
+                                          onChange={(e) => setTextValue(e.target.value + '|' + (textValue.split('|')[1] || ''))}
+                                          placeholder="Phone (optional)"
+                                          className="w-full p-3 bg-[#406A56]/5 border border-[#406A56]/10 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#406A56]/30"
+                                        />
+                                        <input
+                                          type="email"
+                                          value={textValue.split('|')[1] || ''}
+                                          onChange={(e) => setTextValue((textValue.split('|')[0] || '') + '|' + e.target.value)}
+                                          placeholder="Email (optional)"
+                                          className="w-full p-3 bg-[#406A56]/5 border border-[#406A56]/10 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#406A56]/30"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <textarea
+                                        value={textValue}
+                                        onChange={(e) => setTextValue(e.target.value)}
+                                        placeholder={`Enter ${prompt.missingField.replace(/_/g, ' ')}...`}
+                                        rows={2}
+                                        autoFocus
+                                        className="w-full p-3 bg-[#406A56]/5 border border-[#406A56]/10 rounded-xl text-gray-800 placeholder-gray-400 resize-none focus:outline-none focus:border-[#406A56]/30"
+                                      />
+                                    )}
+                                    
+                                    <div className="flex justify-between mt-3">
+                                      <button onClick={() => { setExpandedId(null); setTextValue(''); }} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
+                                      <button
+                                        onClick={() => handleAnswer(prompt.id)}
+                                        disabled={!textValue.trim() || isSubmitting}
+                                        className="flex items-center gap-2 px-4 py-2 bg-[#406A56] hover:bg-[#4a7a64] text-white text-sm font-medium rounded-lg disabled:opacity-50"
+                                      >
+                                        <Send size={14} />
+                                        {isSubmitting ? 'Saving...' : 'Save'}
+                                      </button>
+                                    </div>
                                   </div>
                                 ) : inputMode === null ? (
                                   <div className="space-y-3">
