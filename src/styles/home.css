@@ -1,0 +1,471 @@
+/* =============================================================================
+   HOME PAGE - Modern Warm Glassmorphism Design
+   Based on Color Theory & YT Brand Guidelines
+   ============================================================================= */
+
+/* 
+ * COLOR PALETTE (Analogous Warm + Accent)
+ * Primary: Green #406A56 (trust, growth)
+ * Warm Accent: Yellow #D9C61A (energy, optimism)  
+ * Emotional: Red/Coral #C35F33 (passion, memories)
+ * Cool Balance: Blue #8DACAB (calm, depth)
+ * Wisdom: Purple #4A3552 (legacy, depth)
+ * Background: Off White #F2F1E5 (warmth, scrapbook)
+ */
+
+/* Gradient background with organic blobs */
+.home-background {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, 
+    #F2F1E5 0%, 
+    #FAF7E8 25%,
+    #FFF9E6 50%,
+    #F5EFE0 75%,
+    #F2F1E5 100%
+  );
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* Floating organic shapes for depth */
+.home-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.5;
+  animation: float 20s ease-in-out infinite;
+}
+
+.home-blob-1 {
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(135deg, #D9C61A40, #C35F3330);
+  top: -100px;
+  right: -100px;
+  animation-delay: 0s;
+}
+
+.home-blob-2 {
+  width: 300px;
+  height: 300px;
+  background: linear-gradient(135deg, #406A5640, #8DACAB30);
+  bottom: -50px;
+  left: -50px;
+  animation-delay: -5s;
+}
+
+.home-blob-3 {
+  width: 250px;
+  height: 250px;
+  background: linear-gradient(135deg, #C35F3340, #D9C61A30);
+  top: 40%;
+  left: 30%;
+  animation-delay: -10s;
+}
+
+.home-blob-4 {
+  width: 200px;
+  height: 200px;
+  background: linear-gradient(135deg, #4A355240, #8DACAB30);
+  top: 20%;
+  right: 20%;
+  animation-delay: -15s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(20px, -20px) scale(1.05); }
+  50% { transform: translate(-10px, 10px) scale(0.95); }
+  75% { transform: translate(15px, 15px) scale(1.02); }
+}
+
+/* Main content container */
+.home-content {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 80px 24px 100px;
+}
+
+/* Profile section - left aligned */
+.home-profile {
+  position: fixed;
+  top: 80px;
+  left: 24px;
+  z-index: 20;
+}
+
+/* Glass card base */
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 24px;
+  box-shadow: 
+    0 8px 32px rgba(64, 106, 86, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.glass-card-strong {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Profile card styling */
+.profile-card {
+  width: 280px;
+  padding: 24px;
+}
+
+.profile-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  border: 4px solid rgba(64, 106, 86, 0.2);
+  overflow: hidden;
+  background: linear-gradient(135deg, #D3E1DF, #F2F1E5);
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2d2d2d;
+  text-align: center;
+  margin: 0 0 4px;
+}
+
+.profile-title {
+  font-size: 14px;
+  color: #406A56;
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+.profile-stats {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 16px;
+  border-top: 1px solid rgba(64, 106, 86, 0.1);
+}
+
+.profile-stat {
+  text-align: center;
+}
+
+.profile-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #406A56;
+}
+
+.profile-stat-label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Engagement bubbles area */
+.home-bubbles {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 320px; /* Offset for profile card */
+}
+
+@media (max-width: 1024px) {
+  .home-profile {
+    position: relative;
+    top: 0;
+    left: 0;
+    margin: 0 auto 32px;
+  }
+  
+  .home-bubbles {
+    padding-left: 0;
+  }
+}
+
+/* Bubble cards - warm glassmorphism */
+.bubble-tile {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 
+    0 4px 24px rgba(64, 106, 86, 0.06),
+    0 1px 4px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.bubble-tile:hover {
+  transform: translateY(-4px) rotate(0deg) !important;
+  box-shadow: 
+    0 12px 40px rgba(64, 106, 86, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Colored accent bars */
+.bubble-accent {
+  height: 4px;
+  width: 100%;
+}
+
+.bubble-accent-yellow { background: linear-gradient(90deg, #D9C61A, #E8D84A); }
+.bubble-accent-green { background: linear-gradient(90deg, #406A56, #5A8A72); }
+.bubble-accent-red { background: linear-gradient(90deg, #C35F33, #D87A55); }
+.bubble-accent-blue { background: linear-gradient(90deg, #8DACAB, #A3C2C1); }
+.bubble-accent-purple { background: linear-gradient(90deg, #4A3552, #6A5572); }
+
+/* Bubble content */
+.bubble-content {
+  padding: 16px;
+}
+
+.bubble-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.bubble-type {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.bubble-type-yellow { color: #a39507; }
+.bubble-type-green { color: #406A56; }
+.bubble-type-red { color: #C35F33; }
+.bubble-type-blue { color: #5d8585; }
+.bubble-type-purple { color: #4A3552; }
+
+.bubble-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #3d3d3d;
+}
+
+/* XP badge */
+.bubble-xp {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bubble-xp-yellow { background: rgba(217, 198, 26, 0.15); color: #a39507; }
+.bubble-xp-green { background: rgba(64, 106, 86, 0.1); color: #406A56; }
+.bubble-xp-red { background: rgba(195, 95, 51, 0.1); color: #C35F33; }
+.bubble-xp-blue { background: rgba(141, 172, 171, 0.15); color: #5d8585; }
+.bubble-xp-purple { background: rgba(74, 53, 82, 0.1); color: #4A3552; }
+
+/* Photo preview */
+.bubble-photo {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin: 8px 0;
+}
+
+/* Contact card inside bubble */
+.bubble-contact {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(64, 106, 86, 0.05);
+  border-radius: 12px;
+  margin: 8px 0;
+}
+
+.bubble-contact-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #D3E1DF, #406A5620);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #406A56;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.bubble-contact-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.bubble-contact-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d2d2d;
+}
+
+.bubble-contact-sub {
+  font-size: 12px;
+  color: #406A56;
+}
+
+/* Tap hint */
+.bubble-hint {
+  font-size: 11px;
+  color: #999;
+  text-align: right;
+  margin-top: 8px;
+}
+
+/* Stats/refresh bar */
+.home-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.home-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border-radius: 20px;
+  font-size: 13px;
+  color: #666;
+  border: 1px solid rgba(64, 106, 86, 0.1);
+}
+
+.home-stat-pill strong {
+  color: #406A56;
+}
+
+.home-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: rgba(64, 106, 86, 0.1);
+  border: 1px solid rgba(64, 106, 86, 0.2);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #406A56;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.home-refresh-btn:hover {
+  background: #406A56;
+  color: white;
+}
+
+/* Empty state */
+.home-empty {
+  text-align: center;
+  padding: 48px;
+}
+
+.home-empty-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, rgba(64, 106, 86, 0.1), rgba(217, 198, 26, 0.1));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-empty h3 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #406A56;
+  margin: 0 0 8px;
+}
+
+.home-empty p {
+  font-size: 14px;
+  color: #888;
+  max-width: 280px;
+  margin: 0 auto 24px;
+}
+
+/* Masonry layout */
+.home-masonry {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 220px));
+  gap: 16px;
+  justify-content: center;
+  align-content: center;
+  max-width: 750px;
+}
+
+/* Staggered masonry effect */
+.home-masonry > *:nth-child(2n) { margin-top: 16px; }
+.home-masonry > *:nth-child(3n) { margin-top: 8px; }
+.home-masonry > *:nth-child(5n) { margin-top: 24px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .home-masonry {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .home-masonry > *:nth-child(2n),
+  .home-masonry > *:nth-child(3n),
+  .home-masonry > *:nth-child(5n) {
+    margin-top: 0;
+  }
+  
+  .bubble-tile {
+    transform: rotate(0deg) !important;
+  }
+}
+
+/* Loading animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(64, 106, 86, 0.05) 25%,
+    rgba(64, 106, 86, 0.1) 50%,
+    rgba(64, 106, 86, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}

@@ -4,15 +4,6 @@
 -- Description: Add templates for contact missing info prompts
 -- ============================================================================
 
--- Add target_field column if it doesn't exist
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                 WHERE table_name = 'prompt_templates' AND column_name = 'target_field') THEN
-    ALTER TABLE prompt_templates ADD COLUMN target_field TEXT;
-  END IF;
-END $$;
-
 -- ============================================================================
 -- MISSING INFO TEMPLATES - Contact Information
 -- ============================================================================
@@ -72,36 +63,7 @@ ON CONFLICT (id) DO UPDATE SET
   is_active = EXCLUDED.is_active;
 
 -- ============================================================================
--- QUICK QUESTION TEMPLATES (Yes/No style)
--- ============================================================================
-
-INSERT INTO prompt_templates (id, type, category, prompt_text, prompt_variations, priority_boost, is_active, metadata) VALUES
-
--- Family quick questions
-('quick_married_001', 'quick_question', 'family',
- 'Is {{contact_name}} married?',
- ARRAY['Does {{contact_name}} have a spouse?'],
- 5, TRUE, '{"options": ["Yes", "No", "Not sure"]}'::jsonb),
-
-('quick_kids_001', 'quick_question', 'family',
- 'Does {{contact_name}} have kids?',
- ARRAY['Is {{contact_name}} a parent?'],
- 5, TRUE, '{"options": ["Yes", "No", "Not sure"]}'::jsonb),
-
-('quick_pet_001', 'quick_question', 'family',
- 'Does {{contact_name}} have any pets?',
- ARRAY['Is {{contact_name}} a pet owner?'],
- 3, TRUE, '{"options": ["Yes", "No", "Not sure"]}'::jsonb)
-
-ON CONFLICT (id) DO UPDATE SET
-  prompt_text = EXCLUDED.prompt_text,
-  prompt_variations = EXCLUDED.prompt_variations,
-  priority_boost = EXCLUDED.priority_boost,
-  is_active = EXCLUDED.is_active,
-  metadata = EXCLUDED.metadata;
-
--- ============================================================================
--- Update generate function to handle missing templates gracefully
+-- Update generate function to include contact metadata in prompts
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION generate_engagement_prompts(
@@ -287,7 +249,7 @@ BEGIN
   FOR v_template IN 
     SELECT * FROM prompt_templates 
     WHERE is_active = TRUE
-      AND type IN ('knowledge', 'memory_prompt')  -- Only knowledge/memory prompts as fillers
+      AND type IN ('knowledge', 'memory_prompt')
       AND target_interest IS NULL
       AND target_skill IS NULL
       AND target_hobby IS NULL

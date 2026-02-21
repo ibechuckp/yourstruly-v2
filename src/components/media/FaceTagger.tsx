@@ -56,9 +56,42 @@ export default function FaceTagger({ mediaId, imageUrl, onXPEarned }: FaceTagger
   const supabase = createClient()
 
   useEffect(() => {
-    loadFaces()
+    loadFacesOrDetect()
     loadContacts()
   }, [mediaId])
+
+  const loadFacesOrDetect = async () => {
+    // First try to load existing faces
+    const res = await fetch(`/api/media/${mediaId}/faces`)
+    if (res.ok) {
+      const data = await res.json()
+      if (data.faces && data.faces.length > 0) {
+        setFaces(data.faces)
+        setLoading(false)
+        return
+      }
+    }
+    
+    // No faces found - trigger detection
+    await detectFaces()
+  }
+
+  const detectFaces = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/media/${mediaId}/detect-faces`, { method: 'POST' })
+      if (res.ok) {
+        // Now load the detected faces
+        await loadFaces()
+      } else {
+        const error = await res.json()
+        console.error('Face detection failed:', error)
+      }
+    } catch (err) {
+      console.error('Face detection error:', err)
+    }
+    setLoading(false)
+  }
 
   const loadFaces = async () => {
     const res = await fetch(`/api/media/${mediaId}/faces`)

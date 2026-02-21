@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import TopNav from '@/components/TopNav'
-import DashboardShell from '@/components/DashboardShell'
 
 export default async function DashboardLayout({
   children,
@@ -15,7 +14,7 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  // Get profile for sidebar
+  // Get profile for nav
   const { data: profile } = await supabase
     .from('profiles')
     .select('full_name, avatar_url')
@@ -23,23 +22,11 @@ export default async function DashboardLayout({
     .single()
 
   return (
-    <div className="h-screen w-screen relative overflow-hidden">
-      {/* Scenic Background - persists across all pages */}
-      <div 
-        className="fixed inset-0 w-full h-full bg-cover bg-center pointer-events-none"
-        style={{ 
-          backgroundImage: 'url(/backgrounds/sunset.jpg)',
-          filter: 'brightness(0.7)',
-        }}
-      />
-      <div 
-        className="fixed inset-0 w-full h-full bg-gradient-to-b from-black/30 via-transparent to-black/50 pointer-events-none"
-      />
-      
+    <div className="min-h-screen relative">
       <TopNav user={user} profile={profile} />
-      <DashboardShell>
+      <main className="pt-14">
         {children}
-      </DashboardShell>
+      </main>
     </div>
   )
 }

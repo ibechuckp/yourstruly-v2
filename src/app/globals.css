@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../styles/engagement.css";
+@import "../styles/home.css";
 
 :root {
   --background: #030712;
