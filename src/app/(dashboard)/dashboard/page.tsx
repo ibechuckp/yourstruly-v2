@@ -57,8 +57,11 @@ export default function DashboardPage() {
     id: string;
     type: string;
     icon: string;
+    title: string;
     photoUrl?: string;
     contactName?: string;
+    contactId?: string;
+    memoryId?: string;
   }>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const bulkInputRef = useRef<HTMLInputElement>(null)
@@ -177,12 +180,31 @@ export default function DashboardPage() {
       if (prompt) {
         const config = TYPE_CONFIG[prompt.type] || TYPE_CONFIG.memory_prompt
         const promptIndex = prompts.findIndex(p => p.id === promptId)
+        const contactName = getContactName(prompt, promptIndex)
+        
+        // Generate a meaningful title for the completed tile
+        let title = ''
+        if (contactName) {
+          title = contactName
+        } else if (prompt.type === 'photo_backstory' || prompt.type === 'tag_person') {
+          title = 'Photo memory'
+        } else if (prompt.type === 'memory_prompt') {
+          title = prompt.promptText?.substring(0, 40) || 'Memory'
+        } else if (prompt.type === 'knowledge') {
+          title = prompt.promptText?.substring(0, 40) || 'Wisdom'
+        } else {
+          title = config.label
+        }
+        
         setCompletedTiles(prev => [{
           id: prompt.id,
           type: prompt.type,
           icon: config.icon,
+          title,
           photoUrl: prompt.photoUrl,
-          contactName: getContactName(prompt, promptIndex),
+          contactName,
+          contactId: prompt.contactId,
+          memoryId: prompt.memoryId,
         }, ...prev])
       }
       
@@ -439,43 +461,56 @@ export default function DashboardPage() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-4">
-              {/* Progress Tracker */}
+            <div className="flex flex-col items-start gap-4 w-full">
+              {/* Progress Tracker - aligned left */}
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="progress-tracker"
+                className="progress-tracker ml-4"
               >
-                <span className="progress-tracker-label">✓ Done</span>
+                <span className="progress-tracker-label">Your Progress</span>
                 {completedTiles.length === 0 ? (
                   <span className="progress-tracker-empty">Answer prompts to build your progress</span>
                 ) : (
                   <AnimatePresence mode="popLayout">
-                    {completedTiles.map((tile, index) => (
-                      <motion.div
-                        key={tile.id}
-                        initial={{ scale: 0, opacity: 0, x: -20 }}
-                        animate={{ scale: 1, opacity: 1, x: 0 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 30, delay: index === 0 ? 0.1 : 0 }}
-                        className="progress-tile"
-                        title={tile.contactName || tile.type}
-                      >
-                        {tile.photoUrl ? (
-                          <img src={tile.photoUrl} alt="" />
-                        ) : tile.contactName ? (
-                          <div className="progress-tile-avatar">{tile.contactName.charAt(0).toUpperCase()}</div>
-                        ) : (
-                          <span>{tile.icon}</span>
-                        )}
-                      </motion.div>
-                    ))}
+                    {completedTiles.map((tile, index) => {
+                      // Determine navigation URL
+                      const getNavigationUrl = () => {
+                        if (tile.contactId) return `/dashboard/contacts/${tile.contactId}`
+                        if (tile.memoryId) return `/dashboard/memories/${tile.memoryId}`
+                        if (tile.type === 'knowledge') return `/dashboard/knowledge`
+                        if (tile.type === 'photo_backstory' || tile.type === 'tag_person') return `/dashboard/memories`
+                        return null
+                      }
+                      const navUrl = getNavigationUrl()
+                      
+                      return (
+                        <motion.div
+                          key={tile.id}
+                          initial={{ scale: 0, opacity: 0, x: -20 }}
+                          animate={{ scale: 1, opacity: 1, x: 0 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 30, delay: index === 0 ? 0.1 : 0 }}
+                          className={`progress-tile ${navUrl ? 'cursor-pointer hover:ring-2 hover:ring-[#406A56]/30' : ''}`}
+                          title={tile.title}
+                          onClick={() => navUrl && window.location.assign(navUrl)}
+                        >
+                          {tile.photoUrl ? (
+                            <img src={tile.photoUrl} alt={tile.title} />
+                          ) : tile.contactName ? (
+                            <div className="progress-tile-avatar">{tile.contactName.charAt(0).toUpperCase()}</div>
+                          ) : (
+                            <span>{tile.icon}</span>
+                          )}
+                        </motion.div>
+                      )
+                    })}
                   </AnimatePresence>
                 )}
               </motion.div>
 
-              {/* Fixed-position tile grid (no reflow) */}
-              <div className="relative mx-auto" style={{ width: 816, height: 468 }}>
+              {/* Fixed-position tile grid (no reflow) - centered */}
+              <div className="relative mx-auto" style={{ width: 816, height: 468, marginTop: 8 }}>
                 <AnimatePresence>
                   {prompts.slice(0, 5).map((prompt, i) => {
                     const config = TYPE_CONFIG[prompt.type] || TYPE_CONFIG.memory_prompt
