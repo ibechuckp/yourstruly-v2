@@ -60,11 +60,11 @@ export async function GET(request: NextRequest) {
         if (prompt.contact_id) {
           const { data: contact } = await supabase
             .from('contacts')
-            .select('name, photo_url')
+            .select('full_name, avatar_url')
             .eq('id', prompt.contact_id)
             .single();
-          contactName = contact?.name;
-          contactPhotoUrl = contact?.photo_url;
+          contactName = contact?.full_name;
+          contactPhotoUrl = contact?.avatar_url;
         }
 
         return {

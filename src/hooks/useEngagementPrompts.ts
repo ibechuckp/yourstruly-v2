@@ -81,7 +81,7 @@ export function useEngagementPrompts(count: number = 5): UseEngagementPromptsRet
           .select('id, full_name, avatar_url')
           .in('id', contactIds);
         
-        if (contacts) {
+        if (contacts && contacts.length > 0) {
           contactsMap = Object.fromEntries(
             contacts.map((c: any) => [c.id, { name: c.full_name, photo: c.avatar_url }])
           );

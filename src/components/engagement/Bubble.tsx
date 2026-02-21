@@ -61,8 +61,8 @@ export function Bubble({
   const isContactPrompt = prompt.type === 'quick_question' || prompt.type === 'missing_info';
   
   // For contact prompts, generate a better prompt text if we have contact name
-  const getDisplayText = () => {
-    if (isContactPrompt && prompt.contactName) {
+  const getDisplayText = (name: string | null) => {
+    if (isContactPrompt && name) {
       if (prompt.missingField) {
         // Missing info prompt - ask about specific field
         const fieldLabels: Record<string, string> = {
@@ -73,19 +73,17 @@ export function Bubble({
           relationship: 'relationship to you',
         };
         const fieldLabel = fieldLabels[prompt.missingField] || prompt.missingField;
-        return `What is ${prompt.contactName}'s ${fieldLabel}?`;
+        return `What is ${name}'s ${fieldLabel}?`;
       }
       // Generic contact update
-      return `Update ${prompt.contactName}'s information`;
+      return `Update ${name}'s information`;
     }
     // Replace template variables for other prompt types
     return prompt.promptText
-      .replace(/\{\{contact_name\}\}/g, prompt.contactName || 'this person')
+      .replace(/\{\{contact_name\}\}/g, name || 'this person')
       .replace(/\{\{suggested_location\}\}/g, '...')
       .replace(/\{\{.*?\}\}/g, '');
   };
-
-  const displayText = getDisplayText();
 
   const handleTextSubmit = useCallback(async () => {
     if (!textValue.trim()) return;
@@ -140,18 +138,26 @@ export function Bubble({
   // Get contact metadata for expanded view
   const contactMeta = prompt.metadata?.contact || {};
 
+  // Get display name with fallback
+  const getContactDisplayName = () => {
+    if (prompt.contactName) return prompt.contactName;
+    if (prompt.metadata?.contact?.name) return prompt.metadata.contact.name;
+    if (prompt.metadata?.suggested_contact_name) return prompt.metadata.suggested_contact_name;
+    return null;
+  };
+  
+  const contactDisplayName = getContactDisplayName();
+  const displayText = getDisplayText(contactDisplayName);
+
   return (
     <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.9, y: 20, rotate: rotation }}
+      initial={{ opacity: 0, scale: 0.95, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0, rotate: isExpanded ? 0 : rotation }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 25, delay: index * 0.05 }}
-      whileHover={!isExpanded ? { scale: 1.02, rotate: 0 } : undefined}
+      exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+      transition={{ type: 'spring', stiffness: 400, damping: 30, delay: index * 0.03 }}
       onClick={!isExpanded ? onClick : undefined}
       data-type={prompt.type}
       className={`bubble-card ${isExpanded ? 'expanded' : ''} ${!isExpanded ? 'cursor-pointer' : ''}`}
-      style={{ width: isExpanded ? 320 : 220 }}
     >
       {/* XP Badge */}
       {!isExpanded && (
@@ -180,17 +186,17 @@ export function Bubble({
         </div>
 
         {/* Contact card (collapsed view - always show for contact prompts) */}
-        {isContactPrompt && prompt.contactName && !isExpanded && (
+        {isContactPrompt && contactDisplayName && !isExpanded && (
           <div className="bubble-contact-card">
             <div className="bubble-contact-avatar">
               {prompt.contactPhotoUrl ? (
                 <img src={prompt.contactPhotoUrl} alt="" />
               ) : (
-                prompt.contactName.charAt(0).toUpperCase()
+                contactDisplayName.charAt(0).toUpperCase()
               )}
             </div>
             <div className="bubble-contact-info">
-              <p className="bubble-contact-name">{prompt.contactName}</p>
+              <p className="bubble-contact-name">{contactDisplayName}</p>
               <p className="bubble-contact-subtitle">
                 {prompt.missingField ? `Add ${prompt.missingField.replace('_', ' ')}` : 'Update their info'}
               </p>
@@ -199,7 +205,7 @@ export function Bubble({
         )}
 
         {/* Expanded contact info */}
-        {isContactPrompt && prompt.contactName && isExpanded && (
+        {isContactPrompt && contactDisplayName && isExpanded && (
           <div className="bubble-contact-expanded">
             {/* Large avatar header */}
             <div className="flex items-center gap-4 mb-4 pb-4 border-b border-gray-100">
@@ -207,11 +213,11 @@ export function Bubble({
                 {prompt.contactPhotoUrl ? (
                   <img src={prompt.contactPhotoUrl} alt="" className="w-full h-full rounded-full object-cover" />
                 ) : (
-                  prompt.contactName.charAt(0).toUpperCase()
+                  contactDisplayName.charAt(0).toUpperCase()
                 )}
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-800">{prompt.contactName}</h3>
+                <h3 className="text-lg font-semibold text-gray-800">{contactDisplayName}</h3>
                 <p className="text-sm text-[var(--yt-green)]">{contactMeta.relationship || 'Family member'}</p>
               </div>
             </div>

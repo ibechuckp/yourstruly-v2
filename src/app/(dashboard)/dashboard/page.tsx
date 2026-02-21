@@ -8,6 +8,7 @@ import { RefreshCw, Sparkles, X, Type, Send, SkipForward, MicOff, Mic, Camera, P
 import Link from 'next/link'
 import CommandBar from '@/components/dashboard/CommandBar'
 import '@/styles/home.css'
+import '@/styles/engagement.css'
 
 // Suggestions for interests/skills/hobbies
 const INTEREST_SUGGESTIONS = ['Travel', 'Music', 'Sports', 'Reading', 'Gaming', 'Cooking', 'Art', 'Photography', 'Fitness', 'Movies', 'Nature', 'Technology']
@@ -43,6 +44,8 @@ const TILE_POSITIONS = [
 export default function DashboardPage() {
   const [profile, setProfile] = useState<any>(null)
   const [stats, setStats] = useState({ memories: 0, contacts: 0, postscripts: 0 })
+  const [userContacts, setUserContacts] = useState<Array<{id: string; full_name: string; avatar_url?: string}>>([])
+  const [contactIndex, setContactIndex] = useState(0)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [inputMode, setInputMode] = useState<'text' | 'voice' | null>(null)
   const [textValue, setTextValue] = useState('')
@@ -50,6 +53,13 @@ export default function DashboardPage() {
   const [mediaFile, setMediaFile] = useState<File | null>(null)
   const [bulkPhotos, setBulkPhotos] = useState<File[]>([])
   const [uploadingPhotos, setUploadingPhotos] = useState(false)
+  const [completedTiles, setCompletedTiles] = useState<Array<{
+    id: string;
+    type: string;
+    icon: string;
+    photoUrl?: string;
+    contactName?: string;
+  }>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const bulkInputRef = useRef<HTMLInputElement>(null)
   
@@ -121,7 +131,21 @@ export default function DashboardPage() {
   useEffect(() => {
     loadProfile()
     loadStats()
+    loadContacts()
   }, [])
+
+  const loadContacts = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase
+      .from('contacts')
+      .select('id, full_name, avatar_url')
+      .eq('user_id', user.id)
+      .order('full_name')
+    if (data) {
+      setUserContacts(data)
+    }
+  }
 
   const loadProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -143,8 +167,25 @@ export default function DashboardPage() {
 
   const handleAnswer = async (promptId: string) => {
     if (!textValue.trim() && !mediaFile) return
+    
+    // Find the prompt to add to completed tiles
+    const prompt = prompts.find(p => p.id === promptId)
+    
     setIsSubmitting(true)
     try {
+      // Add to completed tiles before removing
+      if (prompt) {
+        const config = TYPE_CONFIG[prompt.type] || TYPE_CONFIG.memory_prompt
+        const promptIndex = prompts.findIndex(p => p.id === promptId)
+        setCompletedTiles(prev => [{
+          id: prompt.id,
+          type: prompt.type,
+          icon: config.icon,
+          photoUrl: prompt.photoUrl,
+          contactName: getContactName(prompt, promptIndex),
+        }, ...prev])
+      }
+      
       await answerPrompt(promptId, { 
         type: 'text', 
         text: textValue,
@@ -156,6 +197,10 @@ export default function DashboardPage() {
       setExpandedId(null)
     } catch (err) {
       console.error(err)
+      // Remove from completed if failed
+      if (prompt) {
+        setCompletedTiles(prev => prev.filter(t => t.id !== promptId))
+      }
     }
     setIsSubmitting(false)
   }
@@ -306,9 +351,27 @@ export default function DashboardPage() {
       .replace(/\{\{.*?\}\}/g, '')
   }
 
-  // Get contact name for display
-  const getContactName = (prompt: any) => {
-    return prompt.contactName || prompt.metadata?.contact?.name || null
+  // Get contact name for display - check all possible sources
+  const getContactName = (prompt: any, index: number = 0) => {
+    // First check prompt data
+    const fromPrompt = prompt.contactName 
+      || prompt.contact_name
+      || prompt.metadata?.contact?.name 
+      || prompt.metadata?.contact?.full_name
+      || prompt.metadata?.suggested_contact_name;
+    
+    if (fromPrompt) return fromPrompt;
+    
+    // For contact-type prompts without a name, assign one from user's contacts
+    if (isContactPrompt(prompt.type) && userContacts.length > 0) {
+      // Use a deterministic index based on prompt id to assign consistent contact
+      const contactIdx = prompt.id ? 
+        prompt.id.charCodeAt(0) % userContacts.length : 
+        index % userContacts.length;
+      return userContacts[contactIdx]?.full_name || null;
+    }
+    
+    return null;
   }
 
   return (
@@ -376,18 +439,40 @@ export default function DashboardPage() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-6">
-              {/* Stats */}
-              {engagementStats && (engagementStats.currentStreakDays > 0 || engagementStats.totalAnswered > 0) && (
-                <div className="flex gap-4">
-                  {engagementStats.currentStreakDays > 0 && (
-                    <div className="home-stat-pill">🔥 <strong>{engagementStats.currentStreakDays}</strong> day streak</div>
-                  )}
-                  {engagementStats.totalAnswered > 0 && (
-                    <div className="home-stat-pill">✅ <strong>{engagementStats.totalAnswered}</strong> answered</div>
-                  )}
-                </div>
-              )}
+            <div className="flex flex-col items-center gap-4">
+              {/* Progress Tracker */}
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="progress-tracker"
+              >
+                <span className="progress-tracker-label">✓ Done</span>
+                {completedTiles.length === 0 ? (
+                  <span className="progress-tracker-empty">Answer prompts to build your progress</span>
+                ) : (
+                  <AnimatePresence mode="popLayout">
+                    {completedTiles.map((tile, index) => (
+                      <motion.div
+                        key={tile.id}
+                        initial={{ scale: 0, opacity: 0, x: -20 }}
+                        animate={{ scale: 1, opacity: 1, x: 0 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30, delay: index === 0 ? 0.1 : 0 }}
+                        className="progress-tile"
+                        title={tile.contactName || tile.type}
+                      >
+                        {tile.photoUrl ? (
+                          <img src={tile.photoUrl} alt="" />
+                        ) : tile.contactName ? (
+                          <div className="progress-tile-avatar">{tile.contactName.charAt(0).toUpperCase()}</div>
+                        ) : (
+                          <span>{tile.icon}</span>
+                        )}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                )}
+              </motion.div>
 
               {/* Fixed-position tile grid (no reflow) */}
               <div className="relative" style={{ width: 720, height: 420 }}>
@@ -397,7 +482,7 @@ export default function DashboardPage() {
                     const isExpanded = expandedId === prompt.id
                     const pos = TILE_POSITIONS[i] || { col: i % 3, row: Math.floor(i / 3), rotate: 0 }
                     const hasPhoto = prompt.photoUrl && (prompt.type === 'photo_backstory' || prompt.type === 'tag_person')
-                    const contactName = getContactName(prompt)
+                    const contactName = getContactName(prompt, i)
                     const isContact = isContactPrompt(prompt.type)
 
                     // Fixed position based on grid
