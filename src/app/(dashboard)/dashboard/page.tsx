@@ -461,13 +461,14 @@ export default function DashboardPage() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-start gap-4 w-full">
-              {/* Progress Tracker - aligned left */}
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="progress-tracker ml-4"
-              >
+            <div className="flex flex-col items-center gap-4">
+              {/* Progress Tracker - aligned with tile grid */}
+              <div className="w-full" style={{ maxWidth: 816 }}>
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="progress-tracker"
+                >
                 <span className="progress-tracker-label">Your Progress</span>
                 {completedTiles.length === 0 ? (
                   <span className="progress-tracker-empty">Answer prompts to build your progress</span>
@@ -508,6 +509,7 @@ export default function DashboardPage() {
                   </AnimatePresence>
                 )}
               </motion.div>
+              </div>
 
               {/* Fixed-position tile grid (no reflow) - centered */}
               <div className="relative mx-auto" style={{ width: 816, height: 468, marginTop: 8 }}>
