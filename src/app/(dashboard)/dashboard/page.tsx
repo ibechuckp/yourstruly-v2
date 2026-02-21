@@ -103,15 +103,25 @@ export default function DashboardPage() {
   const supabase = createClient()
   const { prompts: rawPrompts, isLoading, shuffle, answerPrompt, skipPrompt, dismissPrompt, stats: engagementStats } = useEngagementPrompts(8) // Fetch more to filter
 
-  // Filter to ensure no duplicate prompt texts
-  const uniquePrompts = rawPrompts.reduce((acc: typeof rawPrompts, prompt) => {
-    // Check if we already have a prompt with the same text
-    const isDuplicate = acc.some(p => p.promptText === prompt.promptText)
-    if (!isDuplicate) {
-      acc.push(prompt)
+  // Filter to ensure no duplicate prompts
+  // Rules: same prompt text = duplicate, max 2 contact prompts
+  const contactTypes = ['quick_question', 'missing_info', 'tag_person']
+  const seenTexts = new Set<string>()
+  let contactCount = 0
+  
+  const uniquePrompts = rawPrompts.filter(prompt => {
+    // Skip if we've seen this exact text
+    if (seenTexts.has(prompt.promptText)) return false
+    seenTexts.add(prompt.promptText)
+    
+    // For contact prompts, limit to max 2 total
+    if (contactTypes.includes(prompt.type)) {
+      if (contactCount >= 2) return false
+      contactCount++
     }
-    return acc
-  }, [])
+    
+    return true
+  })
 
   // Add special prompts (profile update, photo dump)
   const prompts = [...uniquePrompts.slice(0, 5)] // Limit to 5 after filtering
