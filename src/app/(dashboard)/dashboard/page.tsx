@@ -62,7 +62,32 @@ export default function DashboardPage() {
     contactName?: string;
     contactId?: string;
     memoryId?: string;
+    knowledgeId?: string;
+    resultMemoryId?: string;
+    answeredAt: string;
   }>>([])
+  
+  // Load completed tiles from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('yt_completed_tiles')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) {
+          setCompletedTiles(parsed)
+        }
+      } catch (e) {
+        console.error('Failed to parse completed tiles:', e)
+      }
+    }
+  }, [])
+  
+  // Save completed tiles to localStorage when changed
+  useEffect(() => {
+    if (completedTiles.length > 0) {
+      localStorage.setItem('yt_completed_tiles', JSON.stringify(completedTiles))
+    }
+  }, [completedTiles])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const bulkInputRef = useRef<HTMLInputElement>(null)
   
@@ -76,10 +101,20 @@ export default function DashboardPage() {
   })
   
   const supabase = createClient()
-  const { prompts: rawPrompts, isLoading, shuffle, answerPrompt, skipPrompt, dismissPrompt, stats: engagementStats } = useEngagementPrompts(5)
+  const { prompts: rawPrompts, isLoading, shuffle, answerPrompt, skipPrompt, dismissPrompt, stats: engagementStats } = useEngagementPrompts(8) // Fetch more to filter
+
+  // Filter to ensure no duplicate prompt texts
+  const uniquePrompts = rawPrompts.reduce((acc: typeof rawPrompts, prompt) => {
+    // Check if we already have a prompt with the same text
+    const isDuplicate = acc.some(p => p.promptText === prompt.promptText)
+    if (!isDuplicate) {
+      acc.push(prompt)
+    }
+    return acc
+  }, [])
 
   // Add special prompts (profile update, photo dump)
-  const prompts = [...rawPrompts]
+  const prompts = [...uniquePrompts.slice(0, 5)] // Limit to 5 after filtering
   if (profile && rawPrompts.length > 0) {
     const rand = Math.random()
     
@@ -205,6 +240,9 @@ export default function DashboardPage() {
           contactName,
           contactId: prompt.contactId,
           memoryId: prompt.memoryId,
+          knowledgeId: prompt.metadata?.knowledgeId,
+          resultMemoryId: prompt.metadata?.resultMemoryId,
+          answeredAt: new Date().toISOString(),
         }, ...prev])
       }
       
@@ -475,15 +513,25 @@ export default function DashboardPage() {
                 ) : (
                   <AnimatePresence mode="popLayout">
                     {completedTiles.map((tile, index) => {
-                      // Determine navigation URL
-                      const getNavigationUrl = () => {
-                        if (tile.contactId) return `/dashboard/contacts/${tile.contactId}`
-                        if (tile.memoryId) return `/dashboard/memories/${tile.memoryId}`
-                        if (tile.type === 'knowledge') return `/dashboard/knowledge`
-                        if (tile.type === 'photo_backstory' || tile.type === 'tag_person') return `/dashboard/memories`
-                        return null
+                      const handleTileClick = () => {
+                        // Priority: specific item > photo modal > fallback page
+                        if (tile.resultMemoryId) {
+                          window.location.assign(`/dashboard/memories/${tile.resultMemoryId}`)
+                        } else if (tile.memoryId) {
+                          window.location.assign(`/dashboard/memories/${tile.memoryId}`)
+                        } else if (tile.contactId) {
+                          window.location.assign(`/dashboard/contacts/${tile.contactId}`)
+                        } else if (tile.knowledgeId) {
+                          window.location.assign(`/dashboard/knowledge/${tile.knowledgeId}`)
+                        } else if (tile.photoUrl) {
+                          // Open photo in new tab for now
+                          window.open(tile.photoUrl, '_blank')
+                        } else if (tile.type === 'knowledge') {
+                          window.location.assign('/dashboard/knowledge')
+                        } else if (tile.type === 'memory_prompt') {
+                          window.location.assign('/dashboard/memories')
+                        }
                       }
-                      const navUrl = getNavigationUrl()
                       
                       return (
                         <motion.div
@@ -492,9 +540,9 @@ export default function DashboardPage() {
                           animate={{ scale: 1, opacity: 1, x: 0 }}
                           exit={{ scale: 0, opacity: 0 }}
                           transition={{ type: 'spring', stiffness: 500, damping: 30, delay: index === 0 ? 0.1 : 0 }}
-                          className={`progress-tile ${navUrl ? 'cursor-pointer hover:ring-2 hover:ring-[#406A56]/30' : ''}`}
+                          className="progress-tile cursor-pointer hover:ring-2 hover:ring-[#406A56]/30"
                           title={tile.title}
-                          onClick={() => navUrl && window.location.assign(navUrl)}
+                          onClick={handleTileClick}
                         >
                           {tile.photoUrl ? (
                             <img src={tile.photoUrl} alt={tile.title} />
