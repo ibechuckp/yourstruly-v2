@@ -4,10 +4,15 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { useEngagementPrompts } from '@/hooks/useEngagementPrompts'
-import { RefreshCw, Sparkles, X, Type, Send, SkipForward, MicOff, Mic, Camera, Plus } from 'lucide-react'
+import { RefreshCw, Sparkles, X, Type, Send, SkipForward, MicOff, Mic, Camera, Plus, Upload, Image } from 'lucide-react'
 import Link from 'next/link'
 import CommandBar from '@/components/dashboard/CommandBar'
 import '@/styles/home.css'
+
+// Suggestions for interests/skills/hobbies
+const INTEREST_SUGGESTIONS = ['Travel', 'Music', 'Sports', 'Reading', 'Gaming', 'Cooking', 'Art', 'Photography', 'Fitness', 'Movies', 'Nature', 'Technology']
+const SKILL_SUGGESTIONS = ['Leadership', 'Writing', 'Public Speaking', 'Problem Solving', 'Teaching', 'Coding', 'Design', 'Marketing', 'Negotiation', 'Management']
+const HOBBY_SUGGESTIONS = ['Gardening', 'Hiking', 'Painting', 'Yoga', 'Chess', 'Fishing', 'Knitting', 'Woodworking', 'Baking', 'Cycling']
 
 // Type configs with color scheme
 const TYPE_CONFIG: Record<string, { icon: string; label: string; color: 'yellow' | 'green' | 'red' | 'blue' | 'purple'; xp: number }> = {
@@ -22,7 +27,8 @@ const TYPE_CONFIG: Record<string, { icon: string; label: string; color: 'yellow'
   postscript: { icon: '💌', label: 'Future', color: 'purple', xp: 20 },
   favorites_firsts: { icon: '🏆', label: 'Favorites', color: 'red', xp: 10 },
   recipes_wisdom: { icon: '📖', label: 'Recipes', color: 'yellow', xp: 15 },
-  update_profile: { icon: '✏️', label: 'Update Profile', color: 'blue', xp: 0 },
+  update_profile: { icon: '✏️', label: 'About You', color: 'blue', xp: 0 },
+  photo_dump: { icon: '📷', label: 'Photo Dump', color: 'yellow', xp: 0 },
 }
 
 // Fixed tile positions (no reflow on expand)
@@ -42,21 +48,34 @@ export default function DashboardPage() {
   const [textValue, setTextValue] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [mediaFile, setMediaFile] = useState<File | null>(null)
+  const [bulkPhotos, setBulkPhotos] = useState<File[]>([])
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const bulkInputRef = useRef<HTMLInputElement>(null)
+  
+  // Profile update state
+  const [editingField, setEditingField] = useState<'interests' | 'skills' | 'hobbies' | null>(null)
+  const [tagInput, setTagInput] = useState('')
+  const [localTags, setLocalTags] = useState<{ interests: string[]; skills: string[]; hobbies: string[] }>({
+    interests: [],
+    skills: [],
+    hobbies: [],
+  })
   
   const supabase = createClient()
   const { prompts: rawPrompts, isLoading, shuffle, answerPrompt, skipPrompt, dismissPrompt, stats: engagementStats } = useEngagementPrompts(5)
 
-  // Add profile update prompt if user has interests/skills/hobbies to update
+  // Add special prompts (profile update, photo dump)
   const prompts = [...rawPrompts]
-  if (profile && rawPrompts.length > 0 && rawPrompts.length < 5) {
-    // Add interests/skills/hobbies update task occasionally
-    const showUpdateTask = Math.random() < 0.3 // 30% chance
-    if (showUpdateTask) {
+  if (profile && rawPrompts.length > 0) {
+    const rand = Math.random()
+    
+    // 25% chance: interests/skills/hobbies update
+    if (rand < 0.25 && prompts.length < 5) {
       prompts.push({
         id: 'update_profile_interests',
         type: 'update_profile',
-        promptText: 'Update your interests, skills, or hobbies',
+        promptText: 'What are you into lately?',
         category: 'profile',
         status: 'pending',
         priority: 30,
@@ -72,7 +91,32 @@ export default function DashboardPage() {
         }
       } as any)
     }
+    
+    // 20% chance: photo dump
+    if (rand >= 0.25 && rand < 0.45 && prompts.length < 5) {
+      prompts.push({
+        id: 'photo_dump',
+        type: 'photo_dump',
+        promptText: 'Upload a batch of photos',
+        category: 'memories',
+        status: 'pending',
+        priority: 25,
+        userId: profile.id,
+        createdAt: new Date().toISOString(),
+      } as any)
+    }
   }
+  
+  // Sync local tags when profile loads
+  useEffect(() => {
+    if (profile) {
+      setLocalTags({
+        interests: profile.interests || [],
+        skills: profile.skills || [],
+        hobbies: profile.hobbies || [],
+      })
+    }
+  }, [profile])
 
   useEffect(() => {
     loadProfile()
@@ -117,23 +161,119 @@ export default function DashboardPage() {
   }
 
   const handleSkip = async (promptId: string) => {
-    if (promptId.startsWith('update_profile')) {
+    if (promptId.startsWith('update_profile') || promptId === 'photo_dump') {
       setExpandedId(null)
+      setEditingField(null)
+      setBulkPhotos([])
       return
     }
     await skipPrompt(promptId)
     setExpandedId(null)
     setInputMode(null)
   }
+  
+  // Tag management for profile update
+  const addTag = (field: 'interests' | 'skills' | 'hobbies', tag: string) => {
+    if (tag.trim() && !localTags[field].includes(tag.trim())) {
+      setLocalTags(prev => ({
+        ...prev,
+        [field]: [...prev[field], tag.trim()]
+      }))
+    }
+    setTagInput('')
+  }
+  
+  const removeTag = (field: 'interests' | 'skills' | 'hobbies', tag: string) => {
+    setLocalTags(prev => ({
+      ...prev,
+      [field]: prev[field].filter(t => t !== tag)
+    }))
+  }
+  
+  const saveProfileTags = async () => {
+    if (!profile) return
+    setIsSubmitting(true)
+    try {
+      await supabase.from('profiles').update({
+        interests: localTags.interests,
+        skills: localTags.skills,
+        hobbies: localTags.hobbies,
+      }).eq('id', profile.id)
+      
+      setProfile((prev: any) => ({ ...prev, ...localTags }))
+      setExpandedId(null)
+      setEditingField(null)
+    } catch (err) {
+      console.error(err)
+    }
+    setIsSubmitting(false)
+  }
+  
+  // Photo dump upload
+  const handleBulkPhotos = (files: FileList | null) => {
+    if (!files) return
+    const newPhotos = Array.from(files).filter(f => f.type.startsWith('image/'))
+    setBulkPhotos(prev => [...prev, ...newPhotos])
+  }
+  
+  const uploadBulkPhotos = async () => {
+    if (bulkPhotos.length === 0 || !profile) return
+    setUploadingPhotos(true)
+    
+    try {
+      for (const photo of bulkPhotos) {
+        const fileExt = photo.name.split('.').pop()?.toLowerCase() || 'jpg'
+        const fileName = `${profile.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`
+        
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from('memories')
+          .upload(fileName, photo)
+        
+        if (uploadError) {
+          console.error('Upload error:', uploadError)
+          continue
+        }
+        
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('memories')
+          .getPublicUrl(fileName)
+        
+        // Create media record
+        await supabase.from('memory_media').insert({
+          user_id: profile.id,
+          file_url: publicUrl,
+          file_type: 'image',
+          file_name: photo.name,
+          file_size: photo.size,
+        })
+      }
+      
+      setBulkPhotos([])
+      setExpandedId(null)
+      loadStats() // Refresh stats
+    } catch (err) {
+      console.error('Bulk upload error:', err)
+    }
+    setUploadingPhotos(false)
+  }
 
   const handleDismiss = async (promptId: string) => {
-    if (promptId.startsWith('update_profile')) {
+    if (promptId.startsWith('update_profile') || promptId === 'photo_dump') {
       setExpandedId(null)
+      setEditingField(null)
+      setBulkPhotos([])
       return
     }
     await dismissPrompt(promptId)
     setExpandedId(null)
     setInputMode(null)
+  }
+  
+  const getSuggestions = (field: 'interests' | 'skills' | 'hobbies') => {
+    const suggestions = field === 'interests' ? INTEREST_SUGGESTIONS : field === 'skills' ? SKILL_SUGGESTIONS : HOBBY_SUGGESTIONS
+    return suggestions.filter(s => !localTags[field].includes(s))
   }
 
   const isContactPrompt = (type: string) => type === 'quick_question' || type === 'missing_info'
@@ -362,18 +502,142 @@ export default function DashboardPage() {
                                 className="mt-4"
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                {/* Profile update task */}
+                                {/* Profile update task - inline editing */}
                                 {prompt.type === 'update_profile' ? (
-                                  <div className="space-y-3">
-                                    <Link 
-                                      href="/dashboard/profile"
-                                      className="block w-full py-3 bg-[#406A56] hover:bg-[#4a7a64] text-white text-center text-sm font-medium rounded-xl"
+                                  <div className="space-y-4">
+                                    {/* Field tabs */}
+                                    <div className="flex gap-2">
+                                      {(['interests', 'skills', 'hobbies'] as const).map(field => (
+                                        <button
+                                          key={field}
+                                          onClick={() => setEditingField(field)}
+                                          className={`flex-1 py-2 text-xs font-medium rounded-lg capitalize transition-colors ${
+                                            editingField === field 
+                                              ? 'bg-[#406A56] text-white' 
+                                              : 'bg-[#406A56]/10 text-[#406A56] hover:bg-[#406A56]/20'
+                                          }`}
+                                        >
+                                          {field} ({localTags[field].length})
+                                        </button>
+                                      ))}
+                                    </div>
+                                    
+                                    {/* Tag editor */}
+                                    {editingField && (
+                                      <div className="space-y-3">
+                                        {/* Input */}
+                                        <div className="flex gap-2">
+                                          <input
+                                            type="text"
+                                            value={tagInput}
+                                            onChange={(e) => setTagInput(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && addTag(editingField, tagInput)}
+                                            placeholder={`Add ${editingField.slice(0, -1)}...`}
+                                            className="flex-1 px-3 py-2 bg-[#406A56]/5 border border-[#406A56]/10 rounded-lg text-sm focus:outline-none focus:border-[#406A56]/30"
+                                          />
+                                          <button 
+                                            onClick={() => addTag(editingField, tagInput)}
+                                            className="px-3 py-2 bg-[#406A56] text-white rounded-lg text-sm"
+                                          >
+                                            Add
+                                          </button>
+                                        </div>
+                                        
+                                        {/* Current tags */}
+                                        {localTags[editingField].length > 0 && (
+                                          <div className="flex flex-wrap gap-2">
+                                            {localTags[editingField].map(tag => (
+                                              <span key={tag} className="px-3 py-1 bg-[#406A56]/15 text-[#406A56] text-xs rounded-full flex items-center gap-1">
+                                                {tag}
+                                                <button onClick={() => removeTag(editingField, tag)} className="hover:text-red-500">
+                                                  <X size={12} />
+                                                </button>
+                                              </span>
+                                            ))}
+                                          </div>
+                                        )}
+                                        
+                                        {/* Suggestions */}
+                                        <div>
+                                          <p className="text-xs text-gray-400 mb-2">Suggestions</p>
+                                          <div className="flex flex-wrap gap-1">
+                                            {getSuggestions(editingField).slice(0, 8).map(s => (
+                                              <button
+                                                key={s}
+                                                onClick={() => addTag(editingField, s)}
+                                                className="px-2 py-1 bg-gray-100 hover:bg-[#406A56]/10 text-gray-600 text-xs rounded-full transition-colors"
+                                              >
+                                                + {s}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Save button */}
+                                    <button
+                                      onClick={saveProfileTags}
+                                      disabled={isSubmitting}
+                                      className="w-full py-2.5 bg-[#406A56] hover:bg-[#4a7a64] text-white text-sm font-medium rounded-xl disabled:opacity-50"
                                     >
-                                      Go to Profile Settings
-                                    </Link>
-                                    <p className="text-xs text-gray-400 text-center">
-                                      Current: {profile?.interests?.length || 0} interests, {profile?.skills?.length || 0} skills, {profile?.hobbies?.length || 0} hobbies
-                                    </p>
+                                      {isSubmitting ? 'Saving...' : 'Save Changes'}
+                                    </button>
+                                  </div>
+                                ) : prompt.type === 'photo_dump' ? (
+                                  /* Photo dump - bulk upload */
+                                  <div className="space-y-4">
+                                    {/* Drop zone */}
+                                    <div 
+                                      onClick={() => bulkInputRef.current?.click()}
+                                      className="border-2 border-dashed border-[#D9C61A]/40 hover:border-[#D9C61A] rounded-xl p-6 text-center cursor-pointer transition-colors"
+                                    >
+                                      <Upload size={24} className="mx-auto mb-2 text-[#D9C61A]" />
+                                      <p className="text-sm text-gray-600">Click to select photos</p>
+                                      <p className="text-xs text-gray-400 mt-1">or drag & drop</p>
+                                    </div>
+                                    <input
+                                      ref={bulkInputRef}
+                                      type="file"
+                                      accept="image/*"
+                                      multiple
+                                      onChange={(e) => handleBulkPhotos(e.target.files)}
+                                      className="hidden"
+                                    />
+                                    
+                                    {/* Preview */}
+                                    {bulkPhotos.length > 0 && (
+                                      <div>
+                                        <p className="text-xs text-gray-500 mb-2">{bulkPhotos.length} photos selected</p>
+                                        <div className="flex flex-wrap gap-2">
+                                          {bulkPhotos.slice(0, 6).map((photo, i) => (
+                                            <div key={i} className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                                              <img src={URL.createObjectURL(photo)} alt="" className="w-full h-full object-cover" />
+                                              <button 
+                                                onClick={() => setBulkPhotos(prev => prev.filter((_, j) => j !== i))}
+                                                className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center"
+                                              >
+                                                <X size={10} />
+                                              </button>
+                                            </div>
+                                          ))}
+                                          {bulkPhotos.length > 6 && (
+                                            <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-xs text-gray-500">
+                                              +{bulkPhotos.length - 6}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Upload button */}
+                                    <button
+                                      onClick={uploadBulkPhotos}
+                                      disabled={bulkPhotos.length === 0 || uploadingPhotos}
+                                      className="w-full py-2.5 bg-[#D9C61A] hover:bg-[#c9b617] text-gray-900 text-sm font-medium rounded-xl disabled:opacity-50"
+                                    >
+                                      {uploadingPhotos ? `Uploading ${bulkPhotos.length} photos...` : `Upload ${bulkPhotos.length} Photos`}
+                                    </button>
                                   </div>
                                 ) : inputMode === null ? (
                                   <div className="space-y-3">
