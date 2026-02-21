@@ -9,7 +9,8 @@ function parseEmbedding(embedding: any): number[] | null {
   if (typeof embedding === 'string') {
     try {
       // pgvector returns as "[0.1,0.2,...]" string
-      const parsed = JSON.parse(embedding.replace(/^\[|\]$/g, '').split(',').map(Number))
+      const cleaned = embedding.replace(/^\[|\]$/g, '')
+      const parsed = cleaned.split(',').map(Number)
       return Array.isArray(parsed) ? parsed : null
     } catch {
       return null

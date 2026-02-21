@@ -1,6 +1,6 @@
 'use client'
 
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useRef, useEffect, useState } from 'react'
 import gsap from 'gsap'
 import CommandBar from '@/components/dashboard/CommandBar'
@@ -34,19 +34,14 @@ interface DashboardShellProps {
 
 export default function DashboardShell({ children }: DashboardShellProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   
   const profileCardRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const prevPathRef = useRef(pathname)
-  const isAnimating = useRef(false)
   
   const supabase = createClient()
   const isHome = pathname === '/dashboard'
 
-  // Load profile once
   useEffect(() => {
     const loadProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -73,94 +68,15 @@ export default function DashboardShell({ children }: DashboardShellProps) {
     loadProfile()
   }, [])
 
-  // Animate ProfileCard and content on route change (after initial mount)
   useEffect(() => {
-    // Skip if not initialized yet or same path
-    if (!hasInitialized.current || prevPathRef.current === pathname) {
-      return
-    }
-
-    const wasHome = prevPathRef.current === '/dashboard'
-    const goingHome = pathname === '/dashboard'
-    prevPathRef.current = pathname
-
-    // ProfileCard animation - only animate if transitioning to/from home
-    if (profileCardRef.current && (wasHome || goingHome)) {
-      if (goingHome) {
-        // Animate ProfileCard back to center - smooth and visible
-        gsap.to(profileCardRef.current, {
-          left: '50%',
-          top: '50%',
-          xPercent: -50,
-          yPercent: -50,
-          scale: 1,
-          duration: 0.7,
-          ease: 'power2.inOut',
-        })
-      } else if (wasHome) {
-        // Animate ProfileCard to top-left corner (20% smaller)
-        gsap.to(profileCardRef.current, {
-          left: '16px',
-          top: '72px',
-          xPercent: 0,
-          yPercent: 0,
-          scale: 0.8,
-          duration: 0.7,
-          ease: 'power2.inOut',
-        })
-      }
-    }
-
-    // Content animation
-    if (contentRef.current) {
-      if (goingHome) {
-        gsap.to(contentRef.current, {
-          x: 80,
-          opacity: 0,
-          duration: 0.4,
-          ease: 'power2.in',
-        })
-      } else {
-        gsap.fromTo(contentRef.current, 
-          { x: wasHome ? 80 : 40, opacity: 0 },
-          { x: 0, opacity: 1, duration: 0.5, ease: 'power2.out', delay: wasHome ? 0.2 : 0 }
-        )
-      }
-    }
-
-  }, [pathname])
-
-  // Track if initial mount has been done
-  const hasInitialized = useRef(false)
-
-  // Initial position on mount - runs ONCE when loading becomes false
-  useEffect(() => {
-    if (!loading && !hasInitialized.current && profileCardRef.current) {
-      hasInitialized.current = true
-      const currentIsHome = pathname === '/dashboard'
-      prevPathRef.current = pathname
-      
-      if (currentIsHome) {
-        gsap.set(profileCardRef.current, {
-          left: '50%',
-          top: '50%',
-          xPercent: -50,
-          yPercent: -50,
-          scale: 1,
-        })
-      } else {
-        gsap.set(profileCardRef.current, {
-          left: '16px',
-          top: '72px',
-          xPercent: 0,
-          yPercent: 0,
-          scale: 0.8,
-        })
-      }
-      
-      if (contentRef.current && !currentIsHome) {
-        gsap.set(contentRef.current, { x: 0, opacity: 1 })
-      }
+    if (!loading && profileCardRef.current) {
+      gsap.set(profileCardRef.current, {
+        left: '16px',
+        top: '72px',
+        xPercent: 0,
+        yPercent: 0,
+        scale: 0.8,
+      })
     }
   }, [loading])
 
@@ -180,44 +96,35 @@ export default function DashboardShell({ children }: DashboardShellProps) {
 
   if (loading) {
     return (
-      <div className="mt-14 min-h-screen flex items-center justify-center">
+      <div className="pt-14 min-h-screen flex items-center justify-center">
         <div className="text-white/60">Loading...</div>
       </div>
     )
   }
 
   return (
-    <div className="pt-14 h-screen relative overflow-hidden">
-      {/* ProfileCard - fixed position, GSAP controls all positioning */}
+    <div className="pt-14 min-h-screen relative">
+      {/* ProfileCard - fixed top-left */}
       <div
         ref={profileCardRef}
-        className="fixed z-30 origin-top-left will-change-transform pointer-events-auto"
+        className="fixed z-30 origin-top-left will-change-transform pointer-events-auto hidden lg:block"
       >
         <ProfileCard 
           profile={profile}
           onUpdate={updateProfile}
-          compact={!isHome}
+          compact={true}
         />
       </div>
 
-      {/* Page Content - slides in/out */}
-      <div
-        ref={contentRef}
-        className={`will-change-transform ${isHome ? 'opacity-0 pointer-events-none' : ''}`}
-        style={{
-          marginLeft: isHome ? '0' : '280px', // Space for profile card at 0.8 scale
-          paddingLeft: '24px',
-          paddingRight: '24px',
-          paddingBottom: '120px',
-        }}
-      >
-        {/* Only render children if not home (home has its own layout) */}
-        {!isHome && children}
-      </div>
-
-      {/* Home content (widgets around profile card) */}
-      {isHome && (
-        <div className="pointer-events-auto h-full overflow-hidden">
+      {/* Page Content */}
+      {isHome ? (
+        // Home: Center content in full viewport (above command bar)
+        <div className="fixed inset-0 top-14 bottom-24 flex items-center justify-center">
+          {children}
+        </div>
+      ) : (
+        // Other pages: offset for profile card
+        <div className="min-h-[calc(100vh-56px)] lg:pl-[260px] px-6 pb-32">
           {children}
         </div>
       )}

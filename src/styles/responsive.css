@@ -1,0 +1,515 @@
+/* ============================================================================
+   YOURSTRULY V2 — RESPONSIVE STYLES
+   Mobile-first approach with breakpoints for tablet and desktop
+   ============================================================================ */
+
+/* ============================================================================
+   BREAKPOINTS
+   - Mobile: 0 - 639px
+   - Tablet: 640px - 1023px
+   - Desktop: 1024px+
+   - Large: 1280px+
+   ============================================================================ */
+
+:root {
+  /* Spacing scale */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  
+  /* Font sizes - mobile first */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  
+  /* Touch targets - minimum 44px for accessibility, prefer 48px+ for seniors */
+  --touch-target-min: 44px;
+  --touch-target-senior: 56px;
+  
+  /* Border radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+  
+  /* Sidebar width */
+  --sidebar-width: 240px;
+  --sidebar-collapsed: 72px;
+}
+
+/* ============================================================================
+   BASE / MOBILE (< 640px)
+   ============================================================================ */
+
+/* Layout */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
+}
+
+.main-content {
+  flex: 1;
+  padding: var(--space-md);
+  padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
+}
+
+/* Sidebar - hidden on mobile, shown as bottom nav or drawer */
+.sidebar {
+  display: none;
+}
+
+.mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  padding: var(--space-sm) var(--space-md);
+  padding-bottom: calc(var(--space-sm) + env(safe-area-inset-bottom));
+  background: rgba(20, 20, 30, 0.95);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 100;
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-sm);
+  min-width: var(--touch-target-senior);
+  min-height: var(--touch-target-senior);
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-size: var(--text-xs);
+  transition: color 0.2s;
+}
+
+.mobile-nav-item.active,
+.mobile-nav-item:hover {
+  color: white;
+}
+
+.mobile-nav-item svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Cards */
+.card {
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+}
+
+/* Buttons - larger touch targets on mobile */
+.btn {
+  min-height: var(--touch-target-senior);
+  padding: var(--space-md) var(--space-lg);
+  font-size: var(--text-base);
+  border-radius: var(--radius-md);
+}
+
+.btn-icon {
+  min-width: var(--touch-target-senior);
+  min-height: var(--touch-target-senior);
+  padding: var(--space-md);
+}
+
+/* Forms */
+input,
+textarea,
+select {
+  min-height: var(--touch-target-senior);
+  padding: var(--space-md);
+  font-size: var(--text-base); /* Prevents zoom on iOS */
+  border-radius: var(--radius-md);
+}
+
+/* Typography */
+h1 { font-size: var(--text-2xl); }
+h2 { font-size: var(--text-xl); }
+h3 { font-size: var(--text-lg); }
+p, li { font-size: var(--text-base); line-height: 1.6; }
+
+/* Engagement Bubbles - stack vertically on mobile */
+.bubbles-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+}
+
+.bubble {
+  width: 100%;
+  min-height: auto;
+}
+
+.bubble.expanded {
+  width: 100%;
+  max-width: none;
+}
+
+/* Profile cards - full width */
+.profile-card,
+.contact-card,
+.memory-card {
+  width: 100%;
+}
+
+/* Modals - full screen on mobile */
+.modal-overlay {
+  padding: 0;
+}
+
+.modal-content {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  border-radius: 0;
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Photo grids */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+}
+
+.photo-grid-item {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+/* ============================================================================
+   TABLET (640px - 1023px)
+   ============================================================================ */
+
+@media (min-width: 640px) {
+  :root {
+    --space-md: 20px;
+    --space-lg: 28px;
+    --space-xl: 40px;
+  }
+  
+  .main-content {
+    padding: var(--space-lg);
+  }
+  
+  /* Sidebar as collapsible drawer */
+  .sidebar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--sidebar-collapsed);
+    flex-direction: column;
+    padding: var(--space-md);
+    background: rgba(20, 20, 30, 0.95);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 50;
+    transition: width 0.3s ease;
+  }
+  
+  .sidebar:hover,
+  .sidebar.expanded {
+    width: var(--sidebar-width);
+  }
+  
+  .sidebar-item-label {
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  
+  .sidebar:hover .sidebar-item-label,
+  .sidebar.expanded .sidebar-item-label {
+    opacity: 1;
+  }
+  
+  .mobile-nav {
+    display: none;
+  }
+  
+  .main-content {
+    margin-left: var(--sidebar-collapsed);
+    transition: margin-left 0.3s ease;
+  }
+  
+  /* Bubbles - 2 column grid */
+  .bubbles-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+  }
+  
+  .bubble {
+    width: auto;
+  }
+  
+  .bubble.expanded {
+    grid-column: span 2;
+    max-width: 400px;
+    justify-self: center;
+  }
+  
+  /* Photo grid - 3 columns */
+  .photo-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  /* Modals - centered with max width */
+  .modal-content {
+    width: 90%;
+    max-width: 500px;
+    height: auto;
+    max-height: 90vh;
+    border-radius: var(--radius-xl);
+    margin: 5vh auto;
+  }
+  
+  /* Cards can be side by side */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-lg);
+  }
+}
+
+/* ============================================================================
+   DESKTOP (1024px+)
+   ============================================================================ */
+
+@media (min-width: 1024px) {
+  :root {
+    --text-base: 16px;
+    --text-lg: 18px;
+    --text-xl: 22px;
+    --text-2xl: 28px;
+    --text-3xl: 36px;
+  }
+  
+  /* Full sidebar always visible */
+  .sidebar {
+    width: var(--sidebar-width);
+  }
+  
+  .sidebar-item-label {
+    opacity: 1;
+  }
+  
+  .main-content {
+    margin-left: var(--sidebar-width);
+  }
+  
+  /* Bubbles - flexible grid */
+  .bubbles-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  
+  .bubble {
+    width: 180px;
+    min-height: 160px;
+  }
+  
+  .bubble.expanded {
+    width: 340px;
+    grid-column: auto;
+  }
+  
+  /* Photo grid - 4 columns */
+  .photo-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-md);
+  }
+  
+  /* Cards - 3 column option */
+  .card-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  /* Max content width */
+  .content-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
+
+/* ============================================================================
+   LARGE DESKTOP (1280px+)
+   ============================================================================ */
+
+@media (min-width: 1280px) {
+  .photo-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  
+  .bubbles-grid {
+    max-width: 1000px;
+  }
+  
+  .content-container {
+    max-width: 1400px;
+  }
+}
+
+/* ============================================================================
+   SENIOR-FRIENDLY MODE
+   Larger text, bigger touch targets, higher contrast
+   ============================================================================ */
+
+.senior-mode {
+  --text-xs: 14px;
+  --text-sm: 16px;
+  --text-base: 18px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 30px;
+  --text-3xl: 36px;
+  
+  --touch-target-min: 56px;
+  --touch-target-senior: 64px;
+  
+  --space-md: 20px;
+  --space-lg: 32px;
+}
+
+.senior-mode .btn {
+  min-height: 64px;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.senior-mode input,
+.senior-mode textarea,
+.senior-mode select {
+  min-height: 64px;
+  font-size: var(--text-lg);
+}
+
+.senior-mode .bubble {
+  min-height: 180px;
+}
+
+.senior-mode .bubble-prompt {
+  font-size: var(--text-lg);
+}
+
+/* High contrast mode */
+.high-contrast {
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
+  --bg-primary: #000000;
+  --bg-secondary: #1a1a1a;
+  --border-color: #ffffff;
+}
+
+.high-contrast .card,
+.high-contrast .bubble {
+  border-width: 2px;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================================================
+   ACCESSIBILITY
+   ============================================================================ */
+
+/* Focus states */
+:focus-visible {
+  outline: 3px solid #6f6fd2;
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .bubble {
+    animation: none;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .btn:hover,
+  .bubble:hover {
+    transform: none;
+  }
+  
+  /* Larger hit areas */
+  .dropdown-item,
+  .list-item {
+    min-height: var(--touch-target-senior);
+  }
+}
+
+/* ============================================================================
+   SAFE AREAS (notch, home indicator)
+   ============================================================================ */
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* ============================================================================
+   ORIENTATION
+   ============================================================================ */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Landscape phone - reduce vertical spacing */
+  .main-content {
+    padding-top: var(--space-sm);
+    padding-bottom: var(--space-sm);
+  }
+  
+  .modal-content {
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+  
+  .bubbles-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .bubble {
+    width: auto;
+    min-width: 160px;
+    flex: 0 0 auto;
+  }
+}
