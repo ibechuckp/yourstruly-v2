@@ -43,18 +43,18 @@ export function useContacts(): UseContactsReturn {
         .from('contacts')
         .select('*')
         .eq('user_id', user.user.id)
-        .order('name');
+        .order('full_name');
 
       if (fetchError) throw fetchError;
 
       const transformedContacts: Contact[] = (data || []).map((c: any) => ({
         id: c.id,
-        name: c.name,
-        photoUrl: c.photo_url,
+        name: c.full_name,
+        photoUrl: c.avatar_url,
         relationshipType: c.relationship_type,
         email: c.email,
         phone: c.phone,
-        birthDate: c.birth_date,
+        birthDate: c.date_of_birth,
         howMet: c.how_met,
         isDeceased: c.is_deceased || false,
       }));
@@ -77,12 +77,12 @@ export function useContacts(): UseContactsReturn {
       .from('contacts')
       .insert({
         user_id: user.user.id,
-        name: contact.name,
-        photo_url: contact.photoUrl,
+        full_name: contact.name,
+        avatar_url: contact.photoUrl,
         relationship_type: contact.relationshipType,
         email: contact.email,
         phone: contact.phone,
-        birth_date: contact.birthDate,
+        date_of_birth: contact.birthDate,
         how_met: contact.howMet,
       })
       .select()
@@ -92,12 +92,12 @@ export function useContacts(): UseContactsReturn {
 
     const newContact: Contact = {
       id: data.id,
-      name: data.name,
-      photoUrl: data.photo_url,
+      name: data.full_name,
+      photoUrl: data.avatar_url,
       relationshipType: data.relationship_type,
       email: data.email,
       phone: data.phone,
-      birthDate: data.birth_date,
+      birthDate: data.date_of_birth,
       howMet: data.how_met,
       isDeceased: data.is_deceased || false,
     };
@@ -111,12 +111,12 @@ export function useContacts(): UseContactsReturn {
     const { error: updateError } = await supabase
       .from('contacts')
       .update({
-        name: updates.name,
-        photo_url: updates.photoUrl,
+        full_name: updates.name,
+        avatar_url: updates.photoUrl,
         relationship_type: updates.relationshipType,
         email: updates.email,
         phone: updates.phone,
-        birth_date: updates.birthDate,
+        date_of_birth: updates.birthDate,
         how_met: updates.howMet,
         is_deceased: updates.isDeceased,
       })
