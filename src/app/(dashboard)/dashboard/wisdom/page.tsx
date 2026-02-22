@@ -226,22 +226,83 @@ export default function WisdomPage() {
           </div>
         )}
 
-        {/* Stats Card */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl p-6 shadow-sm mb-8"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-[#4A3552]/10 flex items-center justify-center">
-              <Lightbulb size={28} className="text-[#4A3552]" />
+        {/* Analytics Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl p-4 shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#4A3552]/10 flex items-center justify-center">
+                <Lightbulb size={20} className="text-[#4A3552]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-[#4A3552]">{stats?.total || 0}</div>
+                <div className="text-xs text-gray-500">Total Entries</div>
+              </div>
             </div>
-            <div>
-              <div className="text-3xl font-bold text-[#4A3552]">{stats?.total || 0}</div>
-              <div className="text-sm text-gray-500">Wisdom Entries Shared</div>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="bg-white rounded-2xl p-4 shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#C35F33]/10 flex items-center justify-center">
+                <Play size={20} className="text-[#C35F33]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-[#C35F33]">
+                  {entries.filter(e => e.audio_url).length}
+                </div>
+                <div className="text-xs text-gray-500">Voice Entries</div>
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white rounded-2xl p-4 shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#406A56]/10 flex items-center justify-center">
+                <Users size={20} className="text-[#406A56]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-[#406A56]">
+                  {Object.keys(stats?.categories || {}).length}
+                </div>
+                <div className="text-xs text-gray-500">Topics Covered</div>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="bg-white rounded-2xl p-4 shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#D9C61A]/10 flex items-center justify-center">
+                <Star size={20} className="text-[#D9C61A]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-[#D9C61A]">
+                  {entries.length > 0 
+                    ? Math.round(entries.reduce((acc, e) => acc + (e.description?.length || 0), 0) / entries.length)
+                    : 0}
+                </div>
+                <div className="text-xs text-gray-500">Avg. Length</div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
 
         {/* Wisdom Entries */}
         <div className="space-y-4">

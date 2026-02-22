@@ -635,7 +635,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Tile grid */}
-              <div className="relative mx-auto" style={{ width: 816, height: 400, marginTop: 8 }}>
+              <div className="relative mx-auto" style={{ width: 760, height: 420, marginTop: 16 }}>
                 <AnimatePresence mode="popLayout">
                   {prompts.slice(0, 5).map((prompt, i) => {
                     const config = TYPE_CONFIG[prompt.type] || TYPE_CONFIG.memory_prompt
@@ -645,9 +645,9 @@ export default function DashboardPage() {
                     const contactName = getContactName(prompt, i)
                     const isContact = isContactPrompt(prompt.type)
 
-                    const tileWidth = 240
-                    const tileHeight = 185
-                    const gap = 24
+                    const tileWidth = 230
+                    const tileHeight = 180
+                    const gap = 32
                     const left = pos.col * (tileWidth + gap)
                     const top = pos.row * (tileHeight + gap)
                     const staggerDelay = i * 0.08
@@ -661,7 +661,7 @@ export default function DashboardPage() {
                           scale: 1,
                           y: 0,
                           zIndex: isExpanded ? 50 : 1,
-                          x: isExpanded ? -left + 200 : 0,
+                          x: isExpanded ? -left + 180 : 0,
                         }}
                         exit={{ opacity: 0, scale: 0.5, y: -30 }}
                         transition={{ 
@@ -675,7 +675,7 @@ export default function DashboardPage() {
                         style={{ 
                           left, 
                           top,
-                          width: isExpanded ? 360 : tileWidth,
+                          width: isExpanded ? 340 : tileWidth,
                           minHeight: isExpanded ? 'auto' : tileHeight,
                           cursor: isExpanded ? 'default' : 'pointer',
                         }}

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { 
   ChevronLeft, ChevronRight, User, Users, Calendar, Gift,
-  MessageSquare, Send, Check, X, Search, Mail, Phone
+  MessageSquare, Send, Check, X, Search, Mail, Phone, ImagePlus, Trash2
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/home.css'
@@ -17,6 +17,13 @@ interface Contact {
   phone: string | null
   relationship_type: string | null
   profile_photo_url: string | null
+}
+
+interface Attachment {
+  id: string
+  file: File
+  preview: string
+  uploading?: boolean
 }
 
 interface FormData {
@@ -35,6 +42,7 @@ interface FormData {
   title: string
   message: string
   video_url: string
+  attachments: Attachment[]
 }
 
 const EVENT_OPTIONS = [
@@ -81,8 +89,33 @@ export default function NewPostScriptPage() {
     requires_confirmation: false,
     title: '',
     message: '',
-    video_url: ''
+    video_url: '',
+    attachments: []
   })
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+    
+    const newAttachments: Attachment[] = []
+    Array.from(files).forEach(file => {
+      if (form.attachments.length + newAttachments.length >= 5) return
+      const id = Math.random().toString(36).substr(2, 9)
+      newAttachments.push({
+        id,
+        file,
+        preview: URL.createObjectURL(file)
+      })
+    })
+    
+    setForm({ ...form, attachments: [...form.attachments, ...newAttachments] })
+  }
+
+  const removeAttachment = (id: string) => {
+    const att = form.attachments.find(a => a.id === id)
+    if (att?.preview) URL.revokeObjectURL(att.preview)
+    setForm({ ...form, attachments: form.attachments.filter(a => a.id !== id) })
+  }
 
   useEffect(() => {
     fetchContacts()
@@ -147,11 +180,47 @@ export default function NewPostScriptPage() {
     setError(null)
 
     try {
+      // Upload attachments first if any
+      const uploadedAttachments: Array<{ file_url: string; file_type: string; file_name: string; file_size: number }> = []
+      
+      for (const att of form.attachments) {
+        const formData = new FormData()
+        formData.append('file', att.file)
+        formData.append('bucket', 'postscripts')
+        
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (uploadRes.ok) {
+          const { url } = await uploadRes.json()
+          uploadedAttachments.push({
+            file_url: url,
+            file_type: att.file.type,
+            file_name: att.file.name,
+            file_size: att.file.size
+          })
+        }
+      }
+
       const res = await fetch('/api/postscripts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...form,
+          recipient_contact_id: form.recipient_contact_id,
+          recipient_name: form.recipient_name,
+          recipient_email: form.recipient_email,
+          recipient_phone: form.recipient_phone,
+          delivery_type: form.delivery_type,
+          delivery_date: form.delivery_date,
+          delivery_event: form.delivery_event,
+          delivery_recurring: form.delivery_recurring,
+          requires_confirmation: form.requires_confirmation,
+          title: form.title,
+          message: form.message,
+          video_url: form.video_url,
+          attachments: uploadedAttachments,
           status
         })
       })
@@ -428,10 +497,48 @@ export default function NewPostScriptPage() {
             />
           </div>
 
+          {/* Photo Attachments */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Attach Photos <span className="text-gray-400 font-normal">(optional, max 5)</span>
+            </label>
+            
+            {/* Photo Grid */}
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              {form.attachments.map(att => (
+                <div key={att.id} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
+                  <img src={att.preview} alt="" className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => removeAttachment(att.id)}
+                    className="absolute top-1 right-1 p-1.5 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+                  >
+                    <Trash2 size={12} className="text-white" />
+                  </button>
+                </div>
+              ))}
+              
+              {form.attachments.length < 5 && (
+                <label className="aspect-square rounded-xl border-2 border-dashed border-gray-300 
+                                 hover:border-[#C35F33] hover:bg-[#C35F33]/5 
+                                 flex flex-col items-center justify-center cursor-pointer transition-all">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                  />
+                  <ImagePlus size={24} className="text-gray-400 mb-1" />
+                  <span className="text-xs text-gray-400">Add Photo</span>
+                </label>
+              )}
+            </div>
+          </div>
+
           {/* Future: Video Recording */}
-          <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-6 text-center">
-            <Gift size={32} className="mx-auto text-gray-400 mb-2" />
-            <p className="text-gray-500 text-sm">Video recording coming soon</p>
+          <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-4 text-center">
+            <Gift size={24} className="mx-auto text-gray-400 mb-1" />
+            <p className="text-gray-500 text-xs">Video recording coming soon</p>
           </div>
         </div>
       </div>
