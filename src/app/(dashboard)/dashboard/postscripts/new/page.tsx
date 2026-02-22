@@ -780,7 +780,7 @@ export default function NewPostScriptPage() {
                 <ChevronRight size={18} />
               </button>
             ) : (
-              <div className="flex-1 flex gap-3">
+              <>
                 <button
                   onClick={() => handleSave('draft')}
                   disabled={saving}
@@ -805,7 +805,7 @@ export default function NewPostScriptPage() {
                     </>
                   )}
                 </button>
-              </div>
+              </>
             )}
           </div>
         </div>

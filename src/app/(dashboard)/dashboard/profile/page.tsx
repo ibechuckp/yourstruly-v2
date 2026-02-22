@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { 
   User, Calendar, MapPin, Heart, Briefcase, BookOpen, 
-  Music, Film, Utensils, Target, Sparkles, Camera, 
-  ChevronLeft, ChevronRight, Check, Upload, X, Loader2,
-  Brain, Star, GraduationCap
+  Music, Film, Utensils, Target, Camera, Edit2, X, Loader2,
+  Brain, Star, GraduationCap, ChevronLeft, Check, Upload, Quote, Sparkles
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/home.css'
+import '@/styles/page-styles.css'
 
 interface Profile {
   full_name: string
@@ -53,31 +53,23 @@ const PERSONALITY_TYPES = [
 
 const GENDER_OPTIONS = ['Male', 'Female', 'Non-binary', 'Prefer not to say']
 
-const STEPS = [
-  { id: 'basics', title: 'The Basics', icon: User, description: 'Your name and photo' },
-  { id: 'birth', title: 'Birthday', icon: Calendar, description: 'When were you born?' },
-  { id: 'location', title: 'Location', icon: MapPin, description: 'Where do you live?' },
-  { id: 'work', title: 'Work', icon: Briefcase, description: 'What do you do?' },
-  { id: 'education', title: 'Education', icon: GraduationCap, description: 'Your background' },
-  { id: 'personality', title: 'Personality', icon: Brain, description: 'Who are you?' },
-  { id: 'interests', title: 'Interests', icon: Heart, description: 'What do you love?' },
-  { id: 'favorites', title: 'Favorites', icon: Star, description: 'Your top picks' },
-  { id: 'goals', title: 'Life Goals', icon: Target, description: 'Your dreams' },
-]
+const emptyProfile: Profile = {
+  full_name: '', avatar_url: '', date_of_birth: '', gender: '', phone: '',
+  address: '', city: '', state: '', country: '', zipcode: '',
+  biography: '', personal_motto: '', personality_type: '',
+  personality_traits: [], interests: [], skills: [], hobbies: [], life_goals: [],
+  religions: [], occupation: '', company: '', education_level: '', school_name: '', degree: '',
+  favorite_quote: '', favorite_books: [], favorite_movies: [], favorite_music: [], favorite_foods: [],
+}
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<Profile>({
-    full_name: '', avatar_url: '', date_of_birth: '', gender: '', phone: '',
-    address: '', city: '', state: '', country: '', zipcode: '',
-    biography: '', personal_motto: '', personality_type: '',
-    personality_traits: [], interests: [], skills: [], hobbies: [], life_goals: [],
-    religions: [], occupation: '', company: '', education_level: '', school_name: '', degree: '',
-    favorite_quote: '', favorite_books: [], favorite_movies: [], favorite_music: [], favorite_foods: [],
-  })
-  const [step, setStep] = useState(0)
+  const [profile, setProfile] = useState<Profile>(emptyProfile)
+  const [editProfile, setEditProfile] = useState<Profile>(emptyProfile)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editSection, setEditSection] = useState<string | null>(null)
   const [tagInput, setTagInput] = useState('')
   const [currentTagField, setCurrentTagField] = useState<keyof Profile | null>(null)
   const supabase = createClient()
@@ -90,8 +82,8 @@ export default function ProfilePage() {
 
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (data) {
-      setProfile(prev => ({
-        ...prev,
+      const loaded = {
+        ...emptyProfile,
         ...data,
         personality_traits: data.personality_traits || [],
         interests: data.interests || [],
@@ -103,7 +95,9 @@ export default function ProfilePage() {
         favorite_movies: data.favorite_movies || [],
         favorite_music: data.favorite_music || [],
         favorite_foods: data.favorite_foods || [],
-      }))
+      }
+      setProfile(loaded)
+      setEditProfile(loaded)
     }
     setLoading(false)
   }
@@ -113,8 +107,11 @@ export default function ProfilePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    await supabase.from('profiles').update(profile).eq('id', user.id)
+    await supabase.from('profiles').update(editProfile).eq('id', user.id)
+    setProfile(editProfile)
     setSaving(false)
+    setShowEditModal(false)
+    setEditSection(null)
   }
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,487 +128,742 @@ export default function ProfilePage() {
     const { error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true })
     if (!error) {
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName)
-      setProfile(p => ({ ...p, avatar_url: publicUrl }))
+      setEditProfile(p => ({ ...p, avatar_url: publicUrl }))
     }
     setUploading(false)
   }
 
   const addTag = (field: keyof Profile) => {
     if (!tagInput.trim()) return
-    const current = profile[field] as string[]
+    const current = editProfile[field] as string[]
     if (!current.includes(tagInput.trim())) {
-      setProfile(p => ({ ...p, [field]: [...current, tagInput.trim()] }))
+      setEditProfile(p => ({ ...p, [field]: [...current, tagInput.trim()] }))
     }
     setTagInput('')
   }
 
   const removeTag = (field: keyof Profile, tag: string) => {
-    const current = profile[field] as string[]
-    setProfile(p => ({ ...p, [field]: current.filter(t => t !== tag) }))
+    const current = editProfile[field] as string[]
+    setEditProfile(p => ({ ...p, [field]: current.filter(t => t !== tag) }))
   }
 
-  const renderStep = () => {
-    const stepId = STEPS[step].id
-
-    switch (stepId) {
-      case 'basics':
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#406A56]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <User className="w-8 h-8 text-[#406A56]" />
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-900">What's your name?</h2>
-              <p className="text-gray-500 mt-2">This is how you'll appear in your legacy</p>
-            </div>
-            
-            <div className="flex justify-center mb-6">
-              {profile.avatar_url ? (
-                <div className="relative">
-                  <img src={profile.avatar_url} alt="Profile" className="w-28 h-28 rounded-full object-cover border-4 border-[#406A56]/20" />
-                  <label className="absolute bottom-0 right-0 w-9 h-9 bg-[#406A56] text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-[#355a48]">
-                    <Camera size={16} />
-                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploading} />
-                  </label>
-                </div>
-              ) : (
-                <label className="w-28 h-28 rounded-full border-4 border-dashed border-[#406A56]/30 flex flex-col items-center justify-center cursor-pointer hover:border-[#406A56]/50 transition-all">
-                  {uploading ? <Loader2 className="w-8 h-8 text-[#406A56] animate-spin" /> : (
-                    <>
-                      <Upload className="w-8 h-8 text-[#406A56]/50" />
-                      <span className="text-xs text-[#406A56]/50 mt-1">Add photo</span>
-                    </>
-                  )}
-                  <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploading} />
-                </label>
-              )}
-            </div>
-
-            <input
-              type="text"
-              value={profile.full_name}
-              onChange={e => setProfile(p => ({ ...p, full_name: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 text-center text-lg"
-              placeholder="Enter your full name"
-            />
-          </div>
-        )
-
-      case 'birth':
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#406A56]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="w-8 h-8 text-[#406A56]" />
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-900">When were you born?</h2>
-              <p className="text-gray-500 mt-2">Your birthday will be remembered</p>
-            </div>
-            
-            <input
-              type="date"
-              value={profile.date_of_birth}
-              onChange={e => setProfile(p => ({ ...p, date_of_birth: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 text-center"
-            />
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 text-center">Gender (optional)</label>
-              <div className="flex flex-wrap justify-center gap-2">
-                {GENDER_OPTIONS.map(g => (
-                  <button
-                    key={g}
-                    onClick={() => setProfile(p => ({ ...p, gender: g }))}
-                    className={`px-4 py-2 rounded-full text-sm transition-all ${
-                      profile.gender === g 
-                        ? 'bg-[#406A56] text-white' 
-                        : 'bg-white/50 text-gray-600 border border-gray-200 hover:border-[#406A56]/30'
-                    }`}
-                  >
-                    {g}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )
-
-      case 'location':
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#406A56]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MapPin className="w-8 h-8 text-[#406A56]" />
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-900">Where do you live?</h2>
-              <p className="text-gray-500 mt-2">Your home base</p>
-            </div>
-            
-            <input
-              type="text"
-              value={profile.city}
-              onChange={e => setProfile(p => ({ ...p, city: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-              placeholder="City"
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                type="text"
-                value={profile.state}
-                onChange={e => setProfile(p => ({ ...p, state: e.target.value }))}
-                className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-                placeholder="State/Province"
-              />
-              <input
-                type="text"
-                value={profile.country}
-                onChange={e => setProfile(p => ({ ...p, country: e.target.value }))}
-                className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-                placeholder="Country"
-              />
-            </div>
-            <input
-              type="text"
-              value={profile.address}
-              onChange={e => setProfile(p => ({ ...p, address: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-              placeholder="Full address (optional)"
-            />
-          </div>
-        )
-
-      case 'work':
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#406A56]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Briefcase className="w-8 h-8 text-[#406A56]" />
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-900">What do you do?</h2>
-              <p className="text-gray-500 mt-2">Your profession or calling</p>
-            </div>
-            
-            <input
-              type="text"
-              value={profile.occupation}
-              onChange={e => setProfile(p => ({ ...p, occupation: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-              placeholder="Job title or role"
-            />
-            <input
-              type="text"
-              value={profile.company}
-              onChange={e => setProfile(p => ({ ...p, company: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-              placeholder="Company or organization (optional)"
-            />
-          </div>
-        )
-
-      case 'education':
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#406A56]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <GraduationCap className="w-8 h-8 text-[#406A56]" />
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-900">Your education</h2>
-              <p className="text-gray-500 mt-2">Where did you study?</p>
-            </div>
-            
-            <input
-              type="text"
-              value={profile.school_name || ''}
-              onChange={e => setProfile(p => ({ ...p, school_name: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-              placeholder="School or University"
-            />
-            <input
-              type="text"
-              value={profile.degree || ''}
-              onChange={e => setProfile(p => ({ ...p, degree: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-              placeholder="Degree or certification (optional)"
-            />
-          </div>
-        )
-
-      case 'personality':
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#406A56]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Brain className="w-8 h-8 text-[#406A56]" />
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-900">Your personality</h2>
-              <p className="text-gray-500 mt-2">What's your type?</p>
-            </div>
-            
-            <select
-              value={profile.personality_type}
-              onChange={e => setProfile(p => ({ ...p, personality_type: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-            >
-              <option value="">Select your personality type</option>
-              {PERSONALITY_TYPES.map(pt => (
-                <option key={pt} value={pt}>{pt}</option>
-              ))}
-            </select>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Personal Motto or Life Philosophy</label>
-              <textarea
-                value={profile.personal_motto}
-                onChange={e => setProfile(p => ({ ...p, personal_motto: e.target.value }))}
-                className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-                placeholder="What do you live by?"
-                rows={2}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Personality Traits</label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {profile.personality_traits.map(trait => (
-                  <span key={trait} className="px-3 py-1 bg-[#406A56]/10 text-[#406A56] rounded-full text-sm flex items-center gap-1">
-                    {trait}
-                    <button onClick={() => removeTag('personality_traits', trait)} className="hover:text-red-500"><X size={14} /></button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={currentTagField === 'personality_traits' ? tagInput : ''}
-                  onFocus={() => setCurrentTagField('personality_traits')}
-                  onChange={e => setTagInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag('personality_traits'))}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-                  placeholder="Add a trait (e.g., Creative, Loyal)"
-                />
-              </div>
-            </div>
-          </div>
-        )
-
-      case 'interests':
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#406A56]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Heart className="w-8 h-8 text-[#406A56]" />
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-900">What do you love?</h2>
-              <p className="text-gray-500 mt-2">Your hobbies and interests</p>
-            </div>
-            
-            {(['hobbies', 'interests'] as const).map(field => (
-              <div key={field}>
-                <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">{field}</label>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {(profile[field] as string[]).map(item => (
-                    <span key={item} className="px-3 py-1 bg-[#D9C61A]/20 text-[#8B7B0A] rounded-full text-sm flex items-center gap-1">
-                      {item}
-                      <button onClick={() => removeTag(field, item)} className="hover:text-red-500"><X size={14} /></button>
-                    </span>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={currentTagField === field ? tagInput : ''}
-                    onFocus={() => setCurrentTagField(field)}
-                    onChange={e => setTagInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag(field))}
-                    className="flex-1 px-4 py-2 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-                    placeholder={`Add ${field === 'hobbies' ? 'a hobby' : 'an interest'}`}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        )
-
-      case 'favorites':
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#406A56]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Star className="w-8 h-8 text-[#406A56]" />
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-900">Your favorites</h2>
-              <p className="text-gray-500 mt-2">The things that bring you joy</p>
-            </div>
-            
-            {([
-              { field: 'favorite_books' as const, label: 'Books', icon: BookOpen, placeholder: 'Add a book' },
-              { field: 'favorite_movies' as const, label: 'Movies & Shows', icon: Film, placeholder: 'Add a movie' },
-              { field: 'favorite_music' as const, label: 'Music', icon: Music, placeholder: 'Add an artist or song' },
-              { field: 'favorite_foods' as const, label: 'Foods', icon: Utensils, placeholder: 'Add a favorite food' },
-            ]).map(({ field, label, icon: Icon, placeholder }) => (
-              <div key={field}>
-                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                  <Icon size={14} className="text-[#406A56]" /> {label}
-                </label>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {(profile[field] as string[]).map(item => (
-                    <span key={item} className="px-3 py-1 bg-[#C35F33]/10 text-[#C35F33] rounded-full text-sm flex items-center gap-1">
-                      {item}
-                      <button onClick={() => removeTag(field, item)} className="hover:text-red-500"><X size={14} /></button>
-                    </span>
-                  ))}
-                </div>
-                <input
-                  type="text"
-                  value={currentTagField === field ? tagInput : ''}
-                  onFocus={() => setCurrentTagField(field)}
-                  onChange={e => setTagInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag(field))}
-                  className="w-full px-4 py-2 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-                  placeholder={placeholder}
-                />
-              </div>
-            ))}
-          </div>
-        )
-
-      case 'goals':
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#406A56]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Target className="w-8 h-8 text-[#406A56]" />
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-900">Your life goals</h2>
-              <p className="text-gray-500 mt-2">Dreams and aspirations</p>
-            </div>
-            
-            <div>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {profile.life_goals.map(goal => (
-                  <span key={goal} className="px-3 py-1 bg-[#4A3552]/10 text-[#4A3552] rounded-full text-sm flex items-center gap-1">
-                    {goal}
-                    <button onClick={() => removeTag('life_goals', goal)} className="hover:text-red-500"><X size={14} /></button>
-                  </span>
-                ))}
-              </div>
-              <input
-                type="text"
-                value={currentTagField === 'life_goals' ? tagInput : ''}
-                onFocus={() => setCurrentTagField('life_goals')}
-                onChange={e => setTagInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag('life_goals'))}
-                className="w-full px-4 py-2 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-                placeholder="Add a life goal"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Favorite Quote</label>
-              <textarea
-                value={profile.favorite_quote}
-                onChange={e => setProfile(p => ({ ...p, favorite_quote: e.target.value }))}
-                className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-                placeholder="A quote that inspires you..."
-                rows={2}
-              />
-            </div>
-          </div>
-        )
-
-      default:
-        return null
-    }
+  const openEdit = (section: string) => {
+    setEditProfile({ ...profile })
+    setEditSection(section)
+    setShowEditModal(true)
   }
+
+  const formatLocation = () => {
+    const parts = [profile.city, profile.state, profile.country].filter(Boolean)
+    return parts.join(', ') || 'Not specified'
+  }
+
+  const calculateAge = (dob: string) => {
+    if (!dob) return null
+    const birth = new Date(dob)
+    const today = new Date()
+    let age = today.getFullYear() - birth.getFullYear()
+    const m = today.getMonth() - birth.getMonth()
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+    return age
+  }
+
+  // Tag display component
+  const TagList = ({ items, colorClass = 'bg-[#406A56]/10 text-[#406A56]' }: { items: string[], colorClass?: string }) => (
+    <div className="flex flex-wrap gap-2">
+      {items.length > 0 ? items.map(item => (
+        <span key={item} className={`px-3 py-1 rounded-full text-sm ${colorClass}`}>
+          {item}
+        </span>
+      )) : (
+        <span className="text-gray-400 text-sm italic">None added yet</span>
+      )}
+    </div>
+  )
+
+  // Glass card section component
+  const ProfileCard = ({ title, icon: Icon, iconColor = 'text-[#406A56]', bgColor = 'bg-[#406A56]/10', section, children }: {
+    title: string
+    icon: React.ElementType
+    iconColor?: string
+    bgColor?: string
+    section: string
+    children: React.ReactNode
+  }) => (
+    <div className="glass-card-page p-5 mb-4 group relative">
+      <button
+        onClick={() => openEdit(section)}
+        className="absolute top-4 right-4 p-2 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all"
+      >
+        <Edit2 size={14} />
+      </button>
+      <div className="flex items-center gap-3 mb-4">
+        <div className={`w-9 h-9 rounded-xl ${bgColor} flex items-center justify-center`}>
+          <Icon size={18} className={iconColor} />
+        </div>
+        <h3 className="font-semibold text-[#2d2d2d]">{title}</h3>
+      </div>
+      {children}
+    </div>
+  )
 
   if (loading) {
     return (
-      <div className="min-h-screen home-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[#406A56]" />
+      <div className="page-container">
+        <div className="page-background">
+          <div className="page-blob page-blob-1" />
+          <div className="page-blob page-blob-2" />
+          <div className="page-blob page-blob-3" />
+        </div>
+        <div className="relative z-10 flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-[#406A56]" />
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen home-background">
-      <div className="home-blob home-blob-1" />
-      <div className="home-blob home-blob-2" />
-      
-      <div className="relative z-10 p-4 max-w-xl mx-auto">
+    <div className="page-container">
+      {/* Background */}
+      <div className="page-background">
+        <div className="page-blob page-blob-1" />
+        <div className="page-blob page-blob-2" />
+        <div className="page-blob page-blob-3" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 max-w-7xl mx-auto">
         {/* Header */}
-        <header className="flex items-center gap-4 mb-6">
-          <Link href="/dashboard" className="p-2 bg-white/80 backdrop-blur-sm rounded-xl text-gray-600 hover:text-gray-900 border border-gray-200">
+        <div className="page-header mb-8">
+          <Link href="/dashboard" className="page-header-back">
             <ChevronLeft size={20} />
           </Link>
-          <h1 className="text-xl font-semibold text-gray-900">Edit Profile</h1>
-        </header>
-
-        {/* Step Navigation */}
-        <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-2">
-          {STEPS.map((s, i) => (
-            <button
-              key={s.id}
-              onClick={() => { saveProfile(); setStep(i) }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-all ${
-                step === i 
-                  ? 'bg-[#406A56] text-white' 
-                  : 'bg-white/50 text-gray-500 hover:bg-white/80'
-              }`}
-            >
-              <s.icon size={14} />
-              {s.title}
-            </button>
-          ))}
-        </div>
-
-        {/* Progress */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2 text-sm">
-            <span className="font-medium text-[#406A56]">{STEPS[step].title}</span>
-            <span className="text-gray-500">{step + 1} of {STEPS.length}</span>
-          </div>
-          <div className="h-1.5 bg-white/50 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#406A56] transition-all duration-300"
-              style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
-            />
+          <div className="flex-1">
+            <h1 className="page-header-title">My Profile</h1>
+            <p className="page-header-subtitle">Your personal legacy information</p>
           </div>
         </div>
 
-        {/* Card */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-sm">
-          {renderStep()}
+        {/* 3-Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Left Column - Personality & Interests */}
+          <div className="lg:col-span-3 space-y-4">
+            {/* Personality */}
+            <ProfileCard title="Personality" icon={Brain} section="personality">
+              {profile.personality_type && (
+                <div className="mb-3">
+                  <span className="text-sm text-gray-500">Type</span>
+                  <p className="font-medium text-[#406A56]">{profile.personality_type}</p>
+                </div>
+              )}
+              <div className="mb-3">
+                <span className="text-sm text-gray-500 block mb-2">Traits</span>
+                <TagList items={profile.personality_traits} />
+              </div>
+            </ProfileCard>
 
-          {/* Navigation */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100">
-            <button
-              onClick={() => { saveProfile(); setStep(s => s - 1) }}
-              disabled={step === 0}
-              className="flex items-center gap-2 px-4 py-2 text-gray-500 hover:text-[#406A56] disabled:opacity-0 transition-colors"
-            >
-              <ChevronLeft size={16} />
-              Back
-            </button>
+            {/* Interests */}
+            <ProfileCard title="Interests" icon={Heart} iconColor="text-[#C35F33]" bgColor="bg-[#C35F33]/10" section="interests">
+              <TagList items={profile.interests} colorClass="bg-[#C35F33]/10 text-[#C35F33]" />
+            </ProfileCard>
 
-            {step < STEPS.length - 1 ? (
+            {/* Hobbies */}
+            <ProfileCard title="Hobbies" icon={Sparkles} iconColor="text-[#D9C61A]" bgColor="bg-[#D9C61A]/10" section="hobbies">
+              <TagList items={profile.hobbies} colorClass="bg-[#D9C61A]/20 text-[#8B7B0A]" />
+            </ProfileCard>
+
+            {/* Skills */}
+            <ProfileCard title="Skills" icon={Star} iconColor="text-[#8DACAB]" bgColor="bg-[#8DACAB]/10" section="skills">
+              <TagList items={profile.skills} colorClass="bg-[#8DACAB]/20 text-[#5d8585]" />
+            </ProfileCard>
+
+            {/* Life Philosophy */}
+            <ProfileCard title="Life Philosophy" icon={Quote} iconColor="text-[#4A3552]" bgColor="bg-[#4A3552]/10" section="philosophy">
+              {profile.personal_motto ? (
+                <p className="text-[#4A3552] italic">"{profile.personal_motto}"</p>
+              ) : (
+                <p className="text-gray-400 text-sm italic">No motto set</p>
+              )}
+              {profile.favorite_quote && (
+                <div className="mt-3 pt-3 border-t border-[#4A3552]/10">
+                  <span className="text-sm text-gray-500 block mb-1">Favorite Quote</span>
+                  <p className="text-sm text-[#4A3552]/80 italic">"{profile.favorite_quote}"</p>
+                </div>
+              )}
+            </ProfileCard>
+
+            {/* Life Goals */}
+            <ProfileCard title="Life Goals" icon={Target} iconColor="text-[#4A3552]" bgColor="bg-[#4A3552]/10" section="goals">
+              <TagList items={profile.life_goals} colorClass="bg-[#4A3552]/10 text-[#4A3552]" />
+            </ProfileCard>
+          </div>
+
+          {/* Center Column - Hero Section */}
+          <div className="lg:col-span-6">
+            {/* Main Profile Card */}
+            <div className="glass-card-page glass-card-page-strong p-8 text-center mb-6 group relative">
               <button
-                onClick={() => { saveProfile(); setStep(s => s + 1) }}
-                className="flex items-center gap-2 px-6 py-2.5 bg-[#406A56] text-white rounded-xl font-medium hover:bg-[#355a48] transition-all"
+                onClick={() => openEdit('basics')}
+                className="absolute top-4 right-4 p-2 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all"
               >
-                Continue
-                <ChevronRight size={16} />
+                <Edit2 size={14} />
               </button>
-            ) : (
-              <Link
-                href="/dashboard"
-                onClick={() => saveProfile()}
-                className="flex items-center gap-2 px-6 py-2.5 bg-[#406A56] text-white rounded-xl font-medium hover:bg-[#355a48] transition-all"
+
+              {/* Avatar */}
+              <div className="relative inline-block mb-6">
+                {profile.avatar_url ? (
+                  <img 
+                    src={profile.avatar_url} 
+                    alt={profile.full_name} 
+                    className="w-36 h-36 rounded-full object-cover border-4 border-[#406A56]/20 shadow-lg"
+                  />
+                ) : (
+                  <div className="w-36 h-36 rounded-full bg-gradient-to-br from-[#406A56] to-[#5A8A72] flex items-center justify-center text-white text-4xl font-semibold shadow-lg">
+                    {profile.full_name?.charAt(0) || '?'}
+                  </div>
+                )}
+              </div>
+
+              {/* Name & Basic Info */}
+              <h2 className="text-3xl font-bold text-[#2d2d2d] mb-2">
+                {profile.full_name || 'Your Name'}
+              </h2>
+              
+              {profile.occupation && (
+                <p className="text-lg text-[#406A56] mb-2">{profile.occupation}</p>
+              )}
+              
+              {profile.date_of_birth && (
+                <div className="flex items-center justify-center gap-2 text-gray-500 mb-4">
+                  <Calendar size={16} />
+                  <span>
+                    {new Date(profile.date_of_birth).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    {calculateAge(profile.date_of_birth) && ` (${calculateAge(profile.date_of_birth)} years old)`}
+                  </span>
+                </div>
+              )}
+
+              {(profile.city || profile.country) && (
+                <div className="flex items-center justify-center gap-2 text-gray-500 mb-4">
+                  <MapPin size={16} />
+                  <span>{formatLocation()}</span>
+                </div>
+              )}
+
+              {profile.gender && (
+                <span className="inline-block px-3 py-1 bg-[#406A56]/10 text-[#406A56] rounded-full text-sm">
+                  {profile.gender}
+                </span>
+              )}
+            </div>
+
+            {/* Biography Card */}
+            <div className="glass-card-page p-6 mb-6 group relative">
+              <button
+                onClick={() => openEdit('bio')}
+                className="absolute top-4 right-4 p-2 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all"
               >
-                {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                Done
-              </Link>
-            )}
+                <Edit2 size={14} />
+              </button>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-9 h-9 rounded-xl bg-[#406A56]/10 flex items-center justify-center">
+                  <User size={18} className="text-[#406A56]" />
+                </div>
+                <h3 className="font-semibold text-[#2d2d2d]">About Me</h3>
+              </div>
+              {profile.biography ? (
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{profile.biography}</p>
+              ) : (
+                <p className="text-gray-400 italic">Tell your story... What makes you, you?</p>
+              )}
+            </div>
+
+            {/* Favorites Section */}
+            <ProfileCard title="Favorites" icon={Star} iconColor="text-[#C35F33]" bgColor="bg-[#C35F33]/10" section="favorites">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <BookOpen size={14} className="text-[#406A56]" />
+                    <span className="text-sm font-medium text-gray-600">Books</span>
+                  </div>
+                  <TagList items={profile.favorite_books} colorClass="bg-[#406A56]/10 text-[#406A56]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Film size={14} className="text-[#4A3552]" />
+                    <span className="text-sm font-medium text-gray-600">Movies</span>
+                  </div>
+                  <TagList items={profile.favorite_movies} colorClass="bg-[#4A3552]/10 text-[#4A3552]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Music size={14} className="text-[#8DACAB]" />
+                    <span className="text-sm font-medium text-gray-600">Music</span>
+                  </div>
+                  <TagList items={profile.favorite_music} colorClass="bg-[#8DACAB]/20 text-[#5d8585]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Utensils size={14} className="text-[#C35F33]" />
+                    <span className="text-sm font-medium text-gray-600">Foods</span>
+                  </div>
+                  <TagList items={profile.favorite_foods} colorClass="bg-[#C35F33]/10 text-[#C35F33]" />
+                </div>
+              </div>
+            </ProfileCard>
           </div>
+
+          {/* Right Column - Location & Professional */}
+          <div className="lg:col-span-3 space-y-4">
+            {/* Location */}
+            <ProfileCard title="Location" icon={MapPin} section="location">
+              <div className="space-y-2">
+                {profile.address && (
+                  <p className="text-gray-700">{profile.address}</p>
+                )}
+                <p className="text-gray-700">{formatLocation()}</p>
+                {profile.zipcode && (
+                  <p className="text-gray-500 text-sm">{profile.zipcode}</p>
+                )}
+                {!profile.city && !profile.country && !profile.address && (
+                  <p className="text-gray-400 text-sm italic">No location added</p>
+                )}
+              </div>
+            </ProfileCard>
+
+            {/* Religion */}
+            <ProfileCard title="Faith & Beliefs" icon={Heart} iconColor="text-[#4A3552]" bgColor="bg-[#4A3552]/10" section="religion">
+              <TagList items={profile.religions} colorClass="bg-[#4A3552]/10 text-[#4A3552]" />
+            </ProfileCard>
+
+            {/* Occupation */}
+            <ProfileCard title="Work" icon={Briefcase} iconColor="text-[#D9C61A]" bgColor="bg-[#D9C61A]/10" section="work">
+              {profile.occupation ? (
+                <>
+                  <p className="font-medium text-[#2d2d2d]">{profile.occupation}</p>
+                  {profile.company && (
+                    <p className="text-gray-500 text-sm mt-1">at {profile.company}</p>
+                  )}
+                </>
+              ) : (
+                <p className="text-gray-400 text-sm italic">No occupation set</p>
+              )}
+            </ProfileCard>
+
+            {/* Education */}
+            <ProfileCard title="Education" icon={GraduationCap} iconColor="text-[#8DACAB]" bgColor="bg-[#8DACAB]/10" section="education">
+              {profile.school_name ? (
+                <>
+                  <p className="font-medium text-[#2d2d2d]">{profile.school_name}</p>
+                  {profile.degree && (
+                    <p className="text-gray-500 text-sm mt-1">{profile.degree}</p>
+                  )}
+                  {profile.education_level && (
+                    <span className="inline-block mt-2 px-2 py-0.5 bg-[#8DACAB]/15 text-[#5d8585] rounded text-xs">
+                      {profile.education_level}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <p className="text-gray-400 text-sm italic">No education added</p>
+              )}
+            </ProfileCard>
+
+            {/* Contact Info */}
+            <ProfileCard title="Contact" icon={User} section="contact">
+              <div className="space-y-2">
+                {profile.phone ? (
+                  <p className="text-gray-700">{profile.phone}</p>
+                ) : (
+                  <p className="text-gray-400 text-sm italic">No phone added</p>
+                )}
+              </div>
+            </ProfileCard>
+          </div>
+        </div>
+      </div>
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <EditModal
+          section={editSection}
+          profile={editProfile}
+          setProfile={setEditProfile}
+          onClose={() => { setShowEditModal(false); setEditSection(null) }}
+          onSave={saveProfile}
+          saving={saving}
+          uploading={uploading}
+          handlePhotoUpload={handlePhotoUpload}
+          tagInput={tagInput}
+          setTagInput={setTagInput}
+          currentTagField={currentTagField}
+          setCurrentTagField={setCurrentTagField}
+          addTag={addTag}
+          removeTag={removeTag}
+        />
+      )}
+    </div>
+  )
+}
+
+// Edit Modal Component
+function EditModal({
+  section, profile, setProfile, onClose, onSave, saving, uploading,
+  handlePhotoUpload, tagInput, setTagInput, currentTagField, setCurrentTagField, addTag, removeTag
+}: {
+  section: string | null
+  profile: Profile
+  setProfile: React.Dispatch<React.SetStateAction<Profile>>
+  onClose: () => void
+  onSave: () => void
+  saving: boolean
+  uploading: boolean
+  handlePhotoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
+  tagInput: string
+  setTagInput: (v: string) => void
+  currentTagField: keyof Profile | null
+  setCurrentTagField: (v: keyof Profile | null) => void
+  addTag: (field: keyof Profile) => void
+  removeTag: (field: keyof Profile, tag: string) => void
+}) {
+  const getTitle = () => {
+    switch (section) {
+      case 'basics': return 'Edit Basic Info'
+      case 'bio': return 'Edit Biography'
+      case 'personality': return 'Edit Personality'
+      case 'interests': return 'Edit Interests'
+      case 'hobbies': return 'Edit Hobbies'
+      case 'skills': return 'Edit Skills'
+      case 'philosophy': return 'Edit Life Philosophy'
+      case 'goals': return 'Edit Life Goals'
+      case 'location': return 'Edit Location'
+      case 'religion': return 'Edit Faith & Beliefs'
+      case 'work': return 'Edit Work'
+      case 'education': return 'Edit Education'
+      case 'contact': return 'Edit Contact'
+      case 'favorites': return 'Edit Favorites'
+      default: return 'Edit Profile'
+    }
+  }
+
+  const TagEditor = ({ field, label, placeholder, colorClass = 'bg-[#406A56]/10 text-[#406A56]' }: {
+    field: keyof Profile
+    label: string
+    placeholder: string
+    colorClass?: string
+  }) => (
+    <div>
+      <label className="block text-sm text-[#666] mb-2">{label}</label>
+      <div className="flex flex-wrap gap-2 mb-2">
+        {(profile[field] as string[]).map(item => (
+          <span key={item} className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 ${colorClass}`}>
+            {item}
+            <button onClick={() => removeTag(field, item)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+          </span>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={currentTagField === field ? tagInput : ''}
+          onFocus={() => setCurrentTagField(field)}
+          onChange={e => setTagInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag(field))}
+          className="form-input flex-1"
+          placeholder={placeholder}
+        />
+        <button onClick={() => addTag(field)} className="btn-secondary px-4">Add</button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="modal-overlay-page">
+      <div className="modal-content-page max-w-lg">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-[#2d2d2d]">{getTitle()}</h2>
+          <button onClick={onClose} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+          {section === 'basics' && (
+            <>
+              <div className="flex justify-center mb-4">
+                {profile.avatar_url ? (
+                  <div className="relative">
+                    <img src={profile.avatar_url} alt="Profile" className="w-28 h-28 rounded-full object-cover border-4 border-[#406A56]/20" />
+                    <label className="absolute bottom-0 right-0 w-9 h-9 bg-[#406A56] text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-[#355a48]">
+                      <Camera size={16} />
+                      <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploading} />
+                    </label>
+                  </div>
+                ) : (
+                  <label className="w-28 h-28 rounded-full border-4 border-dashed border-[#406A56]/30 flex flex-col items-center justify-center cursor-pointer hover:border-[#406A56]/50 transition-all">
+                    {uploading ? <Loader2 className="w-8 h-8 text-[#406A56] animate-spin" /> : (
+                      <>
+                        <Upload className="w-8 h-8 text-[#406A56]/50" />
+                        <span className="text-xs text-[#406A56]/50 mt-1">Add photo</span>
+                      </>
+                    )}
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploading} />
+                  </label>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm text-[#666] mb-1.5">Full Name</label>
+                <input
+                  value={profile.full_name}
+                  onChange={e => setProfile(p => ({ ...p, full_name: e.target.value }))}
+                  className="form-input"
+                  placeholder="Your full name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-[#666] mb-1.5">Date of Birth</label>
+                <input
+                  type="date"
+                  value={profile.date_of_birth}
+                  onChange={e => setProfile(p => ({ ...p, date_of_birth: e.target.value }))}
+                  className="form-input"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-[#666] mb-2">Gender</label>
+                <div className="flex flex-wrap gap-2">
+                  {GENDER_OPTIONS.map(g => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setProfile(p => ({ ...p, gender: g }))}
+                      className={`px-4 py-2 rounded-full text-sm transition-all ${
+                        profile.gender === g 
+                          ? 'bg-[#406A56] text-white' 
+                          : 'bg-white/50 text-gray-600 border border-gray-200 hover:border-[#406A56]/30'
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {section === 'bio' && (
+            <div>
+              <label className="block text-sm text-[#666] mb-1.5">Biography</label>
+              <textarea
+                value={profile.biography}
+                onChange={e => setProfile(p => ({ ...p, biography: e.target.value }))}
+                className="form-textarea min-h-[200px]"
+                placeholder="Tell your story..."
+              />
+            </div>
+          )}
+
+          {section === 'personality' && (
+            <>
+              <div>
+                <label className="block text-sm text-[#666] mb-1.5">Personality Type</label>
+                <select
+                  value={profile.personality_type}
+                  onChange={e => setProfile(p => ({ ...p, personality_type: e.target.value }))}
+                  className="form-select"
+                >
+                  <option value="">Select your personality type</option>
+                  {PERSONALITY_TYPES.map(pt => (
+                    <option key={pt} value={pt}>{pt}</option>
+                  ))}
+                </select>
+              </div>
+              <TagEditor field="personality_traits" label="Personality Traits" placeholder="Add a trait (e.g., Creative, Loyal)" />
+            </>
+          )}
+
+          {section === 'interests' && (
+            <TagEditor field="interests" label="Interests" placeholder="Add an interest" colorClass="bg-[#C35F33]/10 text-[#C35F33]" />
+          )}
+
+          {section === 'hobbies' && (
+            <TagEditor field="hobbies" label="Hobbies" placeholder="Add a hobby" colorClass="bg-[#D9C61A]/20 text-[#8B7B0A]" />
+          )}
+
+          {section === 'skills' && (
+            <TagEditor field="skills" label="Skills" placeholder="Add a skill" colorClass="bg-[#8DACAB]/20 text-[#5d8585]" />
+          )}
+
+          {section === 'philosophy' && (
+            <>
+              <div>
+                <label className="block text-sm text-[#666] mb-1.5">Personal Motto</label>
+                <textarea
+                  value={profile.personal_motto}
+                  onChange={e => setProfile(p => ({ ...p, personal_motto: e.target.value }))}
+                  className="form-textarea"
+                  placeholder="What do you live by?"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-[#666] mb-1.5">Favorite Quote</label>
+                <textarea
+                  value={profile.favorite_quote}
+                  onChange={e => setProfile(p => ({ ...p, favorite_quote: e.target.value }))}
+                  className="form-textarea"
+                  placeholder="A quote that inspires you..."
+                  rows={3}
+                />
+              </div>
+            </>
+          )}
+
+          {section === 'goals' && (
+            <TagEditor field="life_goals" label="Life Goals" placeholder="Add a life goal" colorClass="bg-[#4A3552]/10 text-[#4A3552]" />
+          )}
+
+          {section === 'location' && (
+            <>
+              <div>
+                <label className="block text-sm text-[#666] mb-1.5">Street Address</label>
+                <input
+                  value={profile.address}
+                  onChange={e => setProfile(p => ({ ...p, address: e.target.value }))}
+                  className="form-input"
+                  placeholder="123 Main Street"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-[#666] mb-1.5">City</label>
+                  <input
+                    value={profile.city}
+                    onChange={e => setProfile(p => ({ ...p, city: e.target.value }))}
+                    className="form-input"
+                    placeholder="City"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-[#666] mb-1.5">State</label>
+                  <input
+                    value={profile.state}
+                    onChange={e => setProfile(p => ({ ...p, state: e.target.value }))}
+                    className="form-input"
+                    placeholder="State"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-[#666] mb-1.5">Country</label>
+                  <input
+                    value={profile.country}
+                    onChange={e => setProfile(p => ({ ...p, country: e.target.value }))}
+                    className="form-input"
+                    placeholder="Country"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-[#666] mb-1.5">Zip Code</label>
+                  <input
+                    value={profile.zipcode}
+                    onChange={e => setProfile(p => ({ ...p, zipcode: e.target.value }))}
+                    className="form-input"
+                    placeholder="12345"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {section === 'religion' && (
+            <TagEditor field="religions" label="Faith & Beliefs" placeholder="Add a belief or religion" colorClass="bg-[#4A3552]/10 text-[#4A3552]" />
+          )}
+
+          {section === 'work' && (
+            <>
+              <div>
+                <label className="block text-sm text-[#666] mb-1.5">Occupation</label>
+                <input
+                  value={profile.occupation}
+                  onChange={e => setProfile(p => ({ ...p, occupation: e.target.value }))}
+                  className="form-input"
+                  placeholder="Job title or role"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-[#666] mb-1.5">Company</label>
+                <input
+                  value={profile.company}
+                  onChange={e => setProfile(p => ({ ...p, company: e.target.value }))}
+                  className="form-input"
+                  placeholder="Company or organization"
+                />
+              </div>
+            </>
+          )}
+
+          {section === 'education' && (
+            <>
+              <div>
+                <label className="block text-sm text-[#666] mb-1.5">School / University</label>
+                <input
+                  value={profile.school_name}
+                  onChange={e => setProfile(p => ({ ...p, school_name: e.target.value }))}
+                  className="form-input"
+                  placeholder="School name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-[#666] mb-1.5">Degree</label>
+                <input
+                  value={profile.degree}
+                  onChange={e => setProfile(p => ({ ...p, degree: e.target.value }))}
+                  className="form-input"
+                  placeholder="Degree or certification"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-[#666] mb-1.5">Education Level</label>
+                <input
+                  value={profile.education_level}
+                  onChange={e => setProfile(p => ({ ...p, education_level: e.target.value }))}
+                  className="form-input"
+                  placeholder="e.g., Bachelor's, Master's, PhD"
+                />
+              </div>
+            </>
+          )}
+
+          {section === 'contact' && (
+            <div>
+              <label className="block text-sm text-[#666] mb-1.5">Phone Number</label>
+              <input
+                value={profile.phone}
+                onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
+                className="form-input"
+                placeholder="(555) 123-4567"
+              />
+            </div>
+          )}
+
+          {section === 'favorites' && (
+            <>
+              <TagEditor field="favorite_books" label="Favorite Books" placeholder="Add a book" colorClass="bg-[#406A56]/10 text-[#406A56]" />
+              <TagEditor field="favorite_movies" label="Favorite Movies" placeholder="Add a movie" colorClass="bg-[#4A3552]/10 text-[#4A3552]" />
+              <TagEditor field="favorite_music" label="Favorite Music" placeholder="Add an artist or song" colorClass="bg-[#8DACAB]/20 text-[#5d8585]" />
+              <TagEditor field="favorite_foods" label="Favorite Foods" placeholder="Add a food" colorClass="bg-[#C35F33]/10 text-[#C35F33]" />
+            </>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[#406A56]/10">
+          <button onClick={onClose} className="btn-secondary">Cancel</button>
+          <button onClick={onSave} disabled={saving} className="btn-primary">
+            {saving ? <><Loader2 size={16} className="animate-spin" /> Saving...</> : <><Check size={16} /> Save</>}
+          </button>
         </div>
       </div>
     </div>

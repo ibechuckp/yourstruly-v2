@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { 
   ChevronLeft, Edit2, Trash2, Heart, Calendar, Camera,
-  Image as ImageIcon, PawPrint, Upload, AlertCircle, User
+  Image as ImageIcon, PawPrint, Upload, AlertCircle, User, X, Check, Search
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/home.css'
@@ -20,11 +20,19 @@ interface Pet {
   personality?: string
   favorite_things?: string[]
   medical_notes?: string
+  emergency_caretaker_id?: string
   emergency_caretaker?: string
   emergency_caretaker_phone?: string
   is_deceased: boolean
   date_of_passing?: string
   profile_photo_url?: string
+}
+
+interface Contact {
+  id: string
+  full_name: string
+  phone?: string
+  avatar_url?: string
 }
 
 interface TaggedMedia {
@@ -34,22 +42,39 @@ interface TaggedMedia {
   memory_title?: string
 }
 
+const SPECIES_OPTIONS = ['Dog', 'Cat', 'Bird', 'Fish', 'Rabbit', 'Hamster', 'Guinea Pig', 'Turtle', 'Snake', 'Other']
+
 export default function PetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [pet, setPet] = useState<Pet | null>(null)
   const [taggedPhotos, setTaggedPhotos] = useState<TaggedMedia[]>([])
+  const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
+  const [showEditModal, setShowEditModal] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
     loadPet()
+    loadContacts()
   }, [id])
+
+  const loadContacts = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    
+    const { data } = await supabase
+      .from('contacts')
+      .select('id, full_name, phone, avatar_url')
+      .eq('user_id', user.id)
+      .order('full_name')
+    
+    if (data) setContacts(data)
+  }
 
   const loadPet = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Load pet
     const { data: petData } = await supabase
       .from('pets')
       .select('*')
@@ -63,8 +88,7 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
     }
     setPet(petData)
 
-    // Load tagged photos (if pet_tags table exists)
-    // For now, we'll check memories where pet is mentioned in title/description
+    // Load tagged photos
     const { data: memoriesData } = await supabase
       .from('memories')
       .select('id, title, memory_media(id, file_url)')
@@ -109,13 +133,11 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
       years--
     }
     if (years < 1) {
-      // Calculate months
       let months = (today.getFullYear() - birth.getFullYear()) * 12
       months += today.getMonth() - birth.getMonth()
-      if (today.getDate() < birth.getDate()) months--
-      return `${months} months`
+      return `${months} month${months !== 1 ? 's' : ''}`
     }
-    return `${years} years`
+    return `${years} year${years !== 1 ? 's' : ''}`
   }
 
   const handleDelete = async () => {
@@ -161,14 +183,8 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
 
   if (loading) {
     return (
-      <div className="min-h-screen relative">
-        <div className="home-background">
-          <div className="home-blob home-blob-1" />
-          <div className="home-blob home-blob-2" />
-        </div>
-        <div className="relative z-10 flex items-center justify-center min-h-screen">
-          <div className="text-gray-500">Loading...</div>
-        </div>
+      <div className="min-h-screen home-background flex items-center justify-center">
+        <div className="animate-pulse text-[#406A56]">Loading...</div>
       </div>
     )
   }
@@ -193,6 +209,7 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
   }
 
   const age = pet.date_of_birth ? getAge(pet.date_of_birth) : null
+  const caretakerContact = contacts.find(c => c.id === pet.emergency_caretaker_id)
 
   return (
     <div className="min-h-screen relative pb-24">
@@ -236,12 +253,12 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
             </div>
 
             <div className="flex items-center gap-2">
-              <Link
-                href={`/dashboard/contacts?editPet=${id}`}
+              <button
+                onClick={() => setShowEditModal(true)}
                 className="p-2.5 bg-white/80 backdrop-blur-sm text-gray-500 hover:text-[#C35F33] rounded-xl transition-all border border-gray-200"
               >
                 <Edit2 size={18} />
-              </Link>
+              </button>
               <button
                 onClick={handleDelete}
                 className="p-2.5 bg-white/80 backdrop-blur-sm text-gray-500 hover:text-red-500 rounded-xl transition-all border border-gray-200"
@@ -319,7 +336,7 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
               </div>
             )}
 
-            {/* Medical Notes - Always show */}
+            {/* Medical Notes */}
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-100 shadow-sm">
               <h3 className="text-gray-900 font-semibold mb-2 flex items-center gap-2">
                 <AlertCircle size={16} className="text-[#C35F33]" />
@@ -338,7 +355,25 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
                 <User size={16} className="text-[#406A56]" />
                 Emergency Caretaker
               </h3>
-              {pet.emergency_caretaker ? (
+              {caretakerContact ? (
+                <div className="flex items-center gap-3">
+                  {caretakerContact.avatar_url ? (
+                    <img src={caretakerContact.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-[#406A56]/10 flex items-center justify-center">
+                      <User size={18} className="text-[#406A56]" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-gray-900 text-sm font-medium">{caretakerContact.full_name}</p>
+                    {caretakerContact.phone && (
+                      <a href={`tel:${caretakerContact.phone}`} className="text-[#406A56] text-xs hover:underline">
+                        {caretakerContact.phone}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ) : pet.emergency_caretaker ? (
                 <div className="space-y-1">
                   <p className="text-gray-900 text-sm font-medium">{pet.emergency_caretaker}</p>
                   {pet.emergency_caretaker_phone && (
@@ -350,6 +385,7 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
               ) : (
                 <p className="text-gray-400 text-sm italic">Not specified - add someone who can care for {pet.name} in an emergency</p>
               )}
+              <p className="text-xs text-gray-400 mt-2">This person will be notified if anything happens to you.</p>
             </div>
           </div>
 
@@ -400,23 +436,300 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
                       href={`/dashboard/memories/${photo.memory_id}`}
                       className="aspect-square rounded-xl overflow-hidden hover:ring-2 hover:ring-[#C35F33] transition-all"
                     >
-                      <img 
-                        src={photo.file_url} 
-                        alt="" 
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={photo.file_url} alt="" className="w-full h-full object-cover" />
                     </Link>
                   ))}
-                  {taggedPhotos.length > 8 && (
-                    <div className="aspect-square rounded-xl bg-gray-100 flex items-center justify-center">
-                      <span className="text-gray-500 font-medium">+{taggedPhotos.length - 8}</span>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
           </div>
         </main>
+      </div>
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <PetEditModal 
+          pet={pet} 
+          contacts={contacts}
+          onClose={() => setShowEditModal(false)} 
+          onSave={(updated) => {
+            setPet(updated)
+            setShowEditModal(false)
+          }} 
+        />
+      )}
+    </div>
+  )
+}
+
+// Edit Modal Component
+function PetEditModal({ 
+  pet, 
+  contacts,
+  onClose, 
+  onSave 
+}: { 
+  pet: Pet
+  contacts: Contact[]
+  onClose: () => void
+  onSave: (pet: Pet) => void 
+}) {
+  const [form, setForm] = useState({
+    name: pet.name,
+    species: pet.species,
+    breed: pet.breed || '',
+    date_of_birth: pet.date_of_birth || '',
+    adoption_date: pet.adoption_date || '',
+    color: pet.color || '',
+    personality: pet.personality || '',
+    medical_notes: pet.medical_notes || '',
+    emergency_caretaker_id: pet.emergency_caretaker_id || '',
+    is_deceased: pet.is_deceased,
+    date_of_passing: pet.date_of_passing || '',
+  })
+  const [saving, setSaving] = useState(false)
+  const [caretakerSearch, setCaretakerSearch] = useState('')
+  const [showCaretakerDropdown, setShowCaretakerDropdown] = useState(false)
+  const supabase = createClient()
+
+  const filteredContacts = contacts.filter(c => 
+    c.full_name.toLowerCase().includes(caretakerSearch.toLowerCase())
+  )
+
+  const selectedCaretaker = contacts.find(c => c.id === form.emergency_caretaker_id)
+
+  const handleSave = async () => {
+    if (!form.name || !form.species) return
+    setSaving(true)
+
+    const { data, error } = await supabase
+      .from('pets')
+      .update({
+        name: form.name,
+        species: form.species,
+        breed: form.breed || null,
+        date_of_birth: form.date_of_birth || null,
+        adoption_date: form.adoption_date || null,
+        color: form.color || null,
+        personality: form.personality || null,
+        medical_notes: form.medical_notes || null,
+        emergency_caretaker_id: form.emergency_caretaker_id || null,
+        is_deceased: form.is_deceased,
+        date_of_passing: form.is_deceased ? (form.date_of_passing || null) : null,
+      })
+      .eq('id', pet.id)
+      .select()
+      .single()
+
+    if (!error && data) {
+      onSave(data)
+    }
+    setSaving(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900">Edit {pet.name}</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Name *</label>
+              <input
+                value={form.name}
+                onChange={e => setForm({ ...form, name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#C35F33]/20 focus:border-[#C35F33] outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Species *</label>
+              <select
+                value={form.species}
+                onChange={e => setForm({ ...form, species: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#C35F33]/20 focus:border-[#C35F33] outline-none"
+              >
+                {SPECIES_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Breed</label>
+              <input
+                value={form.breed}
+                onChange={e => setForm({ ...form, breed: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#C35F33]/20 focus:border-[#C35F33] outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Color</label>
+              <input
+                value={form.color}
+                onChange={e => setForm({ ...form, color: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#C35F33]/20 focus:border-[#C35F33] outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Date of Birth</label>
+              <input
+                type="date"
+                value={form.date_of_birth}
+                onChange={e => setForm({ ...form, date_of_birth: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#C35F33]/20 focus:border-[#C35F33] outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Adoption Date</label>
+              <input
+                type="date"
+                value={form.adoption_date}
+                onChange={e => setForm({ ...form, adoption_date: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#C35F33]/20 focus:border-[#C35F33] outline-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Personality</label>
+            <textarea
+              value={form.personality}
+              onChange={e => setForm({ ...form, personality: e.target.value })}
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#C35F33]/20 focus:border-[#C35F33] outline-none resize-none"
+              placeholder="Playful, loves belly rubs..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Medical Notes</label>
+            <textarea
+              value={form.medical_notes}
+              onChange={e => setForm({ ...form, medical_notes: e.target.value })}
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#C35F33]/20 focus:border-[#C35F33] outline-none resize-none"
+              placeholder="Allergies, medications, vet info..."
+            />
+          </div>
+
+          {/* Emergency Caretaker - Contact Selector */}
+          <div className="p-4 bg-[#406A56]/10 rounded-xl">
+            <label className="block text-sm font-medium text-[#406A56] mb-1">Emergency Caretaker</label>
+            <p className="text-xs text-gray-500 mb-3">Who should care for {pet.name} if something happens to you?</p>
+            
+            {selectedCaretaker ? (
+              <div className="flex items-center justify-between bg-white rounded-lg p-3">
+                <div className="flex items-center gap-3">
+                  {selectedCaretaker.avatar_url ? (
+                    <img src={selectedCaretaker.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-[#406A56]/20 flex items-center justify-center">
+                      <User size={14} className="text-[#406A56]" />
+                    </div>
+                  )}
+                  <span className="text-sm font-medium text-gray-900">{selectedCaretaker.full_name}</span>
+                </div>
+                <button
+                  onClick={() => setForm({ ...form, emergency_caretaker_id: '' })}
+                  className="text-gray-400 hover:text-red-500"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <div className="relative">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={caretakerSearch}
+                    onChange={e => {
+                      setCaretakerSearch(e.target.value)
+                      setShowCaretakerDropdown(true)
+                    }}
+                    onFocus={() => setShowCaretakerDropdown(true)}
+                    placeholder="Search contacts..."
+                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#406A56]/20 focus:border-[#406A56] outline-none"
+                  />
+                </div>
+                {showCaretakerDropdown && filteredContacts.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white rounded-xl border border-gray-200 shadow-lg max-h-48 overflow-y-auto">
+                    {filteredContacts.map(contact => (
+                      <button
+                        key={contact.id}
+                        onClick={() => {
+                          setForm({ ...form, emergency_caretaker_id: contact.id })
+                          setShowCaretakerDropdown(false)
+                          setCaretakerSearch('')
+                        }}
+                        className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left"
+                      >
+                        {contact.avatar_url ? (
+                          <img src={contact.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-[#406A56]/20 flex items-center justify-center">
+                            <User size={14} className="text-[#406A56]" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{contact.full_name}</p>
+                          {contact.phone && <p className="text-xs text-gray-500">{contact.phone}</p>}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Rainbow Bridge */}
+          <div className="p-4 bg-[#4A3552]/5 rounded-xl">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.is_deceased}
+                onChange={e => setForm({ ...form, is_deceased: e.target.checked })}
+                className="w-5 h-5 rounded border-gray-300 text-[#4A3552] focus:ring-[#4A3552]"
+              />
+              <span className="text-gray-600">This pet has passed away</span>
+            </label>
+            {form.is_deceased && (
+              <div className="mt-3">
+                <label className="block text-sm text-gray-600 mb-1">Date of Passing</label>
+                <input
+                  type="date"
+                  value={form.date_of_passing}
+                  onChange={e => setForm({ ...form, date_of_passing: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#4A3552]/20 focus:border-[#4A3552] outline-none"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+          <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving || !form.name || !form.species}
+            className="px-6 py-2 bg-[#C35F33] text-white rounded-xl font-medium hover:bg-[#A84E2A] transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {saving ? 'Saving...' : <><Check size={16} /> Save</>}
+          </button>
+        </div>
       </div>
     </div>
   )
