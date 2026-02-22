@@ -47,13 +47,15 @@ const INLINE_INPUT_TYPES = [
   'tag_person',
 ]
 
-// Fixed tile positions (no reflow on expand)
+// Fixed tile positions: 2x2 grid on left + 1 tall tile on right for photos
+// Layout:  [0] [1] [4-tall]
+//          [2] [3]
 const TILE_POSITIONS = [
-  { col: 0, row: 0, rotate: 0 },
-  { col: 1, row: 0, rotate: 0 },
-  { col: 2, row: 0, rotate: 0 },
-  { col: 0, row: 1, rotate: 0 },
-  { col: 1, row: 1, rotate: 0 },
+  { col: 0, row: 0 },  // top-left
+  { col: 1, row: 0 },  // top-right of 2x2
+  { col: 0, row: 1 },  // bottom-left
+  { col: 1, row: 1 },  // bottom-right of 2x2
+  { col: 2, row: 0, tall: true },  // right side, spans full height
 ]
 
 export default function DashboardPage() {
@@ -634,22 +636,24 @@ export default function DashboardPage() {
                 </motion.div>
               </div>
 
-              {/* Tile grid */}
-              <div className="relative mx-auto" style={{ width: 760, height: 420, marginTop: 16 }}>
+              {/* Tile grid: 2x2 + 1 tall on right */}
+              <div className="relative mx-auto" style={{ width: 720, height: 400, marginTop: 16 }}>
                 <AnimatePresence mode="popLayout">
                   {prompts.slice(0, 5).map((prompt, i) => {
                     const config = TYPE_CONFIG[prompt.type] || TYPE_CONFIG.memory_prompt
                     const isExpanded = expandedId === prompt.id
-                    const pos = TILE_POSITIONS[i] || { col: i % 3, row: Math.floor(i / 3), rotate: 0 }
+                    const pos = TILE_POSITIONS[i] || { col: i % 2, row: Math.floor(i / 2) }
                     const hasPhoto = prompt.photoUrl && (prompt.type === 'photo_backstory' || prompt.type === 'tag_person')
                     const contactName = getContactName(prompt, i)
                     const isContact = isContactPrompt(prompt.type)
+                    const isTall = (pos as any).tall === true
 
-                    const tileWidth = 230
-                    const tileHeight = 180
-                    const gap = 32
+                    const tileWidth = 210
+                    const tileHeight = 175
+                    const tallHeight = tileHeight * 2 + 24  // Full height for photo tiles
+                    const gap = 24
                     const left = pos.col * (tileWidth + gap)
-                    const top = pos.row * (tileHeight + gap)
+                    const top = isTall ? 0 : pos.row * (tileHeight + gap)
                     const staggerDelay = i * 0.08
 
                     return (
@@ -661,7 +665,7 @@ export default function DashboardPage() {
                           scale: 1,
                           y: 0,
                           zIndex: isExpanded ? 50 : 1,
-                          x: isExpanded ? -left + 180 : 0,
+                          x: isExpanded ? -left + 150 : 0,
                         }}
                         exit={{ opacity: 0, scale: 0.5, y: -30 }}
                         transition={{ 
@@ -676,7 +680,7 @@ export default function DashboardPage() {
                           left, 
                           top,
                           width: isExpanded ? 340 : tileWidth,
-                          minHeight: isExpanded ? 'auto' : tileHeight,
+                          minHeight: isExpanded ? 'auto' : (isTall ? tallHeight : tileHeight),
                           cursor: isExpanded ? 'default' : 'pointer',
                         }}
                       >
@@ -727,7 +731,12 @@ export default function DashboardPage() {
 
                           {/* Photo */}
                           {hasPhoto && (
-                            <img src={prompt.photoUrl} alt="" className="bubble-photo" />
+                            <img 
+                              src={prompt.photoUrl} 
+                              alt="" 
+                              className="bubble-photo"
+                              style={{ height: isTall ? 200 : 100 }}
+                            />
                           )}
 
                           {/* Question text */}

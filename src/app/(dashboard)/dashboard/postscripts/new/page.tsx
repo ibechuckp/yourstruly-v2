@@ -122,9 +122,13 @@ export default function NewPostScriptPage() {
   }, [])
 
   async function fetchContacts() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    
     const { data, error } = await supabase
       .from('contacts')
       .select('id, full_name, email, phone, relationship_type, profile_photo_url')
+      .eq('user_id', user.id)
       .order('full_name')
     
     if (error) {
@@ -186,7 +190,7 @@ export default function NewPostScriptPage() {
       for (const att of form.attachments) {
         const formData = new FormData()
         formData.append('file', att.file)
-        formData.append('bucket', 'postscripts')
+        formData.append('bucket', 'memories')
         
         const uploadRes = await fetch('/api/upload', {
           method: 'POST',
@@ -669,11 +673,11 @@ export default function NewPostScriptPage() {
                 <ChevronRight size={18} />
               </button>
             ) : (
-              <div className="flex-1 flex gap-2">
+              <div className="flex-1 flex gap-3">
                 <button
                   onClick={() => handleSave('draft')}
                   disabled={saving}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-medium 
+                  className="flex-1 py-3 px-6 bg-gray-100 text-gray-700 rounded-xl font-medium 
                            hover:bg-gray-200 transition-colors disabled:opacity-50"
                 >
                   Save Draft
@@ -681,7 +685,7 @@ export default function NewPostScriptPage() {
                 <button
                   onClick={() => handleSave('scheduled')}
                   disabled={saving}
-                  className="flex-1 py-3 px-4 bg-[#C35F33] text-white rounded-xl font-medium 
+                  className="flex-1 py-3 px-6 bg-[#C35F33] text-white rounded-xl font-medium 
                            hover:bg-[#A84E2A] transition-colors disabled:opacity-50
                            flex items-center justify-center gap-2"
                 >
