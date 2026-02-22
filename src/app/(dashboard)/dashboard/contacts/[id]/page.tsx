@@ -5,9 +5,10 @@ import { createClient } from '@/lib/supabase/client'
 import { 
   ChevronLeft, User, Mail, Phone, MapPin, Calendar,
   Video, Image as ImageIcon, Gift, Edit2, Trash2,
-  Heart, Mic, MessageSquare, Plus
+  Heart, Mic, MessageSquare, Plus, Camera, Upload
 } from 'lucide-react'
 import Link from 'next/link'
+import '@/styles/home.css'
 
 interface Contact {
   id: string
@@ -24,15 +25,14 @@ interface Contact {
   country: string
   zipcode: string
   notes: string
+  profile_photo_url?: string
 }
 
-interface Interview {
+interface TaggedMedia {
   id: string
-  title: string
-  status: string
-  created_at: string
-  session_questions: { id: string }[]
-  video_responses: { id: string }[]
+  file_url: string
+  memory_id: string
+  memory_title?: string
 }
 
 interface Memory {
@@ -53,11 +53,48 @@ interface PostScript {
 export default function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [contact, setContact] = useState<Contact | null>(null)
-  const [interviews, setInterviews] = useState<Interview[]>([])
+  const [taggedPhotos, setTaggedPhotos] = useState<TaggedMedia[]>([])
   const [memories, setMemories] = useState<Memory[]>([])
   const [postscripts, setPostscripts] = useState<PostScript[]>([])
   const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
   const supabase = createClient()
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !contact) return
+    
+    setUploading(true)
+    try {
+      // Upload to storage
+      const fileExt = file.name.split('.').pop()
+      const fileName = `contact-${contact.id}-${Date.now()}.${fileExt}`
+      const filePath = `contacts/${fileName}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file)
+      
+      if (uploadError) throw uploadError
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+      
+      // Update contact with new photo
+      await supabase
+        .from('contacts')
+        .update({ profile_photo_url: publicUrl })
+        .eq('id', contact.id)
+      
+      setContact({ ...contact, profile_photo_url: publicUrl })
+    } catch (err) {
+      console.error('Upload error:', err)
+      alert('Failed to upload photo')
+    }
+    setUploading(false)
+  }
 
   useEffect(() => {
     loadContact()
@@ -79,36 +116,25 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
       setLoading(false)
       return
     }
-
     setContact(contactData)
 
-    // Load interviews with this contact
-    const { data: interviewsData } = await supabase
-      .from('interview_sessions')
-      .select('id, title, status, created_at, session_questions(id), video_responses(id)')
-      .eq('contact_id', id)
-      .order('created_at', { ascending: false })
-      .limit(10)
-
-    setInterviews(interviewsData || [])
-
-    // Load memories where this contact is tagged
+    // Load tagged photos (face tags)
     const { data: tagsData } = await supabase
-      .from('memory_face_tags')
-      .select('memory_id')
+      .from('face_tags')
+      .select('memory_media_id, memory_media(id, file_url, memory_id, memory:memories(title))')
       .eq('contact_id', id)
+      .limit(20)
 
-    const memoryIds = [...new Set(tagsData?.map(t => t.memory_id) || [])]
-    
-    if (memoryIds.length > 0) {
-      const { data: memoriesData } = await supabase
-        .from('memories')
-        .select('id, title, memory_date')
-        .in('id', memoryIds)
-        .order('memory_date', { ascending: false })
-        .limit(10)
-      
-      setMemories(memoriesData || [])
+    if (tagsData) {
+      const photos = tagsData
+        .filter(t => t.memory_media)
+        .map(t => ({
+          id: t.memory_media.id,
+          file_url: t.memory_media.file_url,
+          memory_id: t.memory_media.memory_id,
+          memory_title: t.memory_media.memory?.title
+        }))
+      setTaggedPhotos(photos)
     }
 
     // Load postscripts to this contact
@@ -120,7 +146,6 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
       .limit(10)
 
     setPostscripts(postscriptsData || [])
-
     setLoading(false)
   }
 
@@ -151,37 +176,43 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
     window.location.href = '/dashboard/contacts'
   }
 
-  const getCoverImage = (memory: Memory) => {
-    const cover = memory.memory_media?.find(m => m.is_cover) || memory.memory_media?.[0]
-    return cover?.file_url
-  }
-
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-500/20 text-green-400'
-      case 'recording': return 'bg-blue-500/20 text-blue-400'
-      case 'sent': return 'bg-amber-500/20 text-amber-400'
-      case 'scheduled': return 'bg-blue-500/20 text-blue-400'
-      default: return 'bg-gray-500/20 text-gray-400'
+      case 'sent': return 'bg-blue-100 text-blue-700'
+      case 'scheduled': return 'bg-amber-100 text-amber-700'
+      case 'opened': return 'bg-green-100 text-green-700'
+      default: return 'bg-gray-100 text-gray-600'
     }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white/60">Loading...</div>
+      <div className="min-h-screen relative">
+        <div className="home-background">
+          <div className="home-blob home-blob-1" />
+          <div className="home-blob home-blob-2" />
+        </div>
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-gray-500">Loading...</div>
+        </div>
       </div>
     )
   }
 
   if (!contact) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-white/60 mb-4">Contact not found</p>
-          <Link href="/dashboard/contacts" className="text-amber-500 hover:underline">
-            Back to contacts
-          </Link>
+      <div className="min-h-screen relative">
+        <div className="home-background">
+          <div className="home-blob home-blob-1" />
+          <div className="home-blob home-blob-2" />
+        </div>
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <p className="text-gray-500 mb-4">Contact not found</p>
+            <Link href="/dashboard/contacts" className="text-[#406A56] hover:underline">
+              Back to contacts
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -190,244 +221,244 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
   const age = getAge(contact.date_of_birth)
 
   return (
-    <div className="min-h-screen p-6">
-      {/* Header */}
-      <header className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link 
-              href="/dashboard/contacts" 
-              className="p-2 bg-gray-900/90 rounded-xl text-white/70 hover:text-white transition-all border border-white/10"
-            >
-              <ChevronLeft size={20} />
-            </Link>
+    <div className="min-h-screen relative pb-24">
+      {/* Warm background */}
+      <div className="home-background">
+        <div className="home-blob home-blob-1" />
+        <div className="home-blob home-blob-2" />
+        <div className="home-blob home-blob-3" />
+      </div>
+
+      <div className="relative z-10 p-6">
+        {/* Header */}
+        <header className="mb-6 max-w-4xl mx-auto">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-2xl font-medium">
-                {contact.full_name.charAt(0)}
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">{contact.full_name}</h1>
-                <p className="text-white/50 text-sm capitalize">{contact.relationship_type?.replace('_', ' ')}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/dashboard/contacts?edit=${id}`}
-              className="p-2.5 bg-gray-900/90 text-white/50 hover:text-white rounded-xl transition-all border border-white/10"
-            >
-              <Edit2 size={18} />
-            </Link>
-            <button
-              onClick={handleDelete}
-              className="p-2.5 bg-gray-900/90 text-white/50 hover:text-red-500 rounded-xl transition-all border border-white/10"
-            >
-              <Trash2 size={18} />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto grid gap-6 lg:grid-cols-3">
-        {/* Contact Info */}
-        <div className="lg:col-span-1 space-y-4">
-          <div className="bg-gray-900/90 rounded-xl p-5 border border-white/10 space-y-4">
-            <h3 className="text-white font-medium">Contact Info</h3>
-            
-            {contact.email && (
-              <div className="flex items-center gap-3 text-white/70">
-                <Mail size={16} className="text-amber-500" />
-                <a href={`mailto:${contact.email}`} className="text-sm hover:text-amber-500">{contact.email}</a>
-              </div>
-            )}
-            
-            {contact.phone && (
-              <div className="flex items-center gap-3 text-white/70">
-                <Phone size={16} className="text-amber-500" />
-                <a href={`tel:${contact.phone}`} className="text-sm hover:text-amber-500">{contact.phone}</a>
-              </div>
-            )}
-            
-            {contact.date_of_birth && (
-              <div className="flex items-center gap-3 text-white/70">
-                <Calendar size={16} className="text-amber-500" />
-                <span className="text-sm">
-                  {formatDate(contact.date_of_birth)}
-                  {age && ` (${age} years old)`}
-                </span>
-              </div>
-            )}
-            
-            {(contact.address || contact.city) && (
-              <div className="flex items-start gap-3 text-white/70">
-                <MapPin size={16} className="text-amber-500 mt-0.5" />
-                <span className="text-sm">
-                  {[contact.address, contact.city, contact.state, contact.zipcode, contact.country].filter(Boolean).join(', ')}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {contact.notes && (
-            <div className="bg-gray-900/90 rounded-xl p-5 border border-white/10">
-              <h3 className="text-white font-medium mb-2">Notes</h3>
-              <p className="text-white/60 text-sm">{contact.notes}</p>
-            </div>
-          )}
-
-          {/* Quick Actions */}
-          <div className="bg-gray-900/90 rounded-xl p-5 border border-white/10">
-            <h3 className="text-white font-medium mb-3">Quick Actions</h3>
-            <div className="space-y-2">
-              <Link
-                href={`/dashboard/journalist?contact=${id}`}
-                className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
+              <Link 
+                href="/dashboard/contacts" 
+                className="p-2 bg-white/80 backdrop-blur-sm rounded-xl text-gray-600 hover:text-gray-900 transition-all border border-gray-200"
               >
-                <Mic size={18} className="text-pink-400" />
-                <span className="text-white/80 text-sm">Start Interview</span>
+                <ChevronLeft size={20} />
               </Link>
+              <div className="flex items-center gap-4">
+                {contact.profile_photo_url ? (
+                  <img 
+                    src={contact.profile_photo_url} 
+                    alt={contact.full_name}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#406A56] to-[#8DACAB] flex items-center justify-center text-white text-2xl font-medium shadow-md">
+                    {contact.full_name.charAt(0)}
+                  </div>
+                )}
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">{contact.full_name}</h1>
+                  <p className="text-[#406A56] text-sm capitalize font-medium">{contact.relationship_type?.replace('_', ' ')}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
               <Link
-                href={`/dashboard/postscripts?contact=${id}`}
-                className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
+                href={`/dashboard/contacts?edit=${id}`}
+                className="p-2.5 bg-white/80 backdrop-blur-sm text-gray-500 hover:text-[#406A56] rounded-xl transition-all border border-gray-200"
               >
-                <Gift size={18} className="text-purple-400" />
-                <span className="text-white/80 text-sm">Send PostScript</span>
+                <Edit2 size={18} />
               </Link>
+              <button
+                onClick={handleDelete}
+                className="p-2.5 bg-white/80 backdrop-blur-sm text-gray-500 hover:text-red-500 rounded-xl transition-all border border-gray-200"
+              >
+                <Trash2 size={18} />
+              </button>
             </div>
           </div>
-        </div>
+        </header>
 
-        {/* Activity */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Interviews */}
-          <div className="bg-gray-900/90 rounded-xl p-5 border border-white/10">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-medium flex items-center gap-2">
-                <Mic size={16} className="text-pink-400" />
-                Interviews
-              </h3>
-              <Link
-                href={`/dashboard/journalist?contact=${id}`}
-                className="text-amber-500 text-sm hover:underline"
-              >
-                New Interview
-              </Link>
+        <main className="max-w-4xl mx-auto grid gap-6 lg:grid-cols-3">
+          {/* Contact Info */}
+          <div className="lg:col-span-1 space-y-4">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-100 shadow-sm space-y-4">
+              <h3 className="text-gray-900 font-semibold">Contact Info</h3>
+              
+              {contact.email && (
+                <div className="flex items-center gap-3 text-gray-600">
+                  <Mail size={16} className="text-[#406A56]" />
+                  <a href={`mailto:${contact.email}`} className="text-sm hover:text-[#406A56]">{contact.email}</a>
+                </div>
+              )}
+              
+              {contact.phone && (
+                <div className="flex items-center gap-3 text-gray-600">
+                  <Phone size={16} className="text-[#406A56]" />
+                  <a href={`tel:${contact.phone}`} className="text-sm hover:text-[#406A56]">{contact.phone}</a>
+                </div>
+              )}
+              
+              {contact.date_of_birth && (
+                <div className="flex items-center gap-3 text-gray-600">
+                  <Calendar size={16} className="text-[#406A56]" />
+                  <span className="text-sm">
+                    {formatDate(contact.date_of_birth)}
+                    {age && ` (${age} years old)`}
+                  </span>
+                </div>
+              )}
+              
+              {(contact.address || contact.city) && (
+                <div className="flex items-start gap-3 text-gray-600">
+                  <MapPin size={16} className="text-[#406A56] mt-0.5" />
+                  <span className="text-sm">
+                    {[contact.address, contact.city, contact.state, contact.zipcode, contact.country].filter(Boolean).join(', ')}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {interviews.length === 0 ? (
-              <p className="text-white/40 text-sm text-center py-4">No interviews yet</p>
-            ) : (
-              <div className="space-y-3">
-                {interviews.map((interview) => (
-                  <Link
-                    key={interview.id}
-                    href={`/dashboard/journalist/${interview.id}`}
-                    className="block p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-white text-sm">{interview.title}</p>
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="text-white/40 text-xs">{formatDate(interview.created_at)}</span>
-                          <span className="text-white/40 text-xs">
-                            {interview.video_responses?.length || 0}/{interview.session_questions?.length || 0} responses
-                          </span>
-                        </div>
-                      </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${getStatusColor(interview.status)}`}>
-                        {interview.status}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
+            {contact.notes && (
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-100 shadow-sm">
+                <h3 className="text-gray-900 font-semibold mb-2">Notes</h3>
+                <p className="text-gray-600 text-sm">{contact.notes}</p>
               </div>
             )}
+
+            {/* Quick Actions */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-100 shadow-sm">
+              <h3 className="text-gray-900 font-semibold mb-3">Quick Actions</h3>
+              <div className="space-y-2">
+                <Link
+                  href={`/dashboard/journalist?contact=${id}`}
+                  className="flex items-center gap-3 p-3 bg-[#4A3552]/5 hover:bg-[#4A3552]/10 rounded-xl transition-colors"
+                >
+                  <Mic size={18} className="text-[#4A3552]" />
+                  <span className="text-gray-700 text-sm font-medium">Start Interview</span>
+                </Link>
+                <Link
+                  href={`/dashboard/postscripts/new?contact=${id}`}
+                  className="flex items-center gap-3 p-3 bg-[#C35F33]/5 hover:bg-[#C35F33]/10 rounded-xl transition-colors"
+                >
+                  <Gift size={18} className="text-[#C35F33]" />
+                  <span className="text-gray-700 text-sm font-medium">Send Future Message</span>
+                </Link>
+              </div>
+            </div>
           </div>
 
-          {/* Memories */}
-          <div className="bg-gray-900/90 rounded-xl p-5 border border-white/10">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-medium flex items-center gap-2">
-                <ImageIcon size={16} className="text-blue-400" />
-                Memories Together
-              </h3>
-              <Link href="/dashboard/memories" className="text-amber-500 text-sm hover:underline">
-                View All
-              </Link>
-            </div>
-
-            {memories.length === 0 ? (
-              <p className="text-white/40 text-sm text-center py-4">No memories tagged with {contact.full_name}</p>
-            ) : (
-              <div className="grid grid-cols-4 gap-2">
-                {memories.map((memory) => {
-                  const coverUrl = getCoverImage(memory)
-                  return (
-                    <Link
-                      key={memory.id}
-                      href={`/dashboard/memories/${memory.id}`}
-                      className="aspect-square rounded-xl overflow-hidden bg-white/5 hover:ring-2 hover:ring-amber-500/50 transition-all"
+          {/* Right Column - Photos & PostScripts */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Tagged Photos Section */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-gray-900 font-semibold flex items-center gap-2">
+                  <Camera size={18} className="text-[#D9C61A]" />
+                  Photos with {contact.full_name.split(' ')[0]}
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">{taggedPhotos.length} photos</span>
+                  <label className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                    <Upload size={16} className={`${uploading ? 'text-gray-300' : 'text-[#406A56]'}`} />
+                  </label>
+                </div>
+              </div>
+              
+              {taggedPhotos.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                    <ImageIcon size={24} className="text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 text-sm mb-2">No tagged photos yet</p>
+                  <p className="text-gray-400 text-xs mb-4">Tag {contact.full_name.split(' ')[0]} in your memories to see photos here</p>
+                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-[#406A56]/10 text-[#406A56] rounded-lg cursor-pointer hover:bg-[#406A56]/20 transition-colors text-sm font-medium">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                    <Upload size={16} />
+                    {uploading ? 'Uploading...' : 'Upload Profile Photo'}
+                  </label>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {taggedPhotos.slice(0, 8).map(photo => (
+                    <Link 
+                      key={photo.id} 
+                      href={`/dashboard/memories/${photo.memory_id}`}
+                      className="aspect-square rounded-xl overflow-hidden hover:ring-2 hover:ring-[#406A56] transition-all"
                     >
-                      {coverUrl ? (
-                        <img src={coverUrl} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ImageIcon size={20} className="text-white/30" />
-                        </div>
-                      )}
+                      <img 
+                        src={photo.file_url} 
+                        alt="" 
+                        className="w-full h-full object-cover"
+                      />
                     </Link>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* PostScripts */}
-          <div className="bg-gray-900/90 rounded-xl p-5 border border-white/10">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-medium flex items-center gap-2">
-                <Gift size={16} className="text-purple-400" />
-                PostScripts
-              </h3>
-              <Link
-                href={`/dashboard/postscripts?contact=${id}`}
-                className="text-amber-500 text-sm hover:underline"
-              >
-                New PostScript
-              </Link>
+                  ))}
+                  {taggedPhotos.length > 8 && (
+                    <div className="aspect-square rounded-xl bg-gray-100 flex items-center justify-center">
+                      <span className="text-gray-500 font-medium">+{taggedPhotos.length - 8}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {postscripts.length === 0 ? (
-              <p className="text-white/40 text-sm text-center py-4">No PostScripts scheduled</p>
-            ) : (
-              <div className="space-y-3">
-                {postscripts.map((ps) => (
-                  <Link
-                    key={ps.id}
-                    href="/dashboard/postscripts"
-                    className="block p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
+            {/* Future Messages (PostScripts) */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-gray-900 font-semibold flex items-center gap-2">
+                  <Gift size={18} className="text-[#C35F33]" />
+                  Future Messages
+                </h3>
+                <Link 
+                  href={`/dashboard/postscripts/new?contact=${id}`}
+                  className="text-sm text-[#C35F33] hover:underline flex items-center gap-1"
+                >
+                  <Plus size={14} /> Create
+                </Link>
+              </div>
+              
+              {postscripts.length === 0 ? (
+                <div className="text-center py-6">
+                  <p className="text-gray-500 text-sm">No scheduled messages</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {postscripts.map(ps => (
+                    <Link 
+                      key={ps.id}
+                      href={`/dashboard/postscripts/${ps.id}`}
+                      className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+                    >
                       <div>
-                        <p className="text-white text-sm">{ps.title}</p>
-                        <span className="text-white/40 text-xs capitalize">
+                        <p className="text-gray-900 font-medium text-sm">{ps.title}</p>
+                        <p className="text-gray-500 text-xs">
                           {ps.delivery_type === 'date' && ps.delivery_date 
                             ? formatDate(ps.delivery_date)
-                            : ps.delivery_type}
-                        </span>
+                            : ps.delivery_type
+                          }
+                        </p>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${getStatusColor(ps.status)}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(ps.status)}`}>
                         {ps.status}
                       </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

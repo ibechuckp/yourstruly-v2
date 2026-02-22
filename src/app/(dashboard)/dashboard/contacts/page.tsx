@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Edit2, Trash2, X, Users, ChevronLeft, Calendar, MapPin, Phone, Mail, Heart, Search } from 'lucide-react'
 import Link from 'next/link'
+import '@/styles/page-styles.css'
 
 // ============================================
 // TYPES
@@ -17,7 +18,7 @@ interface Contact {
   relationship_type: string
   relationship_details?: string
   date_of_birth?: string
-  address?: string  // Street address for gift delivery
+  address?: string
   city?: string
   state?: string
   country?: string
@@ -152,233 +153,248 @@ export default function ContactsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-white/60">Loading...</div>
+      <div className="page-container">
+        <div className="page-background">
+          <div className="page-blob page-blob-1" />
+          <div className="page-blob page-blob-2" />
+          <div className="page-blob page-blob-3" />
+        </div>
+        <div className="relative z-10 loading-container">
+          <div className="loading-text">Loading...</div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen p-6">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <Link 
-          href="/dashboard" 
-          className="p-2 bg-gray-900/90 rounded-xl text-white/70 hover:bg-white/20 hover:text-white transition-all"
-        >
-          <ChevronLeft size={20} />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-white">Contacts & Pets</h1>
-          <p className="text-white/50 text-sm">People and companions in your life</p>
-        </div>
+    <div className="page-container">
+      {/* Warm gradient background with blobs */}
+      <div className="page-background">
+        <div className="page-blob page-blob-1" />
+        <div className="page-blob page-blob-2" />
+        <div className="page-blob page-blob-3" />
       </div>
 
-      {/* Contacts Section */}
-      <section className="mb-10">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <Users size={20} className="text-amber-400" />
-            <h2 className="text-lg font-semibold text-white">People</h2>
-            <span className="text-white/40 text-sm">({filteredContacts.length} of {contacts.length})</span>
-          </div>
-          <button
-            onClick={() => { setEditingContact(null); setShowContactModal(true) }}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-sm font-medium transition-all"
-          >
-            <Plus size={16} />
-            Add Contact
-          </button>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-5">
-          {/* Search Bar */}
-          <div className="relative flex-1 max-w-md">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-            <input
-              type="text"
-              placeholder="Search contacts..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-900/90 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-amber-500/50"
-            />
-          </div>
-
-          {/* Category Filter Buttons */}
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => setSelectedCategory(null)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                !selectedCategory 
-                  ? 'bg-amber-500 text-white' 
-                  : 'bg-gray-900/90 text-white/60 hover:text-white border border-white/10'
-              }`}
-            >
-              All
-            </button>
-            {RELATIONSHIP_OPTIONS.map(group => (
-              <button
-                key={group.category}
-                onClick={() => setSelectedCategory(selectedCategory === group.category ? null : group.category)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                  selectedCategory === group.category
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-gray-900/90 text-white/60 hover:text-white border border-white/10'
-                }`}
-              >
-                {group.category}
-              </button>
-            ))}
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="page-header">
+          <Link href="/dashboard" className="page-header-back">
+            <ChevronLeft size={20} />
+          </Link>
+          <div>
+            <h1 className="page-header-title">Contacts & Pets</h1>
+            <p className="page-header-subtitle">People and companions in your life</p>
           </div>
         </div>
 
-        {contacts.length === 0 ? (
-          <div className="bg-gray-900/90 rounded-2xl p-8 border border-white/10 text-center">
-            <p className="text-white/50 mb-4">No contacts yet</p>
+        {/* Contacts Section */}
+        <section className="mb-10">
+          <div className="section-header">
+            <div className="section-title">
+              <div className="section-title-icon bg-[#406A56]/10">
+                <Users size={18} className="text-[#406A56]" />
+              </div>
+              <div>
+                <span className="text-[#2d2d2d]">People</span>
+                <span className="text-[#406A56]/60 text-sm font-normal ml-2">({filteredContacts.length} of {contacts.length})</span>
+              </div>
+            </div>
             <button
               onClick={() => { setEditingContact(null); setShowContactModal(true) }}
-              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl text-sm font-medium"
+              className="btn-primary"
             >
-              Add Your First Contact
+              <Plus size={16} />
+              Add Contact
             </button>
           </div>
-        ) : filteredContacts.length === 0 ? (
-          <div className="bg-gray-900/90 rounded-2xl p-8 border border-white/10 text-center">
-            <p className="text-white/50 mb-2">No contacts match your search</p>
-            <button
-              onClick={() => { setSearchQuery(''); setSelectedCategory(null) }}
-              className="text-amber-400 hover:text-amber-300 text-sm"
-            >
-              Clear filters
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredContacts.map(contact => (
-              <div 
-                key={contact.id} 
-                className="bg-gray-900/90 rounded-2xl p-5 border border-white/10 hover:bg-white/15 hover:border-amber-500/30 transition-all group cursor-pointer"
-                onClick={() => window.location.href = `/dashboard/contacts/${contact.id}`}
+
+          {/* Search and Filters */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-5">
+            {/* Search Bar */}
+            <div className="relative flex-1 max-w-md">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#406A56]/50" />
+              <input
+                type="text"
+                placeholder="Search contacts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="form-input !pl-12"
+              />
+            </div>
+
+            {/* Category Filter Buttons */}
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`filter-btn ${!selectedCategory ? 'filter-btn-active' : ''}`}
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-semibold">
-                      {contact.full_name.charAt(0)}
+                All
+              </button>
+              {RELATIONSHIP_OPTIONS.map(group => (
+                <button
+                  key={group.category}
+                  onClick={() => setSelectedCategory(selectedCategory === group.category ? null : group.category)}
+                  className={`filter-btn ${selectedCategory === group.category ? 'filter-btn-active' : ''}`}
+                >
+                  {group.category}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {contacts.length === 0 ? (
+            <div className="empty-state">
+              <p className="empty-state-text mb-4">No contacts yet</p>
+              <button
+                onClick={() => { setEditingContact(null); setShowContactModal(true) }}
+                className="btn-primary"
+              >
+                Add Your First Contact
+              </button>
+            </div>
+          ) : filteredContacts.length === 0 ? (
+            <div className="empty-state">
+              <p className="empty-state-text mb-2">No contacts match your search</p>
+              <button
+                onClick={() => { setSearchQuery(''); setSelectedCategory(null) }}
+                className="text-[#406A56] hover:text-[#4a7a64] text-sm font-medium"
+              >
+                Clear filters
+              </button>
+            </div>
+          ) : (
+            <div className="cards-grid">
+              {filteredContacts.map(contact => (
+                <div 
+                  key={contact.id} 
+                  className="content-card content-card-interactive group cursor-pointer"
+                  onClick={() => window.location.href = `/dashboard/contacts/${contact.id}`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="avatar-circle avatar-circle-initials">
+                        {contact.full_name.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="text-[#2d2d2d] font-semibold">{contact.full_name}</h3>
+                        <p className="text-[#406A56] text-sm">{getRelationshipLabel(contact.relationship_type)}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-white font-semibold">{contact.full_name}</h3>
-                      <p className="text-amber-400 text-sm">{getRelationshipLabel(contact.relationship_type)}</p>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => { setEditingContact(contact); setShowContactModal(true) }} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-colors">
+                        <Edit2 size={14} />
+                      </button>
+                      <button onClick={() => handleDeleteContact(contact.id)} className="p-2 text-[#406A56]/50 hover:text-[#C35F33] hover:bg-[#C35F33]/10 rounded-lg transition-colors">
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => { setEditingContact(contact); setShowContactModal(true) }} className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-lg">
-                      <Edit2 size={14} />
-                    </button>
-                    <button onClick={() => handleDeleteContact(contact.id)} className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-lg">
-                      <Trash2 size={14} />
-                    </button>
+                  <div className="space-y-1.5 text-sm">
+                    {contact.date_of_birth && (
+                      <div className="flex items-center gap-2 text-[#666]">
+                        <Calendar size={13} className="text-[#406A56]" />
+                        <span>{new Date(contact.date_of_birth).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                      </div>
+                    )}
+                    {contact.email && (
+                      <div className="flex items-center gap-2 text-[#666]">
+                        <Mail size={13} className="text-[#406A56]" />
+                        <span className="truncate">{contact.email}</span>
+                      </div>
+                    )}
+                    {contact.phone && (
+                      <div className="flex items-center gap-2 text-[#666]">
+                        <Phone size={13} className="text-[#406A56]" />
+                        <span>{contact.phone}</span>
+                      </div>
+                    )}
+                    {(contact.city || contact.country) && (
+                      <div className="flex items-center gap-2 text-[#888]">
+                        <MapPin size={13} className="text-[#406A56]" />
+                        <span>{[contact.city, contact.state, contact.country].filter(Boolean).join(', ')}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="space-y-1.5 text-sm">
-                  {contact.date_of_birth && (
-                    <div className="flex items-center gap-2 text-white/60">
-                      <Calendar size={13} />
-                      <span>{new Date(contact.date_of_birth).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                    </div>
-                  )}
-                  {contact.email && (
-                    <div className="flex items-center gap-2 text-white/60">
-                      <Mail size={13} />
-                      <span className="truncate">{contact.email}</span>
-                    </div>
-                  )}
-                  {contact.phone && (
-                    <div className="flex items-center gap-2 text-white/60">
-                      <Phone size={13} />
-                      <span>{contact.phone}</span>
-                    </div>
-                  )}
-                  {(contact.city || contact.country) && (
-                    <div className="flex items-center gap-2 text-white/50">
-                      <MapPin size={13} />
-                      <span>{[contact.city, contact.state, contact.country].filter(Boolean).join(', ')}</span>
-                    </div>
-                  )}
-                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Pets Section */}
+        <section>
+          <div className="section-header">
+            <div className="section-title">
+              <div className="section-title-icon bg-[#C35F33]/10">
+                <Heart size={18} className="text-[#C35F33]" />
               </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Pets Section */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <Heart size={20} className="text-pink-400" />
-            <h2 className="text-lg font-semibold text-white">Pets</h2>
-            <span className="text-white/40 text-sm">({pets.length})</span>
-          </div>
-          <button
-            onClick={() => { setEditingPet(null); setShowPetModal(true) }}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white rounded-xl text-sm font-medium transition-all"
-          >
-            <Plus size={16} />
-            Add Pet
-          </button>
-        </div>
-
-        {pets.length === 0 ? (
-          <div className="bg-gray-900/90 rounded-2xl p-8 border border-white/10 text-center">
-            <p className="text-white/50 mb-4">No pets yet</p>
+              <div>
+                <span className="text-[#2d2d2d]">Pets</span>
+                <span className="text-[#406A56]/60 text-sm font-normal ml-2">({pets.length})</span>
+              </div>
+            </div>
             <button
               onClick={() => { setEditingPet(null); setShowPetModal(true) }}
-              className="px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl text-sm font-medium"
+              className="btn-accent"
             >
-              Add Your First Pet
+              <Plus size={16} />
+              Add Pet
             </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pets.map(pet => (
-              <div 
-                key={pet.id} 
-                className={`bg-gray-900/90 rounded-2xl p-5 border border-white/10 hover:bg-white/15 transition-all group ${pet.is_deceased ? 'opacity-70' : 'hover:border-pink-500/30'}`}
+
+          {pets.length === 0 ? (
+            <div className="empty-state">
+              <p className="empty-state-text mb-4">No pets yet</p>
+              <button
+                onClick={() => { setEditingPet(null); setShowPetModal(true) }}
+                className="btn-accent"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white font-semibold">
-                      {pet.name.charAt(0)}
+                Add Your First Pet
+              </button>
+            </div>
+          ) : (
+            <div className="cards-grid">
+              {pets.map(pet => (
+                <div 
+                  key={pet.id} 
+                  className={`content-card group cursor-pointer ${pet.is_deceased ? 'opacity-70' : 'content-card-interactive'}`}
+                  onClick={() => window.location.href = `/dashboard/pets/${pet.id}`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#C35F33] to-[#D87A55] flex items-center justify-center text-white font-semibold">
+                        {pet.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="text-[#2d2d2d] font-semibold">{pet.name}</h3>
+                        <p className="text-[#C35F33] text-sm">{pet.species}{pet.breed ? ` - ${pet.breed}` : ''}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-white font-semibold">{pet.name}</h3>
-                      <p className="text-pink-400 text-sm">{pet.species}{pet.breed ? ` - ${pet.breed}` : ''}</p>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => { setEditingPet(pet); setShowPetModal(true) }} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-colors">
+                        <Edit2 size={14} />
+                      </button>
+                      <button onClick={() => handleDeletePet(pet.id)} className="p-2 text-[#406A56]/50 hover:text-[#C35F33] hover:bg-[#C35F33]/10 rounded-lg transition-colors">
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => { setEditingPet(pet); setShowPetModal(true) }} className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-lg">
-                      <Edit2 size={14} />
-                    </button>
-                    <button onClick={() => handleDeletePet(pet.id)} className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-lg">
-                      <Trash2 size={14} />
-                    </button>
+                  <div className="space-y-1.5 text-sm">
+                    {pet.color && <p className="text-[#666]">Color: {pet.color}</p>}
+                    {pet.personality && <p className="text-[#666] line-clamp-1">{pet.personality}</p>}
+                    {pet.is_deceased && (
+                      <p className="text-[#888] italic">
+                        🌈 Rainbow Bridge {pet.date_of_passing ? `· ${new Date(pet.date_of_passing).toLocaleDateString()}` : ''}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <div className="space-y-1.5 text-sm">
-                  {pet.color && <p className="text-white/60">Color: {pet.color}</p>}
-                  {pet.personality && <p className="text-white/50 line-clamp-1">{pet.personality}</p>}
-                  {pet.is_deceased && (
-                    <p className="text-white/40 italic">
-                      Passed {pet.date_of_passing ? new Date(pet.date_of_passing).toLocaleDateString() : ''}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
       {/* Contact Modal */}
       {showContactModal && (
@@ -455,66 +471,66 @@ function ContactModal({ contact, onClose, onSave }: { contact: Contact | null; o
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900/95 backdrop-blur-xl rounded-2xl p-6 border border-white/10 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div className="modal-overlay-page">
+      <div className="modal-content-page">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">{contact ? 'Edit Contact' : 'Add Contact'}</h2>
-          <button onClick={onClose} className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-lg"><X size={20} /></button>
+          <h2 className="text-xl font-semibold text-[#2d2d2d]">{contact ? 'Edit Contact' : 'Add Contact'}</h2>
+          <button onClick={onClose} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg"><X size={20} /></button>
         </div>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-white/60 mb-1.5">Full Name *</label>
-            <input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="John Doe" />
+            <label className="block text-sm text-[#666] mb-1.5">Full Name *</label>
+            <input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} className="form-input" placeholder="John Doe" />
           </div>
           <div>
-            <label className="block text-sm text-white/60 mb-1.5">Relationship *</label>
-            <select value={form.relationship_type} onChange={e => setForm({ ...form, relationship_type: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50">
-              <option value="" className="bg-gray-800">Select...</option>
+            <label className="block text-sm text-[#666] mb-1.5">Relationship *</label>
+            <select value={form.relationship_type} onChange={e => setForm({ ...form, relationship_type: e.target.value })} className="form-select">
+              <option value="">Select...</option>
               {RELATIONSHIP_OPTIONS.map(group => (
-                <optgroup key={group.category} label={group.category} className="bg-gray-800 text-white">
-                  {group.options.map(opt => <option key={opt.id} value={opt.id} className="bg-gray-800">{opt.label}</option>)}
+                <optgroup key={group.category} label={group.category}>
+                  {group.options.map(opt => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
                 </optgroup>
               ))}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Nickname</label>
-              <input value={form.nickname} onChange={e => setForm({ ...form, nickname: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" />
+              <label className="block text-sm text-[#666] mb-1.5">Nickname</label>
+              <input value={form.nickname} onChange={e => setForm({ ...form, nickname: e.target.value })} className="form-input" />
             </div>
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Birthday</label>
-              <input type="date" value={form.date_of_birth} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" />
+              <label className="block text-sm text-[#666] mb-1.5">Birthday</label>
+              <input type="date" value={form.date_of_birth} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="form-input" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Email</label>
-              <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" />
+              <label className="block text-sm text-[#666] mb-1.5">Email</label>
+              <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="form-input" placeholder="email@example.com" />
             </div>
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Phone</label>
-              <input type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" />
+              <label className="block text-sm text-[#666] mb-1.5">Phone</label>
+              <input type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="form-input" placeholder="(555) 123-4567" />
             </div>
           </div>
           <div>
-            <label className="block text-sm text-white/60 mb-1.5">Address (for gift delivery)</label>
-            <input value={form.address || ''} onChange={e => setForm({ ...form, address: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 mb-3" placeholder="123 Main Street, Apt 4" />
+            <label className="block text-sm text-[#666] mb-1.5">Address (for gift delivery)</label>
+            <input value={form.address || ''} onChange={e => setForm({ ...form, address: e.target.value })} className="form-input mb-3" placeholder="123 Main Street, Apt 4" />
             <div className="grid grid-cols-4 gap-3">
-              <input value={form.city || ''} onChange={e => setForm({ ...form, city: e.target.value })} className="px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="City" />
-              <input value={form.state || ''} onChange={e => setForm({ ...form, state: e.target.value })} className="px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="State" />
-              <input value={form.zipcode || ''} onChange={e => setForm({ ...form, zipcode: e.target.value })} className="px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="Zip" />
-              <input value={form.country || ''} onChange={e => setForm({ ...form, country: e.target.value })} className="px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50" placeholder="Country" />
+              <input value={form.city || ''} onChange={e => setForm({ ...form, city: e.target.value })} className="form-input" placeholder="City" />
+              <input value={form.state || ''} onChange={e => setForm({ ...form, state: e.target.value })} className="form-input" placeholder="State" />
+              <input value={form.zipcode || ''} onChange={e => setForm({ ...form, zipcode: e.target.value })} className="form-input" placeholder="Zip" />
+              <input value={form.country || ''} onChange={e => setForm({ ...form, country: e.target.value })} className="form-input" placeholder="Country" />
             </div>
           </div>
           <div>
-            <label className="block text-sm text-white/60 mb-1.5">Notes</label>
-            <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none" rows={2} />
+            <label className="block text-sm text-[#666] mb-1.5">Notes</label>
+            <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="form-textarea" rows={2} />
           </div>
         </div>
-        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/10">
-          <button onClick={onClose} className="px-5 py-2.5 text-white/60 hover:text-white">Cancel</button>
-          <button onClick={handleSave} disabled={saving || !form.full_name || !form.relationship_type} className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl font-medium disabled:opacity-50">
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[#406A56]/10">
+          <button onClick={onClose} className="btn-secondary">Cancel</button>
+          <button onClick={handleSave} disabled={saving || !form.full_name || !form.relationship_type} className="btn-primary">
             {saving ? 'Saving...' : 'Save'}
           </button>
         </div>
@@ -571,70 +587,70 @@ function PetModal({ pet, onClose, onSave }: { pet: Pet | null; onClose: () => vo
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900/95 backdrop-blur-xl rounded-2xl p-6 border border-white/10 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div className="modal-overlay-page">
+      <div className="modal-content-page">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">{pet ? 'Edit Pet' : 'Add Pet'}</h2>
-          <button onClick={onClose} className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-lg"><X size={20} /></button>
+          <h2 className="text-xl font-semibold text-[#2d2d2d]">{pet ? 'Edit Pet' : 'Add Pet'}</h2>
+          <button onClick={onClose} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg"><X size={20} /></button>
         </div>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Name *</label>
-              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" placeholder="Buddy" />
+              <label className="block text-sm text-[#666] mb-1.5">Name *</label>
+              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="form-input" placeholder="Buddy" />
             </div>
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Species *</label>
-              <select value={form.species} onChange={e => setForm({ ...form, species: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50">
-                <option value="" className="bg-gray-800 text-white">Select...</option>
-                {SPECIES_OPTIONS.map(s => <option key={s} value={s} className="bg-gray-800 text-white">{s}</option>)}
+              <label className="block text-sm text-[#666] mb-1.5">Species *</label>
+              <select value={form.species} onChange={e => setForm({ ...form, species: e.target.value })} className="form-select">
+                <option value="">Select...</option>
+                {SPECIES_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Breed</label>
-              <input value={form.breed} onChange={e => setForm({ ...form, breed: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" placeholder="Golden Retriever" />
+              <label className="block text-sm text-[#666] mb-1.5">Breed</label>
+              <input value={form.breed} onChange={e => setForm({ ...form, breed: e.target.value })} className="form-input" placeholder="Golden Retriever" />
             </div>
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Color</label>
-              <input value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" />
+              <label className="block text-sm text-[#666] mb-1.5">Color</label>
+              <input value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} className="form-input" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Date of Birth</label>
-              <input type="date" value={form.date_of_birth} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" />
+              <label className="block text-sm text-[#666] mb-1.5">Date of Birth</label>
+              <input type="date" value={form.date_of_birth} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="form-input" />
             </div>
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Adoption Date</label>
-              <input type="date" value={form.adoption_date} onChange={e => setForm({ ...form, adoption_date: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" />
+              <label className="block text-sm text-[#666] mb-1.5">Adoption Date</label>
+              <input type="date" value={form.adoption_date} onChange={e => setForm({ ...form, adoption_date: e.target.value })} className="form-input" />
             </div>
           </div>
           <div>
-            <label className="block text-sm text-white/60 mb-1.5">Personality</label>
-            <textarea value={form.personality} onChange={e => setForm({ ...form, personality: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50 resize-none" rows={2} placeholder="Playful, loves belly rubs..." />
+            <label className="block text-sm text-[#666] mb-1.5">Personality</label>
+            <textarea value={form.personality} onChange={e => setForm({ ...form, personality: e.target.value })} className="form-textarea" rows={2} placeholder="Playful, loves belly rubs..." />
           </div>
           <div>
-            <label className="block text-sm text-white/60 mb-1.5">Medical Notes</label>
-            <textarea value={form.medical_notes} onChange={e => setForm({ ...form, medical_notes: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50 resize-none" rows={2} />
+            <label className="block text-sm text-[#666] mb-1.5">Medical Notes</label>
+            <textarea value={form.medical_notes} onChange={e => setForm({ ...form, medical_notes: e.target.value })} className="form-textarea" rows={2} />
           </div>
-          <div className="p-4 bg-white/5 rounded-xl">
+          <div className="p-4 bg-[#406A56]/5 rounded-xl">
             <label className="flex items-center gap-3 cursor-pointer">
-              <input type="checkbox" checked={form.is_deceased} onChange={e => setForm({ ...form, is_deceased: e.target.checked })} className="w-5 h-5 rounded border-white/10 bg-white/5 text-pink-500 focus:ring-pink-500" />
-              <span className="text-white/70">This pet has passed away</span>
+              <input type="checkbox" checked={form.is_deceased} onChange={e => setForm({ ...form, is_deceased: e.target.checked })} className="w-5 h-5 rounded border-[#406A56]/20 bg-white text-[#406A56] focus:ring-[#406A56]" />
+              <span className="text-[#666]">This pet has passed away</span>
             </label>
             {form.is_deceased && (
               <div className="mt-3">
-                <label className="block text-sm text-white/60 mb-1.5">Date of Passing</label>
-                <input type="date" value={form.date_of_passing} onChange={e => setForm({ ...form, date_of_passing: e.target.value })} className="w-full px-4 py-3 bg-gray-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50" />
+                <label className="block text-sm text-[#666] mb-1.5">Date of Passing</label>
+                <input type="date" value={form.date_of_passing} onChange={e => setForm({ ...form, date_of_passing: e.target.value })} className="form-input" />
               </div>
             )}
           </div>
         </div>
-        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/10">
-          <button onClick={onClose} className="px-5 py-2.5 text-white/60 hover:text-white">Cancel</button>
-          <button onClick={handleSave} disabled={saving || !form.name || !form.species} className="px-6 py-2.5 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium disabled:opacity-50">
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[#406A56]/10">
+          <button onClick={onClose} className="btn-secondary">Cancel</button>
+          <button onClick={handleSave} disabled={saving || !form.name || !form.species} className="btn-accent">
             {saving ? 'Saving...' : 'Save'}
           </button>
         </div>

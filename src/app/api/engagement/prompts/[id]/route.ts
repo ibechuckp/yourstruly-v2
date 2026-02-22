@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import type { AnswerPromptRequest, AnswerPromptResponse } from '@/types/engagement';
 
+// XP rewards configuration (matching TYPE_CONFIG in Bubble.tsx)
+const XP_REWARDS: Record<string, number> = {
+  photo_backstory: 15,
+  tag_person: 5,
+  missing_info: 5,
+  memory_prompt: 20,
+  knowledge: 15,
+  connect_dots: 10,
+  highlight: 5,
+  quick_question: 5,
+  postscript: 20,
+  favorites_firsts: 10,
+  recipes_wisdom: 15,
+};
+
 // POST /api/engagement/prompts/[id]/respond
 // Answer a specific prompt
 export async function POST(
@@ -78,9 +93,11 @@ export async function POST(
 
     // Handle different prompt types
     let knowledgeEntry = null;
+    let knowledgeEntryId: string | null = null;
     let memoryCreated = false;
     let memoryId: string | null = null;
     let contactUpdated = false;
+    let xpAwarded = 0;
 
     // === UNIFIED MEMORY CREATION FOR ALL CONTENT-GENERATING PROMPTS ===
     // All user-generated content goes into the Memories table
@@ -89,30 +106,78 @@ export async function POST(
     console.log('body.responseText length:', body.responseText?.length || 0);
     console.log('body.responseAudioUrl:', body.responseAudioUrl || 'none');
     
-    // These prompt types should ALL create memory records
+    // These prompt types create MEMORY records (not wisdom)
     const MEMORY_CREATING_TYPES = [
-      'knowledge',       // wisdom/life lessons
       'memory_prompt',   // general memories
       'photo_backstory', // photo stories  
       'favorites_firsts', // favorites and firsts
-      'recipes_wisdom',  // recipes/traditions
       'postscript',      // future messages
     ];
     
+    // These prompt types create KNOWLEDGE/WISDOM entries (separate from memories)
+    const KNOWLEDGE_CREATING_TYPES = [
+      'knowledge',       // wisdom/life lessons
+      'recipes_wisdom',  // recipes/traditions
+    ];
+    
     const shouldCreateMemory = MEMORY_CREATING_TYPES.includes(prompt.type);
+    const shouldCreateKnowledge = KNOWLEDGE_CREATING_TYPES.includes(prompt.type);
     const hasContent = !!(body.responseText || body.responseAudioUrl);
     
-    console.log('shouldCreateMemory:', shouldCreateMemory, 'hasContent:', hasContent);
+    console.log('shouldCreateMemory:', shouldCreateMemory, 'shouldCreateKnowledge:', shouldCreateKnowledge, 'hasContent:', hasContent);
     
+    // === KNOWLEDGE ENTRY CREATION (wisdom prompts - separate from memories) ===
+    if (shouldCreateKnowledge && hasContent) {
+      console.log('=== CREATING KNOWLEDGE ENTRY (not memory) ===');
+      
+      const tags: string[] = ['wisdom'];
+      if (prompt.personalization_context?.interest) tags.push(prompt.personalization_context.interest);
+      if (prompt.personalization_context?.skill) tags.push(prompt.personalization_context.skill);
+      if (prompt.category) tags.push(prompt.category);
+      
+      const category = prompt.category || 'life_lessons';
+
+      const { data: newKnowledge, error: knowledgeError } = await supabase
+        .from('knowledge_entries')
+        .insert({
+          user_id: user.id,
+          category: category,
+          subcategory: prompt.personalization_context?.skill || prompt.personalization_context?.interest,
+          prompt_text: prompt.prompt_text,
+          response_text: body.responseText || null,
+          audio_url: body.responseAudioUrl || null,
+          related_interest: prompt.personalization_context?.interest || null,
+          related_skill: prompt.personalization_context?.skill || null,
+          related_hobby: prompt.personalization_context?.hobby || null,
+          source_prompt_id: promptId,
+          tags: tags,
+        })
+        .select()
+        .single();
+
+      if (knowledgeError) {
+        console.error('=== KNOWLEDGE ENTRY INSERT FAILED ===');
+        console.error('Error:', knowledgeError);
+      } else if (newKnowledge) {
+        knowledgeEntry = newKnowledge;
+        knowledgeEntryId = newKnowledge.id;
+        console.log('=== KNOWLEDGE ENTRY CREATED ===');
+        console.log('Knowledge Entry ID:', newKnowledge.id);
+
+        // Update prompt with result knowledge ID
+        await supabase
+          .from('engagement_prompts')
+          .update({ result_knowledge_id: newKnowledge.id })
+          .eq('id', promptId);
+      }
+    }
+    
+    // === MEMORY CREATION (non-wisdom prompts) ===
     if (shouldCreateMemory && hasContent) {
       // Build tags based on prompt type and context
       const tags: string[] = [];
       
-      if (prompt.type === 'knowledge') {
-        tags.push('wisdom');
-        if (prompt.personalization_context?.interest) tags.push(prompt.personalization_context.interest);
-        if (prompt.personalization_context?.skill) tags.push(prompt.personalization_context.skill);
-      } else if (prompt.type === 'photo_backstory') {
+      if (prompt.type === 'photo_backstory') {
         tags.push('photo story');
       } else {
         tags.push(prompt.type.replace(/_/g, ' '));
@@ -150,21 +215,59 @@ export async function POST(
           .from('engagement_prompts')
           .update({ result_memory_id: newMemory.id })
           .eq('id', promptId);
-          
+
         // If photo_backstory, also link the photo to this memory
         if (prompt.type === 'photo_backstory' && prompt.photo_id) {
           await supabase
             .from('memory_media')
-            .update({ 
+            .update({
               memory_id: newMemory.id,
-              description: body.responseText 
+              description: body.responseText
             })
             .eq('id', prompt.photo_id);
           console.log('Linked photo to memory');
         }
       }
-    } else {
+    } else if (!shouldCreateKnowledge) {
       console.log('Skipping memory creation - shouldCreateMemory:', shouldCreateMemory, 'hasContent:', hasContent);
+    }
+
+    // === XP AWARDING ===
+    // Award XP for answering the prompt
+    try {
+      const xpAmount = XP_REWARDS[prompt.type] || 10;
+      console.log('=== AWARDING XP ===');
+      console.log('Amount:', xpAmount, 'Type:', prompt.type);
+
+      const { data: xpResult, error: xpError } = await supabase.rpc('award_xp', {
+        p_user_id: user.id,
+        p_amount: xpAmount,
+        p_action: 'answer_prompt',
+        p_description: `Answered ${prompt.type} prompt`,
+        p_reference_type: 'prompt',
+        p_reference_id: promptId,
+      });
+
+      if (xpError) {
+        console.error('Failed to award XP:', xpError);
+      } else {
+        xpAwarded = xpAmount;
+        console.log('XP awarded successfully. New total:', xpResult);
+      }
+
+      // Record daily activity for streak tracking
+      const { data: streakResult, error: streakError } = await supabase.rpc('record_daily_activity', {
+        p_user_id: user.id,
+        p_activity_type: 'engagement_prompt',
+      });
+
+      if (streakError) {
+        console.error('Failed to record daily activity:', streakError);
+      } else {
+        console.log('Daily activity recorded. Streak:', streakResult);
+      }
+    } catch (xpCatchError) {
+      console.error('Error in XP awarding:', xpCatchError);
     }
 
     // NOTE: photo_backstory is now handled by the unified memory creation block above
@@ -229,10 +332,12 @@ export async function POST(
       success: true,
       prompt: answeredPrompt,
       knowledgeEntry,
+      knowledgeEntryId: knowledgeEntryId || undefined,
       memoryCreated,
       memoryId: memoryId || undefined,
       contactId: prompt.contact_id || undefined,
       contactUpdated,
+      xpAwarded,
     };
 
     console.log('=== ANSWER RESPONSE ===');

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { ChevronLeft, User, Bell, Shield, Download, Trash2, LogOut, Sparkles, Loader2 } from 'lucide-react'
+import { ChevronLeft, User, Bell, Shield, Download, Trash2, LogOut, Sparkles, Loader2, CreditCard, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import '@/styles/page-styles.css'
 
 interface Settings {
   email_notifications: boolean
@@ -36,7 +37,6 @@ export default function SettingsPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       setEmail(user.email || '')
-      // Load settings from profile or create defaults
       const { data } = await supabase
         .from('profiles')
         .select('settings')
@@ -77,7 +77,6 @@ export default function SettingsPage() {
     if (!confirm('Are you sure you want to delete your account? This cannot be undone.')) return
     if (!confirm('This will permanently delete all your memories, contacts, and data. Type "DELETE" to confirm.')) return
 
-    // In production, this would call a secure API endpoint
     alert('Account deletion requested. Please contact support to complete this process.')
   }
 
@@ -90,7 +89,7 @@ export default function SettingsPage() {
       const res = await fetch('/api/embeddings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}), // Process all types
+        body: JSON.stringify({}),
       })
 
       const data = await res.json()
@@ -115,7 +114,6 @@ export default function SettingsPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Fetch all user data
     const [profileRes, memoriesRes, contactsRes] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', user.id).single(),
       supabase.from('memories').select('*').eq('user_id', user.id),
@@ -129,7 +127,6 @@ export default function SettingsPage() {
       contacts: contactsRes.data,
     }
 
-    // Download as JSON
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -143,208 +140,241 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen p-6 max-w-2xl">
-      {/* Header */}
-      <header className="mb-8">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="p-2 bg-gray-900/90 rounded-xl text-white/70 hover:text-white transition-all border border-white/10">
+    <div className="page-container">
+      {/* Warm gradient background with blobs */}
+      <div className="page-background">
+        <div className="page-blob page-blob-1" />
+        <div className="page-blob page-blob-2" />
+        <div className="page-blob page-blob-3" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 max-w-2xl">
+        {/* Header */}
+        <header className="page-header">
+          <Link href="/dashboard" className="page-header-back">
             <ChevronLeft size={20} />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-white">Settings</h1>
-            <p className="text-white/50 text-sm">Manage your account and preferences</p>
+            <h1 className="page-header-title">Settings</h1>
+            <p className="page-header-subtitle">Manage your account and preferences</p>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {message && (
-        <div className={`mb-6 p-4 rounded-xl ${message.includes('Failed') ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
-          {message}
-        </div>
-      )}
-
-      <div className="space-y-6">
-        {/* Account Section */}
-        <section className="bg-gray-900/90 rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center gap-3 mb-4">
-            <User size={20} className="text-amber-500" />
-            <h2 className="text-lg font-semibold text-white">Account</h2>
+        {message && (
+          <div className={`mb-6 p-4 rounded-xl ${message.includes('Failed') || message.includes('Error') ? 'bg-red-500/10 border border-red-500/20 text-red-600' : 'bg-green-500/10 border border-green-500/20 text-green-700'}`}>
+            {message}
           </div>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-white/50 mb-1">Email</label>
-              <input
-                type="email"
-                value={email}
-                disabled
-                className="w-full px-4 py-3 bg-gray-800/50 border border-white/10 rounded-xl text-white/70 cursor-not-allowed"
-              />
-              <p className="text-xs text-white/30 mt-1">Contact support to change email</p>
+        )}
+
+        <div className="space-y-6">
+          {/* Account Section */}
+          <section className="glass-card-page p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#406A56]/10 flex items-center justify-center">
+                <User size={20} className="text-[#406A56]" />
+              </div>
+              <h2 className="text-lg font-semibold text-[#2d2d2d]">Account</h2>
             </div>
-          </div>
-        </section>
-
-        {/* Notifications Section */}
-        <section className="bg-gray-900/90 rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center gap-3 mb-4">
-            <Bell size={20} className="text-amber-500" />
-            <h2 className="text-lg font-semibold text-white">Notifications</h2>
-          </div>
-          
-          <div className="space-y-4">
-            <label className="flex items-center justify-between cursor-pointer">
+            
+            <div className="space-y-4">
               <div>
-                <p className="text-white">Email Notifications</p>
-                <p className="text-sm text-white/50">Receive updates via email</p>
+                <label className="block text-sm text-[#666] mb-1">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  disabled
+                  className="form-input bg-[#406A56]/5 cursor-not-allowed"
+                />
+                <p className="text-xs text-[#999] mt-1">Contact support to change email</p>
               </div>
-              <input
-                type="checkbox"
-                checked={settings.email_notifications}
-                onChange={(e) => setSettings({ ...settings, email_notifications: e.target.checked })}
-                className="w-5 h-5 rounded bg-gray-800 border-white/20 text-amber-500 focus:ring-amber-500"
-              />
-            </label>
-
-            <label className="flex items-center justify-between cursor-pointer">
-              <div>
-                <p className="text-white">Memory Reminders</p>
-                <p className="text-sm text-white/50">"On this day" memories from past years</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={settings.memory_reminders}
-                onChange={(e) => setSettings({ ...settings, memory_reminders: e.target.checked })}
-                className="w-5 h-5 rounded bg-gray-800 border-white/20 text-amber-500 focus:ring-amber-500"
-              />
-            </label>
-
-            <label className="flex items-center justify-between cursor-pointer">
-              <div>
-                <p className="text-white">Share Notifications</p>
-                <p className="text-sm text-white/50">When contacts interact with shared memories</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={settings.share_notifications}
-                onChange={(e) => setSettings({ ...settings, share_notifications: e.target.checked })}
-                className="w-5 h-5 rounded bg-gray-800 border-white/20 text-amber-500 focus:ring-amber-500"
-              />
-            </label>
-          </div>
-        </section>
-
-        {/* Privacy Section */}
-        <section className="bg-gray-900/90 rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center gap-3 mb-4">
-            <Shield size={20} className="text-amber-500" />
-            <h2 className="text-lg font-semibold text-white">Privacy</h2>
-          </div>
-          
-          <label className="flex items-center justify-between cursor-pointer">
-            <div>
-              <p className="text-white">Public Profile</p>
-              <p className="text-sm text-white/50">Allow others to view your profile</p>
             </div>
-            <input
-              type="checkbox"
-              checked={settings.public_profile}
-              onChange={(e) => setSettings({ ...settings, public_profile: e.target.checked })}
-              className="w-5 h-5 rounded bg-gray-800 border-white/20 text-amber-500 focus:ring-amber-500"
-            />
-          </label>
-        </section>
+          </section>
 
-        {/* Save Button */}
-        <button
-          onClick={saveSettings}
-          disabled={saving}
-          className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
-        >
-          {saving ? 'Saving...' : 'Save Settings'}
-        </button>
+          {/* Subscription Section */}
+          <section className="glass-card-page p-6">
+            <Link href="/dashboard/settings/subscription" className="flex items-center justify-between group">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#D9C61A]/10 flex items-center justify-center">
+                  <CreditCard size={20} className="text-[#8a7c08]" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-[#2d2d2d]">Subscription</h2>
+                  <p className="text-sm text-[#666]">Manage your plan and billing</p>
+                </div>
+              </div>
+              <ChevronRight size={20} className="text-[#999] group-hover:text-[#406A56] transition-colors" />
+            </Link>
+          </section>
 
-        {/* Data Section */}
-        <section className="bg-gray-900/90 rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center gap-3 mb-4">
-            <Download size={20} className="text-amber-500" />
-            <h2 className="text-lg font-semibold text-white">Your Data</h2>
-          </div>
-          
-          <div className="space-y-3">
-            <button
-              onClick={handleExportData}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition-colors"
-            >
-              <Download size={18} />
-              Export All Data
-            </button>
-          </div>
-        </section>
+          {/* Notifications Section */}
+          <section className="glass-card-page p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#D9C61A]/10 flex items-center justify-center">
+                <Bell size={20} className="text-[#8a7c08]" />
+              </div>
+              <h2 className="text-lg font-semibold text-[#2d2d2d]">Notifications</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <label className="flex items-center justify-between cursor-pointer">
+                <div>
+                  <p className="text-[#2d2d2d] font-medium">Email Notifications</p>
+                  <p className="text-sm text-[#666]">Receive updates via email</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settings.email_notifications}
+                  onChange={(e) => setSettings({ ...settings, email_notifications: e.target.checked })}
+                  className="w-5 h-5 rounded bg-white border-[#406A56]/20 text-[#406A56] focus:ring-[#406A56]"
+                />
+              </label>
 
-        {/* AI Features Section */}
-        <section className="bg-gray-900/90 rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center gap-3 mb-4">
-            <Sparkles size={20} className="text-amber-500" />
-            <h2 className="text-lg font-semibold text-white">AI Features</h2>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <p className="text-white mb-1">AI-Powered Search</p>
-              <p className="text-sm text-white/50 mb-3">
-                Generate AI embeddings to enable semantic search across all your memories, contacts, and life data. 
-                This allows the AI assistant to understand and recall your content naturally.
-              </p>
+              <label className="flex items-center justify-between cursor-pointer">
+                <div>
+                  <p className="text-[#2d2d2d] font-medium">Memory Reminders</p>
+                  <p className="text-sm text-[#666]">&quot;On this day&quot; memories from past years</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settings.memory_reminders}
+                  onChange={(e) => setSettings({ ...settings, memory_reminders: e.target.checked })}
+                  className="w-5 h-5 rounded bg-white border-[#406A56]/20 text-[#406A56] focus:ring-[#406A56]"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer">
+                <div>
+                  <p className="text-[#2d2d2d] font-medium">Share Notifications</p>
+                  <p className="text-sm text-[#666]">When contacts interact with shared memories</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settings.share_notifications}
+                  onChange={(e) => setSettings({ ...settings, share_notifications: e.target.checked })}
+                  className="w-5 h-5 rounded bg-white border-[#406A56]/20 text-[#406A56] focus:ring-[#406A56]"
+                />
+              </label>
+            </div>
+          </section>
+
+          {/* Privacy Section */}
+          <section className="glass-card-page p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#4A3552]/10 flex items-center justify-center">
+                <Shield size={20} className="text-[#4A3552]" />
+              </div>
+              <h2 className="text-lg font-semibold text-[#2d2d2d]">Privacy</h2>
+            </div>
+            
+            <label className="flex items-center justify-between cursor-pointer">
+              <div>
+                <p className="text-[#2d2d2d] font-medium">Public Profile</p>
+                <p className="text-sm text-[#666]">Allow others to view your profile</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.public_profile}
+                onChange={(e) => setSettings({ ...settings, public_profile: e.target.checked })}
+                className="w-5 h-5 rounded bg-white border-[#406A56]/20 text-[#406A56] focus:ring-[#406A56]"
+              />
+            </label>
+          </section>
+
+          {/* Save Button */}
+          <button
+            onClick={saveSettings}
+            disabled={saving}
+            className="btn-primary w-full justify-center"
+          >
+            {saving ? 'Saving...' : 'Save Settings'}
+          </button>
+
+          {/* Data Section */}
+          <section className="glass-card-page p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#8DACAB]/10 flex items-center justify-center">
+                <Download size={20} className="text-[#5d8585]" />
+              </div>
+              <h2 className="text-lg font-semibold text-[#2d2d2d]">Your Data</h2>
+            </div>
+            
+            <div className="space-y-3">
               <button
-                onClick={handleGenerateEmbeddings}
-                disabled={generatingEmbeddings}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
+                onClick={handleExportData}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-[#406A56]/5 hover:bg-[#406A56]/10 text-[#406A56] rounded-xl transition-colors font-medium"
               >
-                {generatingEmbeddings ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={16} />
-                    Index My Content for AI
-                  </>
-                )}
+                <Download size={18} />
+                Export All Data
               </button>
-              {embeddingStats && (
-                <p className="text-sm text-green-400 mt-2">
-                  ✓ Indexed {embeddingStats.processed} items
-                  {embeddingStats.errors > 0 && ` (${embeddingStats.errors} errors)`}
+            </div>
+          </section>
+
+          {/* AI Features Section */}
+          <section className="glass-card-page p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#D9C61A]/10 flex items-center justify-center">
+                <Sparkles size={20} className="text-[#8a7c08]" />
+              </div>
+              <h2 className="text-lg font-semibold text-[#2d2d2d]">AI Features</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <p className="text-[#2d2d2d] font-medium mb-1">AI-Powered Search</p>
+                <p className="text-sm text-[#666] mb-3">
+                  Generate AI embeddings to enable semantic search across all your memories, contacts, and life data.
                 </p>
-              )}
+                <button
+                  onClick={handleGenerateEmbeddings}
+                  disabled={generatingEmbeddings}
+                  className="btn-accent"
+                >
+                  {generatingEmbeddings ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={16} />
+                      Index My Content for AI
+                    </>
+                  )}
+                </button>
+                {embeddingStats && (
+                  <p className="text-sm text-green-600 mt-2">
+                    ✓ Indexed {embeddingStats.processed} items
+                    {embeddingStats.errors > 0 && ` (${embeddingStats.errors} errors)`}
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Danger Zone */}
+          <div className="danger-zone">
+            <h2 className="danger-zone-title">Danger Zone</h2>
+            
+            <div className="space-y-3">
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-[#406A56]/5 hover:bg-[#406A56]/10 text-[#406A56] rounded-xl transition-colors font-medium"
+              >
+                <LogOut size={18} />
+                Sign Out
+              </button>
+
+              <button
+                onClick={handleDeleteAccount}
+                className="btn-danger w-full justify-center"
+              >
+                <Trash2 size={18} />
+                Delete Account
+              </button>
             </div>
           </div>
-        </section>
-
-        {/* Danger Zone */}
-        <section className="bg-red-950/30 rounded-2xl p-6 border border-red-500/20">
-          <h2 className="text-lg font-semibold text-red-400 mb-4">Danger Zone</h2>
-          
-          <div className="space-y-3">
-            <button
-              onClick={handleSignOut}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition-colors"
-            >
-              <LogOut size={18} />
-              Sign Out
-            </button>
-
-            <button
-              onClick={handleDeleteAccount}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl transition-colors"
-            >
-              <Trash2 size={18} />
-              Delete Account
-            </button>
-          </div>
-        </section>
+        </div>
       </div>
     </div>
   )

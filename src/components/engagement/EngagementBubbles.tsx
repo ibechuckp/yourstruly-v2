@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEngagementPrompts } from '@/hooks/useEngagementPrompts';
 import { Bubble } from './Bubble';
 import { RefreshCw, Sparkles } from 'lucide-react';
 import type { EngagementPrompt } from '@/types/engagement';
+
+// Lazy load ConversationView for code splitting
+const ConversationView = lazy(() => import('@/components/conversation/ConversationView').then(mod => ({ default: mod.ConversationView })));
 
 interface CompletedTile {
   id: string;
@@ -22,6 +25,7 @@ interface CompletedTile {
 interface EngagementBubblesProps {
   className?: string;
   maxBubbles?: number;
+  enableConversationView?: boolean;
 }
 
 const TYPE_ICONS: Record<string, string> = {
@@ -38,6 +42,17 @@ const TYPE_ICONS: Record<string, string> = {
   recipes_wisdom: '📖',
 };
 
+// Prompt types that benefit from conversation view
+const CONVERSATION_TYPES = [
+  'photo_backstory',
+  'memory_prompt', 
+  'knowledge',
+  'favorites_firsts',
+  'recipes_wisdom',
+  'connect_dots',
+  'postscript',
+];
+
 // Scrapbook-style rotations - subtle
 function getRotation(index: number): number {
   const rotations = [-1.5, 1, -0.8, 1.2, -1, 1.5, -0.5, 0.8, -1.2, 0.6];
@@ -46,7 +61,8 @@ function getRotation(index: number): number {
 
 export function EngagementBubbles({ 
   className = '', 
-  maxBubbles = 5 
+  maxBubbles = 5,
+  enableConversationView = true,
 }: EngagementBubblesProps) {
   const router = useRouter();
   const { 
@@ -62,17 +78,29 @@ export function EngagementBubbles({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [completedTiles, setCompletedTiles] = useState<CompletedTile[]>([]);
   const [animatingTileId, setAnimatingTileId] = useState<string | null>(null);
+  
+  // Conversation view state
+  const [activeConversationPrompt, setActiveConversationPrompt] = useState<EngagementPrompt | null>(null);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setExpandedId(null);
+      if (e.key === 'Escape') {
+        setExpandedId(null);
+        setActiveConversationPrompt(null);
+      }
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, []);
 
   const handleBubbleClick = (prompt: EngagementPrompt) => {
-    setExpandedId(expandedId === prompt.id ? null : prompt.id);
+    // Check if this prompt type should use conversation view
+    if (enableConversationView && CONVERSATION_TYPES.includes(prompt.type)) {
+      setActiveConversationPrompt(prompt);
+    } else {
+      // Fall back to inline expansion for simple prompts
+      setExpandedId(expandedId === prompt.id ? null : prompt.id);
+    }
   };
 
   const handleAnswer = useCallback(async (promptId: string, response: any) => {
@@ -84,12 +112,13 @@ export function EngagementBubbles({
       // Start animation
       setAnimatingTileId(promptId);
       setExpandedId(null);
+      setActiveConversationPrompt(null);
 
       // Wait for shrink animation
       await new Promise(resolve => setTimeout(resolve, 300));
 
       // Actually submit the answer FIRST to get memoryId
-      const result = await answerPrompt(promptId, response);
+      const result = await answerPrompt(promptId, response) as { memoryId?: string; contactId?: string } | undefined;
       console.log('Answer result with memoryId:', result);
 
       // Add to completed tiles with memoryId from API response
@@ -114,10 +143,40 @@ export function EngagementBubbles({
     }
   }, [prompts, answerPrompt]);
 
+  const handleConversationComplete = useCallback((result: {
+    exchanges: Array<{ question: string; response: string; audioUrl?: string }>;
+    summary: string;
+    knowledgeEntryId?: string;
+    memoryId?: string;
+    xpAwarded: number;
+  }) => {
+    if (!activeConversationPrompt) return;
+
+    const prompt = activeConversationPrompt;
+
+    // Add to completed tiles
+    const completedTile: CompletedTile = {
+      id: prompt.id,
+      type: prompt.type,
+      icon: TYPE_ICONS[prompt.type] || '✓',
+      photoUrl: prompt.photoUrl,
+      contactName: prompt.contactName,
+      contactPhotoUrl: prompt.contactPhotoUrl,
+      memoryId: result.memoryId,
+      contactId: prompt.contactId,
+    };
+    setCompletedTiles(prev => [completedTile, ...prev]);
+    setActiveConversationPrompt(null);
+
+    // Remove from prompts list
+    // Note: The API should have already updated the prompt status
+  }, [activeConversationPrompt]);
+
   const handleSkip = async (promptId: string) => {
     try {
       await skipPrompt(promptId);
       setExpandedId(null);
+      setActiveConversationPrompt(null);
     } catch (err) {
       console.error('Failed to skip:', err);
     }
@@ -127,6 +186,7 @@ export function EngagementBubbles({
     try {
       await dismissPrompt(promptId);
       setExpandedId(null);
+      setActiveConversationPrompt(null);
     } catch (err) {
       console.error('Failed to dismiss:', err);
     }
@@ -135,6 +195,7 @@ export function EngagementBubbles({
   const handleRefresh = async () => {
     setIsRefreshing(true);
     setExpandedId(null);
+    setActiveConversationPrompt(null);
     await shuffle();
     setIsRefreshing(false);
   };
@@ -264,6 +325,7 @@ export function EngagementBubbles({
                 onDismiss={() => handleDismiss(prompt.id)}
                 onClose={() => setExpandedId(null)}
                 rotation={getRotation(index)}
+                showConversationIndicator={CONVERSATION_TYPES.includes(prompt.type) && enableConversationView}
               />
             ))}
         </AnimatePresence>
@@ -280,6 +342,35 @@ export function EngagementBubbles({
         <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
         Shuffle
       </motion.button>
+
+      {/* Conversation View Modal */}
+      <AnimatePresence>
+        {activeConversationPrompt && (
+          <Suspense fallback={
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="conversation-overlay"
+            >
+              <div className="conversation-modal flex items-center justify-center">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                >
+                  <Sparkles size={32} className="text-[#4A7C59]" />
+                </motion.div>
+              </div>
+            </motion.div>
+          }>
+            <ConversationView
+              prompt={activeConversationPrompt}
+              onComplete={handleConversationComplete}
+              onClose={() => setActiveConversationPrompt(null)}
+            />
+          </Suspense>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

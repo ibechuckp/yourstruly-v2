@@ -13,7 +13,7 @@ import {
   LogOut,
   Camera,
   MessageSquare,
-  Gift,
+  Send,
   Plane,
   Bot,
   FolderOpen
@@ -40,7 +40,7 @@ const navItems = [
   { href: '/dashboard/journalist', label: 'Video Journalist', icon: MessageSquare },
   // Phase 4+
   { href: '/dashboard/avatar', label: 'AI Avatar', icon: Bot, disabled: true },
-  { href: '/dashboard/postscripts', label: 'PostScripts', icon: Gift },
+  { href: '/dashboard/postscripts', label: 'Future Messages', icon: Send },
   { href: '/dashboard/trips', label: 'Trip Planning', icon: Plane, disabled: true },
 ]
 

@@ -4,9 +4,10 @@ import React, { useState, useEffect, use, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { 
   ChevronLeft, Heart, MapPin, Calendar, Sparkles, 
-  Trash2, Edit2, X, Plus, Image as ImageIcon, Upload, Zap
+  Trash2, Edit2, X, Plus, Image as ImageIcon, Upload, Zap, Play, Square
 } from 'lucide-react'
 import Link from 'next/link'
+import '@/styles/home.css'
 import Modal from '@/components/ui/Modal'
 import FaceTagger from '@/components/media/FaceTagger'
 import CaptionEditor from '@/components/media/CaptionEditor'
@@ -35,6 +36,44 @@ interface Media {
   width: number
   height: number
   is_cover: boolean
+}
+
+// Parse conversation markdown into structured content
+function parseMemoryContent(description: string) {
+  if (!description) return null;
+  
+  // Check if it's a conversation format
+  if (!description.includes('## Summary') && !description.includes('## Conversation')) {
+    return { type: 'plain', content: description };
+  }
+  
+  const parts = description.split('## Conversation');
+  const summaryPart = parts[0]?.replace('## Summary', '').trim();
+  
+  const qaSection = parts[1] || '';
+  const exchanges: { question: string; answer: string; audioUrl?: string }[] = [];
+  
+  // Split by --- separator first
+  const qaPairs = qaSection.split(/\n\n---\n\n/).filter(s => s.trim());
+  
+  for (const pair of qaPairs) {
+    // Extract question
+    const qMatch = pair.match(/\*\*Q\d+:\*\*\s*(.+?)(?=\n\n\*\*A)/s);
+    // Extract answer (everything between **A#:** and either 🎙️ or end)
+    const aMatch = pair.match(/\*\*A\d+:\*\*\s*(.+?)(?=\n\n🎙️|$)/s);
+    // Extract audio URL
+    const audioMatch = pair.match(/🎙️ \[Audio\]\((.+?)\)/);
+    
+    if (qMatch && aMatch) {
+      exchanges.push({
+        question: qMatch[1]?.trim() || '',
+        answer: aMatch[1]?.trim() || '',
+        audioUrl: audioMatch?.[1]?.trim(),
+      });
+    }
+  }
+  
+  return { type: 'conversation', summary: summaryPart, exchanges };
 }
 
 // Toast Component (for XP and info messages)
@@ -79,10 +118,104 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
   const [deletingMediaId, setDeletingMediaId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'faces' | 'caption'>('faces')
   const [xpToasts, setXpToasts] = useState<Array<{ id: number; amount?: number; message?: string }>>([])
+  const [isPlayingConversation, setIsPlayingConversation] = useState(false)
+  const [currentPlayingIndex, setCurrentPlayingIndex] = useState(-1)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const toastIdRef = useRef(0)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const playingRef = useRef(false)
   
   const supabase = createClient()
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      stopConversationPlayback()
+    }
+  }, [])
+
+  const stopConversationPlayback = () => {
+    playingRef.current = false
+    setIsPlayingConversation(false)
+    setCurrentPlayingIndex(-1)
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+    }
+  }
+
+  const playConversation = async (exchanges: Array<{ question: string; answer: string; audioUrl?: string }>) => {
+    if (isPlayingConversation) {
+      stopConversationPlayback()
+      return
+    }
+
+    playingRef.current = true
+    setIsPlayingConversation(true)
+
+    try {
+      for (let i = 0; i < exchanges.length; i++) {
+        if (!playingRef.current) break
+        
+        const ex = exchanges[i]
+        setCurrentPlayingIndex(i)
+
+        // Speak question using browser TTS
+        if ('speechSynthesis' in window) {
+          await new Promise<void>((resolve) => {
+            if (!playingRef.current) { resolve(); return }
+            
+            window.speechSynthesis.cancel()
+            const utterance = new SpeechSynthesisUtterance(ex.question)
+            utterance.rate = 0.95
+            
+            // Try to find a good voice
+            const voices = window.speechSynthesis.getVoices()
+            const preferredVoice = voices.find(v => 
+              v.name.includes('Samantha') || 
+              v.name.includes('Google US English') ||
+              (v.lang.startsWith('en') && v.localService)
+            ) || voices.find(v => v.lang.startsWith('en-US'))
+            if (preferredVoice) utterance.voice = preferredVoice
+            
+            utterance.onend = () => resolve()
+            utterance.onerror = () => resolve()
+            window.speechSynthesis.speak(utterance)
+          })
+        }
+
+        if (!playingRef.current) break
+        await new Promise(r => setTimeout(r, 400))
+
+        // Play answer audio if available
+        if (ex.audioUrl && playingRef.current) {
+          await new Promise<void>((resolve) => {
+            const audio = new Audio(ex.audioUrl)
+            audioRef.current = audio
+            audio.onended = () => {
+              audioRef.current = null
+              resolve()
+            }
+            audio.onerror = () => {
+              audioRef.current = null
+              resolve()
+            }
+            audio.play().catch(() => resolve())
+          })
+        }
+
+        if (!playingRef.current) break
+        await new Promise(r => setTimeout(r, 500))
+      }
+    } finally {
+      setIsPlayingConversation(false)
+      setCurrentPlayingIndex(-1)
+      playingRef.current = false
+    }
+  }
 
   const showXP = (amount?: number, message?: string) => {
     const id = toastIdRef.current++
@@ -253,29 +386,52 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
     })
   }
 
+  // Parse content for display
+  const parsedContent = memory ? parseMemoryContent(memory.description) : null;
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white/60">Loading memory...</div>
+      <div className="min-h-screen relative">
+        <div className="home-background">
+          <div className="home-blob home-blob-1" />
+          <div className="home-blob home-blob-2" />
+        </div>
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-gray-600">Loading memory...</div>
+        </div>
       </div>
     )
   }
 
   if (!memory) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-white/60 mb-4">Memory not found</p>
-          <Link href="/dashboard/memories" className="text-amber-500 hover:underline">
-            Back to memories
-          </Link>
+      <div className="min-h-screen relative">
+        <div className="home-background">
+          <div className="home-blob home-blob-1" />
+          <div className="home-blob home-blob-2" />
+        </div>
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <p className="text-gray-600 mb-4">Memory not found</p>
+            <Link href="/dashboard/memories" className="text-[#406A56] hover:underline">
+              Back to memories
+            </Link>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen relative pb-24">
+      {/* Warm background */}
+      <div className="home-background">
+        <div className="home-blob home-blob-1" />
+        <div className="home-blob home-blob-2" />
+        <div className="home-blob home-blob-3" />
+      </div>
+      
+      <div className="relative z-10 p-6">
       {/* Toasts */}
       <AnimatePresence>
         {xpToasts.map(toast => (
@@ -290,7 +446,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
 
       {/* Header */}
       <header className="mb-6 flex items-center justify-between">
-        <Link href="/dashboard/memories" className="flex items-center gap-2 px-3 py-2 bg-gray-900/90 rounded-xl text-white/70 hover:text-white transition-all border border-white/10">
+        <Link href="/dashboard/memories" className="flex items-center gap-2 px-3 py-2 bg-white/80 backdrop-blur-sm rounded-xl text-gray-600 hover:text-gray-900 transition-all border border-gray-200 shadow-sm">
           <ChevronLeft size={18} />
           <span>Back</span>
         </Link>
@@ -298,19 +454,19 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
         <div className="flex items-center gap-2">
           <button
             onClick={toggleFavorite}
-            className={`p-2.5 bg-gray-900/90 rounded-xl transition-all border border-white/10 ${memory.is_favorite ? 'text-red-500' : 'text-white/50 hover:text-red-500'}`}
+            className={`p-2.5 bg-white/80 backdrop-blur-sm rounded-xl transition-all border border-gray-200 shadow-sm ${memory.is_favorite ? 'text-[#C35F33]' : 'text-gray-400 hover:text-[#C35F33]'}`}
           >
             <Heart size={18} fill={memory.is_favorite ? 'currentColor' : 'none'} />
           </button>
           <button
             onClick={() => setIsEditing(true)}
-            className="p-2.5 bg-gray-900/90 text-white/50 hover:text-white rounded-xl transition-all border border-white/10"
+            className="p-2.5 bg-white/80 backdrop-blur-sm text-gray-400 hover:text-gray-700 rounded-xl transition-all border border-gray-200 shadow-sm"
           >
             <Edit2 size={18} />
           </button>
           <button
             onClick={handleDelete}
-            className="p-2.5 bg-gray-900/90 text-white/50 hover:text-red-500 rounded-xl transition-all border border-white/10"
+            className="p-2.5 bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500 rounded-xl transition-all border border-gray-200 shadow-sm"
           >
             <Trash2 size={18} />
           </button>
@@ -329,8 +485,8 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
                     onClick={() => setActiveTab('faces')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       activeTab === 'faces' 
-                        ? 'bg-amber-600 text-white' 
-                        : 'bg-gray-800 text-white/50 hover:text-white'
+                        ? 'bg-[#406A56] text-white' 
+                        : 'bg-white/80 text-gray-500 hover:text-gray-700 border border-gray-200'
                     }`}
                   >
                     👤 Tag People
@@ -339,8 +495,8 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
                     onClick={() => setActiveTab('caption')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       activeTab === 'caption' 
-                        ? 'bg-amber-600 text-white' 
-                        : 'bg-gray-800 text-white/50 hover:text-white'
+                        ? 'bg-[#406A56] text-white' 
+                        : 'bg-white/80 text-gray-500 hover:text-gray-700 border border-gray-200'
                     }`}
                   >
                     ✏️ Add Story
@@ -356,10 +512,10 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
                   />
                 ) : (
                   <div className="space-y-4">
-                    <div className="rounded-xl overflow-hidden bg-black">
+                    <div className="rounded-xl overflow-hidden bg-gray-100">
                       <img src={selectedMedia.file_url} alt="" className="w-full" />
                     </div>
-                    <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-gray-200 shadow-sm">
                       <CaptionEditor
                         mediaId={selectedMedia.id}
                         onXPEarned={showXP}
@@ -369,12 +525,12 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
                 )}
               </>
             ) : (
-              <div className="aspect-video flex flex-col items-center justify-center bg-gray-900/90 rounded-xl border border-white/10">
-                <ImageIcon size={48} className="text-white/30 mb-4" />
-                <p className="text-white/50 mb-4">No photos yet</p>
+              <div className="aspect-video flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200 shadow-sm">
+                <ImageIcon size={48} className="text-gray-300 mb-4" />
+                <p className="text-gray-500 mb-4">No photos yet</p>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg"
+                  className="flex items-center gap-2 px-4 py-2 bg-[#406A56] hover:bg-[#355a49] text-white rounded-lg transition-colors"
                 >
                   <Upload size={18} />
                   Upload Photos
@@ -390,7 +546,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
                     key={m.id}
                     onClick={() => setSelectedMedia(m)}
                     className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                      selectedMedia?.id === m.id ? 'border-amber-500' : 'border-transparent hover:border-white/30'
+                      selectedMedia?.id === m.id ? 'border-[#406A56]' : 'border-transparent hover:border-gray-300'
                     }`}
                   >
                     <img src={m.file_url} alt="" className="w-full h-full object-cover" />
@@ -406,12 +562,12 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="flex-shrink-0 w-16 h-16 rounded-lg border-2 border-dashed border-white/20 hover:border-amber-500 flex items-center justify-center transition-colors"
+                  className="flex-shrink-0 w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 hover:border-[#406A56] flex items-center justify-center transition-colors bg-white/50"
                 >
                   {uploading ? (
-                    <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-[#406A56] border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <Plus size={20} className="text-white/50" />
+                    <Plus size={20} className="text-gray-400" />
                   )}
                 </button>
               </div>
@@ -431,24 +587,81 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
           {/* Sidebar - Memory Details */}
           <div className="space-y-4">
             {/* Title & Description */}
-            <div className="bg-gray-900/90 rounded-xl p-4 border border-white/10">
-              <h1 className="text-xl font-bold text-white mb-2">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-sm border border-gray-100">
+              <h1 className="text-xl font-bold text-[#2d2d2d] mb-3">
                 {memory.title || 'Untitled Memory'}
               </h1>
               
-              {memory.description && (
-                <p className="text-white/70 text-sm mb-4">{memory.description}</p>
+              {/* Parsed content display */}
+              {parsedContent?.type === 'conversation' ? (
+                <div className="space-y-4">
+                  {/* Play/Pause Conversation Button */}
+                  {parsedContent.exchanges && parsedContent.exchanges.length > 0 && (
+                    <button
+                      onClick={() => playConversation(parsedContent.exchanges)}
+                      className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-[#406A56]/10 to-[#D9C61A]/10 hover:from-[#406A56]/15 hover:to-[#D9C61A]/15 rounded-xl transition-all border border-[#406A56]/20"
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isPlayingConversation ? 'bg-[#406A56]' : 'bg-[#406A56]/20'}`}>
+                        {isPlayingConversation ? (
+                          <Square size={16} className="text-white" fill="white" />
+                        ) : (
+                          <Play size={18} className="text-[#406A56] ml-0.5" />
+                        )}
+                      </div>
+                      <div className="text-left">
+                        <span className="text-[#2d2d2d] font-medium text-sm">
+                          {isPlayingConversation 
+                            ? `Playing ${currentPlayingIndex + 1}/${parsedContent.exchanges.length}...`
+                            : 'Play Full Conversation'
+                          }
+                        </span>
+                        <p className="text-xs text-gray-500">
+                          {isPlayingConversation ? 'Tap to stop' : `${parsedContent.exchanges.length} exchanges • AI + your voice`}
+                        </p>
+                      </div>
+                    </button>
+                  )}
+                  
+                  {/* Summary */}
+                  {parsedContent.summary && (
+                    <p className="text-gray-600 text-sm italic border-l-2 border-[#D9C61A] pl-3">
+                      {parsedContent.summary.length > 200 ? parsedContent.summary.slice(0, 200) + '...' : parsedContent.summary}
+                    </p>
+                  )}
+                  
+                  {/* Q&A exchanges */}
+                  {parsedContent.exchanges && parsedContent.exchanges.length > 0 && (
+                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                      {parsedContent.exchanges.map((ex: { question: string; answer: string; audioUrl?: string }, idx: number) => (
+                        <div key={idx} className="text-sm">
+                          <p className="text-[#406A56] font-medium mb-1">{ex.question}</p>
+                          <p className="text-gray-600 bg-[#F2F1E5] rounded-lg p-3">{ex.answer}</p>
+                          {ex.audioUrl && (
+                            <button 
+                              onClick={() => new Audio(ex.audioUrl).play()}
+                              className="mt-1 text-xs text-[#4A3552] hover:text-[#6a4572] flex items-center gap-1"
+                            >
+                              <Play size={12} fill="currentColor" /> Play this response
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : memory.description && (
+                <p className="text-gray-600 text-sm mb-4">{memory.description}</p>
               )}
 
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2 text-sm mt-4 pt-4 border-t border-gray-100">
                 {memory.memory_date && (
-                  <div className="flex items-center gap-2 text-white/60">
+                  <div className="flex items-center gap-2 text-gray-500">
                     <Calendar size={14} />
                     {formatDate(memory.memory_date)}
                   </div>
                 )}
                 {memory.location_name && (
-                  <div className="flex items-center gap-2 text-white/60">
+                  <div className="flex items-center gap-2 text-gray-500">
                     <MapPin size={14} />
                     {memory.location_name}
                   </div>
@@ -458,24 +671,45 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
 
             {/* AI Insights */}
             {(memory.ai_summary || memory.ai_mood || memory.ai_category) && (
-              <div className="bg-gray-900/90 rounded-xl p-4 border border-white/10">
-                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2 mb-3">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-sm border border-gray-100">
+                <h3 className="text-sm font-medium text-[#D9C61A] flex items-center gap-2 mb-3">
                   <Sparkles size={14} />
                   AI Insights
                 </h3>
                 
                 {memory.ai_summary && (
-                  <p className="text-white/70 text-sm mb-3">{memory.ai_summary}</p>
+                  <div className="space-y-2 mb-3">
+                    {memory.ai_summary.split('\n').map((line, i) => {
+                      // Parse bullet points with bold headers
+                      const match = line.match(/^-\s*\*\*(.+?)\*\*:\s*(.+)$/);
+                      if (match) {
+                        return (
+                          <div key={i} className="flex items-start gap-2 text-sm">
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#D9C61A] mt-2 flex-shrink-0" />
+                            <div>
+                              <span className="font-semibold text-[#4A3552]">{match[1]}:</span>
+                              <span className="text-gray-600 ml-1">{match[2]}</span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      // Regular lines
+                      if (line.trim()) {
+                        return <p key={i} className="text-gray-600 text-sm">{line}</p>;
+                      }
+                      return null;
+                    })}
+                  </div>
                 )}
                 
                 <div className="flex flex-wrap gap-2">
                   {memory.ai_mood && (
-                    <span className="px-2 py-1 bg-purple-600/30 text-purple-300 rounded-full text-xs capitalize">
+                    <span className="px-2 py-1 bg-[#4A3552]/10 text-[#4A3552] rounded-full text-xs capitalize">
                       {memory.ai_mood}
                     </span>
                   )}
                   {memory.ai_category && (
-                    <span className="px-2 py-1 bg-blue-600/30 text-blue-300 rounded-full text-xs capitalize">
+                    <span className="px-2 py-1 bg-[#8DACAB]/20 text-[#406A56] rounded-full text-xs capitalize">
                       {memory.ai_category}
                     </span>
                   )}
@@ -499,6 +733,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
       </main>
+      </div>
 
       {/* Edit Modal */}
       <Modal isOpen={isEditing} onClose={() => setIsEditing(false)} title="Edit Memory">

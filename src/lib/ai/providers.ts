@@ -18,7 +18,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 export const AI_CONFIG = {
   // Embedding provider: 'ollama' | 'gemini' | 'openai' | 'voyage' | 'cohere'
-  embeddingProvider: 'ollama' as const,
+  embeddingProvider: 'gemini' as const,
   
   // Chat provider: 'claude' | 'openai' | 'gemini'
   chatProvider: 'claude' as const,
@@ -29,11 +29,13 @@ export const AI_CONFIG = {
     claudeChat: 'claude-sonnet-4-20250514', // Claude 4 Sonnet
   },
   
-  // Ollama server URL
+  // Ollama server URL (for when using Ollama)
   ollamaUrl: process.env.OLLAMA_URL || 'http://192.168.4.24:11434',
   
   // Embedding dimensions (must match your pgvector column!)
+  // Gemini embedding-001 = 768 dimensions
   // Ollama nomic-embed-text = 768 dimensions
+  // OpenAI text-embedding-3-small = 1536 dimensions
   embeddingDimensions: 768,
 }
 

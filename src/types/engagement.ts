@@ -244,10 +244,12 @@ export interface AnswerPromptResponse {
   success: boolean;
   prompt: EngagementPrompt;
   knowledgeEntry?: KnowledgeEntry; // If a knowledge entry was created
+  knowledgeEntryId?: string; // ID of created knowledge entry
   memoryCreated?: boolean;
   memoryId?: string; // ID of created memory (for photo backstory, memory prompts)
   contactId?: string; // ID of contact (for contact prompts)
   contactUpdated?: boolean;
+  xpAwarded?: number; // XP amount awarded for answering
 }
 
 export interface ShufflePromptsRequest {

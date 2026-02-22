@@ -13,88 +13,54 @@ The engagement bubbles memory creation flow has been audited. The migration 026_
 
 ## 🔴 Critical Issues
 
-### 1. XP Is NOT Actually Being Awarded
+### 1. XP Is NOT Actually Being Awarded ✅ FIXED
 
 **Location:** `src/app/api/engagement/prompts/[id]/route.ts`
 
 **Problem:** While the Bubble component shows XP badges (e.g., "+15 XP") in the UI, the answer endpoint never actually calls `award_xp` or `record_daily_activity`. Users see XP promises but never receive them.
 
-**Code Evidence:**
-- `Bubble.tsx` line 24-35: `TYPE_CONFIG` defines XP values
-- `route.ts`: No XP-related RPC calls anywhere in the 200+ line file
-- XP only exists as a UI decoration, not a real game mechanic
-
-**Fix Required:**
-```typescript
-// Add to route.ts after successful prompt answer
-const XP_REWARDS: Record<string, number> = {
-  photo_backstory: 15,
-  tag_person: 5,
-  missing_info: 5,
-  memory_prompt: 20,
-  knowledge: 15,
-  connect_dots: 10,
-  highlight: 5,
-  quick_question: 5,
-  postscript: 20,
-  favorites_firsts: 10,
-  recipes_wisdom: 15,
-};
-
-// Award XP
-await supabase.rpc('award_xp', {
-  p_user_id: user.id,
-  p_amount: XP_REWARDS[prompt.type] || 10,
-  p_action: 'answer_prompt',
-  p_description: `Answered ${prompt.type} prompt`,
-  p_reference_type: 'prompt',
-  p_reference_id: promptId
-});
-
-// Record for streaks
-await supabase.rpc('record_daily_activity', {
-  p_user_id: user.id,
-  p_activity_type: 'engagement_prompt'
-});
+**Fix Applied (2026-02-21):**
+- Added `XP_REWARDS` configuration matching TYPE_CONFIG from Bubble.tsx
+- Added `award_xp` RPC call after successful prompt answer
+- Added `record_daily_activity` RPC call for streak tracking
+- Added `xpAwarded` field to `AnswerPromptResponse` type
+- XP values: photo_backstory (15), memory_prompt (20), postscript (20), knowledge (15), recipes_wisdom (15), connect_dots (10), favorites_firsts (10), others (5-10)
 ```
 
 ---
 
-### 2. Voice Recording Is Not Implemented
+### 2. Voice Recording Is Not Implemented ✅ FIXED
 
-**Location:** `src/components/engagement/Bubble.tsx` lines 275-283
+**Location:** `src/components/engagement/Bubble.tsx`
 
-**Problem:** The voice input button shows a placeholder "Voice recording coming soon" with no actual functionality. The audio_url column exists but cannot be populated.
+**Problem:** The voice input button showed a placeholder "Voice recording coming soon" with no actual functionality. The audio_url column exists but could not be populated.
 
-**Current Code:**
-```tsx
-<div className="p-6 bg-gray-50 rounded-xl text-center mb-3">
-  <MicOff size={24} className="mx-auto mb-3 text-gray-300" />
-  <p className="text-gray-400 text-sm mb-3">Voice recording coming soon</p>
-  <button onClick={selectTextMode} className="text-sm text-[var(--yt-green)] font-medium">
-    Type your response instead
-  </button>
-</div>
-```
-
-**Impact:** Users cannot create voice memories even though the database schema supports it.
+**Fix Applied (2026-02-21):**
+- Implemented full MediaRecorder API integration
+- Added recording state management (isRecording, recordingTime, audioBlob)
+- Added visual recording indicator with pulsing red animation
+- Added recording timer display (mm:ss format)
+- Added audio preview with native audio player after recording
+- Implemented upload to Supabase storage at `memories/[userId]/voice/[timestamp].webm`
+- Added loading states and error handling for microphone permissions
+- Added re-record functionality
+- Voice responses now pass audio_url to the answer API
 
 ---
 
-### 3. Knowledge Entries Table Is Never Populated
+### 3. Knowledge Entries Table Is Never Populated ✅ FIXED
 
 **Location:** `src/app/api/engagement/prompts/[id]/route.ts`
 
-**Problem:** The `knowledge_entries` table (defined in migration 017) exists but is never populated. The `knowledge` prompt type creates a regular memory, not a knowledge entry.
+**Problem:** The `knowledge_entries` table existed but was never populated. Knowledge prompts created regular memories only, not knowledge entries for the Digital Twin RAG system.
 
-**Current Behavior:**
-- `knowledge` prompts create memories with tags `['wisdom', ...]`
-- No records in `knowledge_entries` table
-- Digital Twin RAG cannot access this data
-
-**Expected vs Actual:**
-- Expected: `knowledge` prompts populate `knowledge_entries` with embeddings
-- Actual: Creates regular memories like other prompt types
+**Fix Applied (2026-02-21):**
+- Added automatic knowledge_entries creation for `knowledge` and `recipes_wisdom` prompt types
+- Populates fields: category, subcategory, prompt_text, response_text/audio_url, related_interest/skill/hobby
+- Links to source prompt via source_prompt_id
+- Updates engagement_prompts.result_knowledge_id for tracking
+- Added `knowledgeEntryId` field to `AnswerPromptResponse` type
+- Digital Twin RAG system can now access this data
 
 ---
 
@@ -109,37 +75,16 @@ The streak milestone system (7/30/100/365 days) awards XP bonuses but has **zero
 
 ---
 
-### 5. Missing Prompt Types in Database Enum
+### 5. Missing Prompt Types in Database Enum ✅ FIXED
 
-The TypeScript types define:
-```typescript
-type PromptType = 'photo_backstory' | 'tag_person' | 'missing_info' | 
-  'memory_prompt' | 'knowledge' | 'connect_dots' | 'highlight' | 
-  'quick_question' | 'postscript' | 'favorites_firsts' | 'recipes_wisdom';
-```
-
-But the PostgreSQL enum in migration 017 only includes:
-```sql
-CREATE TYPE prompt_type AS ENUM (
-  'photo_backstory',
-  'tag_person',
-  'missing_info',
-  'memory_prompt',
-  'knowledge',
-  'connect_dots',
-  'highlight',
-  'quick_question'
-);
-```
+**Problem:** The PostgreSQL `prompt_type` enum was missing values that existed in TypeScript types.
 
 **Missing:** `postscript`, `favorites_firsts`, `recipes_wisdom`
 
-**Fix:**
-```sql
-ALTER TYPE prompt_type ADD VALUE 'postscript';
-ALTER TYPE prompt_type ADD VALUE 'favorites_firsts';
-ALTER TYPE prompt_type ADD VALUE 'recipes_wisdom';
-```
+**Fix Applied (2026-02-21):**
+- Created migration file: `supabase/migrations/027_prompt_type_enum_update.sql`
+- Adds three missing enum values with existence checks
+- Uses idempotent DO blocks to safely add values if they don't exist
 
 ---
 
@@ -209,9 +154,19 @@ ALTER TYPE prompt_type ADD VALUE 'recipes_wisdom';
 
 ---
 
+## Fix Summary (2026-02-21)
+
+All critical issues have been resolved:
+
+| Issue | Status | File(s) Modified |
+|-------|--------|------------------|
+| XP System Not Awarding | ✅ Fixed | `src/app/api/engagement/prompts/[id]/route.ts`, `src/types/engagement.ts` |
+| Voice Recording Placeholder | ✅ Fixed | `src/components/engagement/Bubble.tsx` |
+| Knowledge Entries Not Created | ✅ Fixed | `src/app/api/engagement/prompts/[id]/route.ts`, `src/types/engagement.ts` |
+| Missing Enum Values | ✅ Fixed | `supabase/migrations/027_prompt_type_enum_update.sql` |
+
 ## Next Steps
 
-1. **Immediate:** Add XP awarding to answer endpoint
-2. **Short-term:** Implement voice recording flow
-3. **Medium-term:** Add milestone celebration UI
-4. **Long-term:** E2E test coverage for all prompt types
+1. **Testing:** Run full engagement flow tests to verify all fixes work correctly
+2. **Medium-term:** Add milestone celebration UI (streak milestones show XP but no visual feedback)
+3. **Long-term:** E2E test coverage for all prompt types
