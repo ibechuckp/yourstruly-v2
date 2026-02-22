@@ -406,7 +406,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 160px;
+  max-width: 120px;
+}
+
+/* Container for contact text - needs to constrain overflow */
+.bubble-contact > div:last-child {
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
 }
 
 .bubble-contact-sub {

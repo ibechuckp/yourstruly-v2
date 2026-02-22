@@ -20,7 +20,8 @@ interface Pet {
   personality?: string
   favorite_things?: string[]
   medical_notes?: string
-  emergency_caretaker_id?: string
+  emergency_caretaker_ids?: string[]
+  emergency_caretaker_id?: string  // legacy single
   emergency_caretaker?: string
   emergency_caretaker_phone?: string
   is_deceased: boolean
@@ -181,6 +182,58 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
     setUploading(false)
   }
 
+  const handlePetPhotosUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0 || !pet) return
+    
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Create a memory for this pet's photos
+    const { data: memory, error: memoryError } = await supabase
+      .from('memories')
+      .insert({
+        user_id: user.id,
+        title: `Photos of ${pet.name}`,
+        description: `Photo album for ${pet.name}`,
+        memory_type: 'pet_photos',
+        memory_date: new Date().toISOString().split('T')[0],
+      })
+      .select()
+      .single()
+
+    if (memoryError || !memory) {
+      alert('Failed to create photo album')
+      return
+    }
+
+    // Upload each photo
+    for (const file of Array.from(files)) {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `pet-${pet.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('memories')
+        .upload(fileName, file)
+      
+      if (!uploadError) {
+        const { data: { publicUrl } } = supabase.storage
+          .from('memories')
+          .getPublicUrl(fileName)
+        
+        await supabase.from('memory_media').insert({
+          memory_id: memory.id,
+          file_url: publicUrl,
+          file_type: file.type.startsWith('video') ? 'video' : 'image',
+        })
+      }
+    }
+
+    // Reload photos
+    loadPet()
+    alert(`Uploaded ${files.length} photo(s)!`)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen home-background flex items-center justify-center">
@@ -209,7 +262,9 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
   }
 
   const age = pet.date_of_birth ? getAge(pet.date_of_birth) : null
-  const caretakerContact = contacts.find(c => c.id === pet.emergency_caretaker_id)
+  // Support both single (legacy) and multiple caretakers
+  const caretakerIds = pet.emergency_caretaker_ids || (pet.emergency_caretaker_id ? [pet.emergency_caretaker_id] : [])
+  const caretakerContacts = contacts.filter(c => caretakerIds.includes(c.id))
 
   return (
     <div className="min-h-screen relative pb-24">
@@ -349,29 +404,33 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
               )}
             </div>
 
-            {/* Emergency Caretaker */}
+            {/* Emergency Caretakers */}
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-100 shadow-sm">
               <h3 className="text-gray-900 font-semibold mb-2 flex items-center gap-2">
                 <User size={16} className="text-[#406A56]" />
-                Emergency Caretaker
+                Emergency Caretakers
               </h3>
-              {caretakerContact ? (
-                <div className="flex items-center gap-3">
-                  {caretakerContact.avatar_url ? (
-                    <img src={caretakerContact.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-[#406A56]/10 flex items-center justify-center">
-                      <User size={18} className="text-[#406A56]" />
+              {caretakerContacts.length > 0 ? (
+                <div className="space-y-3">
+                  {caretakerContacts.map(contact => (
+                    <div key={contact.id} className="flex items-center gap-3">
+                      {contact.avatar_url ? (
+                        <img src={contact.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-[#406A56]/10 flex items-center justify-center">
+                          <User size={18} className="text-[#406A56]" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-gray-900 text-sm font-medium">{contact.full_name}</p>
+                        {contact.phone && (
+                          <a href={`tel:${contact.phone}`} className="text-[#406A56] text-xs hover:underline">
+                            {contact.phone}
+                          </a>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  <div>
-                    <p className="text-gray-900 text-sm font-medium">{caretakerContact.full_name}</p>
-                    {caretakerContact.phone && (
-                      <a href={`tel:${caretakerContact.phone}`} className="text-[#406A56] text-xs hover:underline">
-                        {caretakerContact.phone}
-                      </a>
-                    )}
-                  </div>
+                  ))}
                 </div>
               ) : pet.emergency_caretaker ? (
                 <div className="space-y-1">
@@ -385,7 +444,7 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
               ) : (
                 <p className="text-gray-400 text-sm italic">Not specified - add someone who can care for {pet.name} in an emergency</p>
               )}
-              <p className="text-xs text-gray-400 mt-2">This person will be notified if anything happens to you.</p>
+              <p className="text-xs text-gray-400 mt-2">These people will be notified if anything happens to you.</p>
             </div>
           </div>
 
@@ -417,7 +476,20 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
                   <Camera size={18} className="text-[#D9C61A]" />
                   Photos of {pet.name}
                 </h3>
-                <span className="text-sm text-gray-500">{taggedPhotos.length} photos</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">{taggedPhotos.length} photos</span>
+                  <label className="flex items-center gap-1.5 px-3 py-1.5 bg-[#D9C61A]/10 text-[#8B7B0A] text-sm rounded-lg cursor-pointer hover:bg-[#D9C61A]/20 transition-colors">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      multiple
+                      onChange={handlePetPhotosUpload} 
+                      className="hidden" 
+                    />
+                    <Upload size={14} />
+                    Add Photos
+                  </label>
+                </div>
               </div>
               
               {taggedPhotos.length === 0 ? (
@@ -426,7 +498,7 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
                     <ImageIcon size={24} className="text-gray-400" />
                   </div>
                   <p className="text-gray-500 text-sm mb-2">No photos yet</p>
-                  <p className="text-gray-400 text-xs">Add memories featuring {pet.name} to see photos here</p>
+                  <p className="text-gray-400 text-xs">Upload photos or add memories featuring {pet.name}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -483,7 +555,7 @@ function PetEditModal({
     color: pet.color || '',
     personality: pet.personality || '',
     medical_notes: pet.medical_notes || '',
-    emergency_caretaker_id: pet.emergency_caretaker_id || '',
+    emergency_caretaker_ids: pet.emergency_caretaker_ids || (pet.emergency_caretaker_id ? [pet.emergency_caretaker_id] : []),
     is_deceased: pet.is_deceased,
     date_of_passing: pet.date_of_passing || '',
   })
@@ -493,10 +565,21 @@ function PetEditModal({
   const supabase = createClient()
 
   const filteredContacts = contacts.filter(c => 
-    c.full_name.toLowerCase().includes(caretakerSearch.toLowerCase())
+    c.full_name.toLowerCase().includes(caretakerSearch.toLowerCase()) &&
+    !form.emergency_caretaker_ids.includes(c.id)
   )
 
-  const selectedCaretaker = contacts.find(c => c.id === form.emergency_caretaker_id)
+  const selectedCaretakers = contacts.filter(c => form.emergency_caretaker_ids.includes(c.id))
+
+  const addCaretaker = (contactId: string) => {
+    setForm({ ...form, emergency_caretaker_ids: [...form.emergency_caretaker_ids, contactId] })
+    setShowCaretakerDropdown(false)
+    setCaretakerSearch('')
+  }
+
+  const removeCaretaker = (contactId: string) => {
+    setForm({ ...form, emergency_caretaker_ids: form.emergency_caretaker_ids.filter(id => id !== contactId) })
+  }
 
   const handleSave = async () => {
     if (!form.name || !form.species) return
@@ -513,7 +596,7 @@ function PetEditModal({
         color: form.color || null,
         personality: form.personality || null,
         medical_notes: form.medical_notes || null,
-        emergency_caretaker_id: form.emergency_caretaker_id || null,
+        emergency_caretaker_ids: form.emergency_caretaker_ids.length > 0 ? form.emergency_caretaker_ids : null,
         is_deceased: form.is_deceased,
         date_of_passing: form.is_deceased ? (form.date_of_passing || null) : null,
       })
@@ -622,33 +705,40 @@ function PetEditModal({
             />
           </div>
 
-          {/* Emergency Caretaker - Contact Selector */}
+          {/* Emergency Caretakers - Multi-select */}
           <div className="p-4 bg-[#406A56]/10 rounded-xl">
-            <label className="block text-sm font-medium text-[#406A56] mb-1">Emergency Caretaker</label>
+            <label className="block text-sm font-medium text-[#406A56] mb-1">Emergency Caretakers</label>
             <p className="text-xs text-gray-500 mb-3">Who should care for {pet.name} if something happens to you?</p>
             
-            {selectedCaretaker ? (
-              <div className="flex items-center justify-between bg-white rounded-lg p-3">
-                <div className="flex items-center gap-3">
-                  {selectedCaretaker.avatar_url ? (
-                    <img src={selectedCaretaker.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-[#406A56]/20 flex items-center justify-center">
-                      <User size={14} className="text-[#406A56]" />
+            {/* Selected caretakers */}
+            {selectedCaretakers.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {selectedCaretakers.map(contact => (
+                  <div key={contact.id} className="flex items-center justify-between bg-white rounded-lg p-3">
+                    <div className="flex items-center gap-3">
+                      {contact.avatar_url ? (
+                        <img src={contact.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-[#406A56]/20 flex items-center justify-center">
+                          <User size={14} className="text-[#406A56]" />
+                        </div>
+                      )}
+                      <span className="text-sm font-medium text-gray-900">{contact.full_name}</span>
                     </div>
-                  )}
-                  <span className="text-sm font-medium text-gray-900">{selectedCaretaker.full_name}</span>
-                </div>
-                <button
-                  onClick={() => setForm({ ...form, emergency_caretaker_id: '' })}
-                  className="text-gray-400 hover:text-red-500"
-                >
-                  <X size={16} />
-                </button>
+                    <button
+                      onClick={() => removeCaretaker(contact.id)}
+                      className="text-gray-400 hover:text-red-500"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
               </div>
-            ) : (
+            )}
+
+            {/* Add more caretakers */}
+            <div className="relative">
               <div className="relative">
-                <div className="relative">
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
@@ -667,11 +757,7 @@ function PetEditModal({
                     {filteredContacts.map(contact => (
                       <button
                         key={contact.id}
-                        onClick={() => {
-                          setForm({ ...form, emergency_caretaker_id: contact.id })
-                          setShowCaretakerDropdown(false)
-                          setCaretakerSearch('')
-                        }}
+                        onClick={() => addCaretaker(contact.id)}
                         className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left"
                       >
                         {contact.avatar_url ? (
@@ -690,7 +776,6 @@ function PetEditModal({
                   </div>
                 )}
               </div>
-            )}
           </div>
 
           {/* Rainbow Bridge */}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { 
   User, Calendar, MapPin, Heart, Briefcase, BookOpen, 
@@ -10,6 +10,8 @@ import {
 import Link from 'next/link'
 import '@/styles/home.css'
 import '@/styles/page-styles.css'
+import EssenceFingerprintLoader from '@/components/profile/EssenceFingerprintLoader'
+import { generateEssenceVector } from '@/lib/essence'
 
 interface Profile {
   full_name: string
@@ -158,6 +160,21 @@ export default function ProfilePage() {
     return parts.join(', ') || 'Not specified'
   }
 
+  // Generate essence fingerprint vector from profile data
+  const essenceVector = useMemo(() => {
+    return generateEssenceVector({
+      id: undefined, // Will use full_name as seed
+      full_name: profile.full_name,
+      personality_type: profile.personality_type,
+      personality_traits: profile.personality_traits,
+      interests: profile.interests,
+      hobbies: profile.hobbies,
+      occupation: profile.occupation,
+      life_goals: profile.life_goals,
+      biography: profile.biography,
+    })
+  }, [profile])
+
   const calculateAge = (dob: string) => {
     if (!dob) return null
     const birth = new Date(dob)
@@ -184,7 +201,7 @@ export default function ProfilePage() {
   // Glass card section component
   const ProfileCard = ({ title, icon: Icon, iconColor = 'text-[#406A56]', bgColor = 'bg-[#406A56]/10', section, children }: {
     title: string
-    icon: React.ElementType
+    icon: React.ComponentType<{ size?: number; className?: string }>
     iconColor?: string
     bgColor?: string
     section: string
@@ -310,19 +327,31 @@ export default function ProfilePage() {
                 <Edit2 size={14} />
               </button>
 
-              {/* Avatar */}
-              <div className="relative inline-block mb-6">
-                {profile.avatar_url ? (
-                  <img 
-                    src={profile.avatar_url} 
-                    alt={profile.full_name} 
-                    className="w-36 h-36 rounded-full object-cover border-4 border-[#406A56]/20 shadow-lg"
+              {/* Essence Fingerprint - 3D Visualization */}
+              <div className="relative inline-block mb-4">
+                {/* Avatar overlaid on fingerprint */}
+                <div className="relative">
+                  <EssenceFingerprintLoader 
+                    essenceVector={essenceVector} 
+                    size={220}
+                    className="mx-auto"
                   />
-                ) : (
-                  <div className="w-36 h-36 rounded-full bg-gradient-to-br from-[#406A56] to-[#5A8A72] flex items-center justify-center text-white text-4xl font-semibold shadow-lg">
-                    {profile.full_name?.charAt(0) || '?'}
+                  {/* Avatar centered on fingerprint */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    {profile.avatar_url ? (
+                      <img 
+                        src={profile.avatar_url} 
+                        alt={profile.full_name} 
+                        className="w-24 h-24 rounded-full object-cover border-4 border-white/80 shadow-lg"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#406A56] to-[#5A8A72] flex items-center justify-center text-white text-3xl font-semibold shadow-lg border-4 border-white/80">
+                        {profile.full_name?.charAt(0) || '?'}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+                <p className="text-xs text-[#406A56]/60 mt-2 italic">Your Essence Fingerprint</p>
               </div>
 
               {/* Name & Basic Info */}

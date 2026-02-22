@@ -18,7 +18,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 export const AI_CONFIG = {
   // Embedding provider: 'ollama' | 'gemini' | 'openai' | 'voyage' | 'cohere'
-  embeddingProvider: 'gemini' as const,
+  embeddingProvider: 'gemini' as 'ollama' | 'gemini' | 'openai' | 'voyage' | 'cohere',
   
   // Chat provider: 'claude' | 'openai' | 'gemini'
   chatProvider: 'claude' as const,

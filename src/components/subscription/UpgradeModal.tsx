@@ -51,7 +51,7 @@ export function UpgradeModal({ isOpen, onClose, plan, billingCycle }: UpgradeMod
       }
 
       // Redirect to Stripe Checkout
-      const stripeClient = await getStripe();
+      const stripeClient = await getStripe() as any;
       if (stripeClient) {
         await stripeClient.redirectToCheckout({ sessionId: data.sessionId });
       }
