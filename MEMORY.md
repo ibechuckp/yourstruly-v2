@@ -82,10 +82,26 @@ When prompt has `missingField`, shows specific input:
 - `untagged_faces` — Detected faces not linked to contacts
 
 ## Known Issues / TODOs
+- [x] **Memory not saving** — FIXED: memories table was missing `audio_url` and `tags` columns. Migration `026_memories_voice_tags.sql` created. Run `npx supabase db push`.
+- [x] **Progress tile navigation** — FIXED: tiles now store memoryId and navigate on click
 - [ ] Contact prompts showing "Tell us more about this contact" are generic (no missingField)
 - [ ] Need to ensure `missing_info` prompts are generated with proper `contact_id` and `missingField`
-- [ ] Voice input shows "coming soon" placeholder
-- [ ] Prompt text still shows template variables sometimes ({{contact_name}})
+- [ ] Contacts query 400 errors — RLS or column issue with `user_id=eq.XXX`
+- [ ] Face detection 500 errors — API returning HTML, likely missing AWS credentials
+
+## Architecture Decisions
+
+### Multi-Step Conversations (2026-02-21)
+**Decision:** Don't build multi-step into tiles. Use a separate Conversation View.
+
+**Why:** Chuck wants OpenAI voice conversation style (listen → pause → speak → analyze → store). This doesn't fit in a small tile.
+
+**Architecture:**
+- **Tiles** = quick prompts, show what to answer (the "door")
+- **Click tile** = opens dedicated **Conversation View** (full-screen modal or CLI)
+- **Conversation View** = OpenAI-style voice flow, multi-turn, audio visualization, stores when done
+
+**Next step:** Design Conversation View spec before building.
 
 ## Testing
 - **Test account:** ann@gmail.com / ann12345

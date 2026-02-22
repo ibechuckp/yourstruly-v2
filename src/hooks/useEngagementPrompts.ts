@@ -176,8 +176,12 @@ export function useEngagementPrompts(count: number = 5): UseEngagementPromptsRet
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || 'Failed to answer prompt');
+        console.error('Answer prompt API error:', error);
+        throw new Error(error.details || error.error || 'Failed to answer prompt');
       }
+
+      const result = await res.json();
+      console.log('Answer prompt result:', result);
 
       // Remove from local state
       setPrompts(prev => prev.filter(p => p.id !== promptId));
@@ -189,6 +193,9 @@ export function useEngagementPrompts(count: number = 5): UseEngagementPromptsRet
       if (prompts.length <= 2) {
         await fetchPrompts();
       }
+      
+      // Return the result so caller can get memoryId, etc.
+      return result;
 
     } catch (err) {
       console.error('Failed to answer prompt:', err);

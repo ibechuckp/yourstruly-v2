@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEngagementPrompts } from '@/hooks/useEngagementPrompts';
 import { Bubble } from './Bubble';
@@ -14,6 +15,8 @@ interface CompletedTile {
   photoUrl?: string;
   contactName?: string;
   contactPhotoUrl?: string;
+  memoryId?: string;
+  contactId?: string;
 }
 
 interface EngagementBubblesProps {
@@ -45,6 +48,7 @@ export function EngagementBubbles({
   className = '', 
   maxBubbles = 5 
 }: EngagementBubblesProps) {
+  const router = useRouter();
   const { 
     prompts, 
     isLoading, 
@@ -84,7 +88,11 @@ export function EngagementBubbles({
       // Wait for shrink animation
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      // Add to completed tiles (at the beginning - newest first)
+      // Actually submit the answer FIRST to get memoryId
+      const result = await answerPrompt(promptId, response);
+      console.log('Answer result with memoryId:', result);
+
+      // Add to completed tiles with memoryId from API response
       const completedTile: CompletedTile = {
         id: promptId,
         type: prompt.type,
@@ -92,11 +100,10 @@ export function EngagementBubbles({
         photoUrl: prompt.photoUrl,
         contactName: prompt.contactName,
         contactPhotoUrl: prompt.contactPhotoUrl,
+        memoryId: result?.memoryId,
+        contactId: result?.contactId || prompt.contactId,
       };
       setCompletedTiles(prev => [completedTile, ...prev]);
-
-      // Actually submit the answer
-      await answerPrompt(promptId, response);
       
     } catch (err) {
       console.error('Failed to answer:', err);
@@ -130,6 +137,27 @@ export function EngagementBubbles({
     setExpandedId(null);
     await shuffle();
     setIsRefreshing(false);
+  };
+
+  // Navigate to memory or contact when clicking completed tile
+  const handleCompletedTileClick = (tile: CompletedTile) => {
+    console.log('Completed tile clicked:', tile);
+    
+    // Contact-related prompts go to contact page
+    if ((tile.type === 'missing_info' || tile.type === 'tag_person') && tile.contactId) {
+      router.push(`/contacts/${tile.contactId}`);
+      return;
+    }
+    
+    // All other prompts go to memory page if we have memoryId
+    if (tile.memoryId) {
+      router.push(`/memories/${tile.memoryId}`);
+      return;
+    }
+    
+    // Fallback: if no memoryId, go to memories list
+    console.warn('No memoryId found for tile:', tile.id);
+    router.push('/memories');
   };
 
   if (isLoading) {
@@ -189,6 +217,8 @@ export function EngagementBubbles({
                 initial={{ scale: 0, opacity: 0, x: -20 }}
                 animate={{ scale: 1, opacity: 1, x: 0 }}
                 exit={{ scale: 0, opacity: 0 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
                 transition={{ 
                   type: 'spring', 
                   stiffness: 500, 
@@ -196,7 +226,9 @@ export function EngagementBubbles({
                   delay: index === 0 ? 0.1 : 0
                 }}
                 className="progress-tile"
-                title={tile.contactName || tile.type}
+                style={{ cursor: 'pointer' }}
+                title={tile.memoryId ? `View memory: ${tile.contactName || tile.type}` : (tile.contactName || tile.type)}
+                onClick={() => handleCompletedTileClick(tile)}
               >
                 {tile.photoUrl ? (
                   <img src={tile.photoUrl} alt="" />

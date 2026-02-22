@@ -21,7 +21,8 @@ import {
   ChevronDown,
   MoreHorizontal,
   Menu,
-  X
+  X,
+  Lightbulb
 } from 'lucide-react'
 
 interface Profile {
@@ -39,6 +40,7 @@ const primaryNav = [
   { href: '/dashboard/profile', label: 'Profile', icon: UserIcon },
   { href: '/dashboard/contacts', label: 'Contacts', icon: Users },
   { href: '/dashboard/memories', label: 'Memories', icon: Camera },
+  { href: '/dashboard/wisdom', label: 'Wisdom', icon: Lightbulb },
   { href: '/dashboard/albums', label: 'Albums', icon: FolderOpen },
 ]
 

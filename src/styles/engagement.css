@@ -577,3 +577,562 @@
   max-width: 280px;
   margin: 0 auto;
 }
+
+/* =============================================================================
+   XP COUNTER & ANIMATIONS
+   ============================================================================= */
+
+.xp-counter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, rgba(217, 198, 26, 0.15), rgba(217, 198, 26, 0.25));
+  border-radius: 20px;
+  border: 1px solid rgba(217, 198, 26, 0.3);
+}
+
+.xp-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #8a7c08;
+}
+
+.xp-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a39507;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.xp-gain-popup {
+  font-size: 14px;
+  font-weight: 700;
+  color: #D9C61A;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 4px 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(217, 198, 26, 0.3);
+}
+
+.progress-tracker-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(64, 106, 86, 0.15);
+  margin: 0 8px;
+}
+
+.progress-tiles-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+
+.progress-tiles-container::-webkit-scrollbar {
+  height: 4px;
+}
+
+.progress-tiles-container::-webkit-scrollbar-thumb {
+  background: rgba(64, 106, 86, 0.2);
+  border-radius: 2px;
+}
+
+/* Flying tile animation overlay */
+.flying-tile {
+  background: white;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+}
+
+/* =============================================================================
+   BUBBLE DESCRIPTION
+   ============================================================================= */
+
+.bubble-description {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #888;
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* =============================================================================
+   BUBBLE TILE (Used in dashboard)
+   ============================================================================= */
+
+.bubble-tile {
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.06),
+    0 1px 3px rgba(0, 0, 0, 0.04);
+  -webkit-user-drag: none;
+}
+
+.bubble-tile:hover {
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.bubble-content {
+  padding: 16px;
+}
+
+.bubble-accent {
+  height: 4px;
+  width: 100%;
+}
+
+.bubble-accent-yellow { background: var(--yt-yellow); }
+.bubble-accent-green { background: var(--yt-green); }
+.bubble-accent-blue { background: var(--yt-blue); }
+.bubble-accent-red { background: var(--yt-red); }
+.bubble-accent-purple { background: var(--yt-purple); }
+
+.bubble-xp {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.bubble-xp-yellow { background: rgba(217, 198, 26, 0.15); color: #8a7c08; }
+.bubble-xp-green { background: rgba(64, 106, 86, 0.12); color: var(--yt-green); }
+.bubble-xp-blue { background: rgba(141, 172, 171, 0.2); color: #5d8585; }
+.bubble-xp-red { background: rgba(195, 95, 51, 0.12); color: var(--yt-red); }
+.bubble-xp-purple { background: rgba(74, 53, 82, 0.12); color: var(--yt-purple); }
+
+.bubble-type {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.bubble-type-yellow { background: rgba(217, 198, 26, 0.15); color: #8a7c08; }
+.bubble-type-green { background: rgba(64, 106, 86, 0.12); color: var(--yt-green); }
+.bubble-type-blue { background: rgba(141, 172, 171, 0.2); color: #5d8585; }
+.bubble-type-red { background: rgba(195, 95, 51, 0.12); color: var(--yt-red); }
+.bubble-type-purple { background: rgba(74, 53, 82, 0.12); color: var(--yt-purple); }
+
+.bubble-contact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(64, 106, 86, 0.05);
+  border-radius: 10px;
+  margin: 8px 0;
+}
+
+.bubble-contact-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--yt-green-light);
+  color: var(--yt-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.bubble-contact-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bubble-contact-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2d2d2d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+.bubble-contact-sub {
+  font-size: 11px;
+  color: var(--yt-green);
+}
+
+.bubble-photo {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+.bubble-text {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #2d2d2d;
+  margin: 0;
+}
+
+.bubble-hint {
+  font-size: 11px;
+  color: #999;
+  text-align: right;
+  margin-top: 12px;
+}
+
+/* =============================================================================
+   MULTI-STEP CONVERSATION UI
+   ============================================================================= */
+
+.conversation-history {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(64, 106, 86, 0.1);
+}
+
+.conversation-response {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  font-size: 13px;
+}
+
+.conversation-response:not(:last-child) {
+  border-bottom: 1px dashed rgba(64, 106, 86, 0.08);
+}
+
+.conversation-checkmark {
+  color: var(--yt-green);
+  font-size: 12px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.conversation-answer {
+  color: #555;
+  line-height: 1.4;
+}
+
+.step-indicator {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--yt-green);
+  background: rgba(64, 106, 86, 0.08);
+  padding: 3px 8px;
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+/* Progress dots for multi-step */
+.step-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(64, 106, 86, 0.2);
+}
+
+.step-dot.active {
+  background: var(--yt-green);
+}
+
+.step-dot.completed {
+  background: var(--yt-green);
+}
+
+/* =============================================================================
+   PERSONALIZED GREETING HEADER
+   ============================================================================= */
+
+.greeting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 0 16px;
+}
+
+.greeting-text h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--yt-green);
+  margin: 0 0 4px;
+}
+
+.greeting-text p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.upcoming-events {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.upcoming-event {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(217, 198, 26, 0.1);
+  border: 1px solid rgba(217, 198, 26, 0.2);
+  border-radius: 20px;
+  font-size: 13px;
+  color: #666;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.upcoming-event:hover {
+  background: rgba(217, 198, 26, 0.2);
+  border-color: rgba(217, 198, 26, 0.3);
+}
+
+/* =============================================================================
+   MILESTONE CELEBRATION MODAL
+   ============================================================================= */
+
+.milestone-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.milestone-modal {
+  background: white;
+  border-radius: 24px;
+  padding: 40px;
+  text-align: center;
+  max-width: 360px;
+  position: relative;
+  overflow: hidden;
+}
+
+.milestone-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  animation: bounce 0.6s ease-out;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+.milestone-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--yt-green);
+  margin: 0 0 8px;
+}
+
+.milestone-message {
+  font-size: 16px;
+  color: #555;
+  margin: 0 0 24px;
+}
+
+.milestone-confetti {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-size: 32px;
+  animation: confetti 1s ease-out;
+}
+
+@keyframes confetti {
+  0% { transform: translateY(-50px) rotate(0deg); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateY(0) rotate(360deg); opacity: 1; }
+}
+
+.milestone-button {
+  padding: 14px 32px;
+  background: var(--yt-green);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.milestone-button:hover {
+  background: #4a7a64;
+}
+
+/* =============================================================================
+   VOICE RECORDER
+   ============================================================================= */
+
+.voice-recorder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  background: rgba(64, 106, 86, 0.04);
+  border-radius: 16px;
+}
+
+.voice-record-btn {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--yt-green);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(64, 106, 86, 0.3);
+}
+
+.voice-record-btn:hover {
+  transform: scale(1.05);
+}
+
+.voice-record-btn.recording {
+  background: #C35F33;
+  box-shadow: 0 4px 20px rgba(195, 95, 51, 0.4);
+}
+
+.voice-status {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #666;
+}
+
+.voice-playback {
+  width: 100%;
+  padding: 12px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.voice-playback audio {
+  width: 100%;
+  height: 40px;
+}
+
+/* =============================================================================
+   FAMILY REACTIONS (HEARTS)
+   ============================================================================= */
+
+.memory-reactions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: 12px;
+}
+
+.reaction-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reaction-button:hover {
+  background: rgba(255, 107, 107, 0.1);
+  border-color: rgba(255, 107, 107, 0.3);
+  color: #ff6b6b;
+}
+
+.reaction-button.active {
+  background: rgba(255, 107, 107, 0.15);
+  border-color: rgba(255, 107, 107, 0.4);
+  color: #ff6b6b;
+}
+
+.reaction-button .heart-icon {
+  transition: transform 0.2s ease;
+}
+
+.reaction-button:hover .heart-icon,
+.reaction-button.active .heart-icon {
+  transform: scale(1.2);
+}
+
+.reaction-avatars {
+  display: flex;
+  margin-left: auto;
+}
+
+.reaction-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--yt-green-light);
+  color: var(--yt-green);
+  font-size: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -8px;
+  border: 2px solid white;
+}
+
+.reaction-avatar:first-child {
+  margin-left: 0;
+}
+
+.reaction-count {
+  font-size: 12px;
+  color: #999;
+  margin-left: 8px;
+}

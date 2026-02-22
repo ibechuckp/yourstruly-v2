@@ -18,6 +18,10 @@ export async function POST(
 
     const { id: promptId } = await params;
     const body: AnswerPromptRequest = await request.json();
+    
+    console.log('=== ANSWER PROMPT API ===');
+    console.log('Prompt ID:', promptId);
+    console.log('Request body:', JSON.stringify(body, null, 2));
 
     // Verify prompt belongs to user
     const { data: prompt, error: fetchError } = await supabase
@@ -28,8 +32,11 @@ export async function POST(
       .single();
 
     if (fetchError || !prompt) {
+      console.error('Prompt not found:', promptId, fetchError);
       return NextResponse.json({ error: 'Prompt not found' }, { status: 404 });
     }
+    
+    console.log('Found prompt:', JSON.stringify(prompt, null, 2));
 
     // Call answer_prompt function
     const { data: answeredPrompt, error: answerError } = await supabase
@@ -43,80 +50,152 @@ export async function POST(
 
     if (answerError) {
       console.error('Failed to answer prompt:', answerError);
-      return NextResponse.json({ error: 'Failed to answer prompt' }, { status: 500 });
+      console.error('Prompt ID:', promptId);
+      console.error('Request body:', body);
+      
+      // Fallback: If RPC fails, try direct update
+      const { error: directError } = await supabase
+        .from('engagement_prompts')
+        .update({
+          status: 'answered',
+          answered_at: new Date().toISOString(),
+          response_type: body.responseType,
+          response_text: body.responseText || null,
+          response_audio_url: body.responseAudioUrl || null,
+          response_data: body.responseData || null,
+        })
+        .eq('id', promptId);
+      
+      if (directError) {
+        console.error('Direct update also failed:', directError);
+        return NextResponse.json({ 
+          error: 'Failed to answer prompt', 
+          details: answerError.message,
+          code: answerError.code
+        }, { status: 500 });
+      }
     }
 
     // Handle different prompt types
     let knowledgeEntry = null;
     let memoryCreated = false;
+    let memoryId: string | null = null;
     let contactUpdated = false;
 
-    // If it's a knowledge prompt, create a knowledge entry
-    if (prompt.type === 'knowledge' && body.responseText) {
-      const { data: knowledge, error: knowledgeError } = await supabase
-        .from('knowledge_entries')
+    // === UNIFIED MEMORY CREATION FOR ALL CONTENT-GENERATING PROMPTS ===
+    // All user-generated content goes into the Memories table
+    console.log('=== MEMORY CREATION CHECK ===');
+    console.log('prompt.type:', prompt.type);
+    console.log('body.responseText length:', body.responseText?.length || 0);
+    console.log('body.responseAudioUrl:', body.responseAudioUrl || 'none');
+    
+    // These prompt types should ALL create memory records
+    const MEMORY_CREATING_TYPES = [
+      'knowledge',       // wisdom/life lessons
+      'memory_prompt',   // general memories
+      'photo_backstory', // photo stories  
+      'favorites_firsts', // favorites and firsts
+      'recipes_wisdom',  // recipes/traditions
+      'postscript',      // future messages
+    ];
+    
+    const shouldCreateMemory = MEMORY_CREATING_TYPES.includes(prompt.type);
+    const hasContent = !!(body.responseText || body.responseAudioUrl);
+    
+    console.log('shouldCreateMemory:', shouldCreateMemory, 'hasContent:', hasContent);
+    
+    if (shouldCreateMemory && hasContent) {
+      // Build tags based on prompt type and context
+      const tags: string[] = [];
+      
+      if (prompt.type === 'knowledge') {
+        tags.push('wisdom');
+        if (prompt.personalization_context?.interest) tags.push(prompt.personalization_context.interest);
+        if (prompt.personalization_context?.skill) tags.push(prompt.personalization_context.skill);
+      } else if (prompt.type === 'photo_backstory') {
+        tags.push('photo story');
+      } else {
+        tags.push(prompt.type.replace(/_/g, ' '));
+      }
+      if (prompt.category) tags.push(prompt.category);
+      
+      console.log('Creating memory with tags:', tags);
+      
+      const { data: newMemory, error: memoryError } = await supabase
+        .from('memories')
         .insert({
           user_id: user.id,
-          category: prompt.category || 'life_lessons',
-          prompt_text: prompt.prompt_text,
-          response_text: body.responseText,
-          audio_url: body.responseAudioUrl,
-          related_interest: prompt.personalization_context?.interest,
-          related_skill: prompt.personalization_context?.skill,
-          related_hobby: prompt.personalization_context?.hobby,
-          related_religion: prompt.personalization_context?.religion,
-          source_prompt_id: promptId,
+          title: prompt.prompt_text?.substring(0, 100) || 'Memory',
+          description: body.responseText || '🎤 Voice memory recorded',
+          audio_url: body.responseAudioUrl || null,
+          memory_date: new Date().toISOString(),
+          tags,
         })
         .select()
         .single();
 
-      if (!knowledgeError) {
-        knowledgeEntry = knowledge;
-
-        // Update the prompt with the knowledge entry ID
+      if (memoryError) {
+        console.error('=== MEMORY INSERT FAILED ===');
+        console.error('Error:', memoryError);
+        console.error('Error code:', memoryError.code);
+        console.error('Error details:', memoryError.details);
+      } else if (newMemory) {
+        memoryCreated = true;
+        memoryId = newMemory.id;
+        console.log('=== MEMORY CREATED ===');
+        console.log('Memory ID:', newMemory.id);
+        
+        // Update prompt with result memory ID
         await supabase
           .from('engagement_prompts')
-          .update({ result_knowledge_id: knowledge.id })
+          .update({ result_memory_id: newMemory.id })
           .eq('id', promptId);
+          
+        // If photo_backstory, also link the photo to this memory
+        if (prompt.type === 'photo_backstory' && prompt.photo_id) {
+          await supabase
+            .from('memory_media')
+            .update({ 
+              memory_id: newMemory.id,
+              description: body.responseText 
+            })
+            .eq('id', prompt.photo_id);
+          console.log('Linked photo to memory');
+        }
       }
+    } else {
+      console.log('Skipping memory creation - shouldCreateMemory:', shouldCreateMemory, 'hasContent:', hasContent);
     }
 
-    // If it's a memory prompt, create a memory
-    if (prompt.type === 'memory_prompt' && body.responseText) {
-      const { error: memoryError } = await supabase
-        .from('memories')
-        .insert({
-          user_id: user.id,
-          title: prompt.prompt_text.substring(0, 100),
-          description: body.responseText,
-          audio_url: body.responseAudioUrl,
-          tags: [prompt.category].filter(Boolean),
-        });
-
-      memoryCreated = !memoryError;
-    }
-
-    // If it's a photo backstory, update the media
-    if (prompt.type === 'photo_backstory' && prompt.photo_id && body.responseText) {
-      await supabase
-        .from('memory_media')
-        .update({
-          description: body.responseText,
-          backstory_audio_url: body.responseAudioUrl,
-        })
-        .eq('id', prompt.photo_id);
-    }
+    // NOTE: photo_backstory is now handled by the unified memory creation block above
 
     // If it's missing info, update the contact
-    if (prompt.type === 'missing_info' && prompt.contact_id && prompt.missing_field) {
+    if ((prompt.type === 'missing_info' || prompt.type === 'quick_question') && prompt.contact_id) {
       const updateData: Record<string, any> = {};
+      const field = prompt.missing_field;
       
-      if (prompt.missing_field === 'birth_date' && body.responseData?.date) {
-        updateData.birth_date = body.responseData.date;
-      } else if (prompt.missing_field === 'relationship_type' && body.responseData?.value) {
-        updateData.relationship_type = body.responseData.value;
-      } else if (prompt.missing_field === 'how_met' && body.responseText) {
-        updateData.how_met = body.responseText;
+      // Map field types to columns
+      if (field === 'birth_date' || field === 'date_of_birth') {
+        // Accept text input as date
+        updateData.birth_date = body.responseText || body.responseData?.date || null;
+      } else if (field === 'phone') {
+        updateData.phone = body.responseText || body.responseData?.value || null;
+      } else if (field === 'email') {
+        updateData.email = body.responseText || body.responseData?.value || null;
+      } else if (field === 'relationship_type' || field === 'relationship') {
+        updateData.relationship_type = body.responseText || body.responseData?.value || null;
+      } else if (field === 'how_met') {
+        updateData.how_met = body.responseText || null;
+      } else if (field === 'address') {
+        updateData.address = body.responseText || null;
+      } else if (field === 'contact_info') {
+        // Combined phone/email input (pipe-separated)
+        const parts = (body.responseText || '').split('|');
+        if (parts[0]?.trim()) updateData.phone = parts[0].trim();
+        if (parts[1]?.trim()) updateData.email = parts[1].trim();
+      } else if (body.responseText) {
+        // Generic text response - store in notes
+        updateData.notes = body.responseText;
       }
 
       if (Object.keys(updateData).length > 0) {
@@ -125,6 +204,9 @@ export async function POST(
           .update(updateData)
           .eq('id', prompt.contact_id);
 
+        if (contactError) {
+          console.error('Failed to update contact:', contactError);
+        }
         contactUpdated = !contactError;
       }
     }
@@ -148,8 +230,15 @@ export async function POST(
       prompt: answeredPrompt,
       knowledgeEntry,
       memoryCreated,
+      memoryId: memoryId || undefined,
+      contactId: prompt.contact_id || undefined,
       contactUpdated,
     };
+
+    console.log('=== ANSWER RESPONSE ===');
+    console.log('memoryId:', memoryId);
+    console.log('contactId:', prompt.contact_id);
+    console.log('type:', prompt.type);
 
     return NextResponse.json(response);
 

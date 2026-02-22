@@ -99,7 +99,30 @@ export interface EngagementPrompt {
     [key: string]: any;
   };
   
+  // Multi-step conversation support
+  steps?: PromptStep[];
+  currentStep?: number;
+  responses?: StepResponse[];
+  
   createdAt: string;
+}
+
+// Multi-step prompt support
+export interface PromptStep {
+  id: string;
+  question: string;
+  inputType: 'text' | 'voice' | 'photo' | 'date' | 'select';
+  placeholder?: string;
+  required: boolean;
+  options?: string[]; // For select type
+}
+
+export interface StepResponse {
+  stepId: string;
+  question: string;
+  answer: string;
+  mediaUrl?: string;
+  answeredAt: string;
 }
 
 // ============================================================================
@@ -222,6 +245,8 @@ export interface AnswerPromptResponse {
   prompt: EngagementPrompt;
   knowledgeEntry?: KnowledgeEntry; // If a knowledge entry was created
   memoryCreated?: boolean;
+  memoryId?: string; // ID of created memory (for photo backstory, memory prompts)
+  contactId?: string; // ID of contact (for contact prompts)
   contactUpdated?: boolean;
 }
 

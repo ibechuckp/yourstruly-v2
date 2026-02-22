@@ -13,19 +13,54 @@
  * Background: Off White #F2F1E5 (warmth, scrapbook)
  */
 
-/* Gradient background with organic blobs */
+/* Gradient background with organic blobs and paper texture */
 .home-background {
   position: fixed;
   inset: 0;
-  background: linear-gradient(135deg, 
-    #F2F1E5 0%, 
-    #FAF7E8 25%,
-    #FFF9E6 50%,
-    #F5EFE0 75%,
-    #F2F1E5 100%
-  );
+  background: 
+    /* Paper texture overlay using noise-like pattern */
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E"),
+    /* Subtle grain texture */
+    url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='25' cy='25' r='0.5' fill='%23d4c9a8' opacity='0.3'/%3E%3Ccircle cx='75' cy='75' r='0.4' fill='%23c9be9a' opacity='0.25'/%3E%3Ccircle cx='50' cy='10' r='0.3' fill='%23b8ae8c' opacity='0.2'/%3E%3Ccircle cx='10' cy='60' r='0.5' fill='%23d4c9a8' opacity='0.15'/%3E%3Ccircle cx='90' cy='40' r='0.4' fill='%23c9be9a' opacity='0.2'/%3E%3Ccircle cx='35' cy='85' r='0.3' fill='%23b8ae8c' opacity='0.25'/%3E%3Ccircle cx='65' cy='35' r='0.4' fill='%23d4c9a8' opacity='0.15'/%3E%3Ccircle cx='15' cy='15' r='0.3' fill='%23c9be9a' opacity='0.2'/%3E%3C/svg%3E"),
+    /* Warm gradient base */
+    linear-gradient(135deg, 
+      #F2F1E5 0%, 
+      #FAF7E8 25%,
+      #FFF9E6 50%,
+      #F5EFE0 75%,
+      #F2F1E5 100%
+    );
   overflow: hidden;
   z-index: 0;
+}
+
+/* Paper edge shadow effect at top */
+.home-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: linear-gradient(to bottom, 
+    rgba(0, 0, 0, 0.03) 0%,
+    transparent 100%
+  );
+  z-index: 1;
+}
+
+/* Subtle vignette for aged paper feel */
+.home-background::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 60%,
+    rgba(139, 119, 80, 0.06) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Floating organic shapes for depth */
@@ -87,7 +122,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 80px 24px 100px;
+  padding: 24px 24px 100px;
 }
 
 /* Profile section - left aligned */
@@ -178,13 +213,45 @@
   letter-spacing: 0.05em;
 }
 
+/* Upcoming events in profile card */
+.profile-events {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(64, 106, 86, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-event {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(217, 198, 26, 0.1);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #666;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.profile-event:hover {
+  background: rgba(217, 198, 26, 0.2);
+}
+
+.profile-event svg {
+  color: #D9C61A;
+  flex-shrink: 0;
+}
+
 /* Engagement bubbles area */
 .home-bubbles {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  min-height: calc(100vh - 180px);
+  padding-top: 20px;
 }
 
 @media (max-width: 1024px) {
