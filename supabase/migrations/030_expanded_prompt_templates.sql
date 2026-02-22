@@ -3,24 +3,8 @@
 -- Created: 2026-02-22
 -- Description: Add diverse engagement prompts covering religion, interests, 
 --              skills, contact stories, childhood memories, and more
+-- NOTE: Run 029_prompt_type_enums.sql FIRST to add the new enum values
 -- ============================================================================
-
--- First, update the prompt_type enum to include more types
--- This is safe to run multiple times as it just adds missing values
-DO $$ 
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'postscript' AND enumtypid = 'prompt_type'::regtype) THEN
-    ALTER TYPE prompt_type ADD VALUE 'postscript';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'favorites_firsts' AND enumtypid = 'prompt_type'::regtype) THEN
-    ALTER TYPE prompt_type ADD VALUE 'favorites_firsts';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'recipes_wisdom' AND enumtypid = 'prompt_type'::regtype) THEN
-    ALTER TYPE prompt_type ADD VALUE 'recipes_wisdom';
-  END IF;
-EXCEPTION
-  WHEN duplicate_object THEN NULL;
-END $$;
 
 -- ============================================================================
 -- CHILDHOOD & EARLY LIFE MEMORIES
