@@ -639,14 +639,30 @@ export default function DashboardPage() {
               {/* Tile grid: 2x2 + 1 tall on right */}
               <div className="relative mx-auto" style={{ width: 720, height: 400, marginTop: 16 }}>
                 <AnimatePresence mode="popLayout">
-                  {prompts.slice(0, 5).map((prompt, i) => {
+                  {(() => {
+                    // Reorder prompts: photo tasks go to position 4 (tall tile)
+                    const sortedPrompts = [...prompts.slice(0, 5)]
+                    const photoIndex = sortedPrompts.findIndex(p => 
+                      p.photoUrl && (p.type === 'photo_backstory' || p.type === 'tag_person')
+                    )
+                    if (photoIndex !== -1 && photoIndex !== 4) {
+                      // Move photo task to position 4
+                      const [photoPrompt] = sortedPrompts.splice(photoIndex, 1)
+                      if (sortedPrompts.length >= 4) {
+                        sortedPrompts.splice(4, 0, photoPrompt)
+                      } else {
+                        sortedPrompts.push(photoPrompt)
+                      }
+                    }
+                    return sortedPrompts
+                  })().map((prompt, i) => {
                     const config = TYPE_CONFIG[prompt.type] || TYPE_CONFIG.memory_prompt
                     const isExpanded = expandedId === prompt.id
                     const pos = TILE_POSITIONS[i] || { col: i % 2, row: Math.floor(i / 2) }
                     const hasPhoto = prompt.photoUrl && (prompt.type === 'photo_backstory' || prompt.type === 'tag_person')
                     const contactName = getContactName(prompt, i)
                     const isContact = isContactPrompt(prompt.type)
-                    const isTall = (pos as any).tall === true
+                    const isTall = (pos as any).tall === true || (i === 4 && hasPhoto)
 
                     const tileWidth = 210
                     const tileHeight = 175

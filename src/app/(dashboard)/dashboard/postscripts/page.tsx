@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { 
   Send, Calendar, Clock, CheckCircle, Mail, Plus,
-  ChevronRight, Sparkles, Heart, User
+  ChevronRight, Sparkles, Heart, User, Image as ImageIcon, Mic
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/home.css'
@@ -20,12 +20,18 @@ interface PostScript {
   delivery_event: string | null
   status: 'draft' | 'scheduled' | 'sent' | 'opened'
   created_at: string
+  audio_url?: string | null
   recipient?: {
     id: string
     full_name: string
     relationship_type: string | null
     avatar_url: string | null
   } | null
+  attachments?: {
+    id: string
+    file_url: string
+    file_type: string
+  }[]
 }
 
 function formatDate(dateStr: string | null): string {
@@ -65,23 +71,34 @@ function PostScriptCard({ postscript }: { postscript: PostScript }) {
     .join('')
     .toUpperCase()
     .slice(0, 2)
+  
+  const firstImage = postscript.attachments?.find(a => a.file_type?.startsWith('image/'))
+  const hasAudio = postscript.audio_url
 
   return (
     <Link href={`/dashboard/postscripts/${postscript.id}`}>
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-100 
-                      shadow-sm hover:shadow-md transition-all group cursor-pointer">
-        <div className="flex items-start gap-4">
+      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-gray-100 
+                      shadow-sm hover:shadow-md transition-all group cursor-pointer h-full">
+        {/* Image Preview */}
+        {firstImage && (
+          <div className="relative h-28 -mx-4 -mt-4 mb-3 rounded-t-xl overflow-hidden">
+            <img src={firstImage.file_url} alt="" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+          </div>
+        )}
+        
+        <div className="flex items-start gap-3">
           {/* Recipient Avatar */}
           <div className="flex-shrink-0">
             {postscript.recipient?.avatar_url ? (
               <img 
                 src={postscript.recipient.avatar_url} 
                 alt={postscript.recipient_name}
-                className="w-12 h-12 rounded-full object-cover"
+                className="w-10 h-10 rounded-full object-cover"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C35F33] to-[#D9C61A] 
-                              flex items-center justify-center text-white font-medium">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#C35F33] to-[#D9C61A] 
+                              flex items-center justify-center text-white text-sm font-medium">
                 {initials}
               </div>
             )}
@@ -89,38 +106,30 @@ function PostScriptCard({ postscript }: { postscript: PostScript }) {
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="font-semibold text-gray-900 truncate group-hover:text-[#C35F33] transition-colors">
-                {postscript.title}
-              </h3>
-              <ChevronRight size={18} className="text-gray-400 group-hover:text-[#C35F33] transition-colors" />
-            </div>
-            
-            <p className="text-sm text-gray-600 mb-2">
+            <h3 className="font-semibold text-gray-900 text-sm truncate group-hover:text-[#C35F33] transition-colors">
+              {postscript.title}
+            </h3>
+            <p className="text-xs text-gray-500 truncate">
               To: {postscript.recipient_name}
-              {postscript.recipient?.relationship_type && (
-                <span className="text-gray-400"> • {postscript.recipient.relationship_type.replace(/_/g, ' ')}</span>
-              )}
             </p>
+          </div>
+        </div>
 
-            <div className="flex items-center gap-3 text-xs">
-              {/* Status Badge */}
-              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full ${getStatusColor(postscript.status)}`}>
-                {getStatusIcon(postscript.status)}
-                <span className="capitalize">{postscript.status}</span>
+        {/* Footer */}
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${getStatusColor(postscript.status)}`}>
+            {getStatusIcon(postscript.status)}
+            <span className="capitalize">{postscript.status}</span>
+          </span>
+          
+          <div className="flex items-center gap-2 text-gray-400">
+            {hasAudio && <Mic size={12} />}
+            {postscript.attachments && postscript.attachments.length > 0 && (
+              <span className="flex items-center gap-0.5 text-xs">
+                <ImageIcon size={12} />
+                {postscript.attachments.length}
               </span>
-
-              {/* Delivery Info */}
-              <span className="text-gray-500 flex items-center gap-1">
-                <Calendar size={12} />
-                {postscript.delivery_type === 'date' 
-                  ? formatDate(postscript.delivery_date)
-                  : postscript.delivery_type === 'after_passing'
-                    ? 'After I\'m gone'
-                    : postscript.delivery_event || 'Event'
-                }
-              </span>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -240,7 +249,7 @@ export default function PostScriptsPage() {
         </div>
 
         {/* PostScript List */}
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {loading ? (
             <div className="flex justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#C35F33] border-t-transparent" />

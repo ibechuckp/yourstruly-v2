@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { 
   ChevronLeft, Edit2, Trash2, Heart, Calendar, Camera,
-  Image as ImageIcon, PawPrint
+  Image as ImageIcon, PawPrint, Upload, AlertCircle, User
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/home.css'
@@ -20,6 +20,8 @@ interface Pet {
   personality?: string
   favorite_things?: string[]
   medical_notes?: string
+  emergency_caretaker?: string
+  emergency_caretaker_phone?: string
   is_deceased: boolean
   date_of_passing?: string
   profile_photo_url?: string
@@ -120,6 +122,41 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
     if (!confirm('Delete this pet? This cannot be undone.')) return
     await supabase.from('pets').delete().eq('id', id)
     window.location.href = '/dashboard/contacts'
+  }
+
+  const [uploading, setUploading] = useState(false)
+  
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !pet) return
+    
+    setUploading(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `pet-${pet.id}-${Date.now()}.${fileExt}`
+      const filePath = `pets/${fileName}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file)
+      
+      if (uploadError) throw uploadError
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+      
+      await supabase
+        .from('pets')
+        .update({ profile_photo_url: publicUrl })
+        .eq('id', pet.id)
+      
+      setPet({ ...pet, profile_photo_url: publicUrl })
+    } catch (err) {
+      console.error('Upload error:', err)
+      alert('Failed to upload photo')
+    }
+    setUploading(false)
   }
 
   if (loading) {
@@ -282,16 +319,61 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
               </div>
             )}
 
-            {pet.medical_notes && (
-              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-100 shadow-sm">
-                <h3 className="text-gray-900 font-semibold mb-2">Medical Notes</h3>
-                <p className="text-gray-600 text-sm">{pet.medical_notes}</p>
-              </div>
-            )}
+            {/* Medical Notes - Always show */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-100 shadow-sm">
+              <h3 className="text-gray-900 font-semibold mb-2 flex items-center gap-2">
+                <AlertCircle size={16} className="text-[#C35F33]" />
+                Medical Notes
+              </h3>
+              {pet.medical_notes ? (
+                <p className="text-gray-600 text-sm whitespace-pre-wrap">{pet.medical_notes}</p>
+              ) : (
+                <p className="text-gray-400 text-sm italic">No medical notes recorded</p>
+              )}
+            </div>
+
+            {/* Emergency Caretaker */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-100 shadow-sm">
+              <h3 className="text-gray-900 font-semibold mb-2 flex items-center gap-2">
+                <User size={16} className="text-[#406A56]" />
+                Emergency Caretaker
+              </h3>
+              {pet.emergency_caretaker ? (
+                <div className="space-y-1">
+                  <p className="text-gray-900 text-sm font-medium">{pet.emergency_caretaker}</p>
+                  {pet.emergency_caretaker_phone && (
+                    <a href={`tel:${pet.emergency_caretaker_phone}`} className="text-[#406A56] text-sm hover:underline">
+                      {pet.emergency_caretaker_phone}
+                    </a>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm italic">Not specified - add someone who can care for {pet.name} in an emergency</p>
+              )}
+            </div>
           </div>
 
           {/* Right Column - Photos */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Profile Photo Upload */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-100 shadow-sm">
+              <h3 className="text-gray-900 font-semibold mb-4">Profile Photo</h3>
+              <div className="flex items-center gap-4">
+                {pet.profile_photo_url ? (
+                  <img src={pet.profile_photo_url} alt={pet.name} className="w-20 h-20 rounded-full object-cover" />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#C35F33] to-[#D87A55] flex items-center justify-center">
+                    <PawPrint size={32} className="text-white" />
+                  </div>
+                )}
+                <label className="flex items-center gap-2 px-4 py-2 bg-[#C35F33]/10 text-[#C35F33] rounded-xl cursor-pointer hover:bg-[#C35F33]/20 transition-colors">
+                  <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploading} />
+                  <Upload size={16} />
+                  {uploading ? 'Uploading...' : 'Upload Photo'}
+                </label>
+              </div>
+            </div>
+
             {/* Photos Section */}
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-100 shadow-sm">
               <div className="flex items-center justify-between mb-4">

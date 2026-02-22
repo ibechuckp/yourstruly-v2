@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
     .from('postscripts')
     .select(`
       *,
-      recipient:contacts!recipient_contact_id(id, full_name, relationship_type, avatar_url)
+      recipient:contacts!recipient_contact_id(id, full_name, relationship_type, avatar_url),
+      attachments:postscript_attachments(id, file_url, file_type)
     `)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
     title,
     message,
     video_url,
+    audio_url,
     delivery_type = 'date',
     delivery_date,
     delivery_event,
@@ -88,6 +90,7 @@ export async function POST(request: NextRequest) {
       title,
       message: message || null,
       video_url: video_url || null,
+      audio_url: audio_url || null,
       delivery_type,
       delivery_date: delivery_date || null,
       delivery_event: delivery_event || null,

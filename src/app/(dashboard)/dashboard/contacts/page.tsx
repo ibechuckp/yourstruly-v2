@@ -552,6 +552,8 @@ function PetModal({ pet, onClose, onSave }: { pet: Pet | null; onClose: () => vo
     color: pet?.color || '',
     personality: pet?.personality || '',
     medical_notes: pet?.medical_notes || '',
+    emergency_caretaker: (pet as any)?.emergency_caretaker || '',
+    emergency_caretaker_phone: (pet as any)?.emergency_caretaker_phone || '',
     is_deceased: pet?.is_deceased || false,
     date_of_passing: pet?.date_of_passing || '',
   })
@@ -573,6 +575,8 @@ function PetModal({ pet, onClose, onSave }: { pet: Pet | null; onClose: () => vo
       color: form.color || null,
       personality: form.personality || null,
       medical_notes: form.medical_notes || null,
+      emergency_caretaker: form.emergency_caretaker || null,
+      emergency_caretaker_phone: form.emergency_caretaker_phone || null,
       is_deceased: form.is_deceased,
       date_of_passing: form.is_deceased ? (form.date_of_passing || null) : null,
     }
@@ -633,9 +637,23 @@ function PetModal({ pet, onClose, onSave }: { pet: Pet | null; onClose: () => vo
           </div>
           <div>
             <label className="block text-sm text-[#666] mb-1.5">Medical Notes</label>
-            <textarea value={form.medical_notes} onChange={e => setForm({ ...form, medical_notes: e.target.value })} className="form-textarea" rows={2} />
+            <textarea value={form.medical_notes} onChange={e => setForm({ ...form, medical_notes: e.target.value })} className="form-textarea" rows={2} placeholder="Allergies, medications, vet info..." />
           </div>
-          <div className="p-4 bg-[#406A56]/5 rounded-xl">
+          <div className="p-4 bg-[#406A56]/10 rounded-xl space-y-3">
+            <h4 className="text-sm font-medium text-[#406A56]">Emergency Caretaker</h4>
+            <p className="text-xs text-gray-500">Who should take care of this pet if something happens to you?</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-[#666] mb-1.5">Name</label>
+                <input value={form.emergency_caretaker} onChange={e => setForm({ ...form, emergency_caretaker: e.target.value })} className="form-input" placeholder="Jane Doe" />
+              </div>
+              <div>
+                <label className="block text-sm text-[#666] mb-1.5">Phone</label>
+                <input type="tel" value={form.emergency_caretaker_phone} onChange={e => setForm({ ...form, emergency_caretaker_phone: e.target.value })} className="form-input" placeholder="(555) 123-4567" />
+              </div>
+            </div>
+          </div>
+          <div className="p-4 bg-[#4A3552]/5 rounded-xl">
             <label className="flex items-center gap-3 cursor-pointer">
               <input type="checkbox" checked={form.is_deceased} onChange={e => setForm({ ...form, is_deceased: e.target.checked })} className="w-5 h-5 rounded border-[#406A56]/20 bg-white text-[#406A56] focus:ring-[#406A56]" />
               <span className="text-[#666]">This pet has passed away</span>

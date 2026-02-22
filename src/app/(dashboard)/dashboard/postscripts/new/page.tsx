@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { 
   ChevronLeft, ChevronRight, User, Users, Calendar, Gift,
-  MessageSquare, Send, Check, X, Search, Mail, Phone, ImagePlus, Trash2
+  MessageSquare, Send, Check, X, Search, Mail, Phone, ImagePlus, Trash2,
+  Mic, Square, Play, Pause
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/home.css'
@@ -42,6 +43,8 @@ interface FormData {
   title: string
   message: string
   video_url: string
+  audio_url: string
+  audio_blob: Blob | null
   attachments: Attachment[]
 }
 
@@ -90,8 +93,16 @@ export default function NewPostScriptPage() {
     title: '',
     message: '',
     video_url: '',
+    audio_url: '',
+    audio_blob: null,
     attachments: []
   })
+  
+  // Audio recording state
+  const [isRecording, setIsRecording] = useState(false)
+  const [audioPreview, setAudioPreview] = useState<string | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -115,6 +126,47 @@ export default function NewPostScriptPage() {
     const att = form.attachments.find(a => a.id === id)
     if (att?.preview) URL.revokeObjectURL(att.preview)
     setForm({ ...form, attachments: form.attachments.filter(a => a.id !== id) })
+  }
+
+  // Audio recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
+      audioChunksRef.current = []
+      
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data)
+      }
+      
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        const audioUrl = URL.createObjectURL(audioBlob)
+        setAudioPreview(audioUrl)
+        setForm(f => ({ ...f, audio_blob: audioBlob }))
+        stream.getTracks().forEach(track => track.stop())
+      }
+      
+      mediaRecorder.start()
+      setIsRecording(true)
+    } catch (err) {
+      console.error('Failed to start recording:', err)
+      alert('Could not access microphone. Please allow microphone access.')
+    }
+  }
+  
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+    }
+  }
+  
+  const removeAudio = () => {
+    if (audioPreview) URL.revokeObjectURL(audioPreview)
+    setAudioPreview(null)
+    setForm(f => ({ ...f, audio_blob: null, audio_url: '' }))
   }
 
   useEffect(() => {
@@ -208,6 +260,24 @@ export default function NewPostScriptPage() {
         }
       }
 
+      // Upload audio if recorded
+      let audioUrl = form.audio_url
+      if (form.audio_blob) {
+        const audioFormData = new FormData()
+        audioFormData.append('file', form.audio_blob, 'voice-message.webm')
+        audioFormData.append('bucket', 'memories')
+        
+        const audioRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: audioFormData
+        })
+        
+        if (audioRes.ok) {
+          const { url } = await audioRes.json()
+          audioUrl = url
+        }
+      }
+
       const res = await fetch('/api/postscripts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -224,6 +294,7 @@ export default function NewPostScriptPage() {
           title: form.title,
           message: form.message,
           video_url: form.video_url,
+          audio_url: audioUrl,
           attachments: uploadedAttachments,
           status
         })
@@ -539,10 +610,46 @@ export default function NewPostScriptPage() {
             </div>
           </div>
 
-          {/* Future: Video Recording */}
-          <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-4 text-center">
-            <Gift size={24} className="mx-auto text-gray-400 mb-1" />
-            <p className="text-gray-500 text-xs">Video recording coming soon</p>
+          {/* Audio Recording */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Voice Message <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            
+            {audioPreview ? (
+              <div className="bg-[#C35F33]/5 border border-[#C35F33]/20 rounded-xl p-4">
+                <div className="flex items-center gap-4">
+                  <audio src={audioPreview} controls className="flex-1 h-10" />
+                  <button
+                    onClick={removeAudio}
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={isRecording ? stopRecording : startRecording}
+                className={`w-full py-4 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all
+                  ${isRecording 
+                    ? 'border-red-400 bg-red-50 text-red-600' 
+                    : 'border-gray-300 hover:border-[#C35F33] hover:bg-[#C35F33]/5 text-gray-500'
+                  }`}
+              >
+                {isRecording ? (
+                  <>
+                    <div className="w-4 h-4 bg-red-500 rounded animate-pulse" />
+                    <span className="text-sm font-medium">Recording... Click to stop</span>
+                  </>
+                ) : (
+                  <>
+                    <Mic size={24} />
+                    <span className="text-sm">Record a voice message</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
