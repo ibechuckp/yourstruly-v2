@@ -80,7 +80,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   }
 
   // Fetch the subscription details from Stripe
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
 
   // Create or update subscription in database
   const { error } = await supabaseAdmin.from('subscriptions').upsert({
@@ -112,7 +112,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   console.log(`Subscription created/updated for user ${userId}`);
 }
 
-async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+async function handleSubscriptionUpdated(subscription: any) {
   const { error } = await supabaseAdmin
     .from('subscriptions')
     .update({
@@ -135,7 +135,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   console.log(`Subscription updated: ${subscription.id}`);
 }
 
-async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+async function handleSubscriptionDeleted(subscription: any) {
   const { error } = await supabaseAdmin
     .from('subscriptions')
     .update({
@@ -154,7 +154,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   console.log(`Subscription canceled: ${subscription.id}`);
 }
 
-async function handlePaymentFailed(invoice: Stripe.Invoice) {
+async function handlePaymentFailed(invoice: any) {
   const subscriptionId = invoice.subscription as string;
   
   if (!subscriptionId) return;

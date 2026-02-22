@@ -128,12 +128,20 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
     if (tagsData) {
       const photos = tagsData
         .filter(t => t.memory_media)
-        .map(t => ({
-          id: t.memory_media.id,
-          file_url: t.memory_media.file_url,
-          memory_id: t.memory_media.memory_id,
-          memory_title: t.memory_media.memory?.title
-        }))
+        .map(t => {
+          // Handle both array and object return types from Supabase
+          const mm = t.memory_media as any
+          const media = Array.isArray(mm) ? mm[0] : mm
+          const memory = media?.memory
+          const memoryTitle = Array.isArray(memory) ? memory[0]?.title : memory?.title
+          return {
+            id: media?.id,
+            file_url: media?.file_url,
+            memory_id: media?.memory_id,
+            memory_title: memoryTitle
+          }
+        })
+        .filter(p => p.id) // Filter out any with missing data
       setTaggedPhotos(photos)
     }
 

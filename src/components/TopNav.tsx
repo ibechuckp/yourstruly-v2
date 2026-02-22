@@ -256,9 +256,9 @@ export default function TopNav({ user, profile }: TopNavProps) {
                 >
                   <Icon size={20} />
                   <span>{item.label}</span>
-                  {isDisabled && (
+                  {isDisabled ? (
                     <span className="ml-auto text-xs bg-white/10 text-white/40 px-2 py-0.5 rounded">Soon</span>
-                  )}
+                  ) : null}
                 </Link>
               )
             })}

@@ -16,7 +16,7 @@ import {
   Send,
   Plane,
   Bot,
-  FolderOpen
+  Image
 } from 'lucide-react'
 
 interface Profile {
@@ -35,7 +35,7 @@ const navItems = [
   { href: '/dashboard/contacts', label: 'Contacts & Pets', icon: Users },
   // Phase 2
   { href: '/dashboard/memories', label: 'Memories', icon: Camera },
-  { href: '/dashboard/albums', label: 'Albums', icon: FolderOpen },
+  { href: '/dashboard/gallery', label: 'Gallery', icon: Image },
   // Phase 3
   { href: '/dashboard/journalist', label: 'Video Journalist', icon: MessageSquare },
   // Phase 4+

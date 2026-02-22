@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Memory not found' }, { status: 404 });
     }
 
-    const uploadedMedia = [];
+    const uploadedMedia: any[] = [];
 
     for (const photo of photos) {
       const bytes = await photo.arrayBuffer();
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         .getPublicUrl(fileName);
 
       // Create media record
-      const { data: mediaRecord, error: mediaError } = await supabase
+      const mediaResult = await supabase
         .from('memory_media')
         .insert({
           memory_id: memoryId,
@@ -78,8 +78,8 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
 
-      if (!mediaError && mediaRecord) {
-        uploadedMedia.push(mediaRecord);
+      if (!mediaResult.error && mediaResult.data) {
+        uploadedMedia.push(mediaResult.data);
       }
     }
 

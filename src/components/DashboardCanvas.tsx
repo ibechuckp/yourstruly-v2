@@ -42,7 +42,7 @@ const viewConfigs = {
     profileCard: { x: '20px', y: '20px', scale: 0.65, translateX: '0%', translateY: '0%' },
     contentPanel: { x: '0%', opacity: 1 },
   },
-  '/dashboard/albums': {
+  '/dashboard/gallery': {
     profileCard: { x: '20px', y: '20px', scale: 0.65, translateX: '0%', translateY: '0%' },
     contentPanel: { x: '0%', opacity: 1 },
   },

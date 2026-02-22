@@ -302,8 +302,9 @@ export function PersonalityDashboard({ userId, compact = false }: PersonalityDas
                       ${isSelected ? 'ring-2 ring-offset-1' : ''}`}
                     style={{ 
                       backgroundColor: `${p.dim.color}20`,
-                      ringColor: p.dim.color
-                    }}
+                      // @ts-ignore - CSS var for ring color
+                      '--tw-ring-color': p.dim.color
+                    } as React.CSSProperties}
                   >
                     <Icon size={14} style={{ color: p.dim.color }} />
                   </div>

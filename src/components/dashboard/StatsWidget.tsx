@@ -48,7 +48,7 @@ export default function StatsWidget() {
     { label: 'Memories', count: stats.memories, icon: Image, href: '/dashboard/memories', color: 'text-blue-400' },
     { label: 'Contacts', count: stats.contacts, icon: Users, href: '/dashboard/contacts', color: 'text-green-400' },
     { label: 'PostScripts', count: stats.postscripts, icon: Mail, href: '/dashboard/postscripts', color: 'text-purple-400' },
-    { label: 'Albums', count: stats.albums, icon: FolderOpen, href: '/dashboard/albums', color: 'text-amber-400' },
+    { label: 'Gallery', count: stats.albums, icon: FolderOpen, href: '/dashboard/gallery', color: 'text-amber-400' },
     { label: 'Interviews', count: stats.interviews, icon: Mic, href: '/dashboard/journalist', color: 'text-pink-400' },
   ]
 

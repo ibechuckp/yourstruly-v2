@@ -11,8 +11,10 @@ interface Memory {
   location_lat: number
   location_lng: number
   memory_date: string
-  memory_media: {
+  memory_media?: {
+    id?: string
     file_url: string
+    file_type?: string
     is_cover: boolean
   }[]
 }

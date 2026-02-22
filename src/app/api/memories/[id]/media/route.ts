@@ -34,6 +34,12 @@ export async function POST(
     return NextResponse.json({ error: 'No file provided' }, { status: 400 })
   }
 
+  // Extract EXIF data from form (sent by client after extraction)
+  const exifLat = formData.get('exif_lat') as string | null
+  const exifLng = formData.get('exif_lng') as string | null
+  const takenAt = formData.get('taken_at') as string | null
+  const camera = formData.get('camera') as string | null
+
   const fileType = file.type.startsWith('image/') ? 'image' : 
                    file.type.startsWith('video/') ? 'video' : null
 
@@ -117,7 +123,7 @@ export async function POST(
 
   const isCover = count === 0
 
-  // Create media record
+  // Create media record with EXIF data
   const { data: media, error: mediaError } = await supabase
     .from('memory_media')
     .insert({
@@ -131,6 +137,13 @@ export async function POST(
       width,
       height,
       is_cover: isCover,
+      // EXIF data
+      exif_lat: exifLat ? parseFloat(exifLat) : null,
+      exif_lng: exifLng ? parseFloat(exifLng) : null,
+      taken_at: takenAt || null,
+      camera_make: camera?.split(' ')[0] || null,
+      camera_model: camera?.split(' ').slice(1).join(' ') || null,
+      // AI analysis
       ai_faces: detectedFaces.map(f => ({
         boundingBox: f.boundingBox,
         confidence: f.confidence,

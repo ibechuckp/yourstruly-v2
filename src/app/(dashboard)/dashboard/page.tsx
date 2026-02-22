@@ -133,18 +133,9 @@ export default function DashboardPage() {
     return true
   })
 
-  // Inject incomplete contact tasks (max 1)
-  const incompleteContactPrompts = incompleteContacts.slice(0, 1).map(c => ({
-    id: `complete-${c.id}`,
-    type: 'contact_info' as const,
-    promptText: `Complete ${c.full_name.split(' ')[0]}'s info`,
-    contactId: c.id,
-    contactName: c.full_name,
-    contactPhotoUrl: c.avatar_url,
-    missingFields: c.missingFields,
-  }))
+  // Note: incompleteContactPrompts is computed below after incompleteContacts state is declared
 
-  const prompts = [...incompleteContactPrompts, ...uniquePrompts].slice(0, 5)
+  const prompts = uniquePrompts.slice(0, 5)
 
   // Load saved state from localStorage
   useEffect(() => {

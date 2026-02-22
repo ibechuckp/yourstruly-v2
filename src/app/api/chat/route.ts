@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
           user_id: user.id,
           role: 'assistant',
           content: assistantMessage,
-          sources: searchResults.map(r => ({
+          sources: searchResults.map((r: any) => ({
             type: r.content_type,
             id: r.id,
             title: r.title,
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: assistantMessage,
       sessionId: currentSessionId,
-      sources: searchResults.slice(0, 5).map(r => ({
+      sources: searchResults.slice(0, 5).map((r: any) => ({
         type: r.content_type,
         id: r.id,
         title: r.title,
