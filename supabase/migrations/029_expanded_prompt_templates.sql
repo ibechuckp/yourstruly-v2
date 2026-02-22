@@ -53,7 +53,10 @@ INSERT INTO prompt_templates (id, type, category, prompt_text, priority_boost, i
 -- Family Traditions
 ('childhood_traditions_001', 'memory_prompt', 'childhood', 'What family traditions did you have growing up?', 10, TRUE),
 ('childhood_dinners_001', 'memory_prompt', 'childhood', 'What were family dinners like when you were young?', 5, TRUE),
-('childhood_vacation_001', 'memory_prompt', 'childhood', 'Where did your family go on vacation when you were a kid?', 5, TRUE),
+('childhood_vacation_001', 'memory_prompt', 'childhood', 'Where did your family go on vacation when you were a kid?', 5, TRUE)
+ON CONFLICT (id) DO UPDATE SET 
+  prompt_text = EXCLUDED.prompt_text,
+  is_active = EXCLUDED.is_active;
 
 -- ============================================================================
 -- FAVORITES & FIRSTS
