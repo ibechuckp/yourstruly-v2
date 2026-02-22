@@ -19,6 +19,7 @@ const TYPE_CONFIG: Record<string, { icon: string; label: string; color: 'yellow'
   tag_person: { icon: '👤', label: 'Tag Person', color: 'blue', xp: 5 },
   missing_info: { icon: '📝', label: 'Contact', color: 'green', xp: 5 },
   quick_question: { icon: '👤', label: 'Contact', color: 'green', xp: 5 },
+  contact_info: { icon: '✏️', label: 'Complete Info', color: 'green', xp: 10 },
   memory_prompt: { icon: '💭', label: 'Memory', color: 'purple', xp: 20 },
   knowledge: { icon: '🧠', label: 'Wisdom', color: 'red', xp: 15 },
   connect_dots: { icon: '🔗', label: 'Connect', color: 'blue', xp: 10 },
@@ -45,6 +46,7 @@ const INLINE_INPUT_TYPES = [
   'quick_question',
   'missing_info',
   'tag_person',
+  'contact_info',
 ]
 
 // Fixed tile positions: 2x2 grid on left + 1 tall tile on right for photos
@@ -131,7 +133,18 @@ export default function DashboardPage() {
     return true
   })
 
-  const prompts = uniquePrompts.slice(0, 5)
+  // Inject incomplete contact tasks (max 1)
+  const incompleteContactPrompts = incompleteContacts.slice(0, 1).map(c => ({
+    id: `complete-${c.id}`,
+    type: 'contact_info' as const,
+    promptText: `Complete ${c.full_name.split(' ')[0]}'s info`,
+    contactId: c.id,
+    contactName: c.full_name,
+    contactPhotoUrl: c.avatar_url,
+    missingFields: c.missingFields,
+  }))
+
+  const prompts = [...incompleteContactPrompts, ...uniquePrompts].slice(0, 5)
 
   // Load saved state from localStorage
   useEffect(() => {
@@ -190,15 +203,37 @@ export default function DashboardPage() {
     setStats({ memories: mem.count || 0, contacts: con.count || 0, postscripts: ps.count || 0 })
   }
 
+  const [incompleteContacts, setIncompleteContacts] = useState<Array<{
+    id: string
+    full_name: string
+    avatar_url?: string
+    missingFields: string[]
+  }>>([])
+
   const loadContacts = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { data } = await supabase
       .from('contacts')
-      .select('id, full_name, avatar_url')
+      .select('id, full_name, avatar_url, email, phone, date_of_birth, how_met, notes')
       .eq('user_id', user.id)
       .order('full_name')
-    if (data) setUserContacts(data)
+    if (data) {
+      setUserContacts(data)
+      // Find contacts with missing essential info
+      const incomplete = data
+        .map(c => {
+          const missing: string[] = []
+          if (!c.email) missing.push('email')
+          if (!c.phone) missing.push('phone')
+          if (!c.date_of_birth) missing.push('birthday')
+          if (!c.how_met) missing.push('how_met')
+          return { ...c, missingFields: missing }
+        })
+        .filter(c => c.missingFields.length > 0)
+        .slice(0, 3) // Max 3 incomplete contact prompts
+      setIncompleteContacts(incomplete)
+    }
   }
 
   const loadUpcomingEvents = async () => {
