@@ -16,7 +16,7 @@ interface Contact {
   email: string | null
   phone: string | null
   relationship_type: string | null
-  profile_photo_url: string | null
+  avatar_url: string | null
 }
 
 interface Attachment {
@@ -127,7 +127,7 @@ export default function NewPostScriptPage() {
     
     const { data, error } = await supabase
       .from('contacts')
-      .select('id, full_name, email, phone, relationship_type, profile_photo_url')
+      .select('id, full_name, email, phone, relationship_type, avatar_url')
       .eq('user_id', user.id)
       .order('full_name')
     

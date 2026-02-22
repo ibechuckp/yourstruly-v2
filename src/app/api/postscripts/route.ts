@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     .from('postscripts')
     .select(`
       *,
-      recipient:contacts!recipient_contact_id(id, full_name, relationship_type, profile_photo_url)
+      recipient:contacts!recipient_contact_id(id, full_name, relationship_type, avatar_url)
     `)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })

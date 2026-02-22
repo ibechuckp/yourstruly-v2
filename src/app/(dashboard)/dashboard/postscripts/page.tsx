@@ -24,7 +24,7 @@ interface PostScript {
     id: string
     full_name: string
     relationship_type: string | null
-    profile_photo_url: string | null
+    avatar_url: string | null
   } | null
 }
 
@@ -73,9 +73,9 @@ function PostScriptCard({ postscript }: { postscript: PostScript }) {
         <div className="flex items-start gap-4">
           {/* Recipient Avatar */}
           <div className="flex-shrink-0">
-            {postscript.recipient?.profile_photo_url ? (
+            {postscript.recipient?.avatar_url ? (
               <img 
-                src={postscript.recipient.profile_photo_url} 
+                src={postscript.recipient.avatar_url} 
                 alt={postscript.recipient_name}
                 className="w-12 h-12 rounded-full object-cover"
               />
