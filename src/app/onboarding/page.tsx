@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Camera, User, Calendar, ArrowRight, ArrowLeft, Check, Loader2, Upload, X } from 'lucide-react';
+import { Camera, User, Calendar, ArrowRight, ArrowLeft, Check, Loader2, Upload, X, Heart, Sparkles } from 'lucide-react';
+import { HeartfeltQuestion } from '@/components/onboarding';
+import { CongratulationsAnimation } from '@/components/onboarding';
 
 interface OnboardingData {
   fullName: string;
@@ -11,6 +13,9 @@ interface OnboardingData {
   photo: File | null;
   photoPreview: string | null;
 }
+
+// Total steps: 1=Name, 2=Photo, 3=DOB, 4=HeartfeltQuestion, 5=Congrats
+const TOTAL_STEPS = 5;
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
@@ -23,6 +28,9 @@ export default function OnboardingPage() {
     photo: null,
     photoPreview: null,
   });
+  const [showHeartfelt, setShowHeartfelt] = useState(false);
+  const [showCongrats, setShowCongrats] = useState(false);
+  const [heartfeltAnswer, setHeartfeltAnswer] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -66,7 +74,8 @@ export default function OnboardingPage() {
     }));
   };
 
-  const handleComplete = async () => {
+  // Save profile data (called before heartfelt question)
+  const saveProfileData = async () => {
     setSaving(true);
     try {
       let avatarUrl = null;
@@ -90,28 +99,81 @@ export default function OnboardingPage() {
         avatarUrl = publicUrl;
       }
 
-      // Update profile
+      // Update profile (but not complete yet)
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
           full_name: data.fullName,
           date_of_birth: data.dateOfBirth || null,
           avatar_url: avatarUrl,
-          onboarding_completed: true,
           onboarding_step: 3,
         })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
-
-      router.push('/dashboard');
+      return true;
     } catch (error) {
-      console.error('Error completing onboarding:', error);
+      console.error('Error saving profile:', error);
       alert('Something went wrong. Please try again.');
+      return false;
     } finally {
       setSaving(false);
     }
   };
+
+  // Handle heartfelt question answer
+  const handleHeartfeltComplete = async (answer: string) => {
+    setHeartfeltAnswer(answer);
+    setShowHeartfelt(false);
+    
+    // Save the memory
+    try {
+      await supabase.from('memories').insert({
+        user_id: user.id,
+        title: 'My First Memory',
+        description: answer,
+        memory_date: new Date().toISOString(),
+        tags: ['onboarding', 'heartfelt'],
+      });
+    } catch (e) {
+      console.error('Error saving memory:', e);
+    }
+    
+    // Show congratulations
+    setShowCongrats(true);
+  };
+
+  // Handle skip heartfelt
+  const handleHeartfeltSkip = () => {
+    setShowHeartfelt(false);
+    setShowCongrats(true);
+  };
+
+  // Final completion after congrats
+  const handleFinalComplete = async () => {
+    try {
+      await supabase
+        .from('profiles')
+        .update({ onboarding_completed: true })
+        .eq('id', user.id);
+      
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      router.push('/dashboard'); // Go anyway
+    }
+  };
+
+  // Handle moving to heartfelt question step
+  const handleProceedToHeartfelt = async () => {
+    const saved = await saveProfileData();
+    if (saved) {
+      setShowHeartfelt(true);
+    }
+  };
+
+  // Legacy complete for backward compatibility
+  const handleComplete = handleProceedToHeartfelt;
 
   const canProceed = () => {
     if (step === 1) return data.fullName.trim().length > 0;
@@ -229,6 +291,27 @@ export default function OnboardingPage() {
     );
   }
 
+  // Show Heartfelt Question overlay
+  if (showHeartfelt) {
+    return (
+      <HeartfeltQuestion
+        userProfile={{ interests: [], background: data.fullName, values: [] }}
+        onComplete={handleHeartfeltComplete}
+        onSkip={handleHeartfeltSkip}
+      />
+    );
+  }
+
+  // Show Congratulations overlay
+  if (showCongrats) {
+    return (
+      <CongratulationsAnimation
+        userName={data.fullName}
+        onComplete={handleFinalComplete}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen home-background flex items-center justify-center p-4">
       <div className="home-blob home-blob-1" />
@@ -286,8 +369,8 @@ export default function OnboardingPage() {
                   </>
                 ) : (
                   <>
-                    Complete
-                    <Check className="w-4 h-4" />
+                    <Heart className="w-4 h-4" />
+                    Continue to Your First Memory
                   </>
                 )}
               </button>
