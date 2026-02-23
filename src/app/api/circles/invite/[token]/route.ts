@@ -146,8 +146,7 @@ export async function POST(
       created_by,
       circle:circles (
         id,
-        name,
-        is_deleted
+        name
       )
     `)
     .eq('token', token)
@@ -175,7 +174,7 @@ export async function POST(
 
   // circle is an array from Supabase join
   const circle = Array.isArray(invite.circle) ? invite.circle[0] : invite.circle
-  if (!circle || circle.is_deleted) {
+  if (!circle) {
     return NextResponse.json({ error: 'The circle no longer exists' }, { status: 410 })
   }
 

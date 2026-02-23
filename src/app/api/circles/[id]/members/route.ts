@@ -86,12 +86,11 @@ export async function POST(
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
   }
 
-  // Verify circle exists and is not deleted
+  // Verify circle exists
   const { data: circle } = await supabase
     .from('circles')
     .select('id')
     .eq('id', circleId)
-    .eq('is_deleted', false)
     .single()
 
   if (!circle) {

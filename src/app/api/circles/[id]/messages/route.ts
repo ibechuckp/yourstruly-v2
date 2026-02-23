@@ -45,7 +45,7 @@ export async function GET(
       media_url,
       media_type,
       reply_to_id,
-      is_deleted,
+      
       edited_at,
       created_at,
       sender:profiles!circle_messages_sender_id_fkey (
@@ -63,7 +63,7 @@ export async function GET(
       )
     `)
     .eq('circle_id', circleId)
-    .eq('is_deleted', false)
+    
     .order('created_at', { ascending: false })
     .limit(limit)
 
@@ -92,7 +92,7 @@ export async function GET(
       .from('circle_messages')
       .select('*', { count: 'exact', head: true })
       .eq('circle_id', circleId)
-      .eq('is_deleted', false)
+      
       .lt('created_at', messages[messages.length - 1]?.created_at)
     hasMore = (count || 0) > 0
   }
@@ -145,7 +145,7 @@ export async function POST(
       .select('id')
       .eq('id', reply_to_id)
       .eq('circle_id', circleId)
-      .eq('is_deleted', false)
+      
       .single()
 
     if (!replyTarget) {
@@ -169,7 +169,7 @@ export async function POST(
       media_url,
       media_type,
       reply_to_id,
-      is_deleted,
+      
       edited_at,
       created_at,
       sender:profiles!circle_messages_sender_id_fkey (
@@ -256,7 +256,7 @@ export async function PATCH(
       media_url,
       media_type,
       reply_to_id,
-      is_deleted,
+      
       edited_at,
       created_at,
       sender:profiles!circle_messages_sender_id_fkey (
@@ -315,7 +315,7 @@ export async function DELETE(
   const { error } = await supabase
     .from('circle_messages')
     .update({
-      is_deleted: true,
+      
       deleted_at: new Date().toISOString()
     })
     .eq('id', messageId)
