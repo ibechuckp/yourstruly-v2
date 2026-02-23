@@ -88,8 +88,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Explicitly create owner membership (trigger may fail due to RLS)
-  const { error: memberError } = await supabase
+  // Explicitly create owner membership
+  const { data: membership, error: memberError } = await supabase
     .from('circle_members')
     .insert({
       circle_id: circle.id,
@@ -99,11 +99,17 @@ export async function POST(request: NextRequest) {
       invite_status: 'accepted',
       joined_at: new Date().toISOString()
     })
+    .select()
+    .single()
 
   if (memberError) {
     console.error('Create owner membership error:', memberError)
-    // Don't fail circle creation, but log the error
-    // The trigger might have created it, or we have a real issue
+    // This is a critical failure - delete the circle and return error
+    await supabase.from('circles').delete().eq('id', circle.id)
+    return NextResponse.json({ 
+      error: `Failed to create membership: ${memberError.message}. Circle creation rolled back.`,
+      details: memberError
+    }, { status: 500 })
   }
 
   return NextResponse.json({ 
