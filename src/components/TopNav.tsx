@@ -19,10 +19,13 @@ import {
   Bot,
   FolderOpen,
   ChevronDown,
-  MoreHorizontal,
   Menu,
   X,
-  Lightbulb
+  Lightbulb,
+  Mail,
+  BookOpen,
+  UsersRound,
+  Wrench
 } from 'lucide-react'
 
 interface Profile {
@@ -35,19 +38,31 @@ interface TopNavProps {
   profile: Profile | null
 }
 
+// Top-level nav items
 const primaryNav = [
   { href: '/dashboard', label: 'Home', icon: Home },
+  { href: '/dashboard/messages', label: 'Messages', icon: Mail },
   { href: '/dashboard/profile', label: 'Profile', icon: UserIcon },
-  { href: '/dashboard/contacts', label: 'Contacts', icon: Users },
-  { href: '/dashboard/memories', label: 'Memories', icon: Camera },
-  { href: '/dashboard/wisdom', label: 'Wisdom', icon: Lightbulb },
-  { href: '/dashboard/albums', label: 'Albums', icon: FolderOpen },
 ]
 
-const moreItems = [
+// My Story dropdown - content about you
+const myStoryItems = [
+  { href: '/dashboard/memories', label: 'Memories', icon: Camera },
+  { href: '/dashboard/wisdom', label: 'Wisdom', icon: Lightbulb },
+  { href: '/dashboard/gallery', label: 'Gallery', icon: FolderOpen },
+  { href: '/dashboard/postscripts', label: 'PostScripts', icon: Gift },
+]
+
+// People dropdown - who you share with
+const peopleItems = [
+  { href: '/dashboard/contacts', label: 'Contacts', icon: Users },
+  { href: '/dashboard/circles', label: 'Circles', icon: UsersRound },
+]
+
+// Tools dropdown - utilities
+const toolsItems = [
   { href: '/dashboard/journalist', label: 'Video Journalist', icon: MessageSquare },
   { href: '/dashboard/avatar', label: 'AI Avatar', icon: Bot, disabled: true },
-  { href: '/dashboard/postscripts', label: 'PostScripts', icon: Gift },
   { href: '/dashboard/trips', label: 'Trip Planning', icon: Plane, disabled: true },
 ]
 
@@ -55,10 +70,14 @@ export default function TopNav({ user, profile }: TopNavProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
-  const [moreOpen, setMoreOpen] = useState(false)
+  const [myStoryOpen, setMyStoryOpen] = useState(false)
+  const [peopleOpen, setPeopleOpen] = useState(false)
+  const [toolsOpen, setToolsOpen] = useState(false)
   const [userOpen, setUserOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const moreRef = useRef<HTMLDivElement>(null)
+  const myStoryRef = useRef<HTMLDivElement>(null)
+  const peopleRef = useRef<HTMLDivElement>(null)
+  const toolsRef = useRef<HTMLDivElement>(null)
   const userRef = useRef<HTMLDivElement>(null)
 
   const handleSignOut = async () => {
@@ -69,7 +88,9 @@ export default function TopNav({ user, profile }: TopNavProps) {
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false)
+      if (myStoryRef.current && !myStoryRef.current.contains(e.target as Node)) setMyStoryOpen(false)
+      if (peopleRef.current && !peopleRef.current.contains(e.target as Node)) setPeopleOpen(false)
+      if (toolsRef.current && !toolsRef.current.contains(e.target as Node)) setToolsOpen(false)
       if (userRef.current && !userRef.current.contains(e.target as Node)) setUserOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
@@ -89,6 +110,7 @@ export default function TopNav({ user, profile }: TopNavProps) {
 
             {/* Desktop Nav */}
             <div className="hidden lg:flex items-center gap-0.5">
+              {/* Primary items */}
               {primaryNav.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
@@ -111,45 +133,126 @@ export default function TopNav({ user, profile }: TopNavProps) {
               {/* Divider */}
               <div className="w-px h-5 bg-white/20 mx-2" />
 
-              {/* More Dropdown */}
-              <div ref={moreRef} className="relative">
+              {/* My Story Dropdown */}
+              <div ref={myStoryRef} className="relative">
                 <button
-                  onClick={() => setMoreOpen(!moreOpen)}
+                  onClick={() => { setMyStoryOpen(!myStoryOpen); setPeopleOpen(false); setToolsOpen(false) }}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    moreItems.some(i => pathname === i.href)
+                    myStoryItems.some(i => pathname === i.href)
                       ? 'bg-amber-500/20 text-amber-400'
                       : 'text-white/60 hover:bg-white/5 hover:text-white/90'
                   }`}
                 >
-                  <MoreHorizontal size={16} />
-                  <span>More</span>
-                  <ChevronDown size={14} className={`transition-transform ${moreOpen ? 'rotate-180' : ''}`} />
+                  <BookOpen size={16} />
+                  <span>My Story</span>
+                  <ChevronDown size={14} className={`transition-transform ${myStoryOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
-                {moreOpen && (
-                  <div className="absolute top-full left-0 mt-1 w-52 bg-gray-950/95 backdrop-blur-xl border border-white/10 rounded-xl p-1.5 shadow-xl">
-                    {moreItems.map((item) => {
+                {myStoryOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-48 bg-gray-950/95 backdrop-blur-xl border border-white/10 rounded-xl p-1.5 shadow-xl">
+                    {myStoryItems.map((item) => {
                       const Icon = item.icon
                       const isActive = pathname === item.href
                       return (
                         <Link
                           key={item.href}
-                          href={item.disabled ? '#' : item.href}
+                          href={item.href}
+                          onClick={() => setMyStoryOpen(false)}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
+                            isActive
+                              ? 'bg-amber-500/20 text-amber-400'
+                              : 'text-white/60 hover:bg-white/5 hover:text-white/90'
+                          }`}
+                        >
+                          <Icon size={16} />
+                          <span>{item.label}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* People Dropdown */}
+              <div ref={peopleRef} className="relative">
+                <button
+                  onClick={() => { setPeopleOpen(!peopleOpen); setMyStoryOpen(false); setToolsOpen(false) }}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    peopleItems.some(i => pathname === i.href)
+                      ? 'bg-amber-500/20 text-amber-400'
+                      : 'text-white/60 hover:bg-white/5 hover:text-white/90'
+                  }`}
+                >
+                  <Users size={16} />
+                  <span>People</span>
+                  <ChevronDown size={14} className={`transition-transform ${peopleOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {peopleOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-44 bg-gray-950/95 backdrop-blur-xl border border-white/10 rounded-xl p-1.5 shadow-xl">
+                    {peopleItems.map((item) => {
+                      const Icon = item.icon
+                      const isActive = pathname === item.href
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setPeopleOpen(false)}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
+                            isActive
+                              ? 'bg-amber-500/20 text-amber-400'
+                              : 'text-white/60 hover:bg-white/5 hover:text-white/90'
+                          }`}
+                        >
+                          <Icon size={16} />
+                          <span>{item.label}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Tools Dropdown */}
+              <div ref={toolsRef} className="relative">
+                <button
+                  onClick={() => { setToolsOpen(!toolsOpen); setMyStoryOpen(false); setPeopleOpen(false) }}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    toolsItems.some(i => pathname === i.href)
+                      ? 'bg-amber-500/20 text-amber-400'
+                      : 'text-white/60 hover:bg-white/5 hover:text-white/90'
+                  }`}
+                >
+                  <Wrench size={16} />
+                  <span>Tools</span>
+                  <ChevronDown size={14} className={`transition-transform ${toolsOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {toolsOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-48 bg-gray-950/95 backdrop-blur-xl border border-white/10 rounded-xl p-1.5 shadow-xl">
+                    {toolsItems.map((item) => {
+                      const Icon = item.icon
+                      const isActive = pathname === item.href
+                      const isDisabled = 'disabled' in item && item.disabled
+                      return (
+                        <Link
+                          key={item.href}
+                          href={isDisabled ? '#' : item.href}
                           onClick={(e) => {
-                            if (item.disabled) e.preventDefault()
-                            else setMoreOpen(false)
+                            if (isDisabled) e.preventDefault()
+                            else setToolsOpen(false)
                           }}
                           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
                             isActive
                               ? 'bg-amber-500/20 text-amber-400'
-                              : item.disabled
+                              : isDisabled
                               ? 'text-white/30 cursor-not-allowed'
                               : 'text-white/60 hover:bg-white/5 hover:text-white/90'
                           }`}
                         >
                           <Icon size={16} />
                           <span>{item.label}</span>
-                          {item.disabled && (
+                          {isDisabled && (
                             <span className="ml-auto text-[10px] bg-white/10 text-white/40 px-1.5 py-0.5 rounded">Soon</span>
                           )}
                         </Link>
@@ -234,7 +337,80 @@ export default function TopNav({ user, profile }: TopNavProps) {
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 top-14 bg-gray-950/98 backdrop-blur-xl z-40 overflow-y-auto">
           <div className="p-4 space-y-1">
-            {[...primaryNav, ...moreItems].map((item) => {
+            {/* Primary items */}
+            {primaryNav.map((item) => {
+              const Icon = item.icon
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base transition-all ${
+                    isActive
+                      ? 'bg-amber-500/20 text-amber-400'
+                      : 'text-white/60 hover:bg-white/5 hover:text-white/90'
+                  }`}
+                >
+                  <Icon size={20} />
+                  <span>{item.label}</span>
+                </Link>
+              )
+            })}
+
+            {/* My Story Section */}
+            <div className="pt-3 pb-1">
+              <p className="px-4 text-xs font-semibold text-white/40 uppercase tracking-wider">My Story</p>
+            </div>
+            {myStoryItems.map((item) => {
+              const Icon = item.icon
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base transition-all ${
+                    isActive
+                      ? 'bg-amber-500/20 text-amber-400'
+                      : 'text-white/60 hover:bg-white/5 hover:text-white/90'
+                  }`}
+                >
+                  <Icon size={20} />
+                  <span>{item.label}</span>
+                </Link>
+              )
+            })}
+
+            {/* People Section */}
+            <div className="pt-3 pb-1">
+              <p className="px-4 text-xs font-semibold text-white/40 uppercase tracking-wider">People</p>
+            </div>
+            {peopleItems.map((item) => {
+              const Icon = item.icon
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base transition-all ${
+                    isActive
+                      ? 'bg-amber-500/20 text-amber-400'
+                      : 'text-white/60 hover:bg-white/5 hover:text-white/90'
+                  }`}
+                >
+                  <Icon size={20} />
+                  <span>{item.label}</span>
+                </Link>
+              )
+            })}
+
+            {/* Tools Section */}
+            <div className="pt-3 pb-1">
+              <p className="px-4 text-xs font-semibold text-white/40 uppercase tracking-wider">Tools</p>
+            </div>
+            {toolsItems.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href
               const isDisabled = 'disabled' in item && item.disabled
@@ -256,12 +432,13 @@ export default function TopNav({ user, profile }: TopNavProps) {
                 >
                   <Icon size={20} />
                   <span>{item.label}</span>
-                  {isDisabled ? (
+                  {isDisabled && (
                     <span className="ml-auto text-xs bg-white/10 text-white/40 px-2 py-0.5 rounded">Soon</span>
-                  ) : null}
+                  )}
                 </Link>
               )
             })}
+
             <div className="border-t border-white/10 my-3" />
             <Link
               href="/dashboard/settings"

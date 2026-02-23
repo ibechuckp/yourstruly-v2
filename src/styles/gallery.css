@@ -1,18 +1,58 @@
 /* =============================================================================
-   GALLERY PAGE STYLES
-   Dribbble-style photo timeline with globe integration
+   GALLERY PAGE STYLES - Warm Theme
    ============================================================================= */
+
+/* Split View Layout - 50/50 */
+.gallery-split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.gallery-globe-half {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.gallery-globe-half .gallery-globe-section {
+  height: 520px;
+}
+
+.gallery-stats-half {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  overflow: hidden;
+  height: auto;
+  min-height: 520px;
+  box-shadow: 
+    0 8px 32px rgba(64, 106, 86, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+@media (max-width: 1024px) {
+  .gallery-split-view {
+    grid-template-columns: 1fr;
+  }
+  
+  .gallery-globe-half .gallery-globe-section,
+  .gallery-stats-half {
+    height: 420px;
+  }
+}
 
 /* Globe Section */
 .gallery-globe-section {
   position: relative;
   width: 100%;
-  height: 500px;
-  border-radius: 24px;
+  height: 520px;
+  border-radius: 20px;
   overflow: hidden;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.3),
+    0 8px 32px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
@@ -22,271 +62,42 @@
   background: radial-gradient(
     ellipse at center,
     transparent 40%,
-    rgba(0, 0, 0, 0.3) 100%
+    rgba(0, 0, 0, 0.2) 100%
   );
   pointer-events: none;
   z-index: 5;
 }
 
-/* Timeline Filter Bar */
-.gallery-timeline-filter {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.gallery-timeline-filter::-webkit-scrollbar {
-  display: none;
-}
-
-.timeline-filter-btn {
+/* Stats Overlay on Globe - Vertical Left */
+.globe-stats-overlay {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(64, 106, 86, 0.1);
-  border-radius: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  min-width: 80px;
+  gap: 8px;
+  z-index: 10;
 }
 
-.timeline-filter-btn:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(64, 106, 86, 0.2);
-  transform: translateY(-2px);
+.globe-stat-card {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 100px;
 }
 
-.timeline-filter-btn.active {
-  background: #406A56;
-  border-color: #406A56;
-  color: white;
-}
-
-.timeline-filter-btn .year {
+.globe-stat-value {
   font-size: 18px;
   font-weight: 700;
-}
-
-.timeline-filter-btn .month {
-  font-size: 11px;
-  opacity: 0.7;
-  margin-top: 2px;
-}
-
-.timeline-filter-btn .count {
-  font-size: 10px;
-  opacity: 0.5;
-  margin-top: 4px;
-}
-
-/* Dribbble-style Photo Timeline */
-.gallery-photo-timeline {
-  background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
-  border-radius: 24px;
-  padding: 32px;
-  margin-top: 24px;
-  min-height: 400px;
-}
-
-.gallery-timeline-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-}
-
-.gallery-timeline-title {
   color: white;
-  font-size: 20px;
-  font-weight: 600;
 }
 
-.gallery-timeline-subtitle {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 14px;
-  margin-top: 4px;
-}
-
-/* Year Selector Bar */
-.year-selector-bar {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  padding: 16px 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.year-selector-bar::-webkit-scrollbar {
-  display: none;
-}
-
-.year-bar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.year-bar:hover .year-bar-stack {
-  transform: translateY(-4px);
-}
-
-.year-bar-stack {
-  width: 40px;
-  background: linear-gradient(to top, #406A56 0%, #5A8A72 100%);
-  border-radius: 8px 8px 0 0;
-  min-height: 20px;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.year-bar.active .year-bar-stack {
-  background: linear-gradient(to top, #D9C61A 0%, #E8D84A 100%);
-}
-
-.year-bar-stack::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to right, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(0,0,0,0.1) 100%);
-}
-
-.year-bar-label {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 8px;
-  font-weight: 500;
-}
-
-.year-bar.active .year-bar-label {
-  color: #D9C61A;
-  font-weight: 700;
-}
-
-/* Photo Grid in Timeline */
-.gallery-photo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 12px;
-  margin-top: 24px;
-}
-
-.gallery-photo-card {
-  position: relative;
-  aspect-ratio: 1;
-  border-radius: 16px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.gallery-photo-card:hover {
-  transform: scale(1.05);
-  z-index: 10;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-}
-
-.gallery-photo-card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: all 0.3s ease;
-}
-
-.gallery-photo-card:hover img {
-  filter: brightness(1.1);
-}
-
-.gallery-photo-card-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 12px;
-}
-
-.gallery-photo-card:hover .gallery-photo-card-overlay {
-  opacity: 1;
-}
-
-.gallery-photo-date {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.gallery-photo-location {
-  color: rgba(255, 255, 255, 0.5);
+.globe-stat-label {
   font-size: 10px;
-  margin-top: 2px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* Upload Zone in Gallery */
-.gallery-upload-zone {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(16px);
-  border: 2px dashed rgba(64, 106, 86, 0.3);
-  border-radius: 20px;
-  padding: 32px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.gallery-upload-zone:hover {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: #406A56;
-  transform: translateY(-2px);
-}
-
-.gallery-upload-zone.dragging {
-  background: rgba(64, 106, 86, 0.1);
-  border-color: #406A56;
-  border-style: solid;
-}
-
-.gallery-upload-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 16px;
-  background: linear-gradient(135deg, rgba(64, 106, 86, 0.1), rgba(217, 198, 26, 0.1));
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #406A56;
-}
-
-.gallery-upload-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #2d2d2d;
-  margin-bottom: 4px;
-}
-
-.gallery-upload-subtitle {
-  font-size: 14px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* Photo Preview Modal */
@@ -315,15 +126,6 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
-.gallery-preview-info {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  border-radius: 16px;
-  padding: 16px 20px;
-  margin-top: 16px;
-  color: white;
-}
-
 .gallery-preview-close {
   position: absolute;
   top: -48px;
@@ -343,39 +145,331 @@
 
 .gallery-preview-close:hover {
   background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.1);
 }
 
-/* Stats Overlay on Globe */
-.globe-stats-overlay {
-  position: absolute;
-  bottom: 16px;
-  left: 16px;
-  right: 16px;
+/* Scrollbar hide utility */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* =============================================================================
+   TIMELINE RULER - Measuring Tape Style
+   ============================================================================= */
+
+.timeline-ruler-container {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(242, 241, 229, 0.85) 100%
+  );
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  padding: 14px 20px 20px;
+  box-shadow: 
+    0 4px 20px rgba(64, 106, 86, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.timeline-ruler-header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-end;
+  margin-bottom: 14px;
+  padding: 0 4px;
+}
+
+.timeline-ruler-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #2d2d2d;
+}
+
+.timeline-ruler-icon {
+  font-size: 16px;
+}
+
+.timeline-ruler-hint {
+  font-size: 12px;
+  color: #888;
+}
+
+.timeline-ruler-selection-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.timeline-ruler-range-text {
+  font-weight: 600;
+  font-size: 13px;
+  color: #406A56;
+  background: rgba(64, 106, 86, 0.1);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.timeline-ruler-count {
+  font-size: 12px;
+  color: #666;
+}
+
+.timeline-ruler-clear {
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
+  color: #666;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.timeline-ruler-clear:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #333;
+}
+
+/* Track Container */
+.timeline-ruler-track-container {
+  position: relative;
+  padding: 0 20px;
+}
+
+.timeline-ruler-track {
+  position: relative;
+  height: 60px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(242, 241, 229, 0.6) 100%
+  );
+  border-radius: 10px;
+  border: 1px solid rgba(200, 200, 200, 0.4);
+  cursor: pointer;
+  overflow: visible;
+}
+
+/* Tick marks */
+.timeline-ruler-ticks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 16px;
+  pointer-events: none;
+}
+
+.timeline-ruler-tick {
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.timeline-ruler-tick-line {
+  width: 2px;
+  height: 12px;
+  background: linear-gradient(to bottom, #aaa 0%, transparent 100%);
+  border-radius: 1px;
+}
+
+/* Year labels */
+.timeline-ruler-labels {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  pointer-events: none;
+}
+
+.timeline-ruler-label {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.timeline-ruler-label:hover {
+  background: rgba(64, 106, 86, 0.08);
+}
+
+.timeline-ruler-label.selected {
+  background: rgba(64, 106, 86, 0.12);
+}
+
+.timeline-ruler-year {
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.timeline-ruler-label.selected .timeline-ruler-year {
+  color: #406A56;
+  font-weight: 700;
+}
+
+.timeline-ruler-label.has-photos .timeline-ruler-year {
+  color: #2d2d2d;
+}
+
+.timeline-ruler-label.selected.has-photos .timeline-ruler-year {
+  color: #406A56;
+}
+
+/* Photo count dots */
+.timeline-ruler-dots {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+}
+
+.timeline-ruler-dot {
+  width: 4px;
+  height: 4px;
+  background: #406A56;
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+.timeline-ruler-label.selected .timeline-ruler-dot {
+  opacity: 1;
+  background: #406A56;
+}
+
+/* Selection Range */
+.timeline-ruler-selection {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(64, 106, 86, 0.15) 0%,
+    rgba(64, 106, 86, 0.25) 100%
+  );
+  border: 2px solid #406A56;
+  border-radius: 8px;
+  display: flex;
+  align-items: stretch;
+  transition: box-shadow 0.2s ease;
   z-index: 10;
 }
 
-.globe-stat-card {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  border-radius: 12px;
-  padding: 12px 16px;
+.timeline-ruler-selection:not(.dragging) {
+  transition: left 0.15s ease, width 0.15s ease, box-shadow 0.2s ease;
 }
 
-.globe-stat-value {
-  font-size: 20px;
-  font-weight: 700;
-  color: white;
+.timeline-ruler-selection.dragging {
+  box-shadow: 0 4px 16px rgba(64, 106, 86, 0.25);
 }
 
-.globe-stat-label {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.timeline-ruler-selection-area {
+  flex: 1;
+  cursor: grab;
+}
+
+.timeline-ruler-selection-area:active {
+  cursor: grabbing;
+}
+
+/* Handles */
+.timeline-ruler-handle {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: ew-resize;
+  z-index: 20;
+}
+
+.timeline-ruler-handle-left {
+  left: -8px;
+}
+
+.timeline-ruler-handle-right {
+  right: -8px;
+}
+
+.timeline-ruler-handle-grip {
+  width: 8px;
+  height: 32px;
+  background: #406A56;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(64, 106, 86, 0.3);
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-ruler-handle-grip::before {
+  content: '';
+  width: 2px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 1px;
+}
+
+.timeline-ruler-handle:hover .timeline-ruler-handle-grip {
+  background: #355a48;
+  transform: scaleX(1.2);
+}
+
+.timeline-ruler-handle:active .timeline-ruler-handle-grip {
+  background: #2d4d3d;
+  transform: scaleX(1.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .timeline-ruler-container {
+    padding: 12px 14px 16px;
+    border-radius: 14px;
+  }
+  
+  .timeline-ruler-track-container {
+    padding: 0 12px;
+  }
+  
+  .timeline-ruler-track {
+    height: 50px;
+  }
+  
+  .timeline-ruler-year {
+    font-size: 10px;
+  }
+  
+  .timeline-ruler-labels {
+    height: 36px;
+  }
+  
+  .timeline-ruler-label {
+    padding: 3px 4px;
+  }
 }
 
 /* Responsive */
@@ -383,20 +477,6 @@
   .gallery-globe-section {
     height: 350px;
     border-radius: 16px;
-  }
-
-  .gallery-photo-timeline {
-    padding: 20px;
-    border-radius: 16px;
-  }
-
-  .gallery-photo-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-
-  .year-bar-stack {
-    width: 30px;
   }
 
   .gallery-preview-modal {

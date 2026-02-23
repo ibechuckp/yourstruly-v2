@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Heart, MapPin, Users, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import { ScopeIndicator } from '@/components/circles'
 
 interface Memory {
   id: string
@@ -18,6 +19,8 @@ interface Memory {
   is_favorite: boolean
   shared_with_count?: number
   comment_count?: number
+  is_private?: boolean
+  circle_ids?: string[]
   memory_media?: {
     id: string
     file_url: string
@@ -84,8 +87,8 @@ export default function MemoryCard({ memory }: MemoryCardProps) {
               {mediaCount}
             </div>
           )}
-          {/* Shared Badge */}
-          {memory.shared_with_count && memory.shared_with_count > 0 && (
+          {/* Shared Badge - only show if count > 0 */}
+          {typeof memory.shared_with_count === 'number' && memory.shared_with_count > 0 && (
             <div className="px-2 py-1 bg-amber-500/80 backdrop-blur-sm rounded-full text-white text-xs flex items-center gap-1">
               <Users size={12} />
               {memory.shared_with_count}
@@ -107,6 +110,16 @@ export default function MemoryCard({ memory }: MemoryCardProps) {
             {memory.ai_category}
           </div>
         )}
+
+        {/* Scope Indicator */}
+        <div className="absolute bottom-[70px] right-2">
+          <ScopeIndicator 
+            isPrivate={memory.is_private ?? true}
+            circleIds={memory.circle_ids}
+            size="sm"
+            variant="badge"
+          />
+        </div>
 
         {/* Bottom Info */}
         <div className="absolute bottom-0 left-0 right-0 p-3">

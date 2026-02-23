@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     .select(`
       *,
       recipient:contacts!recipient_contact_id(id, full_name, relationship_type, avatar_url),
+      circle:circles!circle_id(id, name),
       attachments:postscript_attachments(id, file_url, file_type)
     `)
     .eq('user_id', user.id)
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
   const {
     recipient_contact_id,
+    circle_id,
     recipient_name,
     recipient_email,
     recipient_phone,
@@ -84,6 +86,7 @@ export async function POST(request: NextRequest) {
     .insert({
       user_id: user.id,
       recipient_contact_id: recipient_contact_id || null,
+      circle_id: circle_id || null,
       recipient_name,
       recipient_email: recipient_email || null,
       recipient_phone: recipient_phone || null,

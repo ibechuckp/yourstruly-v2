@@ -4,13 +4,15 @@ import React, { useState, useEffect, use, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { 
   ChevronLeft, Heart, MapPin, Calendar, Sparkles, 
-  Trash2, Edit2, X, Plus, Image as ImageIcon, Upload, Zap, Play, Square
+  Trash2, Edit2, X, Plus, Image as ImageIcon, Upload, Zap, Play, Square, Share2, Users
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/home.css'
 import Modal from '@/components/ui/Modal'
 import FaceTagger from '@/components/media/FaceTagger'
 import CaptionEditor from '@/components/media/CaptionEditor'
+import ShareMemoryModal from '@/components/memories/ShareMemoryModal'
+import MemoryContributions from '@/components/memories/MemoryContributions'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface Memory {
@@ -36,6 +38,20 @@ interface Media {
   width: number
   height: number
   is_cover: boolean
+}
+
+interface MemoryShare {
+  id: string
+  contact_id: string
+  can_comment: boolean
+  can_add_media: boolean
+  contact: {
+    id: string
+    name: string
+    email?: string
+    phone?: string
+    relationship_type?: string
+  }
 }
 
 // Parse conversation markdown into structured content
@@ -120,6 +136,11 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
   const [xpToasts, setXpToasts] = useState<Array<{ id: number; amount?: number; message?: string }>>([])
   const [isPlayingConversation, setIsPlayingConversation] = useState(false)
   const [currentPlayingIndex, setCurrentPlayingIndex] = useState(-1)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shares, setShares] = useState<MemoryShare[]>([])
+  const [showSharedList, setShowSharedList] = useState(false)
+  const [removingShareId, setRemovingShareId] = useState<string | null>(null)
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState<{ shareId: string; name: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const toastIdRef = useRef(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -228,7 +249,42 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
 
   useEffect(() => {
     loadMemory()
+    loadShares()
   }, [id])
+
+  const loadShares = async () => {
+    try {
+      const res = await fetch(`/api/memories/${id}/share`)
+      if (res.ok) {
+        const data = await res.json()
+        setShares(data.shares || [])
+      }
+    } catch (err) {
+      console.error('Failed to load shares:', err)
+    }
+  }
+
+  const handleRemoveShare = async (contactId: string) => {
+    setRemovingShareId(contactId)
+    try {
+      const res = await fetch(`/api/memories/${id}/share?contact_id=${contactId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        setShares(prev => prev.filter(s => s.contact_id !== contactId))
+        showXP(undefined, 'Share removed')
+      }
+    } catch (err) {
+      console.error('Failed to remove share:', err)
+    } finally {
+      setRemovingShareId(null)
+      setShowRemoveConfirm(null)
+    }
+  }
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  }
 
   const loadMemory = async () => {
     setLoading(true)
@@ -452,6 +508,24 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
         </Link>
         
         <div className="flex items-center gap-2">
+          {/* Shared indicator - clickable to show list */}
+          {shares.length > 0 && (
+            <button
+              onClick={() => setShowSharedList(!showSharedList)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#406A56]/10 hover:bg-[#406A56]/20 rounded-full text-[#406A56] text-sm transition-colors"
+            >
+              <Users size={14} />
+              <span>Shared with {shares.length}</span>
+            </button>
+          )}
+          {/* Share button */}
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-[#406A56] text-white rounded-xl hover:bg-[#4a7a64] transition-all shadow-sm"
+          >
+            <Share2 size={16} />
+            <span className="text-sm font-medium">Share</span>
+          </button>
           <button
             onClick={toggleFavorite}
             className={`p-2.5 bg-white/80 backdrop-blur-sm rounded-xl transition-all border border-gray-200 shadow-sm ${memory.is_favorite ? 'text-[#C35F33]' : 'text-gray-400 hover:text-[#C35F33]'}`}
@@ -472,6 +546,71 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
           </button>
         </div>
       </header>
+
+      {/* Shared With Panel - Expandable */}
+      <AnimatePresence>
+        {showSharedList && shares.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-6 overflow-hidden"
+          >
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-[#2d2d2d] flex items-center gap-2">
+                  <Users size={16} className="text-[#406A56]" />
+                  Shared with {shares.length} {shares.length === 1 ? 'person' : 'people'}
+                </h3>
+                <button
+                  onClick={() => setShowSharedList(false)}
+                  className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="space-y-2">
+                {shares.map(share => (
+                  <div
+                    key={share.id}
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#F2F1E5] transition-colors group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#406A56] to-[#5A8A72] flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                      {getInitials(share.contact.name)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[#2d2d2d] font-medium text-sm truncate">
+                        {share.contact.name}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        {share.contact.relationship_type && (
+                          <span className="text-[#406A56]">{share.contact.relationship_type}</span>
+                        )}
+                        {share.can_add_media && (
+                          <span className="px-1.5 py-0.5 bg-[#D9C61A]/20 text-[#8a7c08] rounded text-[10px]">
+                            Contributor
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowRemoveConfirm({ shareId: share.contact_id, name: share.contact.name })}
+                      disabled={removingShareId === share.contact_id}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      {removingShareId === share.contact_id ? (
+                        <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <X size={16} />
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main className="max-w-5xl mx-auto">
         <div className="grid lg:grid-cols-3 gap-6">
@@ -732,75 +871,142 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
             )}
           </div>
         </div>
+
+        {/* Contributions Section */}
+        <div className="mt-8">
+          <MemoryContributions memoryId={id} />
+        </div>
       </main>
       </div>
 
-      {/* Edit Modal */}
-      <Modal isOpen={isEditing} onClose={() => setIsEditing(false)} title="Edit Memory">
+      {/* Edit Modal - Warm styling */}
+      <Modal 
+        isOpen={isEditing} 
+        onClose={() => setIsEditing(false)} 
+        title="Edit Memory"
+        showDone={false}
+      >
         <div className="space-y-4">
           <div>
-            <label className="block text-white/50 text-sm mb-1">Title</label>
+            <label className="block text-[#2d2d2d] text-sm font-medium mb-2">Title</label>
             <input
               type="text"
               value={editForm.title}
               onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+              className="w-full px-4 py-3 bg-white border border-[#406A56]/20 rounded-xl text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56] transition-all"
+              placeholder="Give this memory a title..."
             />
           </div>
           <div>
-            <label className="block text-white/50 text-sm mb-1">Description</label>
+            <label className="block text-[#2d2d2d] text-sm font-medium mb-2">Description</label>
             <textarea
               value={editForm.description}
               onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-              rows={3}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white resize-none"
+              rows={4}
+              className="w-full px-4 py-3 bg-white border border-[#406A56]/20 rounded-xl text-[#2d2d2d] placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56] transition-all"
+              placeholder="What happened? Who was there? How did you feel?"
             />
           </div>
-          <div>
-            <label className="block text-white/50 text-sm mb-1">Date</label>
-            <input
-              type="date"
-              value={editForm.memory_date}
-              onChange={(e) => setEditForm({ ...editForm, memory_date: e.target.value })}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
-            />
-          </div>
-          <div>
-            <label className="block text-white/50 text-sm mb-1">Location</label>
-            <input
-              type="text"
-              value={editForm.location_name}
-              onChange={(e) => setEditForm({ ...editForm, location_name: e.target.value })}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[#2d2d2d] text-sm font-medium mb-2">
+                <Calendar size={14} className="inline mr-1.5 text-[#406A56]" />
+                Date
+              </label>
+              <input
+                type="date"
+                value={editForm.memory_date}
+                onChange={(e) => setEditForm({ ...editForm, memory_date: e.target.value })}
+                className="w-full px-4 py-3 bg-white border border-[#406A56]/20 rounded-xl text-[#2d2d2d] focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56] transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-[#2d2d2d] text-sm font-medium mb-2">
+                <MapPin size={14} className="inline mr-1.5 text-[#406A56]" />
+                Location
+              </label>
+              <input
+                type="text"
+                value={editForm.location_name}
+                onChange={(e) => setEditForm({ ...editForm, location_name: e.target.value })}
+                className="w-full px-4 py-3 bg-white border border-[#406A56]/20 rounded-xl text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56] transition-all"
+                placeholder="Where was this?"
+              />
+            </div>
           </div>
           <button
             onClick={handleSaveEdit}
-            className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium"
+            className="w-full py-3 bg-[#406A56] hover:bg-[#4a7a64] text-white rounded-xl font-medium transition-colors shadow-sm mt-2"
           >
             Save Changes
           </button>
         </div>
       </Modal>
 
-      {/* Delete Confirm Modal */}
-      <Modal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Delete Photo">
-        <p className="text-white/70 mb-6">Are you sure you want to delete this photo?</p>
+      {/* Delete Confirm Modal - Warm styling */}
+      <Modal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Delete Photo" showDone={false}>
+        <p className="text-gray-600 mb-6">Are you sure you want to delete this photo? This action cannot be undone.</p>
         <div className="flex gap-3">
           <button
             onClick={() => setShowDeleteConfirm(false)}
-            className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg"
+            className="flex-1 py-2.5 bg-white border border-[#406A56]/20 hover:bg-[#F2F1E5] text-[#2d2d2d] rounded-xl transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleDeleteMedia}
-            className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+            className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors"
           >
             Delete
           </button>
         </div>
       </Modal>
+
+      {/* Remove Share Confirm Modal */}
+      <Modal 
+        isOpen={!!showRemoveConfirm} 
+        onClose={() => setShowRemoveConfirm(null)} 
+        title="Remove Share" 
+        showDone={false}
+      >
+        <p className="text-gray-600 mb-6">
+          Remove <span className="font-semibold text-[#2d2d2d]">{showRemoveConfirm?.name}</span> from this memory? 
+          They will no longer be able to view or contribute to it.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowRemoveConfirm(null)}
+            className="flex-1 py-2.5 bg-white border border-[#406A56]/20 hover:bg-[#F2F1E5] text-[#2d2d2d] rounded-xl transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => showRemoveConfirm && handleRemoveShare(showRemoveConfirm.shareId)}
+            disabled={!!removingShareId}
+            className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {removingShareId ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Removing...
+              </>
+            ) : (
+              'Remove'
+            )}
+          </button>
+        </div>
+      </Modal>
+
+      {/* Share Memory Modal */}
+      <ShareMemoryModal
+        isOpen={showShareModal}
+        onClose={() => {
+          setShowShareModal(false)
+          loadShares() // Refresh shares when modal closes
+        }}
+        memoryId={id}
+        memoryTitle={memory?.title}
+      />
     </div>
   )
 }

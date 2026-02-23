@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Lightbulb, Heart, Star, BookOpen, Quote, Play, ChevronRight, Sparkles, Search, X, ChevronLeft, GraduationCap, Briefcase, Users, Utensils, Compass } from 'lucide-react';
+import { Brain, Lightbulb, Heart, Star, BookOpen, Quote, Play, ChevronRight, Sparkles, Search, X, ChevronLeft, GraduationCap, Briefcase, Users, Utensils, Compass, Share2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface WisdomEntry {
@@ -17,10 +17,19 @@ interface WisdomEntry {
   ai_category?: string;
 }
 
+interface SharedWisdomEntry extends WisdomEntry {
+  shared_by?: {
+    full_name: string;
+  };
+  shared_at?: string;
+}
+
 interface WisdomStats {
   total: number;
   categories: Record<string, number>;
 }
+
+type TabMode = 'mine' | 'shared';
 
 // Better wisdom categories with icons and colors
 const WISDOM_CATEGORIES = [
@@ -35,17 +44,21 @@ const WISDOM_CATEGORIES = [
 
 export default function WisdomPage() {
   const [entries, setEntries] = useState<WisdomEntry[]>([]);
+  const [sharedEntries, setSharedEntries] = useState<SharedWisdomEntry[]>([]);
   const [stats, setStats] = useState<WisdomStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingShared, setLoadingShared] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<WisdomEntry | null>(null);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [tabMode, setTabMode] = useState<TabMode>('mine');
   
   const supabase = createClient();
 
   useEffect(() => {
     loadWisdom();
+    loadSharedWisdom();
   }, []);
 
   // Filter entries based on search and category
@@ -110,6 +123,54 @@ export default function WisdomPage() {
     setIsLoading(false);
   };
 
+  const loadSharedWisdom = async () => {
+    setLoadingShared(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Get wisdom shared with current user
+    // knowledge_shares links to contacts, and contacts have shared_with_user_id linking to users
+    const { data: shares, error } = await supabase
+      .from('knowledge_shares')
+      .select(`
+        knowledge_id,
+        created_at,
+        owner_id,
+        knowledge_entries!inner(
+          id,
+          title,
+          description,
+          audio_url,
+          tags,
+          created_at,
+          category,
+          ai_category
+        ),
+        contacts!inner(
+          shared_with_user_id,
+          full_name
+        )
+      `)
+      .eq('contacts.shared_with_user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading shared wisdom:', error);
+      setLoadingShared(false);
+      return;
+    }
+
+    // Transform the data
+    const transformedEntries: SharedWisdomEntry[] = (shares || []).map((share: any) => ({
+      ...share.knowledge_entries,
+      shared_by: { full_name: share.contacts?.full_name || 'Someone' },
+      shared_at: share.created_at,
+    }));
+
+    setSharedEntries(transformedEntries);
+    setLoadingShared(false);
+  };
+
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedCategory(null);
@@ -148,9 +209,52 @@ export default function WisdomPage() {
                 Your Wisdom
               </h1>
               <p className="text-gray-500 text-sm mt-1">
-                {filteredEntries.length} of {entries.length} entries
+                {tabMode === 'mine' 
+                  ? `${filteredEntries.length} of ${entries.length} entries`
+                  : `${sharedEntries.length} shared with you`
+                }
               </p>
             </div>
+          </div>
+
+          {/* Tab Switcher */}
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              onClick={() => setTabMode('mine')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                tabMode === 'mine' 
+                  ? 'bg-[#4A3552] text-white' 
+                  : 'bg-white/80 text-[#4A3552] hover:bg-white border border-[#4A3552]/20'
+              }`}
+            >
+              <Brain size={16} />
+              My Wisdom
+              {entries.length > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                  tabMode === 'mine' ? 'bg-white/20' : 'bg-[#4A3552]/10'
+                }`}>
+                  {entries.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setTabMode('shared')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                tabMode === 'shared' 
+                  ? 'bg-[#4A3552] text-white' 
+                  : 'bg-white/80 text-[#4A3552] hover:bg-white border border-[#4A3552]/20'
+              }`}
+            >
+              <Share2 size={16} />
+              Shared with Me
+              {sharedEntries.length > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                  tabMode === 'shared' ? 'bg-white/20' : 'bg-[#4A3552]/10'
+                }`}>
+                  {sharedEntries.length}
+                </span>
+              )}
+            </button>
           </div>
           
           {/* Search Bar */}
@@ -178,7 +282,8 @@ export default function WisdomPage() {
           </div>
         </div>
 
-        {/* Category Filter Pills */}
+        {/* Category Filter Pills - only show for My Wisdom tab */}
+        {tabMode === 'mine' && (
         <div className="flex flex-wrap gap-2 mb-6">
           <button
             onClick={() => setSelectedCategory(null)}
@@ -213,9 +318,10 @@ export default function WisdomPage() {
             );
           })}
         </div>
+        )}
 
         {/* Clear Filters */}
-        {(searchQuery || selectedCategory) && (
+        {tabMode === 'mine' && (searchQuery || selectedCategory) && (
           <div className="mb-4">
             <button 
               onClick={clearFilters}
@@ -226,7 +332,8 @@ export default function WisdomPage() {
           </div>
         )}
 
-        {/* Analytics Grid */}
+        {/* Analytics Grid - only show for My Wisdom tab */}
+        {tabMode === 'mine' && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -303,15 +410,80 @@ export default function WisdomPage() {
             </div>
           </motion.div>
         </div>
+        )}
 
         {/* Wisdom Entries */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
             <Quote size={20} className="text-[#D9C61A]" />
-            Your Wisdom Collection
+            {tabMode === 'mine' ? 'Your Wisdom Collection' : 'Shared with You'}
           </h3>
-          
-          {filteredEntries.length === 0 && entries.length > 0 ? (
+
+          {/* Shared with Me Tab Content */}
+          {tabMode === 'shared' ? (
+            loadingShared ? (
+              <div className="bg-white rounded-2xl p-12 text-center">
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>
+                  <Brain size={32} className="text-[#4A3552] mx-auto" />
+                </motion.div>
+                <p className="text-gray-400 mt-4">Loading shared wisdom...</p>
+              </div>
+            ) : sharedEntries.length === 0 ? (
+              <div className="bg-white rounded-2xl p-12 text-center">
+                <Share2 size={48} className="mx-auto mb-4 text-[#4A3552]/30" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">No shared wisdom yet</h3>
+                <p className="text-gray-400">When someone shares their wisdom with you, it will appear here</p>
+              </div>
+            ) : (
+              <AnimatePresence mode="popLayout">
+                {sharedEntries.map((entry, index) => (
+                  <motion.div
+                    key={entry.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => window.location.assign(`/dashboard/wisdom/${entry.id}`)}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-full bg-[#4A3552]/10 flex items-center justify-center flex-shrink-0">
+                        <Brain size={20} className="text-[#4A3552]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-gray-800 mb-1 line-clamp-1">{entry.title}</h4>
+                        <p className="text-sm text-gray-500 line-clamp-2">{entry.description}</p>
+                        
+                        {/* Shared by indicator */}
+                        <div className="flex items-center gap-2 mt-2 text-xs text-[#4A3552]">
+                          <Users size={12} />
+                          <span>Shared by {entry.shared_by?.full_name || 'Unknown'}</span>
+                          {entry.shared_at && (
+                            <span className="text-gray-400">
+                              · {new Date(entry.shared_at).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Tags */}
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {entry.tags?.filter(t => t !== 'wisdom').slice(0, 3).map(tag => (
+                            <span 
+                              key={tag} 
+                              className="text-xs px-2 py-0.5 bg-[#4A3552]/10 text-[#4A3552] rounded-full"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <ChevronRight size={20} className="text-gray-300 flex-shrink-0" />
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )
+          ) : filteredEntries.length === 0 && entries.length > 0 ? (
             <div className="bg-white rounded-2xl p-12 text-center">
               <Search size={48} className="mx-auto mb-4 text-gray-300" />
               <h3 className="text-lg font-semibold text-gray-600 mb-2">No matches found</h3>

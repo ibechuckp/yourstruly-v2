@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { 
   Send, Calendar, Clock, CheckCircle, Mail, Plus,
-  ChevronRight, Sparkles, Heart, User, Image as ImageIcon, Mic
+  ChevronRight, Sparkles, Heart, User, Users, Image as ImageIcon, Mic
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/home.css'
@@ -15,6 +15,7 @@ interface PostScript {
   message: string | null
   recipient_name: string
   recipient_email: string | null
+  circle_id: string | null
   delivery_type: 'date' | 'event' | 'after_passing'
   delivery_date: string | null
   delivery_event: string | null
@@ -26,6 +27,10 @@ interface PostScript {
     full_name: string
     relationship_type: string | null
     avatar_url: string | null
+  } | null
+  circle?: {
+    id: string
+    name: string
   } | null
   attachments?: {
     id: string
@@ -65,7 +70,9 @@ function getStatusIcon(status: string) {
 }
 
 function PostScriptCard({ postscript }: { postscript: PostScript }) {
-  const initials = postscript.recipient_name
+  const isCircle = !!postscript.circle_id
+  const displayName = postscript.circle?.name || postscript.recipient_name
+  const initials = displayName
     .split(' ')
     .map(n => n[0])
     .join('')
@@ -90,7 +97,12 @@ function PostScriptCard({ postscript }: { postscript: PostScript }) {
         <div className="flex items-start gap-3">
           {/* Recipient Avatar */}
           <div className="flex-shrink-0">
-            {postscript.recipient?.avatar_url ? (
+            {isCircle ? (
+              <div className="w-10 h-10 rounded-full bg-[#8DACAB] 
+                              flex items-center justify-center text-white">
+                <Users size={18} />
+              </div>
+            ) : postscript.recipient?.avatar_url ? (
               <img 
                 src={postscript.recipient.avatar_url} 
                 alt={postscript.recipient_name}
@@ -110,7 +122,7 @@ function PostScriptCard({ postscript }: { postscript: PostScript }) {
               {postscript.title}
             </h3>
             <p className="text-xs text-gray-500 truncate">
-              To: {postscript.recipient_name}
+              To: {displayName} {isCircle && <span className="text-[#8DACAB]">(Circle)</span>}
             </p>
           </div>
         </div>
@@ -208,6 +220,14 @@ export default function PostScriptsPage() {
                 <p className="text-gray-600 text-sm">Schedule messages for your loved ones</p>
               </div>
             </div>
+            <Link
+              href="/dashboard/postscripts/new"
+              className="flex items-center gap-2 bg-[#C35F33] text-white px-4 py-2 rounded-xl 
+                         font-medium hover:bg-[#A84E2A] transition-colors shadow-sm"
+            >
+              <Plus size={18} />
+              <span className="hidden sm:inline">Add a PostScript</span>
+            </Link>
           </div>
         </header>
 
@@ -278,18 +298,6 @@ export default function PostScriptsPage() {
             ))
           )}
         </div>
-
-        {/* FAB */}
-        {postscripts.length > 0 && (
-          <Link
-            href="/dashboard/postscripts/new"
-            className="fixed bottom-24 right-6 w-14 h-14 bg-[#C35F33] text-white rounded-full 
-                       flex items-center justify-center shadow-lg hover:bg-[#A84E2A] 
-                       transition-colors z-20"
-          >
-            <Plus size={28} />
-          </Link>
-        )}
       </div>
     </div>
   )

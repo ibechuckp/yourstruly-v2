@@ -1,6 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { detectFaces, ensureModels } from '@/lib/ai/faceDetection'
+
+// Force dynamic to avoid build-time evaluation of canvas/face-api
+export const dynamic = 'force-dynamic'
+
+// Lazy import to avoid build-time issues with native modules
+const getFaceDetection = () => import('@/lib/ai/faceDetection')
 
 /**
  * POST /api/media/[id]/detect-faces - Run face detection on a photo
@@ -33,7 +38,8 @@ export async function POST(
     return NextResponse.json({ error: 'Not an image' }, { status: 400 })
   }
 
-  // Ensure models are loaded
+  // Load face detection module and ensure models are ready
+  const { detectFaces, ensureModels } = await getFaceDetection()
   const modelsReady = await ensureModels()
   if (!modelsReady) {
     return NextResponse.json({ 

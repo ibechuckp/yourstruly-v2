@@ -11,6 +11,7 @@ import '@/styles/home.css'
 import '@/styles/engagement.css'
 import '@/styles/conversation.css'
 import CommandBar from '@/components/dashboard/CommandBar'
+import ActivityFeed from '@/components/dashboard/ActivityFeed'
 // import { PersonalityDashboard } from '@/components/personality/PersonalityDashboard' // TODO: Re-enable when analyzing real data
 
 // Type configs with color scheme
@@ -866,6 +867,13 @@ export default function DashboardPage() {
               </button>
             </div>
           )}
+        </div>
+        
+        {/* Activity Feed - Below tiles, centered and matching width */}
+        <div className="flex justify-center mt-8">
+          <div style={{ width: 816, maxWidth: '100%' }}>
+            <ActivityFeed />
+          </div>
         </div>
       </div>
       

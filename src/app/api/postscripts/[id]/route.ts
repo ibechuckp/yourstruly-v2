@@ -8,16 +8,41 @@ export async function GET(
   const supabase = await createClient()
   const { id } = await params
   
+  console.log('[PostScript GET] Fetching postscript:', id)
+  
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
+    console.log('[PostScript GET] Auth error:', authError?.message || 'No user')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  
+  console.log('[PostScript GET] User ID:', user.id)
+
+  // First check if postscript exists at all (for debugging)
+  const { data: anyPostscript, error: checkError } = await supabase
+    .from('postscripts')
+    .select('id, user_id')
+    .eq('id', id)
+    .single()
+  
+  if (checkError) {
+    console.log('[PostScript GET] Postscript lookup failed:', checkError.code, checkError.message)
+    // Check if UUID is valid format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(id)) {
+      console.log('[PostScript GET] Invalid UUID format:', id)
+      return NextResponse.json({ error: 'Invalid PostScript ID format' }, { status: 400 })
+    }
+  } else if (anyPostscript && anyPostscript.user_id !== user.id) {
+    console.log('[PostScript GET] Postscript exists but belongs to different user')
+    return NextResponse.json({ error: 'PostScript not found' }, { status: 404 })
   }
 
   const { data: postscript, error } = await supabase
     .from('postscripts')
     .select(`
       *,
-      recipient:contacts(id, name, relationship, profile_photo_url),
+      recipient:contacts!recipient_contact_id(id, full_name, relationship_type, avatar_url),
       attachments:postscript_attachments(*)
     `)
     .eq('id', id)
@@ -26,12 +51,14 @@ export async function GET(
 
   if (error) {
     if (error.code === 'PGRST116') {
+      console.log('[PostScript GET] No postscript found for id:', id, 'user:', user.id)
       return NextResponse.json({ error: 'PostScript not found' }, { status: 404 })
     }
-    console.error('Error fetching postscript:', error)
+    console.error('[PostScript GET] Database error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  console.log('[PostScript GET] Found postscript:', postscript.id, postscript.title)
   return NextResponse.json({ postscript })
 }
 

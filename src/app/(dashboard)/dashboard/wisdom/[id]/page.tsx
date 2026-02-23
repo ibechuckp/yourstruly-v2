@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Play, Pause, Square, Quote, Calendar, Tag, Lightbulb, Volume2, SkipForward, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Play, Pause, Square, Quote, Calendar, Tag, Lightbulb, Volume2, SkipForward, Sparkles, Share2, Users, X } from 'lucide-react';
 import Link from 'next/link';
 import '@/styles/home.css';
+import ShareWisdomModal from '@/components/wisdom/ShareWisdomModal';
+import WisdomComments from '@/components/wisdom/WisdomComments';
 
 interface WisdomEntry {
   id: string;
@@ -18,6 +20,21 @@ interface WisdomEntry {
   memory_type: string;
   memory_date?: string;
   created_at: string;
+  shared_with_count?: number;
+  comment_count?: number;
+}
+
+interface WisdomShare {
+  id: string;
+  contact_id: string;
+  can_comment: boolean;
+  contact: {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    relationship_type?: string;
+  };
 }
 
 interface ParsedExchange {
@@ -31,6 +48,11 @@ export default function WisdomDetailPage() {
   const router = useRouter();
   const [entry, setEntry] = useState<WisdomEntry | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Sharing state
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shares, setShares] = useState<WisdomShare[]>([]);
+  const [showSharedList, setShowSharedList] = useState(false);
   
   // Audio playback state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -46,6 +68,7 @@ export default function WisdomDetailPage() {
 
   useEffect(() => {
     loadWisdomEntry();
+    loadShares();
     return () => {
       stopPlayback();
     };
@@ -74,6 +97,22 @@ export default function WisdomDetailPage() {
 
     setEntry(data);
     setIsLoading(false);
+  };
+
+  const loadShares = async () => {
+    try {
+      const res = await fetch(`/api/wisdom/${params.id}/share`);
+      if (res.ok) {
+        const data = await res.json();
+        setShares(data.shares || []);
+      }
+    } catch (err) {
+      console.error('Failed to load shares:', err);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   // Parse the description to extract Q&A pairs and audio URLs
@@ -288,15 +327,96 @@ export default function WisdomDetailPage() {
 
       {/* Content */}
       <div className="relative z-10">
-        {/* Back link */}
+        {/* Header with back link and actions */}
         <div className="max-w-3xl mx-auto px-6 py-6">
-          <Link 
-            href="/dashboard/wisdom"
-            className="inline-flex items-center gap-2 text-[#4A3552] hover:text-[#6a4572] transition-colors font-medium"
-          >
-            <ArrowLeft size={20} />
-            <span>Back to Wisdom</span>
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link 
+              href="/dashboard/wisdom"
+              className="inline-flex items-center gap-2 text-[#4A3552] hover:text-[#6a4572] transition-colors font-medium"
+            >
+              <ArrowLeft size={20} />
+              <span>Back to Wisdom</span>
+            </Link>
+            
+            {/* Action buttons */}
+            <div className="flex items-center gap-2">
+              {/* Shared indicator */}
+              {shares.length > 0 && (
+                <button
+                  onClick={() => setShowSharedList(!showSharedList)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#4A3552]/10 hover:bg-[#4A3552]/20 rounded-full text-[#4A3552] text-sm transition-colors"
+                >
+                  <Users size={14} />
+                  <span>Shared with {shares.length}</span>
+                </button>
+              )}
+              
+              {/* Share button */}
+              <button
+                onClick={() => setShowShareModal(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#4A3552] text-white rounded-xl hover:bg-[#5a4562] transition-all shadow-sm"
+              >
+                <Share2 size={16} />
+                <span className="text-sm font-medium">Share</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Shared With Panel - Expandable */}
+        <div className="max-w-3xl mx-auto px-6">
+          <AnimatePresence>
+            {showSharedList && shares.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-6 overflow-hidden"
+              >
+                <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-[#2d2d2d] flex items-center gap-2">
+                      <Users size={16} className="text-[#4A3552]" />
+                      Shared with {shares.length} {shares.length === 1 ? 'person' : 'people'}
+                    </h3>
+                    <button
+                      onClick={() => setShowSharedList(false)}
+                      className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {shares.map(share => (
+                      <div
+                        key={share.id}
+                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#F2F1E5] transition-colors"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4A3552] to-[#6a4572] flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                          {getInitials(share.contact.name)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[#2d2d2d] font-medium text-sm truncate">
+                            {share.contact.name}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            {share.contact.relationship_type && (
+                              <span className="text-[#4A3552]">{share.contact.relationship_type}</span>
+                            )}
+                            {share.can_comment && (
+                              <span className="px-1.5 py-0.5 bg-[#D9C61A]/20 text-[#8a7c08] rounded text-[10px]">
+                                Can comment
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <div className="max-w-3xl mx-auto px-6">
@@ -513,9 +633,25 @@ export default function WisdomDetailPage() {
                 </p>
               </div>
             )}
+
+            {/* Comments Section */}
+            <div className="p-8 border-t border-gray-100 bg-gradient-to-br from-[#F2F1E5]/50 to-transparent">
+              <WisdomComments wisdomId={entry.id} />
+            </div>
           </motion.div>
         </div>
       </div>
+
+      {/* Share Wisdom Modal */}
+      <ShareWisdomModal
+        isOpen={showShareModal}
+        onClose={() => {
+          setShowShareModal(false);
+          loadShares(); // Refresh shares when modal closes
+        }}
+        wisdomId={entry.id}
+        wisdomTitle={entry.title}
+      />
     </div>
   );
 }

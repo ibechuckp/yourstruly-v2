@@ -1,22 +1,22 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { ChevronLeft, Image as ImageIcon, X, MapPin, Calendar, Camera } from 'lucide-react'
+import { ChevronLeft, Image as ImageIcon, MapPin, Plus, Users, PawPrint, Upload, Scan, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import GalleryUpload from '@/components/gallery/GalleryUpload'
-import GalleryTimelineFilter from '@/components/gallery/GalleryTimelineFilter'
-import GalleryTimeline from '@/components/gallery/GalleryTimeline'
+import GalleryStatsPanel from '@/components/gallery/GalleryStatsPanel'
+import TimelineRuler from '@/components/gallery/TimelineRuler'
+import DigitizeModal from '@/components/gallery/DigitizeModal'
 import '@/styles/page-styles.css'
 import '@/styles/gallery.css'
 
-// Dynamic import for globe to avoid SSR issues with mapbox
 const GalleryGlobe = dynamic(() => import('@/components/gallery/GalleryGlobe'), {
   ssr: false,
   loading: () => (
     <div className="gallery-globe-section flex items-center justify-center">
-      <div className="text-white/50">Loading globe...</div>
+      <div className="text-[#406A56]/50">Loading globe...</div>
     </div>
   )
 })
@@ -40,267 +40,391 @@ interface MediaItem {
   }
 }
 
-interface PreviewMedia extends MediaItem {
-  prevId?: string
-  nextId?: string
-}
-
 export default function GalleryPage() {
   const [media, setMedia] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedTimeframe, setSelectedTimeframe] = useState<{ year?: number; month?: number } | null>(null)
-  const [selectedYear, setSelectedYear] = useState<number | null>(null)
-  const [previewMedia, setPreviewMedia] = useState<PreviewMedia | null>(null)
+  const [selectedYearRange, setSelectedYearRange] = useState<[number, number] | null>(null)
+  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null)
+  const [relatedMedia, setRelatedMedia] = useState<MediaItem[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [showDigitizeModal, setShowDigitizeModal] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
+
+  // Generate year range from earliest photo to current year (ascending for ruler)
+  const yearRange = useMemo(() => {
+    const currentYear = new Date().getFullYear()
+    let minYear = currentYear
+    let maxYear = currentYear
+    
+    media.forEach(m => {
+      if (m.taken_at) {
+        const year = new Date(m.taken_at).getFullYear()
+        if (year < minYear) minYear = year
+        if (year > maxYear) maxYear = year
+      }
+    })
+    
+    // If no photos have dates, show last 5 years
+    if (minYear === currentYear && media.length > 0) {
+      minYear = currentYear - 5
+    }
+    
+    // Create array from minYear to maxYear (ascending)
+    const years: number[] = []
+    for (let y = Math.max(minYear, currentYear - 15); y <= maxYear; y++) {
+      years.push(y)
+    }
+    return years
+  }, [media])
+
+  // Count photos per year
+  const yearCounts = useMemo(() => {
+    const counts: Record<number, number> = {}
+    media.forEach(m => {
+      if (m.taken_at) {
+        const year = new Date(m.taken_at).getFullYear()
+        counts[year] = (counts[year] || 0) + 1
+      }
+    })
+    return counts
+  }, [media])
+
+  // Auto-albums based on locations, etc.
+  const autoAlbums = useMemo(() => {
+    const locationAlbums: Record<string, MediaItem[]> = {}
+    
+    media.forEach(m => {
+      if (m.memory?.location_name) {
+        const loc = m.memory.location_name
+        if (!locationAlbums[loc]) locationAlbums[loc] = []
+        locationAlbums[loc].push(m)
+      }
+    })
+
+    return Object.entries(locationAlbums)
+      .filter(([_, items]) => items.length >= 2)
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 6)
+      .map(([name, items]) => ({
+        name,
+        count: items.length,
+        cover: items[0].file_url,
+        type: 'location' as const
+      }))
+  }, [media])
 
   const loadMedia = useCallback(async () => {
     setLoading(true)
-    
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      setLoading(false)
-      return
-    }
+    if (!user) { setLoading(false); return }
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('memory_media')
       .select(`
-        id,
-        file_url,
-        file_type,
-        exif_lat,
-        exif_lng,
-        taken_at,
-        memory_id,
+        id, file_url, file_type, exif_lat, exif_lng, taken_at, memory_id,
         memory:memories(id, title, location_name, location_lat, location_lng)
       `)
       .eq('user_id', user.id)
       .order('taken_at', { ascending: false, nullsFirst: false })
 
-    if (error) {
-      console.error('Error loading media:', error)
-      setLoading(false)
-      return
-    }
-
-    // Transform data to include location from either EXIF or memory
-    const transformedMedia: MediaItem[] = (data || []).map(item => ({
+    const transformed: MediaItem[] = (data || []).map(item => ({
       ...item,
       memory: item.memory ? (Array.isArray(item.memory) ? item.memory[0] : item.memory) : undefined,
       location_lat: item.exif_lat || (item.memory as any)?.location_lat || null,
       location_lng: item.exif_lng || (item.memory as any)?.location_lng || null,
     }))
 
-    setMedia(transformedMedia)
+    setMedia(transformed)
     setLoading(false)
   }, [supabase])
 
-  useEffect(() => {
-    loadMedia()
-  }, [loadMedia])
+  useEffect(() => { loadMedia() }, [loadMedia])
 
-  // Handle media click for preview
-  const handleMediaClick = (item: MediaItem) => {
-    const currentIndex = media.findIndex(m => m.id === item.id)
-    setPreviewMedia({
-      ...item,
-      prevId: currentIndex > 0 ? media[currentIndex - 1].id : undefined,
-      nextId: currentIndex < media.length - 1 ? media[currentIndex + 1].id : undefined,
-    })
+  const handleGlobeSelect = (item: MediaItem) => {
+    const related = media.filter(m => 
+      m.id !== item.id && (
+        m.memory_id === item.memory_id ||
+        (m.memory?.location_name && m.memory.location_name === item.memory?.location_name)
+      )
+    )
+    setRelatedMedia([item, ...related])
+    setSelectedMedia(item)
   }
 
-  // Navigate preview
-  const navigatePreview = (direction: 'prev' | 'next') => {
-    if (!previewMedia) return
-    const targetId = direction === 'prev' ? previewMedia.prevId : previewMedia.nextId
-    if (!targetId) return
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
     
-    const targetMedia = media.find(m => m.id === targetId)
-    if (targetMedia) {
-      handleMediaClick(targetMedia)
+    setUploading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setUploading(false); return }
+
+    for (const file of Array.from(files)) {
+      try {
+        const memoryRes = await fetch('/api/memories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: file.name.replace(/\.[^/.]+$/, ''),
+            memory_date: new Date().toISOString().split('T')[0],
+            memory_type: 'moment',
+          }),
+        })
+        const { memory } = await memoryRes.json()
+        if (!memory?.id) continue
+
+        const formData = new FormData()
+        formData.append('file', file)
+        await fetch(`/api/memories/${memory.id}/media`, { method: 'POST', body: formData })
+      } catch (err) {
+        console.error('Upload error:', err)
+      }
     }
+    
+    setUploading(false)
+    loadMedia()
   }
-
-  // Sync timeline filter with globe
-  const handleTimeframeSelect = (tf: { year?: number; month?: number } | null) => {
-    setSelectedTimeframe(tf)
-    // Also update year selection in timeline
-    setSelectedYear(tf?.year || null)
-  }
-
-  // Stats
-  const mediaWithLocation = media.filter(m => m.location_lat && m.location_lng)
-  const yearsCount = new Set(media.filter(m => m.taken_at).map(m => new Date(m.taken_at!).getFullYear())).size
 
   return (
     <div className="page-container">
-      {/* Background */}
       <div className="page-background">
         <div className="page-blob page-blob-1" />
         <div className="page-blob page-blob-2" />
         <div className="page-blob page-blob-3" />
       </div>
 
-      {/* Content */}
       <div className="relative z-10">
         {/* Header */}
-        <header className="mb-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="page-header-back">
-                <ChevronLeft size={20} />
-              </Link>
-              <div>
-                <h1 className="page-header-title">Gallery</h1>
-                <p className="page-header-subtitle">
-                  {media.length} photos & videos • {mediaWithLocation.length} with location • {yearsCount} years
-                </p>
-              </div>
-            </div>
+        <header className="page-header mb-5">
+          <Link href="/dashboard" className="page-header-back">
+            <ChevronLeft size={20} />
+          </Link>
+          <div>
+            <h1 className="page-header-title">Gallery</h1>
+            <p className="page-header-subtitle">Your visual memories around the world</p>
           </div>
         </header>
 
-        {/* Upload Section */}
-        <GalleryUpload onUploadComplete={loadMedia} />
-
-        {/* Timeline Filter */}
-        {!loading && media.length > 0 && (
-          <GalleryTimelineFilter
-            media={media}
-            selectedTimeframe={selectedTimeframe}
-            onTimeframeSelect={handleTimeframeSelect}
+        {/* Year Timeline Ruler + Upload */}
+        <div className="grid grid-cols-[1fr_auto] gap-4 mb-5">
+          {/* Timeline Ruler */}
+          <TimelineRuler
+            years={yearRange}
+            yearCounts={yearCounts}
+            selectedRange={selectedYearRange}
+            onRangeChange={setSelectedYearRange}
           />
-        )}
+
+          {/* Upload Button - Square */}
+          <button
+            onClick={() => setShowUploadModal(true)}
+            disabled={uploading}
+            className="glass-card-page w-14 h-14 flex items-center justify-center cursor-pointer hover:bg-white/90 transition-all self-start"
+          >
+            {uploading ? (
+              <div className="w-6 h-6 border-2 border-[#8a7c08] border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Plus size={26} className="text-[#8a7c08]" />
+            )}
+          </button>
+          
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            onChange={handleUpload}
+            className="hidden"
+            disabled={uploading}
+          />
+        </div>
 
         {/* Main Content */}
         {loading ? (
-          <div className="loading-container">
-            <div className="loading-text">Loading gallery...</div>
+          <div className="glass-card-page p-12 text-center">
+            <p className="text-[#666]">Loading gallery...</p>
           </div>
         ) : media.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-icon">
+          <div className="glass-card-page p-12 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-[#406A56]/10 rounded-full flex items-center justify-center">
               <ImageIcon size={32} className="text-[#406A56]/50" />
             </div>
-            <h3 className="empty-state-title">No photos yet</h3>
-            <p className="empty-state-text">
-              Upload your first photos to see them on the globe
-            </p>
+            <h3 className="text-lg font-semibold text-[#2d2d2d] mb-2">No photos yet</h3>
+            <p className="text-[#666]">Upload your first photos to see them on the globe</p>
           </div>
         ) : (
           <>
-            {/* Globe View */}
-            <GalleryGlobe
-              media={media}
-              selectedTimeframe={selectedTimeframe}
-              onSelectMedia={handleMediaClick}
-            />
+            {/* Globe + Stats Split */}
+            <div className="gallery-split-view mb-5">
+              <div className="gallery-globe-half">
+                <GalleryGlobe
+                  media={media}
+                  selectedTimeframe={selectedYearRange ? { yearRange: selectedYearRange } : null}
+                  onSelectMedia={handleGlobeSelect}
+                />
+              </div>
+              <div className="gallery-stats-half">
+                <GalleryStatsPanel
+                  media={media}
+                  selectedMedia={selectedMedia}
+                  relatedMedia={relatedMedia}
+                  onClose={() => { setSelectedMedia(null); setRelatedMedia([]) }}
+                  onNavigate={(m) => setSelectedMedia(m as MediaItem)}
+                />
+              </div>
+            </div>
 
-            {/* Dribbble-style Timeline */}
-            <GalleryTimeline
-              media={media}
-              selectedYear={selectedYear}
-              onYearSelect={setSelectedYear}
-              onMediaClick={handleMediaClick}
-            />
+            {/* Auto Albums Row */}
+            <div className="glass-card-page p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-[#2d2d2d]">Smart Albums</h3>
+                <p className="text-xs text-[#666]">Auto-generated from your photos</p>
+              </div>
+              
+              {autoAlbums.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                  {autoAlbums.map((album, i) => (
+                    <div 
+                      key={i}
+                      className="group cursor-pointer"
+                    >
+                      <div className="aspect-square rounded-xl overflow-hidden mb-2 relative">
+                        <img 
+                          src={album.cover} 
+                          alt={album.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <p className="text-white text-sm font-medium truncate">{album.name}</p>
+                          <p className="text-white/60 text-xs">{album.count} photos</p>
+                        </div>
+                        <div className="absolute top-2 right-2 w-6 h-6 bg-white/20 backdrop-blur rounded-full flex items-center justify-center">
+                          <MapPin size={12} className="text-white" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* People Album Placeholder */}
+                  <div className="group cursor-pointer opacity-50">
+                    <div className="aspect-square rounded-xl bg-[#4A3552]/10 flex flex-col items-center justify-center mb-2">
+                      <Users size={28} className="text-[#4A3552]/40 mb-2" />
+                      <p className="text-[#4A3552]/60 text-xs">People</p>
+                      <p className="text-[#4A3552]/40 text-[10px]">Coming soon</p>
+                    </div>
+                  </div>
+                  
+                  {/* Pets Album Placeholder */}
+                  <div className="group cursor-pointer opacity-50">
+                    <div className="aspect-square rounded-xl bg-[#C35F33]/10 flex flex-col items-center justify-center mb-2">
+                      <PawPrint size={28} className="text-[#C35F33]/40 mb-2" />
+                      <p className="text-[#C35F33]/60 text-xs">Pets</p>
+                      <p className="text-[#C35F33]/40 text-[10px]">Coming soon</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="aspect-square rounded-xl bg-[#406A56]/5 flex flex-col items-center justify-center">
+                    <MapPin size={24} className="text-[#406A56]/30 mb-1" />
+                    <p className="text-[#666] text-xs">Locations</p>
+                  </div>
+                  <div className="aspect-square rounded-xl bg-[#4A3552]/5 flex flex-col items-center justify-center">
+                    <Users size={24} className="text-[#4A3552]/30 mb-1" />
+                    <p className="text-[#666] text-xs">People</p>
+                  </div>
+                  <div className="aspect-square rounded-xl bg-[#C35F33]/5 flex flex-col items-center justify-center">
+                    <PawPrint size={24} className="text-[#C35F33]/30 mb-1" />
+                    <p className="text-[#666] text-xs">Pets</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
 
-      {/* Preview Modal */}
-      {previewMedia && (
-        <div 
-          className="gallery-preview-modal"
-          onClick={() => setPreviewMedia(null)}
-        >
-          <div 
-            className="gallery-preview-content"
-            onClick={(e) => e.stopPropagation()}
+      {/* Upload Modal */}
+      <AnimatePresence>
+        {showUploadModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowUploadModal(false)}
           >
-            <button
-              onClick={() => setPreviewMedia(null)}
-              className="gallery-preview-close"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="glass-card-page p-6 w-full max-w-sm relative"
             >
-              <X size={20} />
-            </button>
-
-            {/* Navigation buttons */}
-            {previewMedia.prevId && (
+              {/* Close button */}
               <button
-                onClick={() => navigatePreview('prev')}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80 transition-all"
+                onClick={() => setShowUploadModal(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-lg bg-[#406A56]/10 hover:bg-[#406A56]/20 transition-colors"
               >
-                <ChevronLeft size={24} />
+                <X size={18} className="text-[#406A56]" />
               </button>
-            )}
-            {previewMedia.nextId && (
-              <button
-                onClick={() => navigatePreview('next')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80 transition-all rotate-180"
-              >
-                <ChevronLeft size={24} />
-              </button>
-            )}
 
-            {previewMedia.file_type === 'video' ? (
-              <video
-                src={previewMedia.file_url}
-                className="gallery-preview-image"
-                controls
-                autoPlay
-              />
-            ) : (
-              <img
-                src={previewMedia.file_url}
-                alt=""
-                className="gallery-preview-image"
-              />
-            )}
+              <h2 className="text-lg font-semibold text-[#2d2d2d] mb-2">Add Photos</h2>
+              <p className="text-sm text-[#666] mb-6">Choose how you want to add photos to your gallery</p>
 
-            <div className="gallery-preview-info">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-lg">
-                  {previewMedia.memory?.title || 'Photo'}
-                </h3>
-                {previewMedia.memory?.id && (
-                  <Link
-                    href={`/dashboard/memories/${previewMedia.memory.id}`}
-                    className="text-sm text-[#D9C61A] hover:underline"
-                  >
-                    View Memory →
-                  </Link>
-                )}
+              <div className="space-y-3">
+                {/* Upload from Device */}
+                <button
+                  onClick={() => {
+                    setShowUploadModal(false)
+                    fileInputRef.current?.click()
+                  }}
+                  className="w-full p-4 rounded-xl bg-[#406A56]/10 hover:bg-[#406A56]/20 transition-all group text-left flex items-center gap-4"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-[#406A56]/20 flex items-center justify-center group-hover:bg-[#406A56]/30 transition-colors">
+                    <Upload size={24} className="text-[#406A56]" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-[#2d2d2d]">Upload from Device</p>
+                    <p className="text-sm text-[#666]">Select photos from your phone or computer</p>
+                  </div>
+                </button>
+
+                {/* Digitize Printed Photos */}
+                <button
+                  onClick={() => {
+                    setShowUploadModal(false)
+                    setShowDigitizeModal(true)
+                  }}
+                  className="w-full p-4 rounded-xl bg-[#D9C61A]/10 hover:bg-[#D9C61A]/20 transition-all group text-left flex items-center gap-4 relative overflow-hidden"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-[#D9C61A]/20 flex items-center justify-center group-hover:bg-[#D9C61A]/30 transition-colors">
+                    <Scan size={24} className="text-[#8a7c08]" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-[#2d2d2d]">Digitize Printed Photos</p>
+                    <p className="text-sm text-[#666]">Scan, detect grid, and enhance old photographs</p>
+                  </div>
+                </button>
               </div>
-              
-              <div className="flex flex-wrap gap-4 mt-3 text-sm text-white/70">
-                {previewMedia.taken_at && (
-                  <span className="flex items-center gap-1">
-                    <Calendar size={14} />
-                    {new Date(previewMedia.taken_at).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </span>
-                )}
-                {previewMedia.memory?.location_name && (
-                  <span className="flex items-center gap-1">
-                    <MapPin size={14} />
-                    {previewMedia.memory.location_name}
-                  </span>
-                )}
-                {previewMedia.location_lat && previewMedia.location_lng && (
-                  <span className="flex items-center gap-1 text-[#D9C61A]">
-                    <Camera size={14} />
-                    GPS: {previewMedia.location_lat.toFixed(4)}, {previewMedia.location_lng.toFixed(4)}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Digitize Modal */}
+      <DigitizeModal
+        isOpen={showDigitizeModal}
+        onClose={() => setShowDigitizeModal(false)}
+        onComplete={(memoryId, count) => {
+          setShowDigitizeModal(false)
+          loadMedia()
+        }}
+      />
     </div>
   )
 }

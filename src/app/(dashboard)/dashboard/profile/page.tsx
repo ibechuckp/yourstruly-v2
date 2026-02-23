@@ -12,6 +12,14 @@ import '@/styles/home.css'
 import '@/styles/page-styles.css'
 import EssenceFingerprintLoader from '@/components/profile/EssenceFingerprintLoader'
 import { generateEssenceVector } from '@/lib/essence'
+import PersonalityQuiz from '@/components/profile/PersonalityQuiz'
+import { 
+  OCCUPATION_OPTIONS, INTEREST_OPTIONS, LANGUAGE_OPTIONS, 
+  RELIGION_OPTIONS, POLITICAL_OPTIONS, EDUCATION_LEVEL_OPTIONS,
+  HOBBY_OPTIONS, SKILL_OPTIONS, LIFE_GOAL_OPTIONS, PERSONALITY_TRAIT_OPTIONS,
+  BOOK_SUGGESTIONS, MOVIE_SUGGESTIONS, MUSIC_SUGGESTIONS, FOOD_SUGGESTIONS,
+  QuizResult
+} from '@/lib/personalityQuiz'
 
 interface Profile {
   full_name: string
@@ -33,6 +41,8 @@ interface Profile {
   hobbies: string[]
   life_goals: string[]
   religions: string[]
+  languages: string[]
+  political_leaning: string
   occupation: string
   company: string
   education_level: string
@@ -60,7 +70,8 @@ const emptyProfile: Profile = {
   address: '', city: '', state: '', country: '', zipcode: '',
   biography: '', personal_motto: '', personality_type: '',
   personality_traits: [], interests: [], skills: [], hobbies: [], life_goals: [],
-  religions: [], occupation: '', company: '', education_level: '', school_name: '', degree: '',
+  religions: [], languages: [], political_leaning: '', occupation: '', company: '', 
+  education_level: '', school_name: '', degree: '',
   favorite_quote: '', favorite_books: [], favorite_movies: [], favorite_music: [], favorite_foods: [],
 }
 
@@ -74,6 +85,7 @@ export default function ProfilePage() {
   const [editSection, setEditSection] = useState<string | null>(null)
   const [tagInput, setTagInput] = useState('')
   const [currentTagField, setCurrentTagField] = useState<keyof Profile | null>(null)
+  const [showQuiz, setShowQuiz] = useState(false)
   const supabase = createClient()
 
   useEffect(() => { loadProfile() }, [])
@@ -93,6 +105,7 @@ export default function ProfilePage() {
         hobbies: data.hobbies || [],
         life_goals: data.life_goals || [],
         religions: data.religions || [],
+        languages: data.languages || [],
         favorite_books: data.favorite_books || [],
         favorite_movies: data.favorite_movies || [],
         favorite_music: data.favorite_music || [],
@@ -153,6 +166,20 @@ export default function ProfilePage() {
     setEditProfile({ ...profile })
     setEditSection(section)
     setShowEditModal(true)
+  }
+
+  const handleQuizComplete = async (result: QuizResult) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const updates = {
+      personality_type: result.personalityType,
+      personality_traits: result.traits
+    }
+
+    await supabase.from('profiles').update(updates).eq('id', user.id)
+    setProfile(p => ({ ...p, ...updates }))
+    setEditProfile(p => ({ ...p, ...updates }))
   }
 
   const formatLocation = () => {
@@ -278,6 +305,13 @@ export default function ProfilePage() {
                 <span className="text-sm text-gray-500 block mb-2">Traits</span>
                 <TagList items={profile.personality_traits} />
               </div>
+              <button
+                onClick={() => setShowQuiz(true)}
+                className="w-full mt-3 py-2.5 px-4 bg-gradient-to-r from-[#406A56]/10 to-[#8DACAB]/10 hover:from-[#406A56]/20 hover:to-[#8DACAB]/20 text-[#406A56] font-medium rounded-xl flex items-center justify-center gap-2 transition-all border border-[#406A56]/10"
+              >
+                <Sparkles size={16} />
+                {profile.personality_type ? 'Retake Quiz' : 'Take Personality Quiz'}
+              </button>
             </ProfileCard>
 
             {/* Interests */}
@@ -327,31 +361,31 @@ export default function ProfilePage() {
                 <Edit2 size={14} />
               </button>
 
-              {/* Essence Fingerprint - 3D Visualization */}
-              <div className="relative inline-block mb-4">
-                {/* Avatar overlaid on fingerprint */}
-                <div className="relative">
+              {/* Avatar & Essence - Side by Side */}
+              <div className="flex items-center justify-center gap-8 mb-6">
+                {/* Avatar */}
+                <div className="flex-shrink-0">
+                  {profile.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={profile.full_name} 
+                      className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#406A56] to-[#5A8A72] flex items-center justify-center text-white text-5xl font-semibold shadow-lg border-4 border-white">
+                      {profile.full_name?.charAt(0) || '?'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Essence Fingerprint */}
+                <div className="flex flex-col items-center">
                   <EssenceFingerprintLoader 
                     essenceVector={essenceVector} 
-                    size={220}
-                    className="mx-auto"
+                    size={180}
                   />
-                  {/* Avatar centered on fingerprint */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    {profile.avatar_url ? (
-                      <img 
-                        src={profile.avatar_url} 
-                        alt={profile.full_name} 
-                        className="w-24 h-24 rounded-full object-cover border-4 border-white/80 shadow-lg"
-                      />
-                    ) : (
-                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#406A56] to-[#5A8A72] flex items-center justify-center text-white text-3xl font-semibold shadow-lg border-4 border-white/80">
-                        {profile.full_name?.charAt(0) || '?'}
-                      </div>
-                    )}
-                  </div>
+                  <p className="text-xs text-[#406A56]/60 mt-1 italic">Essence Fingerprint</p>
                 </div>
-                <p className="text-xs text-[#406A56]/60 mt-2 italic">Your Essence Fingerprint</p>
               </div>
 
               {/* Name & Basic Info */}
@@ -461,6 +495,11 @@ export default function ProfilePage() {
               </div>
             </ProfileCard>
 
+            {/* Languages */}
+            <ProfileCard title="Languages" icon={BookOpen} iconColor="text-[#406A56]" bgColor="bg-[#406A56]/10" section="languages">
+              <TagList items={profile.languages} colorClass="bg-[#406A56]/10 text-[#406A56]" />
+            </ProfileCard>
+
             {/* Religion */}
             <ProfileCard title="Faith & Beliefs" icon={Heart} iconColor="text-[#4A3552]" bgColor="bg-[#4A3552]/10" section="religion">
               <TagList items={profile.religions} colorClass="bg-[#4A3552]/10 text-[#4A3552]" />
@@ -532,6 +571,13 @@ export default function ProfilePage() {
           removeTag={removeTag}
         />
       )}
+
+      {/* Personality Quiz */}
+      <PersonalityQuiz
+        isOpen={showQuiz}
+        onClose={() => setShowQuiz(false)}
+        onComplete={handleQuizComplete}
+      />
     </div>
   )
 }
@@ -567,6 +613,7 @@ function EditModal({
       case 'philosophy': return 'Edit Life Philosophy'
       case 'goals': return 'Edit Life Goals'
       case 'location': return 'Edit Location'
+      case 'languages': return 'Edit Languages'
       case 'religion': return 'Edit Faith & Beliefs'
       case 'work': return 'Edit Work'
       case 'education': return 'Edit Education'
@@ -708,20 +755,169 @@ function EditModal({
                   ))}
                 </select>
               </div>
-              <TagEditor field="personality_traits" label="Personality Traits" placeholder="Add a trait (e.g., Creative, Loyal)" />
+              <div>
+                <label className="block text-sm text-[#666] mb-2">Personality Traits</label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {(profile.personality_traits || []).map(trait => (
+                    <span key={trait} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#406A56]/10 text-[#406A56]">
+                      {trait}
+                      <button onClick={() => removeTag('personality_traits', trait)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                    </span>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mb-2">Click to add traits:</p>
+                <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-white/50">
+                  <div className="flex flex-wrap gap-2">
+                    {PERSONALITY_TRAIT_OPTIONS.filter(t => !(profile.personality_traits || []).includes(t)).map(trait => (
+                      <button
+                        key={trait}
+                        type="button"
+                        onClick={() => setProfile(p => ({ ...p, personality_traits: [...(p.personality_traits || []), trait] }))}
+                        className="px-3 py-1.5 rounded-full text-sm bg-gray-100 text-gray-600 hover:bg-[#406A56]/10 hover:text-[#406A56] transition-colors"
+                      >
+                        + {trait}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <input
+                    type="text"
+                    value={currentTagField === 'personality_traits' ? tagInput : ''}
+                    onFocus={() => setCurrentTagField('personality_traits')}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag('personality_traits'))}
+                    className="form-input flex-1"
+                    placeholder="Or add a custom trait..."
+                  />
+                  <button onClick={() => addTag('personality_traits')} className="btn-secondary px-4">Add</button>
+                </div>
+              </div>
             </>
           )}
 
           {section === 'interests' && (
-            <TagEditor field="interests" label="Interests" placeholder="Add an interest" colorClass="bg-[#C35F33]/10 text-[#C35F33]" />
+            <div>
+              <label className="block text-sm text-[#666] mb-2">Interests</label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {(profile.interests || []).map(interest => (
+                  <span key={interest} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#C35F33]/10 text-[#C35F33]">
+                    {interest}
+                    <button onClick={() => removeTag('interests', interest)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                  </span>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mb-2">Click to add interests:</p>
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-white/50">
+                <div className="flex flex-wrap gap-2">
+                  {INTEREST_OPTIONS.filter(i => !(profile.interests || []).includes(i)).map(interest => (
+                    <button
+                      key={interest}
+                      type="button"
+                      onClick={() => setProfile(p => ({ ...p, interests: [...(p.interests || []), interest] }))}
+                      className="px-3 py-1.5 rounded-full text-sm bg-gray-100 text-gray-600 hover:bg-[#C35F33]/10 hover:text-[#C35F33] transition-colors"
+                    >
+                      + {interest}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Custom input for unlisted interests */}
+              <div className="flex gap-2 mt-3">
+                <input
+                  type="text"
+                  value={currentTagField === 'interests' ? tagInput : ''}
+                  onFocus={() => setCurrentTagField('interests')}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag('interests'))}
+                  className="form-input flex-1"
+                  placeholder="Or add a custom interest..."
+                />
+                <button onClick={() => addTag('interests')} className="btn-secondary px-4">Add</button>
+              </div>
+            </div>
           )}
 
           {section === 'hobbies' && (
-            <TagEditor field="hobbies" label="Hobbies" placeholder="Add a hobby" colorClass="bg-[#D9C61A]/20 text-[#8B7B0A]" />
+            <div>
+              <label className="block text-sm text-[#666] mb-2">Hobbies</label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {(profile.hobbies || []).map(hobby => (
+                  <span key={hobby} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#D9C61A]/20 text-[#8B7B0A]">
+                    {hobby}
+                    <button onClick={() => removeTag('hobbies', hobby)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                  </span>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mb-2">Click to add hobbies:</p>
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-white/50">
+                <div className="flex flex-wrap gap-2">
+                  {HOBBY_OPTIONS.filter(h => !(profile.hobbies || []).includes(h)).map(hobby => (
+                    <button
+                      key={hobby}
+                      type="button"
+                      onClick={() => setProfile(p => ({ ...p, hobbies: [...(p.hobbies || []), hobby] }))}
+                      className="px-3 py-1.5 rounded-full text-sm bg-gray-100 text-gray-600 hover:bg-[#D9C61A]/20 hover:text-[#8B7B0A] transition-colors"
+                    >
+                      + {hobby}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2 mt-3">
+                <input
+                  type="text"
+                  value={currentTagField === 'hobbies' ? tagInput : ''}
+                  onFocus={() => setCurrentTagField('hobbies')}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag('hobbies'))}
+                  className="form-input flex-1"
+                  placeholder="Or add a custom hobby..."
+                />
+                <button onClick={() => addTag('hobbies')} className="btn-secondary px-4">Add</button>
+              </div>
+            </div>
           )}
 
           {section === 'skills' && (
-            <TagEditor field="skills" label="Skills" placeholder="Add a skill" colorClass="bg-[#8DACAB]/20 text-[#5d8585]" />
+            <div>
+              <label className="block text-sm text-[#666] mb-2">Skills</label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {(profile.skills || []).map(skill => (
+                  <span key={skill} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#8DACAB]/20 text-[#5d8585]">
+                    {skill}
+                    <button onClick={() => removeTag('skills', skill)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                  </span>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mb-2">Click to add skills:</p>
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-white/50">
+                <div className="flex flex-wrap gap-2">
+                  {SKILL_OPTIONS.filter(s => !(profile.skills || []).includes(s)).map(skill => (
+                    <button
+                      key={skill}
+                      type="button"
+                      onClick={() => setProfile(p => ({ ...p, skills: [...(p.skills || []), skill] }))}
+                      className="px-3 py-1.5 rounded-full text-sm bg-gray-100 text-gray-600 hover:bg-[#8DACAB]/20 hover:text-[#5d8585] transition-colors"
+                    >
+                      + {skill}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2 mt-3">
+                <input
+                  type="text"
+                  value={currentTagField === 'skills' ? tagInput : ''}
+                  onFocus={() => setCurrentTagField('skills')}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag('skills'))}
+                  className="form-input flex-1"
+                  placeholder="Or add a custom skill..."
+                />
+                <button onClick={() => addTag('skills')} className="btn-secondary px-4">Add</button>
+              </div>
+            </div>
           )}
 
           {section === 'philosophy' && (
@@ -750,7 +946,44 @@ function EditModal({
           )}
 
           {section === 'goals' && (
-            <TagEditor field="life_goals" label="Life Goals" placeholder="Add a life goal" colorClass="bg-[#4A3552]/10 text-[#4A3552]" />
+            <div>
+              <label className="block text-sm text-[#666] mb-2">Life Goals</label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {(profile.life_goals || []).map(goal => (
+                  <span key={goal} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#4A3552]/10 text-[#4A3552]">
+                    {goal}
+                    <button onClick={() => removeTag('life_goals', goal)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                  </span>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mb-2">Click to add goals:</p>
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-white/50">
+                <div className="flex flex-wrap gap-2">
+                  {LIFE_GOAL_OPTIONS.filter(g => !(profile.life_goals || []).includes(g)).map(goal => (
+                    <button
+                      key={goal}
+                      type="button"
+                      onClick={() => setProfile(p => ({ ...p, life_goals: [...(p.life_goals || []), goal] }))}
+                      className="px-3 py-1.5 rounded-full text-sm bg-gray-100 text-gray-600 hover:bg-[#4A3552]/10 hover:text-[#4A3552] transition-colors"
+                    >
+                      + {goal}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2 mt-3">
+                <input
+                  type="text"
+                  value={currentTagField === 'life_goals' ? tagInput : ''}
+                  onFocus={() => setCurrentTagField('life_goals')}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag('life_goals'))}
+                  className="form-input flex-1"
+                  placeholder="Or add a custom goal..."
+                />
+                <button onClick={() => addTag('life_goals')} className="btn-secondary px-4">Add</button>
+              </div>
+            </div>
           )}
 
           {section === 'location' && (
@@ -807,20 +1040,90 @@ function EditModal({
             </>
           )}
 
+          {section === 'languages' && (
+            <div>
+              <label className="block text-sm text-[#666] mb-2">Languages</label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {(profile.languages || []).map(lang => (
+                  <span key={lang} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#406A56]/10 text-[#406A56]">
+                    {lang}
+                    <button onClick={() => removeTag('languages', lang)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                  </span>
+                ))}
+              </div>
+              <select
+                value=""
+                onChange={e => {
+                  const val = e.target.value
+                  if (val && !(profile.languages || []).includes(val)) {
+                    setProfile(p => ({ ...p, languages: [...(p.languages || []), val] }))
+                  }
+                }}
+                className="form-select"
+              >
+                <option value="">Add a language...</option>
+                {LANGUAGE_OPTIONS.filter(l => !(profile.languages || []).includes(l)).map(lang => (
+                  <option key={lang} value={lang}>{lang}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {section === 'religion' && (
-            <TagEditor field="religions" label="Faith & Beliefs" placeholder="Add a belief or religion" colorClass="bg-[#4A3552]/10 text-[#4A3552]" />
+            <div>
+              <label className="block text-sm text-[#666] mb-2">Faith & Beliefs</label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {(profile.religions || []).map(rel => (
+                  <span key={rel} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#4A3552]/10 text-[#4A3552]">
+                    {rel}
+                    <button onClick={() => removeTag('religions', rel)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                  </span>
+                ))}
+              </div>
+              <select
+                value=""
+                onChange={e => {
+                  const val = e.target.value
+                  if (val && !(profile.religions || []).includes(val)) {
+                    setProfile(p => ({ ...p, religions: [...(p.religions || []), val] }))
+                  }
+                }}
+                className="form-select"
+              >
+                <option value="">Add a belief or religion...</option>
+                {RELIGION_OPTIONS.filter(r => !(profile.religions || []).includes(r)).map(rel => (
+                  <option key={rel} value={rel}>{rel}</option>
+                ))}
+              </select>
+            </div>
           )}
 
           {section === 'work' && (
             <>
               <div>
                 <label className="block text-sm text-[#666] mb-1.5">Occupation</label>
-                <input
-                  value={profile.occupation}
-                  onChange={e => setProfile(p => ({ ...p, occupation: e.target.value }))}
-                  className="form-input"
-                  placeholder="Job title or role"
-                />
+                <select
+                  value={OCCUPATION_OPTIONS.includes(profile.occupation) ? profile.occupation : 'Other'}
+                  onChange={e => {
+                    if (e.target.value !== 'Other') {
+                      setProfile(p => ({ ...p, occupation: e.target.value }))
+                    }
+                  }}
+                  className="form-select mb-2"
+                >
+                  <option value="">Select an occupation</option>
+                  {OCCUPATION_OPTIONS.map(occ => (
+                    <option key={occ} value={occ}>{occ}</option>
+                  ))}
+                </select>
+                {(!OCCUPATION_OPTIONS.includes(profile.occupation) || profile.occupation === 'Other' || !profile.occupation) && (
+                  <input
+                    value={profile.occupation === 'Other' ? '' : profile.occupation}
+                    onChange={e => setProfile(p => ({ ...p, occupation: e.target.value }))}
+                    className="form-input"
+                    placeholder="Enter your occupation"
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-sm text-[#666] mb-1.5">Company</label>
@@ -837,6 +1140,19 @@ function EditModal({
           {section === 'education' && (
             <>
               <div>
+                <label className="block text-sm text-[#666] mb-1.5">Education Level</label>
+                <select
+                  value={profile.education_level}
+                  onChange={e => setProfile(p => ({ ...p, education_level: e.target.value }))}
+                  className="form-select"
+                >
+                  <option value="">Select education level</option>
+                  {EDUCATION_LEVEL_OPTIONS.map(level => (
+                    <option key={level} value={level}>{level}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm text-[#666] mb-1.5">School / University</label>
                 <input
                   value={profile.school_name}
@@ -852,15 +1168,6 @@ function EditModal({
                   onChange={e => setProfile(p => ({ ...p, degree: e.target.value }))}
                   className="form-input"
                   placeholder="Degree or certification"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-[#666] mb-1.5">Education Level</label>
-                <input
-                  value={profile.education_level}
-                  onChange={e => setProfile(p => ({ ...p, education_level: e.target.value }))}
-                  className="form-input"
-                  placeholder="e.g., Bachelor's, Master's, PhD"
                 />
               </div>
             </>
@@ -880,10 +1187,161 @@ function EditModal({
 
           {section === 'favorites' && (
             <>
-              <TagEditor field="favorite_books" label="Favorite Books" placeholder="Add a book" colorClass="bg-[#406A56]/10 text-[#406A56]" />
-              <TagEditor field="favorite_movies" label="Favorite Movies" placeholder="Add a movie" colorClass="bg-[#4A3552]/10 text-[#4A3552]" />
-              <TagEditor field="favorite_music" label="Favorite Music" placeholder="Add an artist or song" colorClass="bg-[#8DACAB]/20 text-[#5d8585]" />
-              <TagEditor field="favorite_foods" label="Favorite Foods" placeholder="Add a food" colorClass="bg-[#C35F33]/10 text-[#C35F33]" />
+              {/* Books */}
+              <div>
+                <label className="block text-sm text-[#666] mb-2">Favorite Books</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {(profile.favorite_books || []).map(book => (
+                    <span key={book} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#406A56]/10 text-[#406A56]">
+                      {book}
+                      <button onClick={() => removeTag('favorite_books', book)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                    </span>
+                  ))}
+                </div>
+                <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-xl p-2 bg-white/50 mb-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    {BOOK_SUGGESTIONS.filter(b => !(profile.favorite_books || []).includes(b)).slice(0, 12).map(book => (
+                      <button
+                        key={book}
+                        type="button"
+                        onClick={() => setProfile(p => ({ ...p, favorite_books: [...(p.favorite_books || []), book] }))}
+                        className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600 hover:bg-[#406A56]/10 hover:text-[#406A56] transition-colors"
+                      >
+                        + {book}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={currentTagField === 'favorite_books' ? tagInput : ''}
+                    onFocus={() => setCurrentTagField('favorite_books')}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag('favorite_books'))}
+                    className="form-input flex-1 text-sm"
+                    placeholder="Add another book..."
+                  />
+                  <button onClick={() => addTag('favorite_books')} className="btn-secondary px-3 text-sm">Add</button>
+                </div>
+              </div>
+
+              {/* Movies */}
+              <div>
+                <label className="block text-sm text-[#666] mb-2">Favorite Movies</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {(profile.favorite_movies || []).map(movie => (
+                    <span key={movie} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#4A3552]/10 text-[#4A3552]">
+                      {movie}
+                      <button onClick={() => removeTag('favorite_movies', movie)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                    </span>
+                  ))}
+                </div>
+                <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-xl p-2 bg-white/50 mb-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    {MOVIE_SUGGESTIONS.filter(m => !(profile.favorite_movies || []).includes(m)).slice(0, 12).map(movie => (
+                      <button
+                        key={movie}
+                        type="button"
+                        onClick={() => setProfile(p => ({ ...p, favorite_movies: [...(p.favorite_movies || []), movie] }))}
+                        className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600 hover:bg-[#4A3552]/10 hover:text-[#4A3552] transition-colors"
+                      >
+                        + {movie}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={currentTagField === 'favorite_movies' ? tagInput : ''}
+                    onFocus={() => setCurrentTagField('favorite_movies')}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag('favorite_movies'))}
+                    className="form-input flex-1 text-sm"
+                    placeholder="Add another movie..."
+                  />
+                  <button onClick={() => addTag('favorite_movies')} className="btn-secondary px-3 text-sm">Add</button>
+                </div>
+              </div>
+
+              {/* Music */}
+              <div>
+                <label className="block text-sm text-[#666] mb-2">Favorite Music</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {(profile.favorite_music || []).map(music => (
+                    <span key={music} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#8DACAB]/20 text-[#5d8585]">
+                      {music}
+                      <button onClick={() => removeTag('favorite_music', music)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                    </span>
+                  ))}
+                </div>
+                <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-xl p-2 bg-white/50 mb-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    {MUSIC_SUGGESTIONS.filter(m => !(profile.favorite_music || []).includes(m)).slice(0, 12).map(music => (
+                      <button
+                        key={music}
+                        type="button"
+                        onClick={() => setProfile(p => ({ ...p, favorite_music: [...(p.favorite_music || []), music] }))}
+                        className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600 hover:bg-[#8DACAB]/20 hover:text-[#5d8585] transition-colors"
+                      >
+                        + {music}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={currentTagField === 'favorite_music' ? tagInput : ''}
+                    onFocus={() => setCurrentTagField('favorite_music')}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag('favorite_music'))}
+                    className="form-input flex-1 text-sm"
+                    placeholder="Add another artist or genre..."
+                  />
+                  <button onClick={() => addTag('favorite_music')} className="btn-secondary px-3 text-sm">Add</button>
+                </div>
+              </div>
+
+              {/* Foods */}
+              <div>
+                <label className="block text-sm text-[#666] mb-2">Favorite Foods</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {(profile.favorite_foods || []).map(food => (
+                    <span key={food} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#C35F33]/10 text-[#C35F33]">
+                      {food}
+                      <button onClick={() => removeTag('favorite_foods', food)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                    </span>
+                  ))}
+                </div>
+                <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-xl p-2 bg-white/50 mb-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    {FOOD_SUGGESTIONS.filter(f => !(profile.favorite_foods || []).includes(f)).slice(0, 12).map(food => (
+                      <button
+                        key={food}
+                        type="button"
+                        onClick={() => setProfile(p => ({ ...p, favorite_foods: [...(p.favorite_foods || []), food] }))}
+                        className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600 hover:bg-[#C35F33]/10 hover:text-[#C35F33] transition-colors"
+                      >
+                        + {food}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={currentTagField === 'favorite_foods' ? tagInput : ''}
+                    onFocus={() => setCurrentTagField('favorite_foods')}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag('favorite_foods'))}
+                    className="form-input flex-1 text-sm"
+                    placeholder="Add another food..."
+                  />
+                  <button onClick={() => addTag('favorite_foods')} className="btn-secondary px-3 text-sm">Add</button>
+                </div>
+              </div>
             </>
           )}
         </div>

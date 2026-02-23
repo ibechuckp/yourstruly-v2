@@ -1,6 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { detectFaces, getDominantExpression } from '@/lib/ai/faceDetection'
+
+// Force dynamic to avoid build-time evaluation of canvas/face-api
+export const dynamic = 'force-dynamic'
+
+// Lazy import to avoid build-time issues with native modules
+const getFaceDetection = () => import('@/lib/ai/faceDetection')
 
 // POST /api/memories/[id]/media - Upload media to memory
 export async function POST(
@@ -82,6 +87,7 @@ export async function POST(
 
   if (fileType === 'image') {
     try {
+      const { detectFaces, getDominantExpression } = await getFaceDetection()
       const faces = await detectFaces(buffer)
       detectedFaces = faces.map(f => ({
         boundingBox: f.boundingBox,

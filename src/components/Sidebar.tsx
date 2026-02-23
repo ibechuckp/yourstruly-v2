@@ -16,7 +16,8 @@ import {
   Send,
   Plane,
   Bot,
-  Image
+  Image,
+  BookOpen
 } from 'lucide-react'
 
 interface Profile {
@@ -33,8 +34,10 @@ const navItems = [
   { href: '/dashboard', label: 'Home', icon: Home },
   { href: '/dashboard/profile', label: 'My Profile', icon: UserIcon },
   { href: '/dashboard/contacts', label: 'Contacts & Pets', icon: Users },
+  { href: '/dashboard/circles', label: 'Circles', icon: Users },
   // Phase 2
   { href: '/dashboard/memories', label: 'Memories', icon: Camera },
+  { href: '/dashboard/wisdom', label: 'Wisdom', icon: BookOpen },
   { href: '/dashboard/gallery', label: 'Gallery', icon: Image },
   // Phase 3
   { href: '/dashboard/journalist', label: 'Video Journalist', icon: MessageSquare },

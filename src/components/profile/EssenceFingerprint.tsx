@@ -1,357 +1,491 @@
 'use client'
 
-import { useRef, useMemo, Suspense } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { 
-  MeshTransmissionMaterial, 
-  Environment, 
-  Float,
-  Sparkles
-} from '@react-three/drei'
-import * as THREE from 'three'
-import { ESSENCE_LAYERS, getLayerValues, getDominantColors, EssenceVector } from '@/lib/essence'
+import { useMemo, useState } from 'react'
+import { ESSENCE_LAYERS, getLayerValues, EssenceVector, EssenceLayer } from '@/lib/essence'
 
 interface EssenceFingerprintProps {
   essenceVector: EssenceVector
   size?: number
   className?: string
+  interactive?: boolean
 }
 
-// Colors for the YT palette
-const YT_COLORS = {
-  sage: '#406A56',
-  gold: '#D9C61A', 
-  copper: '#C35F33',
-  plum: '#4A3552',
-  teal: '#8DACAB'
+// Layer colors from essence.ts
+const LAYER_COLORS: Record<EssenceLayer, string> = {
+  temperament: '#406A56',      // Sage green
+  motivation: '#D9C61A',        // Gold
+  cognitiveStyle: '#C35F33',    // Coral
+  emotionalSignature: '#8DACAB', // Teal
+  socialPattern: '#4A3552',      // Plum
 }
 
-/**
- * Generate points for a single layer's organic shape
- */
-function generateLayerGeometry(
-  layerValues: number[],
-  layerIndex: number,
-  baseRadius: number,
-  heightOffset: number
-): THREE.BufferGeometry {
-  const segments = 64
-  const layers = 8
-  const positions: number[] = []
-  const indices: number[] = []
-  const normals: number[] = []
-  const uvs: number[] = []
-  
-  // Interpolate values across segments
-  const interpolatedValues: number[] = []
-  for (let i = 0; i < segments; i++) {
-    const t = (i / segments) * layerValues.length
-    const idx = Math.floor(t)
-    const frac = t - idx
-    const v1 = layerValues[idx % layerValues.length]
-    const v2 = layerValues[(idx + 1) % layerValues.length]
-    interpolatedValues.push(v1 * (1 - frac) + v2 * frac)
-  }
-  
-  // Generate vertices
-  for (let y = 0; y <= layers; y++) {
-    const yNorm = y / layers
-    const yPos = (yNorm - 0.5) * 0.3 + heightOffset
-    
-    for (let x = 0; x <= segments; x++) {
-      const xNorm = x / segments
-      const angle = xNorm * Math.PI * 2
-      
-      // Get interpolated dimension value for this angle
-      const dimValue = interpolatedValues[x % segments]
-      
-      // Create organic ridges based on dimension values
-      const ridgeAmplitude = 0.15 + dimValue * 0.25
-      const waveFreq = 3 + layerIndex * 1.5
-      const ridgeEffect = Math.sin(angle * waveFreq) * ridgeAmplitude * dimValue
-      
-      // Radial distance with organic variation
-      const radiusVariation = 1 + ridgeEffect + Math.sin(yNorm * Math.PI) * 0.1
-      const radius = baseRadius * radiusVariation
-      
-      // Helix twist for DNA-like feel
-      const twist = yNorm * Math.PI * 0.5 * (layerIndex % 2 === 0 ? 1 : -1)
-      const twistedAngle = angle + twist
-      
-      const px = Math.cos(twistedAngle) * radius
-      const pz = Math.sin(twistedAngle) * radius
-      const py = yPos
-      
-      positions.push(px, py, pz)
-      
-      // Normal pointing outward with some variation
-      const nx = Math.cos(twistedAngle)
-      const nz = Math.sin(twistedAngle)
-      const ny = 0.2 * Math.sin(yNorm * Math.PI)
-      const len = Math.sqrt(nx * nx + ny * ny + nz * nz)
-      normals.push(nx / len, ny / len, nz / len)
-      
-      uvs.push(xNorm, yNorm)
-    }
-  }
-  
-  // Generate indices
-  for (let y = 0; y < layers; y++) {
-    for (let x = 0; x < segments; x++) {
-      const a = y * (segments + 1) + x
-      const b = a + 1
-      const c = a + segments + 1
-      const d = c + 1
-      
-      indices.push(a, c, b)
-      indices.push(b, c, d)
-    }
-  }
-  
-  const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
-  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
-  geometry.setIndex(indices)
-  
-  return geometry
+// Layer display info
+const LAYER_INFO: Record<EssenceLayer, { name: string; icon: string; description: string }> = {
+  temperament: { 
+    name: 'Temperament', 
+    icon: '🌿', 
+    description: 'Your core nature - how you naturally respond to the world' 
+  },
+  motivation: { 
+    name: 'Motivation', 
+    icon: '✨', 
+    description: 'What drives you - your deepest goals and desires' 
+  },
+  cognitiveStyle: { 
+    name: 'Cognitive Style', 
+    icon: '🧠', 
+    description: 'How you think - your mental patterns and preferences' 
+  },
+  emotionalSignature: { 
+    name: 'Emotional Signature', 
+    icon: '💫', 
+    description: 'How you feel - your emotional landscape' 
+  },
+  socialPattern: { 
+    name: 'Social Pattern', 
+    icon: '🤝', 
+    description: 'How you connect - your relationship style' 
+  },
 }
 
-/**
- * Single essence layer mesh
- */
-function EssenceLayer({ 
-  layerValues, 
-  layerIndex, 
-  color,
-  totalLayers 
-}: {
-  layerValues: number[]
-  layerIndex: number
+const LAYER_ORDER: EssenceLayer[] = [
+  'temperament',
+  'motivation', 
+  'cognitiveStyle',
+  'emotionalSignature',
+  'socialPattern'
+]
+
+interface LayerData {
+  key: EssenceLayer
+  name: string
+  icon: string
+  description: string
   color: string
-  totalLayers: number
-}) {
-  const meshRef = useRef<THREE.Mesh>(null)
-  
-  const baseRadius = 0.3 + layerIndex * 0.2
-  const heightOffset = (layerIndex - totalLayers / 2) * 0.15
-  
-  const geometry = useMemo(() => 
-    generateLayerGeometry(layerValues, layerIndex, baseRadius, heightOffset),
-    [layerValues, layerIndex, baseRadius, heightOffset]
-  )
-  
-  // Individual layer rotation
-  useFrame((state) => {
-    if (meshRef.current) {
-      const speed = 0.1 + layerIndex * 0.02
-      const direction = layerIndex % 2 === 0 ? 1 : -1
-      meshRef.current.rotation.y += speed * 0.005 * direction
-      
-      // Subtle breathing effect
-      const scale = 1 + Math.sin(state.clock.elapsedTime * 0.5 + layerIndex) * 0.02
-      meshRef.current.scale.setScalar(scale)
-    }
-  })
-  
-  return (
-    <mesh ref={meshRef} geometry={geometry}>
-      <MeshTransmissionMaterial
-        color={color}
-        thickness={0.2}
-        roughness={0.1}
-        transmission={0.8}
-        ior={1.5}
-        chromaticAberration={0.03}
-        backside={true}
-        backsideThickness={0.1}
-        samples={4}
-      />
-    </mesh>
-  )
+  dimensions: { name: string; value: number }[]
+  avgValue: number
 }
 
 /**
- * Core essence shape - crystalline aurora
+ * Get full layer data from essence vector
  */
-function EssenceCore({ 
-  essenceVector,
-  dominantColors 
-}: { 
-  essenceVector: EssenceVector
-  dominantColors: string[]
-}) {
-  const coreRef = useRef<THREE.Group>(null)
-  const innerRef = useRef<THREE.Mesh>(null)
-  
-  // Slow rotation
-  useFrame((state) => {
-    if (coreRef.current) {
-      coreRef.current.rotation.y += 0.003
-      coreRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.2) * 0.1
-    }
-    if (innerRef.current) {
-      innerRef.current.rotation.y -= 0.005
-      const pulse = 1 + Math.sin(state.clock.elapsedTime * 0.8) * 0.05
-      innerRef.current.scale.setScalar(pulse * 0.25)
-    }
-  })
-  
-  // Extract layer values
-  const layers = useMemo(() => {
-    return Object.keys(ESSENCE_LAYERS).map((key, index) => ({
+function getLayerData(essenceVector: EssenceVector): LayerData[] {
+  return LAYER_ORDER.map((key) => {
+    const values = getLayerValues(essenceVector, key)
+    const dimensions = ESSENCE_LAYERS[key].dimensions
+    const info = LAYER_INFO[key]
+    const avgValue = values.reduce((a, b) => a + b, 0) / values.length
+    
+    return {
       key,
-      values: getLayerValues(essenceVector, key as keyof typeof ESSENCE_LAYERS),
-      color: ESSENCE_LAYERS[key as keyof typeof ESSENCE_LAYERS].color,
-      index
-    }))
-  }, [essenceVector])
-  
-  return (
-    <group ref={coreRef}>
-      {/* Inner glowing core */}
-      <mesh ref={innerRef}>
-        <icosahedronGeometry args={[1, 2]} />
-        <meshBasicMaterial
-          color={dominantColors[0]}
-          transparent
-          opacity={0.6}
-        />
-      </mesh>
-      
-      {/* Essence layers */}
-      {layers.map((layer) => (
-        <EssenceLayer
-          key={layer.key}
-          layerValues={layer.values}
-          layerIndex={layer.index}
-          color={layer.color}
-          totalLayers={layers.length}
-        />
-      ))}
-      
-      {/* Ambient sparkles */}
-      <Sparkles
-        count={30}
-        scale={2.5}
-        size={2}
-        speed={0.3}
-        color={dominantColors[0]}
-        opacity={0.6}
-      />
-    </group>
-  )
-}
-
-/**
- * Loading fallback
- */
-function LoadingFallback() {
-  const meshRef = useRef<THREE.Mesh>(null)
-  
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y += 0.01
-      const scale = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.1
-      meshRef.current.scale.setScalar(scale)
+      name: info.name,
+      icon: info.icon,
+      description: info.description,
+      color: LAYER_COLORS[key],
+      avgValue,
+      dimensions: dimensions.map((dim, i) => ({
+        name: dim,
+        value: values[i]
+      }))
     }
   })
-  
-  return (
-    <mesh ref={meshRef}>
-      <dodecahedronGeometry args={[0.5, 0]} />
-      <meshStandardMaterial
-        color={YT_COLORS.sage}
-        wireframe
-        transparent
-        opacity={0.5}
-      />
-    </mesh>
-  )
 }
 
 /**
- * Main scene
+ * Generate SVG path for a layer polygon
  */
-function EssenceScene({ essenceVector }: { essenceVector: EssenceVector }) {
-  const dominantColors = useMemo(() => getDominantColors(essenceVector), [essenceVector])
+function generateLayerPath(
+  values: number[], 
+  centerX: number, 
+  centerY: number, 
+  radius: number
+): string {
+  const angleStep = (2 * Math.PI) / values.length
+  const startAngle = -Math.PI / 2 // Start from top
+  
+  return values.map((value, i) => {
+    const angle = startAngle + i * angleStep
+    // Ensure minimum visibility with at least 10% radius
+    const r = Math.max(value, 0.1) * radius
+    const x = centerX + r * Math.cos(angle)
+    const y = centerY + r * Math.sin(angle)
+    return `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`
+  }).join(' ') + ' Z'
+}
+
+/**
+ * Generate concentric grid circles
+ */
+function GridCircles({ 
+  centerX, 
+  centerY, 
+  radius 
+}: { 
+  centerX: number
+  centerY: number
+  radius: number 
+}) {
+  const levels = [0.25, 0.5, 0.75, 1]
   
   return (
     <>
-      {/* Lighting */}
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[5, 5, 5]} intensity={0.6} color="#fff" />
-      <directionalLight position={[-5, -5, -5]} intensity={0.3} color={dominantColors[0]} />
-      <pointLight position={[0, 0, 0]} intensity={0.5} color={dominantColors[1]} />
-      
-      {/* Environment for reflections */}
-      <Environment preset="sunset" />
-      
-      {/* Floating effect */}
-      <Float
-        speed={2}
-        rotationIntensity={0.2}
-        floatIntensity={0.3}
-      >
-        <Suspense fallback={<LoadingFallback />}>
-          <EssenceCore 
-            essenceVector={essenceVector}
-            dominantColors={dominantColors}
-          />
-        </Suspense>
-      </Float>
+      {levels.map((level) => (
+        <circle
+          key={level}
+          cx={centerX}
+          cy={centerY}
+          r={radius * level}
+          fill="none"
+          stroke="#D1D5DB"
+          strokeWidth={level === 1 ? 1.5 : 0.5}
+          strokeDasharray={level === 1 ? 'none' : '3 3'}
+          opacity={0.4}
+        />
+      ))}
     </>
   )
 }
 
 /**
- * Main component - Essence Fingerprint 3D Visualization
+ * Single layer polygon with hover effects
  */
-export default function EssenceFingerprint({ 
-  essenceVector, 
-  size = 200,
-  className = ''
-}: EssenceFingerprintProps) {
+function LayerPolygon({
+  layer,
+  centerX,
+  centerY,
+  radius,
+  isHighlighted,
+  isHovered,
+  onHover,
+  onLeave,
+  onClick
+}: {
+  layer: LayerData
+  centerX: number
+  centerY: number
+  radius: number
+  isHighlighted: boolean
+  isHovered: boolean
+  onHover: () => void
+  onLeave: () => void
+  onClick: () => void
+}) {
+  const values = layer.dimensions.map(d => d.value)
+  const path = generateLayerPath(values, centerX, centerY, radius)
+  
+  // Opacity logic: highlighted layers are more visible
+  const baseOpacity = isHovered ? 0.5 : 0.35
+  const dimmedOpacity = 0.15
+  const fillOpacity = isHighlighted ? baseOpacity : (isHovered ? baseOpacity : dimmedOpacity)
+  
   return (
-    <div 
-      className={`relative ${className}`}
-      style={{ width: size, height: size }}
+    <g 
+      className="cursor-pointer transition-opacity duration-200"
+      onMouseEnter={onHover}
+      onMouseLeave={onLeave}
+      onClick={onClick}
     >
-      {/* Glow effect background */}
-      <div 
-        className="absolute inset-0 rounded-full opacity-30 blur-xl"
+      <path
+        d={path}
+        fill={layer.color}
+        fillOpacity={isHighlighted ? fillOpacity : (isHovered ? 0.35 : 0.35)}
+        stroke={layer.color}
+        strokeWidth={isHovered ? 2.5 : 1.5}
+        strokeLinejoin="round"
+        strokeOpacity={isHovered ? 1 : 0.7}
         style={{
-          background: `radial-gradient(circle, ${YT_COLORS.sage}40 0%, transparent 70%)`
+          transition: 'all 150ms ease-out'
         }}
       />
-      
-      <Canvas
-        camera={{ position: [0, 0, 4], fov: 45 }}
-        dpr={[1, 2]}
-        style={{ background: 'transparent' }}
-      >
-        <EssenceScene essenceVector={essenceVector} />
-      </Canvas>
+    </g>
+  )
+}
+
+/**
+ * Legend showing layer colors and names
+ */
+function LayerLegend({
+  layers,
+  hoveredLayer,
+  onHover,
+  onLeave,
+  onClick,
+  compact = false
+}: {
+  layers: LayerData[]
+  hoveredLayer: EssenceLayer | null
+  onHover: (key: EssenceLayer) => void
+  onLeave: () => void
+  onClick: (key: EssenceLayer) => void
+  compact?: boolean
+}) {
+  return (
+    <div className={`flex flex-wrap justify-center gap-2 ${compact ? 'mt-2' : 'mt-4'}`}>
+      {layers.map((layer) => {
+        const isHovered = hoveredLayer === layer.key
+        return (
+          <button
+            key={layer.key}
+            className={`
+              flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs
+              transition-all duration-150 border
+              ${isHovered 
+                ? 'border-gray-300 shadow-sm scale-105' 
+                : 'border-transparent hover:border-gray-200'
+              }
+            `}
+            style={{ 
+              backgroundColor: isHovered ? `${layer.color}25` : `${layer.color}10`,
+            }}
+            onMouseEnter={() => onHover(layer.key)}
+            onMouseLeave={onLeave}
+            onClick={() => onClick(layer.key)}
+          >
+            <div 
+              className="w-2.5 h-2.5 rounded-full"
+              style={{ backgroundColor: layer.color }}
+            />
+            <span 
+              className="font-medium"
+              style={{ color: isHovered ? layer.color : '#4B5563' }}
+            >
+              {compact ? layer.icon : layer.name}
+            </span>
+            {!compact && (
+              <span className="text-gray-400">
+                {Math.round(layer.avgValue * 100)}%
+              </span>
+            )}
+          </button>
+        )
+      })}
     </div>
   )
 }
 
 /**
- * Client-only wrapper to prevent SSR issues
+ * Detailed breakdown modal
  */
-export function EssenceFingerprintClient(props: EssenceFingerprintProps) {
+function LayerModal({
+  layer,
+  onClose
+}: {
+  layer: LayerData
+  onClose: () => void
+}) {
+  const sortedDims = [...layer.dimensions].sort((a, b) => b.value - a.value)
+  
   return (
-    <Suspense fallback={
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div 
-        className={`relative ${props.className || ''}`}
-        style={{ width: props.size || 200, height: props.size || 200 }}
+        className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[80vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-16 h-16 rounded-full border-2 border-[#406A56]/30 border-t-[#406A56] animate-spin" />
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+              style={{ backgroundColor: `${layer.color}20` }}
+            >
+              {layer.icon}
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg text-gray-900">{layer.name}</h3>
+              <p className="text-sm text-gray-500">{layer.dimensions.length} traits</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+          >
+            <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        {/* Description */}
+        <p className="text-sm text-gray-600 mb-5 pb-4 border-b border-gray-100">
+          {layer.description}
+        </p>
+        
+        {/* Trait bars */}
+        <div className="space-y-3">
+          {sortedDims.map((dim, i) => {
+            const label = dim.name
+              .replace(/([A-Z])/g, ' $1')
+              .replace(/^./, str => str.toUpperCase())
+              .trim()
+            
+            return (
+              <div key={dim.name}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-700 font-medium">{label}</span>
+                  <span 
+                    className="font-semibold"
+                    style={{ color: layer.color }}
+                  >
+                    {Math.round(dim.value * 100)}%
+                  </span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ 
+                      width: `${dim.value * 100}%`,
+                      backgroundColor: layer.color,
+                      opacity: 0.7 + (i === 0 ? 0.3 : 0)
+                    }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        
+        {/* Average score */}
+        <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
+          <span className="text-sm text-gray-500">Layer Average</span>
+          <span 
+            className="text-lg font-bold"
+            style={{ color: layer.color }}
+          >
+            {Math.round(layer.avgValue * 100)}%
+          </span>
         </div>
       </div>
-    }>
-      <EssenceFingerprint {...props} />
-    </Suspense>
+    </div>
+  )
+}
+
+/**
+ * Multi-Layer Essence Fingerprint Component
+ * 
+ * Displays 5 overlapping semi-transparent polygons,
+ * each representing a different personality layer with
+ * varying numbers of vertices based on trait count.
+ */
+export default function EssenceFingerprint({ 
+  essenceVector, 
+  size = 300,
+  className = '',
+  interactive = true
+}: EssenceFingerprintProps) {
+  const [hoveredLayer, setHoveredLayer] = useState<EssenceLayer | null>(null)
+  const [selectedLayer, setSelectedLayer] = useState<EssenceLayer | null>(null)
+  
+  const layerData = useMemo(
+    () => getLayerData(essenceVector), 
+    [essenceVector]
+  )
+  
+  const padding = size * 0.1
+  const centerX = size / 2
+  const centerY = size / 2
+  const radius = (size / 2) - padding
+  
+  const handleLayerClick = (key: EssenceLayer) => {
+    if (interactive) {
+      setSelectedLayer(key)
+    }
+  }
+  
+  const selectedLayerData = selectedLayer 
+    ? layerData.find(l => l.key === selectedLayer) 
+    : null
+  
+  return (
+    <div className={`relative ${className}`}>
+      <svg 
+        width={size} 
+        height={size} 
+        viewBox={`0 0 ${size} ${size}`}
+        className="overflow-visible"
+      >
+        {/* Background */}
+        <circle 
+          cx={centerX} 
+          cy={centerY} 
+          r={radius + 5} 
+          fill="#F2F1E5" 
+          opacity={0.3}
+        />
+        
+        {/* Grid circles */}
+        <GridCircles centerX={centerX} centerY={centerY} radius={radius} />
+        
+        {/* Center dot */}
+        <circle
+          cx={centerX}
+          cy={centerY}
+          r={3}
+          fill="#D1D5DB"
+        />
+        
+        {/* Layer polygons - rendered in order so later layers appear on top */}
+        {layerData.map((layer) => (
+          <LayerPolygon
+            key={layer.key}
+            layer={layer}
+            centerX={centerX}
+            centerY={centerY}
+            radius={radius}
+            isHighlighted={hoveredLayer === null || hoveredLayer === layer.key}
+            isHovered={hoveredLayer === layer.key}
+            onHover={() => interactive && setHoveredLayer(layer.key)}
+            onLeave={() => interactive && setHoveredLayer(null)}
+            onClick={() => handleLayerClick(layer.key)}
+          />
+        ))}
+      </svg>
+      
+      {/* Hover tooltip */}
+      {interactive && hoveredLayer && !selectedLayer && (
+        <div className="absolute left-1/2 -translate-x-1/2 -bottom-2 translate-y-full z-10 pointer-events-none">
+          <div 
+            className="bg-white rounded-lg shadow-lg border border-gray-100 px-3 py-2 text-center"
+            style={{ minWidth: '160px' }}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <span>{LAYER_INFO[hoveredLayer].icon}</span>
+              <span className="font-medium text-gray-800">
+                {LAYER_INFO[hoveredLayer].name}
+              </span>
+            </div>
+            <div 
+              className="text-sm font-semibold mt-0.5"
+              style={{ color: LAYER_COLORS[hoveredLayer] }}
+            >
+              {Math.round(layerData.find(l => l.key === hoveredLayer)!.avgValue * 100)}% avg
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+              Click for details
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Layer legend */}
+      <LayerLegend
+        layers={layerData}
+        hoveredLayer={hoveredLayer}
+        onHover={(key) => interactive && setHoveredLayer(key)}
+        onLeave={() => interactive && setHoveredLayer(null)}
+        onClick={(key) => handleLayerClick(key)}
+        compact={size < 250}
+      />
+      
+      {/* Detail modal */}
+      {selectedLayerData && (
+        <LayerModal
+          layer={selectedLayerData}
+          onClose={() => setSelectedLayer(null)}
+        />
+      )}
+    </div>
   )
 }

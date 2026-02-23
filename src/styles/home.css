@@ -125,12 +125,27 @@
   padding: 24px 24px 100px;
 }
 
+/* Adjust content for left sidebar on large screens */
+@media (min-width: 1024px) {
+  .home-content {
+    padding-left: 328px; /* 280px profile + 24px margin + 24px gap */
+  }
+}
+
+/* Activity feed is now in main content, no right sidebar padding needed */
+
 /* Profile section - left aligned */
 .home-profile {
   position: fixed;
   top: 80px;
   left: 24px;
   z-index: 20;
+}
+
+/* Activity Feed section - now inline in main content */
+.home-activity-inline {
+  width: 100%;
+  max-width: 816px;
 }
 
 /* Glass card base */

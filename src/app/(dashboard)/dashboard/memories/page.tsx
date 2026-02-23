@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Image as ImageIcon, Calendar, MapPin, Sparkles, Grid, List, Globe, ChevronLeft, Search, X, Clock } from 'lucide-react'
+import { Plus, Image as ImageIcon, Calendar, MapPin, Sparkles, Grid, List, Globe, ChevronLeft, Search, X, Clock, Users, Share2 } from 'lucide-react'
 import Link from 'next/link'
 import CreateMemoryModal from '@/components/memories/CreateMemoryModal'
 import MemoryCard from '@/components/memories/MemoryCard'
@@ -32,13 +32,27 @@ interface Memory {
   }[]
 }
 
+interface SharedMemory extends Memory {
+  shared_by?: {
+    id: string
+    full_name: string
+    avatar_url?: string
+  }
+  shared_at?: string
+  permission_level?: string
+}
+
 type ViewMode = 'grid' | 'timeline' | 'globe'
+type TabMode = 'mine' | 'shared'
 
 export default function MemoriesPage() {
   const [memories, setMemories] = useState<Memory[]>([])
+  const [sharedMemories, setSharedMemories] = useState<SharedMemory[]>([])
   const [filteredMemories, setFilteredMemories] = useState<Memory[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingShared, setLoadingShared] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  const [tabMode, setTabMode] = useState<TabMode>('mine')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -76,9 +90,68 @@ export default function MemoriesPage() {
     setLoading(false)
   }, [selectedCategory, dateFilter, supabase])
 
+  const loadSharedMemories = useCallback(async () => {
+    setLoadingShared(true)
+    
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Get memories shared with current user (via memory_shares table)
+    const { data: shares, error } = await supabase
+      .from('memory_shares')
+      .select(`
+        memory_id,
+        permission_level,
+        created_at,
+        shared_by_user_id,
+        memories!inner(
+          id,
+          title,
+          description,
+          memory_date,
+          memory_type,
+          location_name,
+          location_lat,
+          location_lng,
+          ai_summary,
+          ai_mood,
+          ai_category,
+          ai_labels,
+          is_favorite,
+          memory_media(id, file_url, file_type, is_cover)
+        ),
+        profiles!memory_shares_shared_by_user_id_fkey(
+          id,
+          full_name,
+          avatar_url
+        )
+      `)
+      .eq('shared_with_user_id', user.id)
+      .eq('status', 'accepted')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error loading shared memories:', error)
+      setLoadingShared(false)
+      return
+    }
+
+    // Transform the data
+    const transformedMemories: SharedMemory[] = (shares || []).map((share: any) => ({
+      ...share.memories,
+      shared_by: share.profiles,
+      shared_at: share.created_at,
+      permission_level: share.permission_level,
+    }))
+
+    setSharedMemories(transformedMemories)
+    setLoadingShared(false)
+  }, [supabase])
+
   useEffect(() => {
     loadMemories()
-  }, [loadMemories])
+    loadSharedMemories()
+  }, [loadMemories, loadSharedMemories])
 
   // Filter by search query
   useEffect(() => {
@@ -146,7 +219,12 @@ export default function MemoriesPage() {
               </Link>
               <div>
                 <h1 className="page-header-title">Memories</h1>
-                <p className="page-header-subtitle">{filteredMemories.length} of {memories.length} moments</p>
+                <p className="page-header-subtitle">
+                  {tabMode === 'mine' 
+                    ? `${filteredMemories.length} of ${memories.length} moments`
+                    : `${sharedMemories.length} shared with you`
+                  }
+                </p>
               </div>
             </div>
 
@@ -201,7 +279,48 @@ export default function MemoriesPage() {
             </div>
           </div>
 
-          {/* Filters Row */}
+          {/* Tab Switcher */}
+          <div className="flex items-center gap-2 mt-4">
+            <button
+              onClick={() => setTabMode('mine')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                tabMode === 'mine' 
+                  ? 'bg-[#406A56] text-white' 
+                  : 'bg-white/80 text-[#406A56] hover:bg-white border border-[#406A56]/20'
+              }`}
+            >
+              <ImageIcon size={16} />
+              My Memories
+              {memories.length > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                  tabMode === 'mine' ? 'bg-white/20' : 'bg-[#406A56]/10'
+                }`}>
+                  {memories.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setTabMode('shared')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                tabMode === 'shared' 
+                  ? 'bg-[#406A56] text-white' 
+                  : 'bg-white/80 text-[#406A56] hover:bg-white border border-[#406A56]/20'
+              }`}
+            >
+              <Share2 size={16} />
+              Shared with Me
+              {sharedMemories.length > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                  tabMode === 'shared' ? 'bg-white/20' : 'bg-[#406A56]/10'
+                }`}>
+                  {sharedMemories.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Filters Row - only show for "My Memories" tab */}
+          {tabMode === 'mine' && (
           <div className="flex items-center gap-2 mt-4 overflow-x-auto pb-2">
             {/* Category Filters */}
             {categories.map((cat) => (
@@ -241,10 +360,11 @@ export default function MemoriesPage() {
               </button>
             )}
           </div>
+          )}
         </header>
 
-        {/* Horizontal Timeline (always visible when there are memories) */}
-        {!loading && memories.length > 0 && (
+        {/* Horizontal Timeline (only show for "My Memories" tab) */}
+        {!loading && tabMode === 'mine' && memories.length > 0 && (
           <MemoryTimeline 
             memories={memories.map(m => ({
               id: m.id,
@@ -258,7 +378,39 @@ export default function MemoriesPage() {
 
         {/* Content */}
         <main>
-          {loading ? (
+          {/* Shared with Me Tab */}
+          {tabMode === 'shared' ? (
+            loadingShared ? (
+              <div className="loading-container">
+                <div className="loading-text">Loading shared memories...</div>
+              </div>
+            ) : sharedMemories.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <Share2 size={32} className="text-[#406A56]/50" />
+                </div>
+                <h3 className="empty-state-title">No shared memories yet</h3>
+                <p className="empty-state-text">
+                  When someone shares their memories with you, they&apos;ll appear here
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {sharedMemories.map((memory) => (
+                  <div key={memory.id} className="relative group">
+                    <MemoryCard memory={memory} />
+                    {/* Shared by indicator */}
+                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent rounded-b-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-2 text-white text-xs">
+                        <Users size={12} />
+                        <span className="truncate">Shared by {memory.shared_by?.full_name || 'Unknown'}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : loading ? (
             <div className="loading-container">
               <div className="loading-text">Loading memories...</div>
             </div>

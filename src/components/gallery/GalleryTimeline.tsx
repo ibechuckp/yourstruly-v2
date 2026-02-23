@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Calendar, MapPin, X } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useMemo, useRef, useEffect } from 'react'
+import { Search } from 'lucide-react'
+import gsap from 'gsap'
 
 interface MediaItem {
   id: string
@@ -10,16 +10,12 @@ interface MediaItem {
   file_type: string
   location_lat: number | null
   location_lng: number | null
-  exif_lat: number | null
-  exif_lng: number | null
   taken_at: string | null
   memory_id: string
   memory?: {
     id: string
     title: string
     location_name: string
-    location_lat: number | null
-    location_lng: number | null
   }
 }
 
@@ -36,18 +32,16 @@ export default function GalleryTimeline({
   onYearSelect,
   onMediaClick 
 }: GalleryTimelineProps) {
-  const [hoveredMedia, setHoveredMedia] = useState<MediaItem | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const cardsContainerRef = useRef<HTMLDivElement>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const dragState = useRef({ startX: 0, scrollLeft: 0, moved: false })
 
-  // Group media by year with counts
+  // Group by year
   const yearGroups = useMemo(() => {
     const groups: Record<number, MediaItem[]> = {}
-    const currentYear = new Date().getFullYear()
-    
-    // Initialize years from 2010 to current
-    for (let y = 2010; y <= currentYear; y++) {
-      groups[y] = []
-    }
-
     media.forEach(item => {
       if (item.taken_at) {
         const year = new Date(item.taken_at).getFullYear()
@@ -55,176 +49,229 @@ export default function GalleryTimeline({
         groups[year].push(item)
       }
     })
-
     return groups
   }, [media])
 
-  // Get sorted years with photos
-  const yearsWithPhotos = useMemo(() => {
-    return Object.entries(yearGroups)
-      .filter(([_, items]) => items.length > 0)
-      .sort(([a], [b]) => parseInt(b) - parseInt(a))
-      .map(([year, items]) => ({
-        year: parseInt(year),
-        count: items.length,
-        items
-      }))
-  }, [yearGroups])
+  const years = useMemo(() => 
+    Object.keys(yearGroups).map(Number).sort((a, b) => b - a),
+    [yearGroups]
+  )
 
-  // Calculate max count for bar height scaling
-  const maxCount = useMemo(() => {
-    return Math.max(...yearsWithPhotos.map(y => y.count), 1)
-  }, [yearsWithPhotos])
+  // Display cards
+  const displayCards = useMemo(() => {
+    const targetMedia = selectedYear ? (yearGroups[selectedYear] || []) : media
+    
+    const filtered = searchQuery 
+      ? targetMedia.filter(m => 
+          m.memory?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          m.memory?.location_name?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : targetMedia
 
-  // Get media for selected year (or all if none selected)
-  const displayMedia = useMemo(() => {
-    if (selectedYear === null) {
-      return media.slice(0, 50) // Show first 50 when no year selected
+    // Group by memory
+    const cardMap = new Map<string, { items: MediaItem[], title: string, location: string }>()
+    filtered.forEach(item => {
+      const key = item.memory_id || item.id
+      if (!cardMap.has(key)) {
+        cardMap.set(key, {
+          items: [],
+          title: item.memory?.title || 'Memory',
+          location: item.memory?.location_name || ''
+        })
+      }
+      cardMap.get(key)!.items.push(item)
+    })
+
+    return Array.from(cardMap.values()).slice(0, 12)
+  }, [media, selectedYear, yearGroups, searchQuery])
+
+  // GSAP scroll-based 3D effect
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const updateCards = () => {
+      const cards = container.querySelectorAll('.tl-card') as NodeListOf<HTMLElement>
+      const containerRect = container.getBoundingClientRect()
+      const containerCenter = containerRect.left + containerRect.width / 2
+
+      cards.forEach((card) => {
+        const cardRect = card.getBoundingClientRect()
+        const cardCenter = cardRect.left + cardRect.width / 2
+        const distance = cardCenter - containerCenter
+        const maxDistance = containerRect.width / 2
+        const progress = Math.max(-1, Math.min(1, distance / maxDistance))
+
+        // 3D transforms based on position
+        const rotateY = progress * 25
+        const translateZ = (1 - Math.abs(progress)) * 50
+        const scale = 1 - Math.abs(progress) * 0.12
+        const opacity = 1 - Math.abs(progress) * 0.35
+
+        gsap.set(card, {
+          rotateY,
+          z: translateZ,
+          scale,
+          opacity,
+          transformPerspective: 1000,
+          transformOrigin: 'center center'
+        })
+      })
     }
-    return yearGroups[selectedYear] || []
-  }, [media, selectedYear, yearGroups])
+
+    // Initial + scroll updates
+    updateCards()
+    container.addEventListener('scroll', updateCards)
+    window.addEventListener('resize', updateCards)
+
+    return () => {
+      container.removeEventListener('scroll', updateCards)
+      window.removeEventListener('resize', updateCards)
+    }
+  }, [displayCards])
+
+  // Drag to scroll
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollContainerRef.current) return
+    setIsDragging(true)
+    dragState.current = {
+      startX: e.pageX - scrollContainerRef.current.offsetLeft,
+      scrollLeft: scrollContainerRef.current.scrollLeft,
+      moved: false
+    }
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollContainerRef.current) return
+    e.preventDefault()
+    const x = e.pageX - scrollContainerRef.current.offsetLeft
+    const walk = (x - dragState.current.startX) * 1.5
+    if (Math.abs(walk) > 5) dragState.current.moved = true
+    scrollContainerRef.current.scrollLeft = dragState.current.scrollLeft - walk
+  }
+
+  const handleMouseUp = () => setIsDragging(false)
+
+  const handleCardClick = (item: MediaItem) => {
+    if (!dragState.current.moved) {
+      onMediaClick(item)
+    }
+    dragState.current.moved = false
+  }
 
   return (
-    <div className="gallery-photo-timeline">
+    <div className="tl-section">
       {/* Header */}
-      <div className="gallery-timeline-header">
-        <div>
-          <h2 className="gallery-timeline-title">
-            {selectedYear ? `Photos from ${selectedYear}` : 'Photo Timeline'}
-          </h2>
-          <p className="gallery-timeline-subtitle">
-            {selectedYear 
-              ? `${displayMedia.length} photos`
-              : `${media.length} photos across ${yearsWithPhotos.length} years`
-            }
-          </p>
+      <div className="tl-header">
+        <h2 className="tl-title">My Timeline</h2>
+        
+        <div className="tl-header-right">
+          {showSearch ? (
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search memories..."
+              className="tl-search-input"
+              autoFocus
+              onBlur={() => !searchQuery && setShowSearch(false)}
+            />
+          ) : (
+            <button onClick={() => setShowSearch(true)} className="tl-search-btn">
+              <Search size={18} />
+            </button>
+          )}
         </div>
-        {selectedYear && (
-          <button
-            onClick={() => onYearSelect(null)}
-            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all"
-          >
-            <X size={16} />
-            Show All
-          </button>
-        )}
       </div>
 
-      {/* Year Selector Bar - Dribbble style */}
-      <div className="year-selector-bar">
-        {yearsWithPhotos.map(({ year, count }) => {
-          const heightPercent = Math.max((count / maxCount) * 100, 10)
-          const isActive = selectedYear === year
+      {/* Cards Carousel */}
+      <div 
+        ref={scrollContainerRef}
+        className="tl-scroll-container"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        <div ref={cardsContainerRef} className="tl-cards-track">
+          {/* Spacer for centering */}
+          <div className="tl-spacer" />
           
-          return (
-            <motion.div
-              key={year}
-              className={`year-bar ${isActive ? 'active' : ''}`}
-              onClick={() => onYearSelect(isActive ? null : year)}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: (new Date().getFullYear() - year) * 0.02 }}
-            >
-              <div 
-                className="year-bar-stack"
-                style={{ height: `${heightPercent}px`, minHeight: '20px', maxHeight: '100px' }}
+          {displayCards.map((card, index) => {
+            const coverImage = card.items[0]
+            return (
+              <div
+                key={coverImage.id}
+                className="tl-card"
+                onClick={() => handleCardClick(coverImage)}
               >
-                {/* Mini photo stack preview */}
-                {count > 0 && (
-                  <div className="absolute inset-x-1 top-1 bottom-1 overflow-hidden rounded">
-                    {yearGroups[year].slice(0, 3).map((item, i) => (
-                      <div
-                        key={item.id}
-                        className="absolute inset-0 bg-cover bg-center opacity-20"
-                        style={{
-                          backgroundImage: `url(${item.file_url})`,
-                          transform: `translateY(${i * 10}%)`,
-                        }}
-                      />
-                    ))}
+                {/* Card Content */}
+                <div className="tl-card-inner">
+                  {coverImage.file_type === 'video' ? (
+                    <video
+                      src={coverImage.file_url}
+                      className="tl-card-media"
+                      muted
+                      playsInline
+                      loop
+                      onMouseEnter={(e) => e.currentTarget.play()}
+                      onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0 }}
+                    />
+                  ) : (
+                    <img
+                      src={coverImage.file_url}
+                      alt={card.title}
+                      className="tl-card-media"
+                      draggable={false}
+                    />
+                  )}
+                  
+                  {/* Gradient overlay */}
+                  <div className="tl-card-overlay" />
+                  
+                  {/* Count badge */}
+                  {card.items.length > 1 && (
+                    <div className="tl-card-badge">+{card.items.length - 1}</div>
+                  )}
+                  
+                  {/* Label */}
+                  <div className="tl-card-label">
+                    <span className="tl-card-title">{card.title}</span>
+                    {card.location && (
+                      <span className="tl-card-location">{card.location}</span>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
-              <span className="year-bar-label">{year}</span>
-              <span className="text-[9px] text-white/30 mt-1">{count}</span>
-            </motion.div>
-          )
-        })}
+            )
+          })}
+          
+          {/* Spacer for centering */}
+          <div className="tl-spacer" />
+        </div>
       </div>
 
-      {/* Photo Grid */}
-      {displayMedia.length > 0 ? (
-        <div className="gallery-photo-grid">
-          <AnimatePresence mode="popLayout">
-            {displayMedia.map((item, index) => (
-              <motion.div
-                key={item.id}
-                className="gallery-photo-card"
-                onClick={() => onMediaClick(item)}
-                onMouseEnter={() => setHoveredMedia(item)}
-                onMouseLeave={() => setHoveredMedia(null)}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ delay: index * 0.02, duration: 0.2 }}
-                layout
-              >
-                {item.file_type === 'video' ? (
-                  <video
-                    src={item.file_url}
-                    className="w-full h-full object-cover"
-                    muted
-                    playsInline
-                  />
-                ) : (
-                  <img
-                    src={item.file_url}
-                    alt=""
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                )}
-
-                {/* Video indicator */}
-                {item.file_type === 'video' && (
-                  <div className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center">
-                    <div className="w-0 h-0 border-l-[6px] border-l-white border-y-[4px] border-y-transparent ml-0.5" />
-                  </div>
-                )}
-
-                {/* Hover overlay */}
-                <div className="gallery-photo-card-overlay">
-                  {item.taken_at && (
-                    <div className="gallery-photo-date">
-                      <Calendar size={10} />
-                      {new Date(item.taken_at).toLocaleDateString()}
-                    </div>
-                  )}
-                  {item.memory?.location_name && (
-                    <div className="gallery-photo-location">
-                      <MapPin size={10} />
-                      {item.memory.location_name}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4">
-            <Calendar size={24} className="text-white/40" />
-          </div>
-          <p className="text-white/60">No photos for this period</p>
+      {/* Year Selector Bar */}
+      <div className="tl-years-bar">
+        <div className="tl-years-track">
           <button
             onClick={() => onYearSelect(null)}
-            className="mt-4 text-sm text-[#D9C61A] hover:underline"
+            className={`tl-year-btn ${selectedYear === null ? 'active' : ''}`}
           >
-            Show all photos
+            All
           </button>
+          {years.map(year => (
+            <button
+              key={year}
+              onClick={() => onYearSelect(year === selectedYear ? null : year)}
+              className={`tl-year-btn ${selectedYear === year ? 'active' : ''}`}
+            >
+              {year}
+              {selectedYear === year && <span className="tl-year-dot" />}
+            </button>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   )
 }

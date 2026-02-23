@@ -26,23 +26,23 @@ interface MediaItem {
 interface GalleryGlobeProps {
   media: MediaItem[]
   onSelectMedia?: (media: MediaItem) => void
-  selectedTimeframe?: { year?: number; month?: number } | null
+  selectedTimeframe?: { yearRange?: [number, number] } | null
 }
 
 export default function GalleryGlobe({ media, onSelectMedia, selectedTimeframe }: GalleryGlobeProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
   const markersRef = useRef<mapboxgl.Marker[]>([])
+  const spinEnabledRef = useRef(true)
   const [loaded, setLoaded] = useState(false)
 
-  // Filter media by timeframe
-  const filteredMedia = selectedTimeframe
+  // Filter media by year range
+  const filteredMedia = selectedTimeframe?.yearRange
     ? media.filter(m => {
         if (!m.taken_at) return false
-        const date = new Date(m.taken_at)
-        if (selectedTimeframe.year && date.getFullYear() !== selectedTimeframe.year) return false
-        if (selectedTimeframe.month && date.getMonth() + 1 !== selectedTimeframe.month) return false
-        return true
+        const year = new Date(m.taken_at).getFullYear()
+        const [startYear, endYear] = selectedTimeframe.yearRange!
+        return year >= startYear && year <= endYear
       })
     : media
 
@@ -76,12 +76,11 @@ export default function GalleryGlobe({ media, onSelectMedia, selectedTimeframe }
     const secondsPerRevolution = 240
     const maxSpinZoom = 5
     let userInteracting = false
-    let spinEnabled = true
 
     function spinGlobe() {
       if (!map.current) return
       const zoom = map.current.getZoom()
-      if (spinEnabled && !userInteracting && zoom < maxSpinZoom) {
+      if (spinEnabledRef.current && !userInteracting && zoom < maxSpinZoom) {
         let distancePerSecond = 360 / secondsPerRevolution
         if (zoom > maxSpinZoom - 1) {
           distancePerSecond *= (maxSpinZoom - zoom)
@@ -163,17 +162,20 @@ export default function GalleryGlobe({ media, onSelectMedia, selectedTimeframe }
       // Create custom marker element
       const el = document.createElement('div')
       el.className = 'gallery-marker'
+      const size = isCluster ? 50 : 44
       el.style.cssText = `
-        width: ${isCluster ? '50px' : '44px'};
-        height: ${isCluster ? '50px' : '44px'};
+        width: ${size}px;
+        height: ${size}px;
         border-radius: 50%;
         border: 3px solid ${isCluster ? '#D9C61A' : '#406A56'};
         background-size: cover;
         background-position: center;
         cursor: pointer;
         box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: box-shadow 0.15s ease-out;
         position: relative;
+        will-change: box-shadow;
+        contain: layout style;
       `
 
       if (coverItem.file_url) {
@@ -207,16 +209,30 @@ export default function GalleryGlobe({ media, onSelectMedia, selectedTimeframe }
       }
 
       el.addEventListener('mouseenter', () => {
-        el.style.transform = 'scale(1.2)'
-        el.style.boxShadow = '0 8px 25px rgba(0,0,0,0.5)'
-        el.style.zIndex = '100'
+        el.style.boxShadow = '0 6px 25px rgba(0,0,0,0.6), 0 0 0 3px rgba(64,106,86,0.3)'
+        el.style.borderColor = '#D9C61A'
       })
       el.addEventListener('mouseleave', () => {
-        el.style.transform = 'scale(1)'
         el.style.boxShadow = '0 4px 15px rgba(0,0,0,0.4)'
-        el.style.zIndex = '1'
+        el.style.borderColor = isCluster ? '#D9C61A' : '#406A56'
       })
-      el.addEventListener('click', () => {
+      el.addEventListener('click', (e) => {
+        // Stop propagation to prevent map from handling the click
+        e.stopPropagation()
+        
+        // Pause globe spin briefly to prevent jarring movement
+        spinEnabledRef.current = false
+        
+        // Stop any ongoing map animation
+        if (map.current) {
+          map.current.stop()
+        }
+        
+        // Re-enable spin after a short delay
+        setTimeout(() => {
+          spinEnabledRef.current = true
+        }, 500)
+        
         if (isCluster && cluster.items.length <= 5) {
           // For small clusters, show first item
           onSelectMedia?.(cluster.items[0])
@@ -279,9 +295,40 @@ export default function GalleryGlobe({ media, onSelectMedia, selectedTimeframe }
         </div>
       </div>
 
-      {/* Instructions */}
-      <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2">
-        <p className="text-white/60 text-xs">Drag to explore • Click markers to view</p>
+      {/* Zoom Controls */}
+      <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+        <button
+          onClick={() => map.current?.zoomIn()}
+          className="w-10 h-10 bg-black/70 backdrop-blur-sm rounded-lg flex items-center justify-center text-white hover:bg-black/80 transition-all"
+          title="Zoom in"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+        <button
+          onClick={() => map.current?.zoomOut()}
+          className="w-10 h-10 bg-black/70 backdrop-blur-sm rounded-lg flex items-center justify-center text-white hover:bg-black/80 transition-all"
+          title="Zoom out"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+        <button
+          onClick={() => {
+            map.current?.flyTo({ center: [0, 20], zoom: 1.5, pitch: 0 })
+          }}
+          className="w-10 h-10 bg-black/70 backdrop-blur-sm rounded-lg flex items-center justify-center text-white hover:bg-black/80 transition-all"
+          title="Reset view"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="2" y1="12" x2="22" y2="12" />
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+          </svg>
+        </button>
       </div>
     </div>
   )

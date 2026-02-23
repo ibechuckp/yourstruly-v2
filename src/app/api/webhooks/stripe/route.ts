@@ -3,23 +3,28 @@ import { stripe } from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Service role client for webhook (bypasses RLS)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
+// Lazy-init Supabase admin client (avoids build-time env issues)
+let _supabaseAdmin: ReturnType<typeof createClient> | null = null;
+function getSupabaseAdmin() {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
   }
-);
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+  return _supabaseAdmin;
+}
 
 export async function POST(req: NextRequest) {
   const payload = await req.text();
   const signature = req.headers.get('stripe-signature')!;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
   let event: Stripe.Event;
 
@@ -83,7 +88,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
 
   // Create or update subscription in database
-  const { error } = await supabaseAdmin.from('subscriptions').upsert({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (getSupabaseAdmin().from('subscriptions') as any).upsert({
     user_id: userId,
     stripe_customer_id: customerId,
     stripe_subscription_id: subscriptionId,
@@ -113,8 +119,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 }
 
 async function handleSubscriptionUpdated(subscription: any) {
-  const { error } = await supabaseAdmin
-    .from('subscriptions')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (getSupabaseAdmin().from('subscriptions') as any)
     .update({
       status: subscription.status,
       current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
@@ -136,8 +142,8 @@ async function handleSubscriptionUpdated(subscription: any) {
 }
 
 async function handleSubscriptionDeleted(subscription: any) {
-  const { error } = await supabaseAdmin
-    .from('subscriptions')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (getSupabaseAdmin().from('subscriptions') as any)
     .update({
       status: 'canceled',
       cancel_at_period_end: false,
@@ -159,8 +165,8 @@ async function handlePaymentFailed(invoice: any) {
   
   if (!subscriptionId) return;
 
-  const { error } = await supabaseAdmin
-    .from('subscriptions')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (getSupabaseAdmin().from('subscriptions') as any)
     .update({
       status: 'past_due',
       updated_at: new Date().toISOString(),

@@ -12,6 +12,8 @@ interface ModalProps {
   maxWidth?: string
   showDone?: boolean
   onDone?: () => void
+  doneText?: string
+  doneDisabled?: boolean
 }
 
 export default function Modal({ 
@@ -21,7 +23,9 @@ export default function Modal({
   children, 
   maxWidth = 'max-w-md',
   showDone = true,
-  onDone
+  onDone,
+  doneText = 'Done',
+  doneDisabled = false
 }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
 
@@ -56,19 +60,19 @@ export default function Modal({
   const modal = (
     <div 
       ref={overlayRef}
-      className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4"
       onClick={(e) => e.target === overlayRef.current && onClose()}
     >
       <div 
-        className={`bg-gray-900 rounded-t-2xl sm:rounded-2xl border border-gray-700 w-full ${maxWidth} max-h-[90vh] sm:max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200`}
+        className={`bg-[#F2F1E5]/95 backdrop-blur-xl rounded-t-2xl sm:rounded-2xl border border-white/50 w-full ${maxWidth} max-h-[90vh] sm:max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 shadow-2xl`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-800">
-          <h3 className="text-white font-semibold text-lg">{title}</h3>
+        <div className="flex items-center justify-between p-5 border-b border-[#406A56]/10">
+          <h3 className="text-[#2d2d2d] font-semibold text-lg">{title}</h3>
           <button 
             onClick={onClose} 
-            className="text-gray-400 hover:text-white transition-colors p-1 hover:bg-gray-800 rounded-lg"
+            className="text-gray-500 hover:text-[#2d2d2d] transition-colors p-1 hover:bg-[#406A56]/10 rounded-lg"
           >
             <X size={20} />
           </button>
@@ -81,12 +85,13 @@ export default function Modal({
 
         {/* Footer with Done button */}
         {showDone && (
-          <div className="p-4 border-t border-gray-800 flex justify-end">
+          <div className="p-4 border-t border-[#406A56]/10 flex justify-end">
             <button
               onClick={handleDone}
-              className="px-6 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors"
+              disabled={doneDisabled}
+              className="px-6 py-2 bg-[#406A56] hover:bg-[#4a7a64] text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Done
+              {doneText}
             </button>
           </div>
         )}

@@ -1,6 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { findAllMatches } from '@/lib/ai/faceDetection'
+
+// Force dynamic to avoid build-time evaluation of canvas/face-api
+export const dynamic = 'force-dynamic'
+
+// Lazy import to avoid build-time issues with native modules
+const getFaceDetection = async () => import('@/lib/ai/faceDetection')
 
 // Helper to parse embedding from Supabase (could be string or array)
 function parseEmbedding(embedding: any): number[] | null {
@@ -95,6 +100,9 @@ export async function GET(
     : { data: [] }
 
   const contactMap = new Map(contacts?.map(c => [c.id, c]) || [])
+
+  // Load face detection module
+  const { findAllMatches } = await getFaceDetection()
 
   // Build response with suggestions
   const facesWithSuggestions = faces.map(face => {

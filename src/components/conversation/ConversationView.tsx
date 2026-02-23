@@ -8,6 +8,7 @@ import { TranscriptionPreview } from './TranscriptionPreview';
 import { ConversationHistory } from './ConversationHistory';
 import { AIPromptBubble } from './AIPromptBubble';
 import { ReviewScreen } from './ReviewScreen';
+import { ScopeSelector, type ScopeSelection } from '@/components/circles';
 import type { EngagementPrompt } from '@/types/engagement';
 
 interface Exchange {
@@ -30,7 +31,7 @@ interface ConversationViewProps {
   onClose: () => void;
 }
 
-type ViewState = 'intro' | 'recording' | 'confirming' | 'continue-prompt' | 'review' | 'complete';
+type ViewState = 'intro' | 'recording' | 'confirming' | 'continue-prompt' | 'review' | 'scope-select' | 'complete';
 type InputMode = 'voice' | 'text';
 
 export function ConversationView({ prompt, expectedXp = 15, onComplete, onClose }: ConversationViewProps) {
@@ -52,6 +53,11 @@ export function ConversationView({ prompt, expectedXp = 15, onComplete, onClose 
   
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Scope selection state
+  const [showScopeSelector, setShowScopeSelector] = useState(false);
+  const [pendingSaveData, setPendingSaveData] = useState<{ summary: string; photos?: File[] } | null>(null);
+  const [scopeSelection, setScopeSelection] = useState<ScopeSelection>({ isPrivate: true, circleIds: [] });
   
   const modalRef = useRef<HTMLDivElement>(null);
   const introTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -262,12 +268,25 @@ export function ConversationView({ prompt, expectedXp = 15, onComplete, onClose 
     setViewState('review');
   }, []);
 
-  // Handle review complete
+  // Handle review complete - show scope selector first
   const handleReviewComplete = useCallback(async (editedSummary: string, photos?: File[]) => {
+    // Store the pending data and show scope selector
+    setPendingSaveData({ summary: editedSummary, photos });
+    setShowScopeSelector(true);
+  }, []);
+
+  // Handle scope selection and final save
+  const handleScopeSelected = useCallback(async (selection: ScopeSelection) => {
+    setScopeSelection(selection);
+    setShowScopeSelector(false);
+    
+    if (!pendingSaveData) return;
+    
+    const { summary: editedSummary, photos } = pendingSaveData;
     setIsSaving(true);
 
     try {
-      // First save the conversation
+      // First save the conversation with scope
       const response = await fetch('/api/conversation/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -278,6 +297,8 @@ export function ConversationView({ prompt, expectedXp = 15, onComplete, onClose 
           summary: editedSummary,
           expectedXp,  // Pass expected XP for consistent awarding
           photoId: prompt.photoId,  // For photo_backstory prompts
+          isPrivate: selection.isPrivate,
+          circleIds: selection.circleIds,
         }),
       });
 
@@ -307,6 +328,7 @@ export function ConversationView({ prompt, expectedXp = 15, onComplete, onClose 
       }
       
       setViewState('complete');
+      setPendingSaveData(null);
       
       setTimeout(() => {
         onComplete({
@@ -322,7 +344,7 @@ export function ConversationView({ prompt, expectedXp = 15, onComplete, onClose 
       setError('Failed to save. Please try again.');
       setIsSaving(false);
     }
-  }, [exchanges, onComplete, prompt.id, prompt.type]);
+  }, [exchanges, onComplete, prompt.id, prompt.type, prompt.photoId, expectedXp, pendingSaveData]);
 
   // Handle discard
   const handleDiscard = useCallback(() => {
@@ -633,6 +655,19 @@ export function ConversationView({ prompt, expectedXp = 15, onComplete, onClose 
             </motion.div>
           )}
         </motion.div>
+
+        {/* Scope Selector Modal */}
+        <ScopeSelector
+          isOpen={showScopeSelector}
+          onClose={() => {
+            setShowScopeSelector(false);
+            // If closed without saving, default to private and continue
+            handleScopeSelected({ isPrivate: true, circleIds: [] });
+          }}
+          onSave={handleScopeSelected}
+          contentType="conversation"
+          title="Share this memory?"
+        />
       </motion.div>
     </AnimatePresence>
   );

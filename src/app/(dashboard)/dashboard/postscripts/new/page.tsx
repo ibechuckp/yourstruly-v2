@@ -20,6 +20,13 @@ interface Contact {
   avatar_url: string | null
 }
 
+interface Circle {
+  id: string
+  name: string
+  description: string | null
+  member_count: number
+}
+
 interface Attachment {
   id: string
   file: File
@@ -29,7 +36,9 @@ interface Attachment {
 
 interface FormData {
   // Recipient
+  recipient_type: 'contact' | 'circle'
   recipient_contact_id: string | null
+  circle_id: string | null
   recipient_name: string
   recipient_email: string
   recipient_phone: string
@@ -76,12 +85,15 @@ export default function NewPostScriptPage() {
   
   const [step, setStep] = useState(1)
   const [contacts, setContacts] = useState<Contact[]>([])
+  const [circles, setCircles] = useState<Circle[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
   const [form, setForm] = useState<FormData>({
+    recipient_type: 'contact',
     recipient_contact_id: null,
+    circle_id: null,
     recipient_name: '',
     recipient_email: '',
     recipient_phone: '',
@@ -171,6 +183,7 @@ export default function NewPostScriptPage() {
 
   useEffect(() => {
     fetchContacts()
+    fetchCircles()
   }, [])
 
   async function fetchContacts() {
@@ -189,20 +202,80 @@ export default function NewPostScriptPage() {
     if (data) setContacts(data)
   }
 
+  async function fetchCircles() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    
+    // Get circles where user is a member with accepted status
+    const { data, error } = await supabase
+      .from('circle_members')
+      .select(`
+        circle:circles!inner(id, name, description),
+        circle_id
+      `)
+      .eq('user_id', user.id)
+      .eq('invite_status', 'accepted')
+    
+    if (error) {
+      console.error('Error fetching circles:', error)
+      return
+    }
+    
+    if (data) {
+      // Get member counts for each circle
+      const circleIds = data.map(d => d.circle_id)
+      const { data: memberCounts } = await supabase
+        .from('circle_members')
+        .select('circle_id')
+        .in('circle_id', circleIds)
+        .eq('invite_status', 'accepted')
+      
+      const countMap = (memberCounts || []).reduce((acc: Record<string, number>, m) => {
+        acc[m.circle_id] = (acc[m.circle_id] || 0) + 1
+        return acc
+      }, {})
+      
+      const circlesWithCounts: Circle[] = data.map(d => ({
+        id: (d.circle as any).id,
+        name: (d.circle as any).name,
+        description: (d.circle as any).description,
+        member_count: countMap[d.circle_id] || 1
+      }))
+      
+      setCircles(circlesWithCounts)
+    }
+  }
+
   function selectContact(contact: Contact) {
     setForm({
       ...form,
+      recipient_type: 'contact',
       recipient_contact_id: contact.id,
+      circle_id: null,
       recipient_name: contact.full_name,
       recipient_email: contact.email || '',
       recipient_phone: contact.phone || ''
     })
   }
 
-  function clearContact() {
+  function selectCircle(circle: Circle) {
     setForm({
       ...form,
+      recipient_type: 'circle',
       recipient_contact_id: null,
+      circle_id: circle.id,
+      recipient_name: circle.name,
+      recipient_email: '',
+      recipient_phone: ''
+    })
+  }
+
+  function clearRecipient() {
+    setForm({
+      ...form,
+      recipient_type: 'contact',
+      recipient_contact_id: null,
+      circle_id: null,
       recipient_name: '',
       recipient_email: '',
       recipient_phone: ''
@@ -216,7 +289,8 @@ export default function NewPostScriptPage() {
   function canProceed(): boolean {
     switch (step) {
       case 1:
-        return form.recipient_name.trim().length > 0
+        // Either have a contact/circle selected, or manual name entry
+        return form.recipient_name.trim().length > 0 || form.circle_id !== null
       case 2:
         if (form.delivery_type === 'date') {
           return form.delivery_date.length > 0
@@ -283,6 +357,7 @@ export default function NewPostScriptPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           recipient_contact_id: form.recipient_contact_id,
+          circle_id: form.circle_id,
           recipient_name: form.recipient_name,
           recipient_email: form.recipient_email,
           recipient_phone: form.recipient_phone,
@@ -314,7 +389,11 @@ export default function NewPostScriptPage() {
   }
 
   // Step 1: Recipient Selection
+  const [recipientTab, setRecipientTab] = useState<'contacts' | 'circles'>('contacts')
+  
   function renderRecipientStep() {
+    const hasSelection = form.recipient_contact_id || form.circle_id
+    
     return (
       <div className="space-y-6">
         <div className="text-center mb-8">
@@ -322,35 +401,61 @@ export default function NewPostScriptPage() {
             <Users size={32} className="text-[#C35F33]" />
           </div>
           <h2 className="text-xl font-bold text-gray-900">Who is this message for?</h2>
-          <p className="text-gray-600 mt-1">Select from your contacts or enter details manually</p>
+          <p className="text-gray-600 mt-1">Select a contact, circle, or enter details manually</p>
         </div>
 
-        {/* Selected Contact */}
-        {form.recipient_contact_id && (
+        {/* Selected Recipient */}
+        {hasSelection && (
           <div className="bg-[#C35F33]/5 border border-[#C35F33]/20 rounded-2xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#C35F33] text-white flex items-center justify-center font-medium">
-                {form.recipient_name.slice(0, 2).toUpperCase()}
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-medium
+                ${form.circle_id 
+                  ? 'bg-[#8DACAB] text-white' 
+                  : 'bg-[#C35F33] text-white'}`}>
+                {form.circle_id ? <Users size={20} /> : form.recipient_name.slice(0, 2).toUpperCase()}
               </div>
               <div>
                 <p className="font-medium text-gray-900">{form.recipient_name}</p>
-                <p className="text-sm text-gray-500">{form.recipient_email || 'No email'}</p>
+                <p className="text-sm text-gray-500">
+                  {form.circle_id ? 'Circle' : (form.recipient_email || 'No email')}
+                </p>
               </div>
             </div>
-            <button onClick={clearContact} className="p-2 hover:bg-gray-100 rounded-full">
+            <button onClick={clearRecipient} className="p-2 hover:bg-gray-100 rounded-full">
               <X size={18} className="text-gray-500" />
             </button>
           </div>
         )}
 
-        {/* Search Contacts */}
-        {!form.recipient_contact_id && (
+        {/* Recipient Selection */}
+        {!hasSelection && (
           <>
+            {/* Tabs: Contacts vs Circles */}
+            <div className="flex bg-gray-100 rounded-xl p-1">
+              <button
+                onClick={() => setRecipientTab('contacts')}
+                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2
+                  ${recipientTab === 'contacts' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
+              >
+                <User size={16} />
+                Contacts
+              </button>
+              <button
+                onClick={() => setRecipientTab('circles')}
+                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2
+                  ${recipientTab === 'circles' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
+              >
+                <Users size={16} />
+                Circles
+              </button>
+            </div>
+
+            {/* Search */}
             <div className="relative">
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search contacts..."
+                placeholder={recipientTab === 'contacts' ? 'Search contacts...' : 'Search circles...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl 
@@ -358,79 +463,115 @@ export default function NewPostScriptPage() {
               />
             </div>
 
-            {/* Contact List */}
-            <div className="max-h-60 overflow-y-auto space-y-2">
-              {contacts.length === 0 ? (
-                <p className="text-center text-gray-400 py-4 text-sm">Loading contacts...</p>
-              ) : filteredContacts.length === 0 ? (
-                <p className="text-center text-gray-400 py-4 text-sm">No contacts found for "{searchQuery}"</p>
-              ) : (
-                filteredContacts.map(contact => (
-                  <button
-                    key={contact.id}
-                    onClick={() => selectContact(contact)}
-                    className="w-full flex items-center gap-3 p-3 bg-white border border-gray-200 
-                             rounded-xl hover:border-[#C35F33] hover:bg-[#C35F33]/5 transition-all text-left"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-[#C35F33]/10 text-[#C35F33] flex items-center justify-center font-semibold">
-                      {contact.full_name.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">{contact.full_name}</p>
-                      <p className="text-sm text-gray-600">{contact.relationship_type || 'Contact'}</p>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
+            {/* Contacts List */}
+            {recipientTab === 'contacts' && (
+              <div className="max-h-60 overflow-y-auto space-y-2">
+                {contacts.length === 0 ? (
+                  <p className="text-center text-gray-400 py-4 text-sm">Loading contacts...</p>
+                ) : filteredContacts.length === 0 ? (
+                  <p className="text-center text-gray-400 py-4 text-sm">No contacts found for "{searchQuery}"</p>
+                ) : (
+                  filteredContacts.map(contact => (
+                    <button
+                      key={contact.id}
+                      onClick={() => selectContact(contact)}
+                      className="w-full flex items-center gap-3 p-3 bg-white border border-gray-200 
+                               rounded-xl hover:border-[#C35F33] hover:bg-[#C35F33]/5 transition-all text-left"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-[#C35F33]/10 text-[#C35F33] flex items-center justify-center font-semibold">
+                        {contact.full_name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900">{contact.full_name}</p>
+                        <p className="text-sm text-gray-600">{contact.relationship_type || 'Contact'}</p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
 
-            {/* Manual Entry */}
-            <div className="border-t pt-6">
-              <p className="text-sm text-gray-500 mb-4">Or enter details manually:</p>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-                  <input
-                    type="text"
-                    value={form.recipient_name}
-                    onChange={(e) => setForm({ ...form, recipient_name: e.target.value })}
-                    placeholder="Enter recipient name"
-                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl 
-                             focus:ring-2 focus:ring-[#C35F33]/20 focus:border-[#C35F33] outline-none text-gray-900 placeholder:text-gray-400"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <div className="relative">
-                      <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="email"
-                        value={form.recipient_email}
-                        onChange={(e) => setForm({ ...form, recipient_email: e.target.value })}
-                        placeholder="email@example.com"
-                        className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl 
-                                 focus:ring-2 focus:ring-[#C35F33]/20 focus:border-[#C35F33] outline-none text-gray-900 placeholder:text-gray-400"
-                      />
-                    </div>
+            {/* Circles List */}
+            {recipientTab === 'circles' && (
+              <div className="max-h-60 overflow-y-auto space-y-2">
+                {circles.length === 0 ? (
+                  <div className="text-center py-6">
+                    <Users size={32} className="mx-auto text-gray-300 mb-2" />
+                    <p className="text-gray-400 text-sm">No circles yet</p>
+                    <p className="text-gray-400 text-xs mt-1">Create a circle to send messages to groups</p>
                   </div>
+                ) : (
+                  circles
+                    .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .map(circle => (
+                      <button
+                        key={circle.id}
+                        onClick={() => selectCircle(circle)}
+                        className="w-full flex items-center gap-3 p-3 bg-white border border-gray-200 
+                                 rounded-xl hover:border-[#8DACAB] hover:bg-[#8DACAB]/5 transition-all text-left"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-[#8DACAB]/20 text-[#8DACAB] flex items-center justify-center">
+                          <Users size={20} />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">{circle.name}</p>
+                          <p className="text-sm text-gray-600">{circle.member_count} member{circle.member_count !== 1 ? 's' : ''}</p>
+                        </div>
+                      </button>
+                    ))
+                )}
+              </div>
+            )}
+
+            {/* Manual Entry (only for contacts) */}
+            {recipientTab === 'contacts' && (
+              <div className="border-t pt-6">
+                <p className="text-sm text-gray-500 mb-4">Or enter details manually:</p>
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                    <div className="relative">
-                      <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="tel"
-                        value={form.recipient_phone}
-                        onChange={(e) => setForm({ ...form, recipient_phone: e.target.value })}
-                        placeholder="+1234567890"
-                        className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl 
-                                 focus:ring-2 focus:ring-[#C35F33]/20 focus:border-[#C35F33] outline-none text-gray-900 placeholder:text-gray-400"
-                      />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                    <input
+                      type="text"
+                      value={form.recipient_name}
+                      onChange={(e) => setForm({ ...form, recipient_name: e.target.value })}
+                      placeholder="Enter recipient name"
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl 
+                               focus:ring-2 focus:ring-[#C35F33]/20 focus:border-[#C35F33] outline-none text-gray-900 placeholder:text-gray-400"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <div className="relative">
+                        <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="email"
+                          value={form.recipient_email}
+                          onChange={(e) => setForm({ ...form, recipient_email: e.target.value })}
+                          placeholder="email@example.com"
+                          className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl 
+                                   focus:ring-2 focus:ring-[#C35F33]/20 focus:border-[#C35F33] outline-none text-gray-900 placeholder:text-gray-400"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                      <div className="relative">
+                        <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="tel"
+                          value={form.recipient_phone}
+                          onChange={(e) => setForm({ ...form, recipient_phone: e.target.value })}
+                          placeholder="+1234567890"
+                          className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl 
+                                   focus:ring-2 focus:ring-[#C35F33]/20 focus:border-[#C35F33] outline-none text-gray-900 placeholder:text-gray-400"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </>
         )}
       </div>
@@ -680,8 +821,15 @@ export default function NewPostScriptPage() {
           {/* Recipient */}
           <div className="p-4">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">To</p>
-            <p className="font-medium text-gray-900">{form.recipient_name}</p>
-            {form.recipient_email && <p className="text-sm text-gray-500">{form.recipient_email}</p>}
+            <div className="flex items-center gap-2">
+              {form.circle_id && <Users size={16} className="text-[#8DACAB]" />}
+              <p className="font-medium text-gray-900">{form.recipient_name}</p>
+            </div>
+            {form.circle_id ? (
+              <p className="text-sm text-[#8DACAB]">Circle • Delivers to all members</p>
+            ) : form.recipient_email ? (
+              <p className="text-sm text-gray-500">{form.recipient_email}</p>
+            ) : null}
           </div>
 
           {/* Delivery */}
