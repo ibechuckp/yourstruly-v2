@@ -554,6 +554,11 @@ export default function DashboardPage() {
         </div>
         
         {/* Personality/Essence Graph - TODO: Add back when properly analyzing data */}
+        
+        {/* Activity Feed - In left column, below profile card */}
+        <div className="mt-6" style={{ width: '100%' }}>
+          <ActivityFeed />
+        </div>
       </div>
 
       {/* Main content */}
@@ -869,12 +874,6 @@ export default function DashboardPage() {
           )}
         </div>
         
-        {/* Activity Feed - Below tiles, centered and matching width */}
-        <div className="flex justify-center mt-8">
-          <div style={{ width: 816, maxWidth: '100%' }}>
-            <ActivityFeed />
-          </div>
-        </div>
       </div>
       
       {/* CommandBar - RAG interface */}
