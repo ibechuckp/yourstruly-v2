@@ -76,4 +76,19 @@ ON CONFLICT (circle_id, user_id) DO UPDATE SET
   role = 'owner',
   invite_status = 'accepted';
 
--- Done! Try creating a circle now.
+-- 8. Add DELETE policy for circles table
+DROP POLICY IF EXISTS "Owners can delete circles" ON circles;
+
+CREATE POLICY "Owners can delete circles" ON circles
+  FOR DELETE USING (
+    created_by = auth.uid()
+    OR
+    EXISTS (
+      SELECT 1 FROM circle_members cm
+      WHERE cm.circle_id = circles.id
+      AND cm.user_id = auth.uid()
+      AND cm.role = 'owner'
+    )
+  );
+
+-- Done! Try creating and deleting circles now.
