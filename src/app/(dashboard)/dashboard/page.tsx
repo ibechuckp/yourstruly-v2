@@ -555,8 +555,8 @@ export default function DashboardPage() {
         
         {/* Personality/Essence Graph - TODO: Add back when properly analyzing data */}
         
-        {/* Activity Feed - In left column, below profile card */}
-        <div className="mt-6" style={{ width: '100%' }}>
+        {/* Activity Feed - In left column, below profile card, same width */}
+        <div className="mt-6" style={{ width: 280 }}>
           <ActivityFeed />
         </div>
       </div>

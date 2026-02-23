@@ -234,7 +234,10 @@ export default function InviteMemberModal({
                   contacts.slice(0, 6).map(contact => (
                     <button
                       key={contact.id}
-                      onClick={() => onInviteUser(contact.id)}
+                      onClick={() => {
+                        // Contacts aren't YT users - generate invite link instead
+                        onGenerateLink()
+                      }}
                       className="w-full flex items-center gap-3 p-3 hover:bg-[#406A56]/5 transition-colors text-left border-b border-[#406A56]/5 last:border-b-0"
                     >
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#406A56] to-[#8DACAB] flex items-center justify-center text-white font-medium overflow-hidden">
@@ -250,6 +253,7 @@ export default function InviteMemberModal({
                           <p className="text-xs text-[#666] truncate">{contact.email}</p>
                         )}
                       </div>
+                      <span className="text-xs text-[#888] bg-gray-100 px-2 py-0.5 rounded-full">Send Link</span>
                     </button>
                   ))
                 )}
