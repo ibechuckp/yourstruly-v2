@@ -19,18 +19,18 @@ interface BubbleProps {
   showConversationIndicator?: boolean;
 }
 
-const TYPE_CONFIG: Record<string, { icon: string; label: string; xp: number }> = {
-  photo_backstory: { icon: '📸', label: 'Photo Story', xp: 15 },
-  tag_person: { icon: '👤', label: 'Tag Person', xp: 5 },
-  missing_info: { icon: '📝', label: 'Contact Info', xp: 5 },
-  memory_prompt: { icon: '💭', label: 'Memory', xp: 20 },
-  knowledge: { icon: '🧠', label: 'Knowledge', xp: 15 },
-  connect_dots: { icon: '🔗', label: 'Connect', xp: 10 },
-  highlight: { icon: '⭐', label: 'Highlight', xp: 5 },
-  quick_question: { icon: '👤', label: 'Contact Info', xp: 5 },
-  postscript: { icon: '💌', label: 'Future Message', xp: 20 },
-  favorites_firsts: { icon: '🏆', label: 'Favorites', xp: 10 },
-  recipes_wisdom: { icon: '📖', label: 'Wisdom', xp: 15 },
+const TYPE_CONFIG: Record<string, { icon: string; label: string; xp: number; categoryClass: string }> = {
+  photo_backstory: { icon: '📸', label: 'Photo Story', xp: 15, categoryClass: 'category-pill-photo' },
+  tag_person: { icon: '👤', label: 'Tag Person', xp: 5, categoryClass: 'category-pill-contact' },
+  missing_info: { icon: '📝', label: 'Contact Info', xp: 5, categoryClass: 'category-pill-contact' },
+  memory_prompt: { icon: '💭', label: 'Memory', xp: 20, categoryClass: 'category-pill-memory' },
+  knowledge: { icon: '🧠', label: 'Knowledge', xp: 15, categoryClass: 'category-pill-knowledge' },
+  connect_dots: { icon: '🔗', label: 'Connect', xp: 10, categoryClass: 'category-pill-contact' },
+  highlight: { icon: '⭐', label: 'Highlight', xp: 5, categoryClass: 'category-pill-photo' },
+  quick_question: { icon: '👤', label: 'Contact Info', xp: 5, categoryClass: 'category-pill-contact' },
+  postscript: { icon: '💌', label: 'Future Message', xp: 20, categoryClass: 'category-pill-memory' },
+  favorites_firsts: { icon: '🏆', label: 'Favorites', xp: 10, categoryClass: 'category-pill-knowledge' },
+  recipes_wisdom: { icon: '📖', label: 'Wisdom', xp: 15, categoryClass: 'category-pill-knowledge' },
 };
 
 // Contact fields to display when expanded
@@ -351,10 +351,12 @@ export function Bubble({
 
       {/* Main content */}
       <div className="p-4 pt-5">
-        {/* Header */}
+        {/* Header with handwritten category pill */}
         <div className="flex items-center gap-2 mb-3">
           <span className="text-base">{config.icon}</span>
-          <span className="bubble-type-label">{config.label}</span>
+          <span className={`category-pill ${config.categoryClass}`}>
+            {config.label}
+          </span>
         </div>
 
         {/* Contact card (collapsed view - always show for contact prompts) */}

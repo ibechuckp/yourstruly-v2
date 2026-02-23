@@ -40,7 +40,7 @@ export async function GET(
       member_count:circle_members(count)
     `)
     .eq('id', circleId)
-    .eq('is_deleted', false)
+    
     .single()
 
   if (error || !circle) {
@@ -109,7 +109,7 @@ export async function PATCH(
     .from('circles')
     .update(updateData)
     .eq('id', circleId)
-    .eq('is_deleted', false)
+    
     .select()
     .single()
 
@@ -166,13 +166,10 @@ export async function DELETE(
     }
   }
 
-  // Soft delete the circle
+  // Hard delete the circle (cascade will remove members)
   const { error } = await supabase
     .from('circles')
-    .update({ 
-      is_deleted: true,
-      deleted_at: new Date().toISOString()
-    })
+    .delete()
     .eq('id', circleId)
 
   if (error) {

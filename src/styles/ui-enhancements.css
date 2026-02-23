@@ -1,0 +1,657 @@
+/* =============================================================================
+   YOURSTRULY V2 - UI/UX ENHANCEMENTS
+   Fonts, Paper Textures, and Utility Classes
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   FONT VARIABLES & UTILITIES
+   ----------------------------------------------------------------------------- */
+
+/* Handwritten font for category pills - warm and personal */
+.font-handwritten {
+  font-family: var(--font-handwritten), 'Caveat', cursive;
+}
+
+.font-patrick-hand {
+  font-family: var(--font-patrick-hand), 'Patrick Hand', cursive;
+}
+
+/* Serif font for memory titles - elegant and timeless */
+.font-playfair {
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+}
+
+/* -----------------------------------------------------------------------------
+   MEMORY TITLE UTILITIES (Playfair Display)
+   ----------------------------------------------------------------------------- */
+
+.memory-title {
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.memory-title-lg {
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+  font-size: 2.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.memory-title-md {
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.memory-title-sm {
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.memory-title-xs {
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.4;
+}
+
+/* Memory title with italic emphasis */
+.memory-title-italic {
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* -----------------------------------------------------------------------------
+   CATEGORY PILLS - HANDWRITTEN STYLE
+   ----------------------------------------------------------------------------- */
+
+.category-pill {
+  font-family: var(--font-handwritten), 'Caveat', cursive;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.35rem 1rem;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+.category-pill-contact {
+  background: rgba(64, 106, 86, 0.12);
+  color: var(--yt-green);
+}
+
+.category-pill-memory {
+  background: rgba(74, 53, 82, 0.12);
+  color: var(--yt-purple);
+}
+
+.category-pill-knowledge {
+  background: rgba(195, 95, 51, 0.12);
+  color: var(--yt-red);
+}
+
+.category-pill-photo {
+  background: rgba(217, 198, 26, 0.15);
+  color: #a39507;
+}
+
+/* Engagement bubble type labels with handwritten font */
+.bubble-type-handwritten {
+  font-family: var(--font-handwritten), 'Caveat', cursive;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
+/* -----------------------------------------------------------------------------
+   PAPER TEXTURES
+   ----------------------------------------------------------------------------- */
+
+/* Base paper texture with subtle noise */
+.paper-texture {
+  position: relative;
+  background-color: #fefefe;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-blend-mode: multiply;
+}
+
+.paper-texture::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse at 20% 20%, rgba(255,255,255,0.8) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(0,0,0,0.03) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Paper texture with cream/off-white tone */
+.paper-texture-cream {
+  position: relative;
+  background-color: #f9f7f0;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-blend-mode: soft-light;
+}
+
+/* Aged paper texture */
+.paper-texture-aged {
+  position: relative;
+  background-color: #f5f0e6;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-blend-mode: multiply;
+}
+
+.paper-texture-aged::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse at 30% 20%, rgba(196, 164, 132, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(139, 119, 101, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Subtle vignette effect for paper */
+.paper-vignette {
+  position: relative;
+}
+
+.paper-vignette::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.08) 100%);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Edge shadow for paper depth */
+.paper-edge-shadow {
+  box-shadow: 
+    inset 0 0 30px rgba(0,0,0,0.03),
+    0 1px 3px rgba(0,0,0,0.08),
+    0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* -----------------------------------------------------------------------------
+   POSTSCRIPT LETTER STYLES
+   ----------------------------------------------------------------------------- */
+
+.postscript-letter {
+  position: relative;
+  background: linear-gradient(135deg, #fefefe 0%, #f9f7f0 100%);
+  border-radius: 4px;
+  padding: 3rem 2.5rem;
+  box-shadow: 
+    0 1px 1px rgba(0,0,0,0.05),
+    0 2px 4px rgba(0,0,0,0.08),
+    0 8px 24px rgba(0,0,0,0.1);
+}
+
+.postscript-letter::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.4;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Handwritten signature style */
+.signature-handwritten {
+  font-family: var(--font-handwritten), 'Caveat', cursive;
+  font-size: 1.5rem;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--yt-green);
+}
+
+/* -----------------------------------------------------------------------------
+   RECORDING COUNTDOWN ANIMATION
+   ----------------------------------------------------------------------------- */
+
+@keyframes countdown-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.8;
+  }
+}
+
+@keyframes countdown-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes countdown-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.countdown-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  position: relative;
+}
+
+.countdown-number {
+  font-size: 4rem;
+  font-weight: 700;
+  color: var(--yt-green);
+  animation: countdown-pulse 0.8s ease-in-out infinite;
+  z-index: 2;
+}
+
+.countdown-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid var(--yt-green);
+  animation: countdown-ring 1s ease-out infinite;
+}
+
+.countdown-ring-delayed {
+  animation-delay: 0.5s;
+}
+
+/* -----------------------------------------------------------------------------
+   TYPEWRITER EFFECT
+   ----------------------------------------------------------------------------- */
+
+@keyframes typewriter-cursor {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.typewriter-text {
+  overflow: hidden;
+  border-right: 2px solid var(--yt-green);
+  white-space: nowrap;
+  animation: typewriter-cursor 0.8s step-end infinite;
+}
+
+.typewriter-container {
+  position: relative;
+}
+
+.typewriter-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.2em;
+  background-color: var(--yt-green);
+  margin-left: 2px;
+  animation: typewriter-cursor 0.8s step-end infinite;
+  vertical-align: text-bottom;
+}
+
+/* Multi-line typewriter effect */
+.typewriter-multiline {
+  position: relative;
+}
+
+.typewriter-multiline::after {
+  content: '|';
+  position: absolute;
+  right: -4px;
+  animation: typewriter-cursor 0.8s step-end infinite;
+  color: var(--yt-green);
+}
+
+/* -----------------------------------------------------------------------------
+   ENVELOPE ANIMATION
+   ----------------------------------------------------------------------------- */
+
+@keyframes envelope-shake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+}
+
+@keyframes envelope-flap-open {
+  0% {
+    transform: rotateX(0deg);
+  }
+  100% {
+    transform: rotateX(-180deg);
+  }
+}
+
+@keyframes envelope-slide-out {
+  0% {
+    transform: translateY(0) scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(-20px) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes wax-seal-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(195, 95, 51, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(195, 95, 51, 0.5);
+  }
+}
+
+.envelope-container {
+  position: relative;
+  width: 320px;
+  height: 220px;
+  cursor: pointer;
+  perspective: 1000px;
+}
+
+.envelope-container:hover .envelope-wax-seal {
+  animation: envelope-shake 0.5s ease-in-out infinite;
+}
+
+.envelope-body {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #e8e0d0 0%, #d4c8b8 100%);
+  border-radius: 0 0 8px 8px;
+  box-shadow: 
+    0 4px 12px rgba(0,0,0,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.envelope-flap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 110px;
+  background: linear-gradient(135deg, #f0e8d8 0%, #e0d4c4 100%);
+  clip-path: polygon(0 0, 50% 100%, 100% 0);
+  transform-origin: top;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+}
+
+.envelope-flap.open {
+  transform: rotateX(-180deg);
+}
+
+.envelope-letter {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  background: #fefefe;
+  border-radius: 4px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transform: translateY(0) scale(0.95);
+  opacity: 0;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.envelope-letter.visible {
+  transform: translateY(-60px) scale(1);
+  opacity: 1;
+}
+
+.envelope-wax-seal {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #C35F33 0%, #a84d28 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(195, 95, 51, 0.4);
+  z-index: 15;
+  transition: opacity 0.3s ease;
+}
+
+.envelope-wax-seal.open {
+  opacity: 0;
+}
+
+.envelope-wax-seal::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-radius: 50%;
+}
+
+/* -----------------------------------------------------------------------------
+   CONFETTI ANIMATION
+   ----------------------------------------------------------------------------- */
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100%) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes confetti-pop {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  animation: confetti-fall 3s ease-out forwards;
+}
+
+.confetti-piece:nth-child(4n+1) {
+  background: var(--yt-yellow);
+}
+
+.confetti-piece:nth-child(4n+2) {
+  background: var(--yt-green);
+}
+
+.confetti-piece:nth-child(4n+3) {
+  background: var(--yt-red);
+}
+
+.confetti-piece:nth-child(4n+4) {
+  background: var(--yt-blue);
+}
+
+/* -----------------------------------------------------------------------------
+   ONBOARDING - HEARTFELT QUESTION STYLES
+   ----------------------------------------------------------------------------- */
+
+.heartfelt-container {
+  background: linear-gradient(135deg, #fefefe 0%, #f5f0e6 100%);
+  border-radius: 24px;
+  padding: 3rem;
+  box-shadow: 
+    0 4px 20px rgba(0,0,0,0.08),
+    0 8px 40px rgba(0,0,0,0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.heartfelt-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(64, 106, 86, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.heartfelt-question {
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #2d2d2d;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.heartfelt-category-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(64, 106, 86, 0.1);
+  border-radius: 9999px;
+  font-family: var(--font-handwritten), 'Caveat', cursive;
+  font-size: 1.1rem;
+  color: var(--yt-green);
+  margin-bottom: 1.5rem;
+}
+
+/* Category-specific colors */
+.heartfelt-category-family {
+  background: rgba(195, 95, 51, 0.12);
+  color: var(--yt-red);
+}
+
+.heartfelt-category-career {
+  background: rgba(64, 106, 86, 0.12);
+  color: var(--yt-green);
+}
+
+.heartfelt-category-love {
+  background: rgba(217, 198, 26, 0.15);
+  color: #8a7c08;
+}
+
+.heartfelt-category-memories {
+  background: rgba(141, 172, 171, 0.2);
+  color: #5d8585;
+}
+
+.heartfelt-category-wisdom {
+  background: rgba(74, 53, 82, 0.12);
+  color: var(--yt-purple);
+}
+
+/* -----------------------------------------------------------------------------
+   CELEBRATION ANIMATION
+   ----------------------------------------------------------------------------- */
+
+@keyframes celebration-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.05);
+  }
+}
+
+@keyframes celebration-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(217, 198, 26, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(217, 198, 26, 0.6);
+  }
+}
+
+.celebration-icon {
+  animation: celebration-bounce 1s ease-in-out infinite;
+}
+
+.celebration-glow {
+  animation: celebration-glow 2s ease-in-out infinite;
+}
+
+/* -----------------------------------------------------------------------------
+   RESPONSIVE ADJUSTMENTS
+   ----------------------------------------------------------------------------- */
+
+@media (max-width: 640px) {
+  .memory-title-lg {
+    font-size: 1.75rem;
+  }
+  
+  .memory-title-md {
+    font-size: 1.375rem;
+  }
+  
+  .category-pill {
+    font-size: 1rem;
+    padding: 0.25rem 0.75rem;
+  }
+  
+  .heartfelt-question {
+    font-size: 1.375rem;
+  }
+  
+  .envelope-container {
+    width: 280px;
+    height: 192px;
+  }
+}

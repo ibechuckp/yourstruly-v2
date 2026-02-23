@@ -27,6 +27,7 @@ export function VoiceRecorder({
   const [mode, setMode] = useState<TranscriptionMode>('live'); // Default to live with Deepgram
   const [liveTranscript, setLiveTranscript] = useState('');
   const [isDeepgramAvailable, setIsDeepgramAvailable] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -331,14 +332,35 @@ export function VoiceRecorder({
     }
   }, [onRecordingComplete, visualizeAudio]);
 
+  // Countdown before recording starts
+  const startCountdown = useCallback(() => {
+    setCountdown(3);
+    
+    const countInterval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(countInterval);
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Start actual recording after countdown
+    setTimeout(() => {
+      if (mode === 'live' && isDeepgramAvailable) {
+        startDeepgramLive();
+      } else {
+        startRecordedMode();
+      }
+    }, 3000);
+  }, [mode, isDeepgramAvailable, startDeepgramLive, startRecordedMode]);
+
   // Start recording based on mode
   const startRecording = useCallback(async () => {
-    if (mode === 'live' && isDeepgramAvailable) {
-      await startDeepgramLive();
-    } else {
-      await startRecordedMode();
-    }
-  }, [mode, isDeepgramAvailable, startDeepgramLive, startRecordedMode]);
+    // Start countdown first
+    startCountdown();
+  }, [startCountdown]);
 
   // Stop recording
   const stopRecording = useCallback(() => {
@@ -495,6 +517,31 @@ export function VoiceRecorder({
         </div>
       )}
 
+      {/* Countdown Animation */}
+      <AnimatePresence>
+        {countdown !== null && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.5 }}
+            className="countdown-container"
+          >
+            <div className="countdown-ring" />
+            <div className="countdown-ring countdown-ring-delayed" />
+            <motion.span 
+              className="countdown-number"
+              key={countdown}
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.2 }}
+              transition={{ duration: 0.3 }}
+            >
+              {countdown}
+            </motion.span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Waveform visualization */}
       <AnimatePresence>
         {isRecording && (
@@ -535,10 +582,10 @@ export function VoiceRecorder({
       <div className="voice-recorder-main">
         <motion.button
           onClick={isRecording ? stopRecording : startRecording}
-          disabled={isLoading}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className={`voice-recorder-button ${isRecording ? 'recording' : ''}`}
+          disabled={isLoading || countdown !== null}
+          whileHover={{ scale: countdown !== null ? 1 : 1.05 }}
+          whileTap={{ scale: countdown !== null ? 1 : 0.95 }}
+          className={`voice-recorder-button ${isRecording ? 'recording' : ''} ${countdown !== null ? 'opacity-50 cursor-not-allowed' : ''}`}
           aria-label={isRecording ? 'Stop recording' : 'Start recording'}
         >
           <AnimatePresence mode="wait">
@@ -583,7 +630,9 @@ export function VoiceRecorder({
           className="voice-recorder-timer"
           animate={{ opacity: isRecording ? 1 : 0.6 }}
         >
-          {isRecording ? (
+          {countdown !== null ? (
+            <span className="text-[#406A56] font-medium">Get ready...</span>
+          ) : isRecording ? (
             <>
               <span className="voice-recorder-timer-dot" />
               {formatTime(recordingTime)}
