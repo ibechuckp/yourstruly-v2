@@ -124,7 +124,7 @@ export default function MemoryCard({ memory }: MemoryCardProps) {
         {/* Bottom Info */}
         <div className="absolute bottom-0 left-0 right-0 p-3">
           {memory.title && (
-            <h3 className="text-white font-medium text-sm truncate mb-1">
+            <h3 className="memory-title-xs text-white truncate mb-1 drop-shadow-lg">
               {memory.title}
             </h3>
           )}
