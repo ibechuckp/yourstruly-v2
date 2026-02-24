@@ -21,6 +21,13 @@
   background-image: url('/images/washi-tape-blue.svg');
 }
 
+.washi-tape-brown,
+.washi-tape-realistic {
+  background-image: url('/images/brown-tape-02.png');
+  width: 180px;
+  height: 36px;
+}
+
 /* Tape positions */
 .washi-tape-top {
   top: -8px;

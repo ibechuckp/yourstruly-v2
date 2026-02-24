@@ -107,7 +107,12 @@ export default function TopNav({ user, profile }: TopNavProps) {
           {/* Left: Logo + Primary Nav */}
           <div className="flex items-center gap-1">
             <Link href="/dashboard" className="mr-4 flex-shrink-0">
-              <h1 className="text-xl title-elegant-bold text-[#C35F33]">YoursTruly</h1>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src="/images/logo-yours.svg" 
+                alt="YoursTruly" 
+                className="h-7 w-auto"
+              />
             </Link>
 
             {/* Desktop Nav */}
@@ -142,7 +147,7 @@ export default function TopNav({ user, profile }: TopNavProps) {
                 </button>
                 
                 {myStoryOpen && (
-                  <div className="absolute top-full left-0 mt-1 w-48 glass-modal rounded-refined p-1.5">
+                  <div className="absolute top-full left-0 mt-1 w-48 glass-modal rounded-refined p-1.5 dropdown-menu">
                     {myStoryItems.map((item) => {
                       const Icon = item.icon
                       const isActive = pathname === item.href
@@ -179,7 +184,7 @@ export default function TopNav({ user, profile }: TopNavProps) {
                 </button>
                 
                 {peopleOpen && (
-                  <div className="absolute top-full left-0 mt-1 w-44 glass-modal rounded-refined p-1.5">
+                  <div className="absolute top-full left-0 mt-1 w-44 glass-modal rounded-refined p-1.5 dropdown-menu">
                     {peopleItems.map((item) => {
                       const Icon = item.icon
                       const isActive = pathname === item.href
@@ -216,7 +221,7 @@ export default function TopNav({ user, profile }: TopNavProps) {
                 </button>
                 
                 {toolsOpen && (
-                  <div className="absolute top-full left-0 mt-1 w-48 glass-modal rounded-refined p-1.5">
+                  <div className="absolute top-full left-0 mt-1 w-48 glass-modal rounded-refined p-1.5 dropdown-menu">
                     {toolsItems.map((item) => {
                       const Icon = item.icon
                       const isActive = pathname === item.href
@@ -277,7 +282,7 @@ export default function TopNav({ user, profile }: TopNavProps) {
               </button>
 
               {userOpen && (
-                <div className="absolute top-full right-0 mt-1 w-56 glass-modal rounded-refined p-1.5">
+                <div className="absolute top-full right-0 mt-1 w-56 glass-modal rounded-refined p-1.5 dropdown-menu">
                   <div className="px-3 py-2 border-b border-[#C35F33]/10 mb-1">
                     <p className="text-sm font-medium text-gray-900 truncate">{profile?.full_name || 'Welcome!'}</p>
                     <p className="text-xs text-gray-500 truncate">{user.email}</p>
