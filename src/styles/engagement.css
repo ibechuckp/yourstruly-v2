@@ -777,20 +777,21 @@
 .bubble-type {
   position: relative;
   font-family: var(--font-inter-tight), 'Inter Tight', sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 8px 16px;
+  letter-spacing: 0.08em;
+  padding: 6px 12px;
   display: inline-block;
   color: #3d3d3d; /* Consistent dark color for all titles */
+  margin-left: -4px; /* Align torn edge flush with content edge */
 }
 
 /* Torn edge background for category pill - different SVG per color */
 .bubble-type::before {
   content: '';
   position: absolute;
-  inset: -2px -4px;
+  inset: -2px -2px;
   background-size: 100% 100%;
   background-repeat: no-repeat;
   z-index: -1;

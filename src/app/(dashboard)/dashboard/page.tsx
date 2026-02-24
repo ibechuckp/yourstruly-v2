@@ -684,10 +684,11 @@ export default function DashboardPage() {
               )}
 
               {/* Tile grid: CSS Grid - 3 columns, photo tile spans 2 rows */}
+              {/* Width: 3×216px + 2×24px = 696px (matches CommandBar max-w-2xl + padding) */}
               <div 
                 className="grid mx-auto"
                 style={{ 
-                  gridTemplateColumns: '200px 200px 200px',
+                  gridTemplateColumns: '216px 216px 216px',
                   gridTemplateRows: 'auto auto',
                   gap: '24px',
                   width: 'fit-content',
@@ -882,10 +883,7 @@ export default function DashboardPage() {
           )}
         </div>
         
-        {/* CommandBar - aligned with engagement grid center */}
-        <div className="mt-8 mx-auto" style={{ width: 648 }}>
-          <CommandBar />
-        </div>
+        {/* CommandBar - removed, it positions itself fixed at bottom */}
       </div>
     </div>
   )

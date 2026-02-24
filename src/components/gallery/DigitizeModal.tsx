@@ -186,9 +186,9 @@ export default function DigitizeModal({ isOpen, onClose, onComplete }: DigitizeM
       />
       
       {/* Modal */}
-      <div className="relative bg-[#FDF8F3]/85 backdrop-blur-[28px] backdrop-saturate-[160%] border border-white/50 rounded-[20px] shadow-[0_4px_16px_rgba(195,95,51,0.06),0_20px_60px_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.8)] w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative bg-white/90 backdrop-blur-[24px] border border-white/50 rounded-[20px] shadow-[0_4px_16px_rgba(195,95,51,0.06),0_20px_60px_rgba(0,0,0,0.1)] w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/40 bg-white/30 backdrop-blur-md">
+        <div className="flex items-center justify-between p-4 border-b border-white/40 bg-white/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#D9C61A]/20 flex items-center justify-center">
               <Scan className="w-5 h-5 text-[#8a7c08]" />
