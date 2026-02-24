@@ -675,8 +675,16 @@ export default function DashboardPage() {
                 )}
               </AnimatePresence>
 
-              {/* Tile grid: 2x2 + 1 tall on right */}
-              <div className="relative mx-auto" style={{ width: 656, height: 408, marginTop: 16 }}>
+              {/* Tile grid: CSS Grid - 3 columns, photo tile spans 2 rows */}
+              <div 
+                className="grid mx-auto mt-4"
+                style={{ 
+                  gridTemplateColumns: '200px 200px 200px',
+                  gridTemplateRows: '1fr 1fr',
+                  gap: '24px',
+                  width: 'fit-content',
+                }}
+              >
                 <AnimatePresence mode="popLayout">
                   {(() => {
                     // Reorder prompts: photo tasks go to position 4 (tall tile)
@@ -697,46 +705,39 @@ export default function DashboardPage() {
                   })().map((prompt, i) => {
                     const config = TYPE_CONFIG[prompt.type] || TYPE_CONFIG.memory_prompt
                     const isExpanded = expandedId === prompt.id
-                    const pos = TILE_POSITIONS[i] || { col: i % 2, row: Math.floor(i / 2) }
                     const hasPhoto = prompt.photoUrl && (prompt.type === 'photo_backstory' || prompt.type === 'tag_person')
                     const contactName = getContactName(prompt, i)
                     const isContact = isContactPrompt(prompt.type)
-                    const isTall = (pos as any).tall === true || (i === 4 && hasPhoto)
-
-                    const tileWidth = 200
-                    const tileHeight = 190  // Increased to prevent content overflow
-                    const gap = 28  // More gap between tiles
-                    const tallHeight = tileHeight * 2 + gap  // Full height for photo tiles
-                    const left = pos.col * (tileWidth + gap)
-                    const top = isTall ? 0 : pos.row * (tileHeight + gap)
+                    const isTall = i === 4 && hasPhoto
                     const staggerDelay = i * 0.08
+
+                    // Grid positioning: tiles 0-3 in 2x2, tile 4 spans rows on right
+                    const gridStyle: React.CSSProperties = isTall 
+                      ? { gridColumn: 3, gridRow: '1 / 3' }
+                      : {}
 
                     return (
                       <motion.div
                         key={`${tilesKey}-${prompt.id}`}
-                        initial={{ opacity: 0, scale: 0.3, y: 50 }}
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ 
                           opacity: 1, 
                           scale: 1,
                           y: 0,
                           zIndex: isExpanded ? 50 : 1,
-                          x: isExpanded ? -left + 150 : 0,
                         }}
-                        exit={{ opacity: 0, scale: 0.5, y: -30 }}
+                        exit={{ opacity: 0, scale: 0.9, y: -20 }}
                         transition={{ 
                           type: 'spring', 
                           stiffness: 400, 
-                          damping: 25,
-                          delay: isExpanded ? 0 : staggerDelay,
+                          damping: 30,
+                          delay: staggerDelay,
                         }}
                         onClick={() => !isExpanded && handleTileClick(prompt)}
-                        className={`bubble-tile absolute ${isExpanded ? 'shadow-2xl' : ''}`}
+                        className={`bubble-tile ${isExpanded ? 'shadow-2xl fixed inset-4 z-50 m-auto max-w-md' : ''}`}
                         data-type={prompt.type}
                         style={{ 
-                          left, 
-                          top,
-                          width: isExpanded ? 340 : tileWidth,
-                          minHeight: isExpanded ? 'auto' : (isTall ? tallHeight : tileHeight),
+                          ...gridStyle,
                           cursor: isExpanded ? 'default' : 'pointer',
                         }}
                       >
