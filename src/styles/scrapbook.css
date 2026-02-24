@@ -1,0 +1,377 @@
+/* ============================================
+   SCRAPBOOK UI STYLES
+   Based on YoursTruly Webflow Landing Page
+   Torn edges, washi tape, photo collages
+   ============================================ */
+
+/* -------------------------
+   Washi Tape Components
+   ------------------------- */
+.washi-tape {
+  position: absolute;
+  width: 120px;
+  height: 24px;
+  background-image: url('/images/washi-tape.svg');
+  background-size: 100% 100%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.washi-tape-blue {
+  background-image: url('/images/washi-tape-blue.svg');
+}
+
+/* Tape positions */
+.washi-tape-top {
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+}
+
+.washi-tape-top-left {
+  top: -6px;
+  left: 10px;
+  transform: rotate(-15deg);
+}
+
+.washi-tape-top-right {
+  top: -6px;
+  right: 10px;
+  left: auto;
+  transform: rotate(12deg);
+}
+
+/* Inline tape for text highlight effect */
+.tape-highlight {
+  position: relative;
+  display: inline;
+}
+
+.tape-highlight::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  top: 50%;
+  height: 80%;
+  transform: translateY(-50%);
+  background: rgba(201, 168, 108, 0.3);
+  z-index: -1;
+  border-radius: 2px;
+}
+
+.tape-highlight-blue::before {
+  background: rgba(141, 172, 171, 0.35);
+}
+
+.tape-highlight-yellow::before {
+  background: rgba(217, 198, 26, 0.25);
+}
+
+/* -------------------------
+   Torn Paper Edges
+   ------------------------- */
+.torn-edge-bottom {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.torn-edge-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background-color: inherit;
+  mask-image: url('/images/torn-paper-edge.svg');
+  mask-size: 100% 100%;
+  -webkit-mask-image: url('/images/torn-paper-edge.svg');
+  -webkit-mask-size: 100% 100%;
+}
+
+/* Full torn paper card */
+.torn-paper {
+  background: #F2F1E5;
+  position: relative;
+  padding: 20px;
+  /* Clip-path for torn edges all around */
+  clip-path: polygon(
+    0% 2%, 2% 0%, 4% 3%, 6% 1%, 8% 2%, 10% 0%, 12% 3%, 14% 1%, 16% 2%, 18% 0%, 20% 3%, 22% 1%, 24% 2%, 26% 0%, 28% 3%, 30% 1%, 32% 2%, 34% 0%, 36% 3%, 38% 1%, 40% 2%, 42% 0%, 44% 3%, 46% 1%, 48% 2%, 50% 0%, 52% 3%, 54% 1%, 56% 2%, 58% 0%, 60% 3%, 62% 1%, 64% 2%, 66% 0%, 68% 3%, 70% 1%, 72% 2%, 74% 0%, 76% 3%, 78% 1%, 80% 2%, 82% 0%, 84% 3%, 86% 1%, 88% 2%, 90% 0%, 92% 3%, 94% 1%, 96% 2%, 98% 0%, 100% 2%,
+    100% 98%, 98% 100%, 96% 97%, 94% 99%, 92% 98%, 90% 100%, 88% 97%, 86% 99%, 84% 98%, 82% 100%, 80% 97%, 78% 99%, 76% 98%, 74% 100%, 72% 97%, 70% 99%, 68% 98%, 66% 100%, 64% 97%, 62% 99%, 60% 98%, 58% 100%, 56% 97%, 54% 99%, 52% 98%, 50% 100%, 48% 97%, 46% 99%, 44% 98%, 42% 100%, 40% 97%, 38% 99%, 36% 98%, 34% 100%, 32% 97%, 30% 99%, 28% 98%, 26% 100%, 24% 97%, 22% 99%, 20% 98%, 18% 100%, 16% 97%, 14% 99%, 12% 98%, 10% 100%, 8% 97%, 6% 99%, 4% 98%, 2% 100%, 0% 98%
+  );
+}
+
+/* -------------------------
+   Photo Card Styles
+   ------------------------- */
+.photo-scrapbook {
+  position: relative;
+  background: #fff;
+  padding: 8px;
+  box-shadow: 
+    0 2px 8px rgba(0,0,0,0.1),
+    0 4px 16px rgba(0,0,0,0.05);
+}
+
+.photo-scrapbook img {
+  width: 100%;
+  display: block;
+}
+
+/* Polaroid style */
+.photo-polaroid {
+  background: #fff;
+  padding: 12px 12px 40px 12px;
+  box-shadow: 
+    0 3px 10px rgba(0,0,0,0.12),
+    0 6px 20px rgba(0,0,0,0.08);
+}
+
+.photo-polaroid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.photo-polaroid-caption {
+  position: absolute;
+  bottom: 8px;
+  left: 12px;
+  right: 12px;
+  font-family: var(--font-handwritten, 'Caveat', cursive);
+  font-size: 1.1rem;
+  color: #333;
+  text-align: center;
+}
+
+/* Photo rotations for natural scrapbook look */
+.photo-tilt-1 { transform: rotate(-2deg); }
+.photo-tilt-2 { transform: rotate(1.5deg); }
+.photo-tilt-3 { transform: rotate(-1deg); }
+.photo-tilt-4 { transform: rotate(2.5deg); }
+.photo-tilt-5 { transform: rotate(-3deg); }
+
+/* -------------------------
+   Photo Collage Layout
+   ------------------------- */
+.photo-collage {
+  position: relative;
+  display: grid;
+  gap: 0;
+}
+
+.photo-collage > * {
+  position: relative;
+}
+
+/* Overlapping photos effect */
+.photo-collage-overlap > *:nth-child(1) { z-index: 3; }
+.photo-collage-overlap > *:nth-child(2) { z-index: 2; margin-left: -20px; margin-top: 30px; }
+.photo-collage-overlap > *:nth-child(3) { z-index: 1; margin-left: 20px; margin-top: -40px; }
+
+/* -------------------------
+   Scrapbook Sections
+   ------------------------- */
+.section-cream {
+  background: #F2F1E5;
+}
+
+.section-purple {
+  background: #4A3552;
+  color: white;
+}
+
+.section-terracotta {
+  background: #C35F33;
+  color: white;
+}
+
+.section-green {
+  background: #406A56;
+  color: white;
+}
+
+/* Yellow accent bar */
+.accent-bar-yellow {
+  background: #D9C61A;
+  padding: 8px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #000;
+}
+
+/* -------------------------
+   Numbered Steps (like PostScripts)
+   ------------------------- */
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #D9C61A;
+  color: #000;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 50%;
+}
+
+/* -------------------------
+   Handwritten Emphasis
+   ------------------------- */
+.handwritten {
+  font-family: var(--font-handwritten, 'Caveat', cursive);
+}
+
+.handwritten-emphasis {
+  font-family: var(--font-handwritten, 'Caveat', cursive);
+  font-style: italic;
+  font-size: 1.1em;
+}
+
+/* Mixed typography like "AND WHY MATTER TO YOU" */
+.mixed-type {
+  display: inline;
+}
+
+.mixed-type .accent {
+  font-family: var(--font-handwritten, 'Caveat', cursive);
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* -------------------------
+   Scrapbook Cards
+   ------------------------- */
+.card-scrapbook {
+  background: #F2F1E5;
+  border-radius: 4px;
+  padding: 20px;
+  position: relative;
+  box-shadow: 
+    0 2px 8px rgba(0,0,0,0.06),
+    0 4px 16px rgba(0,0,0,0.04);
+}
+
+/* Card with tape */
+.card-taped {
+  position: relative;
+}
+
+.card-taped::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 100px;
+  height: 20px;
+  background-image: url('/images/washi-tape.svg');
+  background-size: 100% 100%;
+  z-index: 10;
+}
+
+/* -------------------------
+   Album/Gallery Styles
+   ------------------------- */
+.album-cover {
+  position: relative;
+  background: #fff;
+  padding: 8px;
+  box-shadow: 
+    0 2px 8px rgba(0,0,0,0.1),
+    -3px 3px 0 -1px #f5f5f0,
+    -3px 3px 8px rgba(0,0,0,0.08),
+    -6px 6px 0 -1px #ebebeb,
+    -6px 6px 8px rgba(0,0,0,0.06);
+}
+
+.album-cover img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+/* -------------------------
+   Memory Timeline Cards
+   ------------------------- */
+.memory-card-scrapbook {
+  background: #F2F1E5;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.memory-card-scrapbook::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20px;
+  width: 80px;
+  height: 18px;
+  background-image: url('/images/washi-tape.svg');
+  background-size: 100% 100%;
+  transform: rotate(-3deg);
+  z-index: 10;
+}
+
+/* -------------------------
+   Sticky Note Style
+   ------------------------- */
+.sticky-note {
+  background: #fff8b8;
+  padding: 16px;
+  box-shadow: 
+    2px 3px 8px rgba(0,0,0,0.12);
+  transform: rotate(var(--rotation, -1deg));
+  position: relative;
+}
+
+.sticky-note::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.05), transparent);
+}
+
+.sticky-note-pink { background: #ffd4e0; }
+.sticky-note-blue { background: #d4e8ff; }
+.sticky-note-green { background: #d4ffd8; }
+
+/* -------------------------
+   CTA Buttons (Webflow style)
+   ------------------------- */
+.btn-scrapbook {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #406A56;
+  color: white;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-scrapbook:hover {
+  background: #365a48;
+  transform: translateY(-1px);
+}
+
+.btn-scrapbook-outline {
+  background: transparent;
+  border: 2px solid #406A56;
+  color: #406A56;
+}
+
+.btn-scrapbook-outline:hover {
+  background: #406A56;
+  color: white;
+}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Caveat, Playfair_Display, Patrick_Hand } from "next/font/google";
+import { Geist, Geist_Mono, Caveat, Playfair_Display, Patrick_Hand, Inter_Tight } from "next/font/google";
 import "./globals.css";
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -11,6 +11,13 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+// Brand primary font - Inter Tight
+const interTight = Inter_Tight({
+  variable: "--font-inter-tight",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 // Handwritten font for category pills and warm touches
@@ -46,7 +53,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${caveat.variable} ${patrickHand.variable} ${playfair.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${interTight.variable} ${caveat.variable} ${patrickHand.variable} ${playfair.variable} antialiased`}
       >
         {children}
       </body>

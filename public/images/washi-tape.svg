@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" preserveAspectRatio="none">
+  <defs>
+    <filter id="tape-texture" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <!-- Main tape body with slight transparency and texture -->
+  <rect x="0" y="5" width="200" height="30" fill="#c9a86c" opacity="0.85" filter="url(#tape-texture)"/>
+  <!-- Subtle striations -->
+  <line x1="0" y1="12" x2="200" y2="12" stroke="#b8956a" stroke-width="0.5" opacity="0.3"/>
+  <line x1="0" y1="20" x2="200" y2="20" stroke="#b8956a" stroke-width="0.5" opacity="0.3"/>
+  <line x1="0" y1="28" x2="200" y2="28" stroke="#b8956a" stroke-width="0.5" opacity="0.3"/>
+  <!-- Torn edges -->
+  <path d="M0,5 Q3,3 6,6 Q9,4 12,5 Q15,3 18,6 Q21,4 24,5 Q27,3 30,6 Q33,4 36,5 Q39,3 42,6 Q45,4 48,5 Q51,3 54,6 Q57,4 60,5 Q63,3 66,6 Q69,4 72,5 Q75,3 78,6 Q81,4 84,5 Q87,3 90,6 Q93,4 96,5 Q99,3 102,6 Q105,4 108,5 Q111,3 114,6 Q117,4 120,5 Q123,3 126,6 Q129,4 132,5 Q135,3 138,6 Q141,4 144,5 Q147,3 150,6 Q153,4 156,5 Q159,3 162,6 Q165,4 168,5 Q171,3 174,6 Q177,4 180,5 Q183,3 186,6 Q189,4 192,5 Q195,3 198,6 L200,5 L200,0 L0,0 Z" fill="#F2F1E5"/>
+  <path d="M0,35 Q3,37 6,34 Q9,36 12,35 Q15,37 18,34 Q21,36 24,35 Q27,37 30,34 Q33,36 36,35 Q39,37 42,34 Q45,36 48,35 Q51,37 54,34 Q57,36 60,35 Q63,37 66,34 Q69,36 72,35 Q75,37 78,34 Q81,36 84,35 Q87,37 90,34 Q93,36 96,35 Q99,37 102,34 Q105,36 108,35 Q111,37 114,34 Q117,36 120,35 Q123,37 126,34 Q129,36 132,35 Q135,37 138,34 Q141,36 144,35 Q147,37 150,34 Q153,36 156,35 Q159,37 162,34 Q165,36 168,35 Q171,37 174,34 Q177,36 180,35 Q183,37 186,34 Q189,36 192,35 Q195,37 198,34 L200,35 L200,40 L0,40 Z" fill="#F2F1E5"/>
+</svg>
