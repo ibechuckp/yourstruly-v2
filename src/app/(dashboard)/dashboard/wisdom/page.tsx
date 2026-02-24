@@ -5,6 +5,9 @@ import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, Lightbulb, Heart, Star, BookOpen, Quote, Play, ChevronRight, Sparkles, Search, X, ChevronLeft, GraduationCap, Briefcase, Users, Utensils, Compass, Share2 } from 'lucide-react';
 import Link from 'next/link';
+import '@/styles/home.css';
+import '@/styles/page-styles.css';
+import '@/styles/engagement.css';
 
 interface WisdomEntry {
   id: string;
@@ -195,12 +198,19 @@ export default function WisdomPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F2F1E5] via-[#FAF7E8] to-[#F5EFE0] p-6 lg:p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="page-container min-h-screen p-6 lg:p-8">
+      {/* Background */}
+      <div className="page-background">
+        <div className="page-blob page-blob-1" />
+        <div className="page-blob page-blob-2" />
+        <div className="page-blob page-blob-3" />
+      </div>
+      
+      <div className="relative z-10 max-w-6xl mx-auto">
         {/* Header with Search */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
-            <Link href="/dashboard" className="p-2 bg-white/80 backdrop-blur-sm rounded-xl hover:bg-white transition-all border border-gray-200">
+            <Link href="/dashboard" className="glass-card p-2 hover:bg-white/90 transition-all">
               <ChevronLeft size={20} className="text-gray-600" />
             </Link>
             <div className="flex-1">

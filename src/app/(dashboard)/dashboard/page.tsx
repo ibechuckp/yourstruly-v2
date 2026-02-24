@@ -12,6 +12,7 @@ import '@/styles/engagement.css'
 import '@/styles/conversation.css'
 import CommandBar from '@/components/dashboard/CommandBar'
 import ActivityFeed, { XPCompletion } from '@/components/dashboard/ActivityFeed'
+import { getTileIcon } from '@/lib/dashboard/icons'
 // import { PersonalityDashboard } from '@/components/personality/PersonalityDashboard' // TODO: Re-enable when analyzing real data
 
 // Type configs with color scheme
@@ -684,13 +685,13 @@ export default function DashboardPage() {
               )}
 
               {/* Tile grid: CSS Grid - 3 columns, photo tile spans 2 rows */}
-              {/* Width: 3×216px + 2×24px = 696px (matches CommandBar max-w-2xl + padding) */}
+              {/* Width: 3×240px + 2×28px = 776px - larger tiles to fill space */}
               <div 
                 className="grid mx-auto"
                 style={{ 
-                  gridTemplateColumns: '216px 216px 216px',
+                  gridTemplateColumns: '240px 240px 240px',
                   gridTemplateRows: 'auto auto',
-                  gap: '24px',
+                  gap: '28px',
                   width: 'fit-content',
                 }}
               >
@@ -772,8 +773,13 @@ export default function DashboardPage() {
                         )}
 
                         <div className="bubble-content">
-                          {/* Header - category pill with torn edge */}
-                          <div className="mb-3">
+                          {/* Header - category pill with torn edge and icon */}
+                          <div className="mb-3 flex items-center gap-2">
+                            <img 
+                              src={getTileIcon(prompt.type)} 
+                              alt="" 
+                              className="w-6 h-6 opacity-70"
+                            />
                             <span className={`bubble-type bubble-type-${config.color}`}>{config.label}</span>
                           </div>
 
@@ -883,7 +889,8 @@ export default function DashboardPage() {
           )}
         </div>
         
-        {/* CommandBar - removed, it positions itself fixed at bottom */}
+        {/* CommandBar - positions itself fixed at bottom */}
+        <CommandBar />
       </div>
     </div>
   )

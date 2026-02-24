@@ -131,7 +131,7 @@
 .home-profile {
   position: fixed;
   top: 88px; /* 56px nav + 32px gap */
-  left: 24px;
+  left: 48px; /* More left padding to balance layout */
   z-index: 20;
 }
 
