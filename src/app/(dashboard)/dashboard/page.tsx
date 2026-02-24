@@ -722,7 +722,7 @@ export default function DashboardPage() {
                           delay: isExpanded ? 0 : staggerDelay,
                         }}
                         onClick={() => !isExpanded && handleTileClick(prompt)}
-                        className={`bubble-tile absolute ${isExpanded ? 'shadow-2xl' : ''}`}
+                        className={`bubble-tile absolute ${isExpanded ? 'shadow-2xl' : ''} ${hasPhoto ? 'has-photo' : ''}`}
                         style={{ 
                           left, 
                           top,

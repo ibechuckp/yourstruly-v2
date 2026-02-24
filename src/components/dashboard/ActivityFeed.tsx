@@ -311,7 +311,16 @@ export default function ActivityFeed({ xpCompletions = [] }: ActivityFeedProps) 
   }, [])
 
   return (
-    <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-[#406A56]/10 shadow-sm overflow-hidden">
+    <div className="bg-[#F2F1E5] rounded-lg border border-white/50 shadow-md overflow-hidden relative">
+      {/* Washi tape decoration */}
+      <div 
+        className="absolute -top-2 left-1/2 -translate-x-1/2 w-20 h-5 z-10 pointer-events-none"
+        style={{
+          backgroundImage: "url('/images/washi-tape-blue.svg')",
+          backgroundSize: '100% 100%',
+          transform: 'translateX(-50%) rotate(1deg)',
+        }}
+      />
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#406A56]/10">
         <div className="flex items-center gap-2">
