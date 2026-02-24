@@ -677,33 +677,18 @@
 
 .bubble-tile {
   background: #F2F1E5;
-  border-radius: 6px;
-  overflow: visible;
+  border-radius: 12px;
+  overflow: hidden;
   box-shadow: 
-    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.08),
     0 4px 16px rgba(0, 0, 0, 0.04);
   -webkit-user-drag: none;
-  position: relative;
 }
 
 .bubble-tile:hover {
   box-shadow: 
-    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.12),
     0 8px 24px rgba(0, 0, 0, 0.08);
-}
-
-/* Add washi tape to some tiles (photo tiles) */
-.bubble-tile.has-photo::before {
-  content: '';
-  position: absolute;
-  top: -8px;
-  left: 20px;
-  width: 60px;
-  height: 18px;
-  background-image: url('/images/washi-tape.svg');
-  background-size: 100% 100%;
-  transform: rotate(-3deg);
-  z-index: 10;
 }
 
 .bubble-content {

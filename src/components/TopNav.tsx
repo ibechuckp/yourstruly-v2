@@ -112,40 +112,31 @@ export default function TopNav({ user, profile }: TopNavProps) {
 
             {/* Desktop Nav */}
             <div className="hidden lg:flex items-center gap-0.5">
-              {/* Primary items */}
+              {/* Primary items - simple underline hover like Webflow */}
               {primaryNav.map((item) => {
-                const Icon = item.icon
                 const isActive = pathname === item.href
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                      isActive
-                        ? 'bg-[#C35F33]/15 text-[#C35F33]'
-                        : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
-                    }`}
+                    className={`nav-link-underline mx-3 text-sm font-medium ${isActive ? 'active' : ''}`}
                   >
-                    <Icon size={16} />
-                    <span>{item.label}</span>
+                    {item.label}
                   </Link>
                 )
               })}
 
               {/* Divider */}
-              <div className="w-px h-5 bg-[#C35F33]/20 mx-2" />
+              <div className="w-px h-5 bg-black/10 mx-4" />
 
               {/* My Story Dropdown */}
               <div ref={myStoryRef} className="relative">
                 <button
                   onClick={() => { setMyStoryOpen(!myStoryOpen); setPeopleOpen(false); setToolsOpen(false) }}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    myStoryItems.some(i => pathname === i.href)
-                      ? 'bg-[#C35F33]/15 text-[#C35F33]'
-                      : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
+                  className={`nav-link-underline mx-3 text-sm font-medium flex items-center gap-1 ${
+                    myStoryItems.some(i => pathname === i.href) ? 'active' : ''
                   }`}
                 >
-                  <BookOpen size={16} />
                   <span>My Story</span>
                   <ChevronDown size={14} className={`transition-transform ${myStoryOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -179,13 +170,10 @@ export default function TopNav({ user, profile }: TopNavProps) {
               <div ref={peopleRef} className="relative">
                 <button
                   onClick={() => { setPeopleOpen(!peopleOpen); setMyStoryOpen(false); setToolsOpen(false) }}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    peopleItems.some(i => pathname === i.href)
-                      ? 'bg-[#C35F33]/15 text-[#C35F33]'
-                      : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
+                  className={`nav-link-underline mx-3 text-sm font-medium flex items-center gap-1 ${
+                    peopleItems.some(i => pathname === i.href) ? 'active' : ''
                   }`}
                 >
-                  <Users size={16} />
                   <span>People</span>
                   <ChevronDown size={14} className={`transition-transform ${peopleOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -219,13 +207,10 @@ export default function TopNav({ user, profile }: TopNavProps) {
               <div ref={toolsRef} className="relative">
                 <button
                   onClick={() => { setToolsOpen(!toolsOpen); setMyStoryOpen(false); setPeopleOpen(false) }}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    toolsItems.some(i => pathname === i.href)
-                      ? 'bg-[#C35F33]/15 text-[#C35F33]'
-                      : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
+                  className={`nav-link-underline mx-3 text-sm font-medium flex items-center gap-1 ${
+                    toolsItems.some(i => pathname === i.href) ? 'active' : ''
                   }`}
                 >
-                  <Wrench size={16} />
                   <span>Tools</span>
                   <ChevronDown size={14} className={`transition-transform ${toolsOpen ? 'rotate-180' : ''}`} />
                 </button>

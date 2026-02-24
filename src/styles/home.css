@@ -13,24 +13,13 @@
  * Background: Off White #F2F1E5 (warmth, scrapbook)
  */
 
-/* Gradient background with paper texture */
+/* Clean cream background - matches Webflow */
 .home-background {
   position: fixed;
   inset: 0;
   background-color: #F2F1E5;
-  background-image: url('/paper-texture.jpg');
-  background-size: 600px auto;
-  background-repeat: repeat;
   overflow: hidden;
   z-index: 0;
-}
-
-/* Cream overlay to soften texture */
-.home-background > .paper-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(242, 241, 229, 0.65);
-  pointer-events: none;
 }
 
 /* Paper edge shadow effect at top */
@@ -173,26 +162,11 @@
   border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
-/* Profile card styling - Scrapbook with tape */
+/* Profile card styling */
 .profile-card {
   width: 280px;
   padding: 24px;
-  position: relative;
   background: #F2F1E5;
-}
-
-/* Washi tape decoration on profile card */
-.profile-card::before {
-  content: '';
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%) rotate(-2deg);
-  width: 100px;
-  height: 20px;
-  background-image: url('/images/washi-tape.svg');
-  background-size: 100% 100%;
-  z-index: 10;
 }
 
 .profile-avatar {

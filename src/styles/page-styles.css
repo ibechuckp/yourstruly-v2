@@ -21,20 +21,8 @@
   position: fixed;
   inset: 0;
   background-color: #F2F1E5;
-  background-image: url('/paper-texture.jpg');
-  background-size: 600px auto;
-  background-repeat: repeat;
   overflow: hidden;
   z-index: 0;
-}
-
-/* Subtle cream overlay to soften texture */
-.page-background::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(242, 241, 229, 0.7);
-  pointer-events: none;
 }
 
 /* Floating blobs for depth */
