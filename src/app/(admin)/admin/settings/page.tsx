@@ -1,5 +1,5 @@
 import { requireAdmin } from '@/lib/admin/auth';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import FeatureFlagsList from '@/components/admin/FeatureFlagsList';
 import AuditLogViewer from '@/components/admin/AuditLogViewer';
 import SystemSettings from '@/components/admin/SystemSettings';
@@ -14,7 +14,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   const params = await searchParams;
   const activeTab = params.tab || 'general';
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Fetch feature flags
   const { data: featureFlags } = await supabase

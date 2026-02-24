@@ -1,6 +1,6 @@
 import { requireAdmin } from '@/lib/admin/auth';
 import { getAuditStats } from '@/lib/admin/audit';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { 
   Users, 
   UserPlus, 
@@ -10,63 +10,88 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ShieldAlert,
-  CheckCircle
+  CheckCircle,
+  MessageSquare,
+  Image,
+  Heart
 } from 'lucide-react';
 
 export default async function AdminDashboardPage() {
   const admin = await requireAdmin();
-  const supabase = await createClient();
+  const supabase = createAdminClient(); // Use admin client to bypass RLS
   
-  // Fetch stats
-  const [
-    { count: totalUsers },
-    { count: newUsersToday },
-    { count: activeSubscriptions },
-    auditStats,
-  ] = await Promise.all([
-    supabase.from('profiles').select('*', { count: 'exact', head: true }),
-    supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
-    supabase
-      .from('subscriptions')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'active'),
-    getAuditStats(7),
-  ]);
+  // Fetch stats - wrap in try/catch for missing tables
+  let totalUsers = 0, newUsersToday = 0, activeSubscriptions = 0;
+  let totalMemories = 0, totalContacts = 0, totalInterviews = 0;
+  let auditStats = { totalActions: 0, actionsByType: {}, topAdmins: [] };
+
+  try {
+    const [
+      usersResult,
+      newUsersResult,
+      subscriptionsResult,
+      memoriesResult,
+      contactsResult,
+      interviewsResult,
+      auditResult,
+    ] = await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+      supabase
+        .from('subscriptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active'),
+      supabase.from('memories').select('*', { count: 'exact', head: true }),
+      supabase.from('contacts').select('*', { count: 'exact', head: true }),
+      supabase.from('interviews').select('*', { count: 'exact', head: true }),
+      getAuditStats(7),
+    ]);
+    
+    totalUsers = usersResult.count || 0;
+    newUsersToday = newUsersResult.count || 0;
+    activeSubscriptions = subscriptionsResult.count || 0;
+    totalMemories = memoriesResult.count || 0;
+    totalContacts = contactsResult.count || 0;
+    totalInterviews = interviewsResult.count || 0;
+    auditStats = auditResult;
+  } catch (error) {
+    console.error('Error fetching admin stats:', error);
+  }
 
   const statsCards = [
     {
       title: 'Total Users',
-      value: totalUsers?.toLocaleString() || '0',
-      change: '+12%',
-      changeType: 'positive' as const,
+      value: totalUsers.toLocaleString(),
+      change: newUsersToday > 0 ? `+${newUsersToday} today` : 'No new today',
+      changeType: newUsersToday > 0 ? 'positive' : 'neutral' as const,
       icon: Users,
       color: 'from-[#406A56] to-[#4A7A66]',
     },
     {
-      title: 'New Today',
-      value: newUsersToday?.toString() || '0',
-      change: '+5',
-      changeType: 'positive' as const,
-      icon: UserPlus,
+      title: 'Total Memories',
+      value: totalMemories.toLocaleString(),
+      change: 'All time',
+      changeType: 'neutral' as const,
+      icon: Image,
       color: 'from-[#C35F33] to-[#D37F53]',
     },
     {
-      title: 'Active Subscriptions',
-      value: activeSubscriptions?.toLocaleString() || '0',
-      change: '+8%',
-      changeType: 'positive' as const,
-      icon: CheckCircle,
-      color: 'from-[#D9C61A] to-[#E9D63A]',
+      title: 'Contacts',
+      value: totalContacts.toLocaleString(),
+      change: 'Loved ones added',
+      changeType: 'neutral' as const,
+      icon: Heart,
+      color: 'from-[#4A3552] to-[#5A4562]',
     },
     {
-      title: 'Admin Actions (7d)',
-      value: auditStats.totalActions.toString(),
-      change: auditStats.totalActions > 100 ? '+15%' : '-5%',
-      changeType: auditStats.totalActions > 100 ? 'positive' : 'negative' as const,
-      icon: Activity,
+      title: 'Interviews',
+      value: totalInterviews.toLocaleString(),
+      change: 'Conversations',
+      changeType: 'neutral' as const,
+      icon: MessageSquare,
       color: 'from-[#8DACAB] to-[#9DBCBD]',
     },
   ];
@@ -102,17 +127,19 @@ export default async function AdminDashboardPage() {
                 </div>
               </div>
               <div className="flex items-center gap-1 mt-4">
-                {stat.changeType === 'positive' ? (
+                {stat.changeType === 'positive' && (
                   <ArrowUpRight className="w-4 h-4 text-[#406A56]" />
-                ) : (
+                )}
+                {stat.changeType === 'negative' && (
                   <ArrowDownRight className="w-4 h-4 text-[#C35F33]" />
                 )}
                 <span className={`text-sm font-medium ${
-                  stat.changeType === 'positive' ? 'text-[#406A56]' : 'text-[#C35F33]'
+                  stat.changeType === 'positive' ? 'text-[#406A56]' : 
+                  stat.changeType === 'negative' ? 'text-[#C35F33]' : 
+                  'text-[#2a1f1a]/60'
                 }`}>
                   {stat.change}
                 </span>
-                <span className="text-sm text-[#2a1f1a]/40 ml-1">vs last week</span>
               </div>
             </div>
           );

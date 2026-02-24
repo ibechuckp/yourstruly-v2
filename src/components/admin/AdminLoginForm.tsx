@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 interface AdminLoginFormProps {
   redirect?: string;
@@ -22,16 +23,32 @@ export default function AdminLoginForm({ redirect }: AdminLoginFormProps) {
     setError('');
 
     try {
-      const response = await fetch('/admin/api/auth/login', {
+      // Use client-side Supabase for auth (sets cookies properly)
+      const supabase = createClient();
+      
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError || !authData.user) {
+        setError(authError?.message || 'Invalid credentials');
+        setIsLoading(false);
+        return;
+      }
+
+      // Verify admin status via API
+      const response = await fetch('/api/admin/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Failed to sign in');
+        // Not an admin - sign out
+        await supabase.auth.signOut();
+        setError(data.error || 'Access denied');
         setIsLoading(false);
         return;
       }
@@ -60,6 +77,7 @@ export default function AdminLoginForm({ redirect }: AdminLoginFormProps) {
         <input
           id="email"
           type="email"
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -76,6 +94,7 @@ export default function AdminLoginForm({ redirect }: AdminLoginFormProps) {
           <input
             id="password"
             type={showPassword ? 'text' : 'password'}
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required

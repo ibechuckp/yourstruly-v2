@@ -1,5 +1,5 @@
 import { requireAdmin } from '@/lib/admin/auth';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import PromptTemplatesTable from '@/components/admin/PromptTemplatesTable';
 
 export const metadata = {
@@ -24,7 +24,7 @@ export default async function EngagementPage({ searchParams }: EngagementPagePro
   const from = (currentPage - 1) * ITEMS_PER_PAGE;
   const to = from + ITEMS_PER_PAGE - 1;
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Build query
   let query = supabase

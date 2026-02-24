@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
-import { updateLastLogin, logAdminAction } from '@/lib/admin/audit';
-import { AuditActions } from '@/lib/admin/audit';
+import { logAdminAction } from '@/lib/admin/audit';
+import { AuditActions } from '@/lib/admin/audit-actions';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,8 +30,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is an admin
-    const { data: adminUser, error: adminError } = await supabase
+    // Check if user is an admin (use admin client to bypass RLS)
+    const adminSupabase = createAdminClient();
+    const { data: adminUser, error: adminError } = await adminSupabase
       .from('admin_users')
       .select('*')
       .eq('id', authData.user.id)
@@ -47,8 +49,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update last login
-    await supabase
+    // Update last login (use admin client to bypass RLS)
+    await adminSupabase
       .from('admin_users')
       .update({ last_login_at: new Date().toISOString() })
       .eq('id', authData.user.id);

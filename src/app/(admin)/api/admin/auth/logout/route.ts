@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { logAdminAction, AuditActions } from '@/lib/admin/audit';
+import { logAdminAction } from '@/lib/admin/audit';
+import { AuditActions } from '@/lib/admin/audit-actions';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,9 +22,9 @@ export async function POST(request: NextRequest) {
     // Sign out
     await supabase.auth.signOut();
 
-    return NextResponse.redirect(new URL('/admin/login', request.url));
+    return NextResponse.redirect(new URL('/admin-auth/login', request.url));
   } catch (error) {
     console.error('Admin logout error:', error);
-    return NextResponse.redirect(new URL('/admin/login', request.url));
+    return NextResponse.redirect(new URL('/admin-auth/login', request.url));
   }
 }

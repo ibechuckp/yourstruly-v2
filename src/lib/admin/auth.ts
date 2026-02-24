@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { AdminUser, AdminRole, hasPermission } from '@/types/admin';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -17,8 +18,9 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
     return null;
   }
   
-  // Check if user is an admin
-  const { data: adminUser } = await supabase
+  // Check if user is an admin (use admin client to bypass RLS)
+  const adminSupabase = createAdminClient();
+  const { data: adminUser } = await adminSupabase
     .from('admin_users')
     .select('*')
     .eq('id', user.id)
@@ -43,7 +45,7 @@ export async function requireAdmin(): Promise<AdminUser> {
   const admin = await getCurrentAdmin();
   
   if (!admin) {
-    redirect('/admin/login');
+    redirect('/admin-auth/login');
   }
   
   return admin;
@@ -83,9 +85,9 @@ export async function checkPermission(permission: string): Promise<boolean> {
  * Update admin last login timestamp
  */
 export async function updateLastLogin(adminId: string): Promise<void> {
-  const supabase = await createClient();
+  const adminSupabase = createAdminClient();
   
-  await supabase
+  await adminSupabase
     .from('admin_users')
     .update({ last_login_at: new Date().toISOString() })
     .eq('id', adminId);

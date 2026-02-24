@@ -1,5 +1,5 @@
 import { requirePermission } from '@/lib/admin/auth';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import UsersTable from '@/components/admin/UsersTable';
 import { Search, Filter, Download, UserPlus } from 'lucide-react';
 
@@ -16,7 +16,7 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
   await requirePermission('users:read');
   const params = await searchParams;
   
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   
   const page = parseInt(params.page || '1', 10);
   const pageSize = 20;

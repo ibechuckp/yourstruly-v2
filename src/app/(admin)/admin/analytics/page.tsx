@@ -1,5 +1,5 @@
 import { requireAdmin } from '@/lib/admin/auth';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import { subDays, format } from 'date-fns';
 
@@ -21,7 +21,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
   const to = params.to ? new Date(params.to) : new Date();
   const from = params.from ? new Date(params.from) : subDays(to, 30);
   
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   
   // Get total users
   const { count: totalUsers } = await supabase

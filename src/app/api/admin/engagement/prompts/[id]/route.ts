@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { logAdminAction, AuditActions } from '@/lib/admin/audit';
+import { logAdminAction } from '@/lib/admin/audit';
+import { AuditActions } from '@/lib/admin/audit-actions';
 
 // GET /api/admin/engagement/prompts/:id - Get single prompt
 export async function GET(

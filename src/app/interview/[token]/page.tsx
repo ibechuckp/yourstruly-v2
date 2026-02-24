@@ -2,7 +2,20 @@
 
 import { useState, useEffect, useRef, use } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Video, Mic, Square, Play, ChevronRight, Check, Loader2, AlertCircle } from 'lucide-react'
+import { 
+  Video, Mic, Square, Play, ChevronRight, Check, Loader2, AlertCircle,
+  MicOff, Type, ChevronLeft, Clock, Heart, Sparkles, Send
+} from 'lucide-react'
+import '@/styles/interview.css'
+
+// YT Brand Colors
+const BRAND_COLORS = {
+  green: '#406A56',
+  terraCotta: '#C35F33',
+  yellow: '#D9C61A',
+  purple: '#4A3552',
+  offWhite: '#F2F1E5',
+}
 
 interface SessionQuestion {
   id: string
@@ -20,6 +33,8 @@ interface Session {
     full_name: string
   }
   session_questions: SessionQuestion[]
+  voice_enabled: boolean
+  allow_text_answers: boolean
 }
 
 export default function InterviewPage({ params }: { params: Promise<{ token: string }> }) {
@@ -33,20 +48,27 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
   const [uploading, setUploading] = useState(false)
   const [completed, setCompleted] = useState(false)
   const [permissionGranted, setPermissionGranted] = useState(false)
+  const [answerMode, setAnswerMode] = useState<'video' | 'voice' | 'text' | null>(null)
+  const [textAnswer, setTextAnswer] = useState('')
+  const [recordingTime, setRecordingTime] = useState(0)
+  const [showWelcome, setShowWelcome] = useState(true)
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const streamRef = useRef<MediaStream | null>(null)
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
   
   const supabase = createClient()
 
   useEffect(() => {
     loadSession()
     return () => {
-      // Cleanup stream on unmount
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop())
+      }
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current)
       }
     }
   }, [token])
@@ -56,7 +78,7 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
       const { data, error } = await supabase
         .from('interview_sessions')
         .select(`
-          id, title, status, user_id,
+          id, title, status, user_id, voice_enabled, allow_text_answers,
           contact:contacts(full_name),
           session_questions(id, question_text, status, sort_order)
         `)
@@ -85,7 +107,7 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
       // Sort questions
       data.session_questions.sort((a, b) => a.sort_order - b.sort_order)
       
-      // Fix contact type (Supabase returns array for single relations)
+      // Fix contact type
       const formattedSession = {
         ...data,
         contact: Array.isArray(data.contact) ? data.contact[0] : data.contact
@@ -127,12 +149,22 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
     }
   }
 
-  const startRecording = () => {
-    if (!streamRef.current) return
+  const startRecording = async (mode: 'video' | 'voice') => {
+    if (!streamRef.current && mode === 'video') {
+      await requestPermission()
+    }
 
     chunksRef.current = []
-    const mediaRecorder = new MediaRecorder(streamRef.current, {
-      mimeType: 'video/webm;codecs=vp9'
+    
+    let stream: MediaStream
+    if (mode === 'voice') {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    } else {
+      stream = streamRef.current!
+    }
+    
+    const mediaRecorder = new MediaRecorder(stream, {
+      mimeType: mode === 'video' ? 'video/webm;codecs=vp9' : 'audio/webm'
     })
 
     mediaRecorder.ondataavailable = (e) => {
@@ -142,13 +174,21 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
     }
 
     mediaRecorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: 'video/webm' })
+      const blob = new Blob(chunksRef.current, { 
+        type: mode === 'video' ? 'video/webm' : 'audio/webm' 
+      })
       setRecordedBlob(blob)
     }
 
     mediaRecorderRef.current = mediaRecorder
     mediaRecorder.start(1000)
     setIsRecording(true)
+    setRecordingTime(0)
+    
+    // Start timer
+    recordingTimerRef.current = setInterval(() => {
+      setRecordingTime(prev => prev + 1)
+    }, 1000)
 
     // Update session status
     if (session) {
@@ -163,6 +203,9 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop()
       setIsRecording(false)
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current)
+      }
     }
   }
 
@@ -173,31 +216,38 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
 
     try {
       const question = session.session_questions[currentQuestion]
-      const fileName = `${session.id}/${question.id}-${Date.now()}.webm`
+      const isVoice = answerMode === 'voice'
+      const fileExt = isVoice ? 'webm' : 'webm'
+      const fileName = `${session.id}/${question.id}-${Date.now()}.${fileExt}`
+      const bucket = isVoice ? 'audio' : 'videos'
 
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
-        .from('videos')
+        .from(bucket)
         .upload(fileName, recordedBlob, {
-          contentType: 'video/webm',
+          contentType: isVoice ? 'audio/webm' : 'video/webm',
         })
 
       if (uploadError) throw uploadError
 
       const { data: { publicUrl } } = supabase.storage
-        .from('videos')
+        .from(bucket)
         .getPublicUrl(fileName)
 
-      // Create video response record
-      await supabase.from('video_responses').insert({
+      // Create response record
+      const responseData: any = {
         session_id: session.id,
         session_question_id: question.id,
         user_id: session.user_id,
-        contact_id: session.contact?.full_name ? undefined : session.user_id, // Fix this
-        video_url: publicUrl,
-        video_key: fileName,
-        duration: Math.round(recordedBlob.size / 50000), // Rough estimate
-      })
+        video_url: isVoice ? null : publicUrl,
+        video_key: isVoice ? null : fileName,
+        audio_url: isVoice ? publicUrl : null,
+        audio_key: isVoice ? fileName : null,
+        duration: recordingTime,
+        answer_type: answerMode,
+      }
+
+      await supabase.from('video_responses').insert(responseData)
 
       // Mark question as answered
       await supabase
@@ -209,8 +259,9 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
       if (currentQuestion < session.session_questions.length - 1) {
         setCurrentQuestion(prev => prev + 1)
         setRecordedBlob(null)
+        setAnswerMode(null)
+        setRecordingTime(0)
       } else {
-        // All done!
         await supabase
           .from('interview_sessions')
           .update({ status: 'completed', completed_at: new Date().toISOString() })
@@ -219,7 +270,48 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
       }
     } catch (e) {
       console.error('Upload error:', e)
-      alert('Failed to save video. Please try again.')
+      alert('Failed to save. Please try again.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const submitTextAnswer = async () => {
+    if (!textAnswer.trim() || !session) return
+
+    setUploading(true)
+
+    try {
+      const question = session.session_questions[currentQuestion]
+
+      await supabase.from('video_responses').insert({
+        session_id: session.id,
+        session_question_id: question.id,
+        user_id: session.user_id,
+        text_response: textAnswer,
+        answer_type: 'text',
+        duration: 0,
+      })
+
+      await supabase
+        .from('session_questions')
+        .update({ status: 'answered' })
+        .eq('id', question.id)
+
+      if (currentQuestion < session.session_questions.length - 1) {
+        setCurrentQuestion(prev => prev + 1)
+        setTextAnswer('')
+        setAnswerMode(null)
+      } else {
+        await supabase
+          .from('interview_sessions')
+          .update({ status: 'completed', completed_at: new Date().toISOString() })
+          .eq('id', session.id)
+        setCompleted(true)
+      }
+    } catch (e) {
+      console.error('Submit error:', e)
+      alert('Failed to save. Please try again.')
     } finally {
       setUploading(false)
     }
@@ -238,6 +330,8 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
     if (currentQuestion < session.session_questions.length - 1) {
       setCurrentQuestion(prev => prev + 1)
       setRecordedBlob(null)
+      setAnswerMode(null)
+      setTextAnswer('')
     } else {
       await supabase
         .from('interview_sessions')
@@ -249,23 +343,35 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
 
   const retakeRecording = () => {
     setRecordedBlob(null)
+    setRecordingTime(0)
+  }
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <Loader2 size={32} className="text-amber-500 animate-spin" />
+      <div className="interview-page">
+        <div className="interview-loading">
+          <Loader2 size={40} className="animate-spin" />
+          <p>Loading your interview...</p>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
-          <h1 className="text-xl font-semibold text-white mb-2">Oops!</h1>
-          <p className="text-gray-400">{error}</p>
+      <div className="interview-page">
+        <div className="interview-error">
+          <div className="interview-error-icon">
+            <AlertCircle size={48} />
+          </div>
+          <h1>Oops!</h1>
+          <p>{error}</p>
         </div>
       </div>
     )
@@ -273,17 +379,21 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
 
   if (completed) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check size={40} className="text-green-500" />
+      <div className="interview-page">
+        <div className="interview-completed">
+          <div className="interview-success-icon">
+            <Check size={48} />
           </div>
-          <h1 className="text-2xl font-semibold text-white mb-2">Thank you!</h1>
-          <p className="text-gray-400 mb-6">
+          <h1>Thank you!</h1>
+          <p>
             Your responses have been recorded and sent to your loved one. 
             They will treasure these memories forever.
           </p>
-          <p className="text-amber-500 text-sm">You can close this page now.</p>
+          <div className="interview-completed-hearts">
+            <Heart className="heart-1" fill="#C35F33" />
+            <Heart className="heart-2" fill="#406A56" />
+            <Heart className="heart-3" fill="#D9C61A" />
+          </div>
         </div>
       </div>
     )
@@ -293,89 +403,218 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
 
   const question = session.session_questions[currentQuestion]
 
-  return (
-    <div className="min-h-screen bg-gray-950 flex flex-col">
-      {/* Header */}
-      <header className="p-4 border-b border-gray-800">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-white font-medium">{session.title}</h1>
-            <p className="text-gray-400 text-sm">
-              Question {currentQuestion + 1} of {session.session_questions.length}
+  // Welcome screen
+  if (showWelcome) {
+    return (
+      <div className="interview-page">
+        <div className="interview-welcome">
+          <div className="interview-welcome-content">
+            <div className="interview-welcome-icon">
+              <Sparkles size={40} />
+            </div>
+            <h1>{session.title}</h1>
+            <p className="interview-welcome-subtitle">
+              Someone special wants to hear your story
             </p>
-          </div>
-          <div className="w-24 h-2 bg-gray-800 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-amber-500 transition-all"
-              style={{ width: `${((currentQuestion + 1) / session.session_questions.length) * 100}%` }}
-            />
+            
+            <div className="interview-welcome-card">
+              <p className="interview-welcome-text">
+                Hi! {session.contact?.full_name || 'Someone'} has invited you to share 
+                some memories and stories. This is a gift that will be treasured 
+                for generations.
+              </p>
+              
+              <div className="interview-welcome-details">
+                <div className="interview-welcome-detail">
+                  <Clock size={18} />
+                  <span>{session.session_questions.length} questions</span>
+                </div>
+                <div className="interview-welcome-detail">
+                  <Video size={18} />
+                  <span>Video, voice, or text answers</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowWelcome(false)
+                requestPermission()
+              }}
+              className="interview-btn interview-btn-primary"
+            >
+              Let's Begin
+              <ChevronRight size={20} />
+            </button>
           </div>
         </div>
-      </header>
+      </div>
+    )
+  }
+
+  return (
+    <div className="interview-page">
+      {/* Progress Bar */}
+      <div className="interview-progress">
+        <div className="interview-progress-info">
+          <span>Question {currentQuestion + 1} of {session.session_questions.length}</span>
+          <span>{Math.round(((currentQuestion + 1) / session.session_questions.length) * 100)}%</span>
+        </div>
+        <div className="interview-progress-bar">
+          <div 
+            className="interview-progress-fill"
+            style={{ width: `${((currentQuestion + 1) / session.session_questions.length) * 100}%` }}
+          />
+        </div>
+      </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-2xl">
-          {/* Question */}
-          <div className="text-center mb-8">
-            <p className="text-2xl md:text-3xl font-medium text-white leading-relaxed">
+      <main className="interview-main">
+        <div className="interview-container">
+          {/* Question Card */}
+          <div className="interview-question-card">
+            <div className="interview-question-number">
+              Question {currentQuestion + 1}
+            </div>
+            <h2 className="interview-question-text">
               {question.question_text}
-            </p>
+            </h2>
           </div>
 
-          {/* Video Area */}
-          <div className="relative aspect-video bg-gray-900 rounded-2xl overflow-hidden mb-6">
-            {!permissionGranted ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <Video size={48} className="text-gray-600 mb-4" />
-                <p className="text-gray-400 mb-4">Camera access required</p>
+          {/* Answer Mode Selection */}
+          {!answerMode && !recordedBlob && (
+            <div className="interview-mode-selection">
+              <p className="interview-mode-title">How would you like to answer?</p>
+              <div className="interview-modes">
                 <button
-                  onClick={requestPermission}
-                  className="flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition-colors"
+                  onClick={() => setAnswerMode('video')}
+                  className="interview-mode-btn"
                 >
-                  <Video size={20} />
-                  Enable Camera
+                  <div className="interview-mode-icon interview-mode-video">
+                    <Video size={28} />
+                  </div>
+                  <span>Video</span>
+                  <small>Record with camera</small>
                 </button>
+                
+                {session.voice_enabled !== false && (
+                  <button
+                    onClick={() => setAnswerMode('voice')}
+                    className="interview-mode-btn"
+                  >
+                    <div className="interview-mode-icon interview-mode-voice">
+                      <Mic size={28} />
+                    </div>
+                    <span>Voice</span>
+                    <small>Audio only</small>
+                  </button>
+                )}
+                
+                {session.allow_text_answers && (
+                  <button
+                    onClick={() => setAnswerMode('text')}
+                    className="interview-mode-btn"
+                  >
+                    <div className="interview-mode-icon interview-mode-text">
+                      <Type size={28} />
+                    </div>
+                    <span>Text</span>
+                    <small>Type your answer</small>
+                  </button>
+                )}
               </div>
-            ) : recordedBlob ? (
-              <video
-                src={URL.createObjectURL(recordedBlob)}
-                className="w-full h-full object-cover"
-                controls
-              />
-            ) : (
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-              />
-            )}
+            </div>
+          )}
 
-            {/* Recording indicator */}
-            {isRecording && (
-              <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-red-500 rounded-full">
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                <span className="text-white text-sm font-medium">Recording</span>
-              </div>
-            )}
-          </div>
+          {/* Recording Area */}
+          {(answerMode === 'video' || answerMode === 'voice') && (
+            <div className="interview-recording-area">
+              {!permissionGranted && answerMode === 'video' ? (
+                <div className="interview-permission-request">
+                  <Video size={48} />
+                  <p>Camera access required</p>
+                  <button
+                    onClick={requestPermission}
+                    className="interview-btn interview-btn-primary"
+                  >
+                    <Video size={20} />
+                    Enable Camera
+                  </button>
+                </div>
+              ) : recordedBlob ? (
+                <div className="interview-preview">
+                  {answerMode === 'video' ? (
+                    <video
+                      src={URL.createObjectURL(recordedBlob)}
+                      controls
+                      className="interview-preview-video"
+                    />
+                  ) : (
+                    <div className="interview-preview-audio">
+                      <audio
+                        src={URL.createObjectURL(recordedBlob)}
+                        controls
+                      />
+                      <div className="interview-preview-audio-icon">
+                        <Mic size={48} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className={`interview-recorder ${answerMode}`}>
+                  {answerMode === 'video' && (
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      muted
+                      playsInline
+                      className="interview-camera"
+                    />
+                  )}
+                  
+                  {isRecording && (
+                    <div className="interview-recording-indicator">
+                      <div className="interview-recording-dot" />
+                      <span>Recording</span>
+                      <span className="interview-recording-time">
+                        {formatTime(recordingTime)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Text Answer Area */}
+          {answerMode === 'text' && !recordedBlob && (
+            <div className="interview-text-area">
+              <textarea
+                value={textAnswer}
+                onChange={(e) => setTextAnswer(e.target.value)}
+                placeholder="Type your answer here..."
+                className="interview-textarea"
+                rows={6}
+              />
+            </div>
+          )}
 
           {/* Controls */}
-          <div className="flex items-center justify-center gap-4">
-            {!permissionGranted ? null : recordedBlob ? (
+          <div className="interview-controls">
+            {recordedBlob ? (
+              // After recording - review options
               <>
                 <button
                   onClick={retakeRecording}
-                  className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition-colors"
+                  className="interview-btn interview-btn-secondary"
                 >
                   Retake
                 </button>
                 <button
                   onClick={uploadAndNext}
                   disabled={uploading}
-                  className="flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl transition-colors"
+                  className="interview-btn interview-btn-primary"
                 >
                   {uploading ? (
                     <>
@@ -390,42 +629,86 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
                   )}
                 </button>
               </>
-            ) : (
+            ) : answerMode === 'text' ? (
+              // Text answer controls
               <>
                 <button
-                  onClick={skipQuestion}
-                  className="px-6 py-3 text-gray-400 hover:text-white transition-colors"
+                  onClick={() => {
+                    setAnswerMode(null)
+                    setTextAnswer('')
+                  }}
+                  className="interview-btn interview-btn-ghost"
                 >
-                  Skip
+                  <ChevronLeft size={18} />
+                  Back
                 </button>
+                <button
+                  onClick={submitTextAnswer}
+                  disabled={!textAnswer.trim() || uploading}
+                  className="interview-btn interview-btn-primary"
+                >
+                  {uploading ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : (
+                    <>
+                      <Send size={18} />
+                      Submit Answer
+                    </>
+                  )}
+                </button>
+              </>
+            ) : answerMode ? (
+              // Recording controls
+              <>
+                <button
+                  onClick={() => {
+                    setAnswerMode(null)
+                    if (streamRef.current) {
+                      streamRef.current.getTracks().forEach(track => track.stop())
+                      streamRef.current = null
+                    }
+                    setPermissionGranted(false)
+                  }}
+                  className="interview-btn interview-btn-ghost"
+                >
+                  <ChevronLeft size={18} />
+                  Back
+                </button>
+                
                 {isRecording ? (
                   <button
                     onClick={stopRecording}
-                    className="flex items-center gap-2 px-8 py-4 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors"
+                    className="interview-btn interview-btn-stop"
                   >
-                    <Square size={20} />
-                    Stop Recording
+                    <Square size={20} fill="currentColor" />
+                    Stop
                   </button>
                 ) : (
                   <button
-                    onClick={startRecording}
-                    className="flex items-center gap-2 px-8 py-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition-colors"
+                    onClick={() => startRecording(answerMode)}
+                    className="interview-btn interview-btn-record"
                   >
-                    <Video size={20} />
+                    {answerMode === 'video' ? <Video size={20} /> : <Mic size={20} />}
                     Start Recording
                   </button>
                 )}
               </>
+            ) : (
+              // Initial state - skip option
+              <button
+                onClick={skipQuestion}
+                className="interview-btn interview-btn-ghost"
+              >
+                Skip this question
+              </button>
             )}
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="p-4 text-center">
-        <p className="text-gray-500 text-sm">
-          Powered by <span className="text-amber-500">YoursTruly</span>
-        </p>
+      <footer className="interview-footer">
+        <p>Powered by <span className="interview-brand">YoursTruly</span></p>
       </footer>
     </div>
   )

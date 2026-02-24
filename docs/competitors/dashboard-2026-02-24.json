@@ -1,0 +1,310 @@
+{
+  "generatedAt": "2026-02-24T17:15:05.848Z",
+  "totalCompetitors": 16,
+  "activeCompetitors": 11,
+  "competitors": [
+    {
+      "name": "StoryWorth",
+      "slug": "storyworth",
+      "url": "https://www.storyworth.com/",
+      "status": "active",
+      "pricing": {
+        "basic": "$99/year",
+        "notes": "Includes 1 year weekly prompts + 1 hardcover book (up to 300 pages). Extra books ~$69."
+      },
+      "featureCount": 9,
+      "hasVoice": true,
+      "hasVideo": false,
+      "hasAI": true,
+      "hasBook": true,
+      "differentiatorCount": 5,
+      "weaknessCount": 6,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "Remento",
+      "slug": "remento",
+      "url": "https://www.remento.co/",
+      "status": "active",
+      "pricing": {
+        "basic": "$84-99/year",
+        "premium": "$12/month renewal",
+        "notes": "Includes 1 year prompts + 1 hardcover book. 30-day money-back guarantee."
+      },
+      "featureCount": 8,
+      "hasVoice": true,
+      "hasVideo": true,
+      "hasAI": true,
+      "hasBook": true,
+      "differentiatorCount": 4,
+      "weaknessCount": 5,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "HeritageWhisper",
+      "slug": "heritagewhisper",
+      "url": "https://heritagewhisper.com/",
+      "status": "active",
+      "pricing": {
+        "free": "First 5 stories free",
+        "basic": "$79/year",
+        "notes": "Unlimited recordings, unlimited family sharing, data export included."
+      },
+      "featureCount": 8,
+      "hasVoice": true,
+      "hasVideo": false,
+      "hasAI": true,
+      "hasBook": true,
+      "differentiatorCount": 5,
+      "weaknessCount": 5,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "Capsle Stories",
+      "slug": "capsle-stories",
+      "url": "https://capslestories.com/",
+      "status": "active",
+      "pricing": {
+        "free": "14-day free trial",
+        "basic": "Annual subscription (price unlisted)",
+        "notes": "Mobile app-based. Recently reduced prices."
+      },
+      "featureCount": 5,
+      "hasVoice": false,
+      "hasVideo": true,
+      "hasAI": false,
+      "hasBook": false,
+      "differentiatorCount": 3,
+      "weaknessCount": 5,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "Klokbox",
+      "slug": "klokbox",
+      "url": "https://www.klokbox.com/",
+      "status": "active",
+      "pricing": {
+        "free": "Free with ads, unlimited albums",
+        "premium": "$4.99/month",
+        "notes": "Premium removes ads, adds cloud backup"
+      },
+      "featureCount": 7,
+      "hasVoice": false,
+      "hasVideo": false,
+      "hasAI": false,
+      "hasBook": true,
+      "differentiatorCount": 4,
+      "weaknessCount": 5,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "Turning Hearts",
+      "slug": "turning-hearts",
+      "url": "https://turninghearts.com/",
+      "status": "active",
+      "pricing": {
+        "oneTime": "Medallion purchase (price varies)",
+        "notes": "Physical medallion + lifetime digital access. 2 medallions per pack."
+      },
+      "featureCount": 6,
+      "hasVoice": false,
+      "hasVideo": true,
+      "hasAI": false,
+      "hasBook": false,
+      "differentiatorCount": 4,
+      "weaknessCount": 5,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "23snaps",
+      "slug": "23snaps",
+      "url": "https://www.23snaps.com/",
+      "status": "active",
+      "pricing": {
+        "free": "Free tier available",
+        "premium": "Premium for prints/books",
+        "notes": "Private family photo sharing app"
+      },
+      "featureCount": 5,
+      "hasVoice": false,
+      "hasVideo": true,
+      "hasAI": false,
+      "hasBook": true,
+      "differentiatorCount": 3,
+      "weaknessCount": 5,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "Eternos",
+      "slug": "eternos",
+      "url": "https://eternos.life/",
+      "status": "active",
+      "pricing": {
+        "basic": "$25/month (Consumer)",
+        "premium": "$49/month + $995 setup (Prosumer)",
+        "enterprise": "Custom pricing",
+        "notes": "AI digital twin with voice cloning. 5-10MB bandwidth/month included."
+      },
+      "featureCount": 7,
+      "hasVoice": true,
+      "hasVideo": true,
+      "hasAI": true,
+      "hasBook": false,
+      "differentiatorCount": 4,
+      "weaknessCount": 5,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "memura.life",
+      "slug": "memura-life",
+      "url": "https://memura.life/",
+      "status": "active",
+      "pricing": {
+        "notes": "Pricing not publicly listed. Early stage product."
+      },
+      "featureCount": 4,
+      "hasVoice": true,
+      "hasVideo": false,
+      "hasAI": false,
+      "hasBook": false,
+      "differentiatorCount": 2,
+      "weaknessCount": 4,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "HereAfter AI",
+      "slug": "hereafter-ai",
+      "url": "https://www.hereafter.ai/",
+      "status": "active",
+      "pricing": {
+        "notes": "Gift card model. Price varies by gift type."
+      },
+      "featureCount": 4,
+      "hasVoice": true,
+      "hasVideo": false,
+      "hasAI": false,
+      "hasBook": false,
+      "differentiatorCount": 3,
+      "weaknessCount": 3,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "MyFarewelling",
+      "slug": "myfarewelling",
+      "url": "https://www.myfarewelling.com/",
+      "status": "active",
+      "pricing": {
+        "free": "Memorial pages free to start",
+        "oneTime": "$19 funeral planning toolkit",
+        "notes": "Free memorial pages, paid planning toolkit"
+      },
+      "featureCount": 7,
+      "hasVoice": false,
+      "hasVideo": false,
+      "hasAI": true,
+      "hasBook": false,
+      "differentiatorCount": 4,
+      "weaknessCount": 4,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "alivemoment.com",
+      "slug": "alivemoment",
+      "url": "https://alivemoment.com/",
+      "status": "pivot",
+      "pricing": {
+        "notes": "Photo animation service. Not a direct competitor."
+      },
+      "featureCount": 2,
+      "hasVoice": false,
+      "hasVideo": false,
+      "hasAI": true,
+      "hasBook": false,
+      "differentiatorCount": 1,
+      "weaknessCount": 3,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "With You App",
+      "slug": "with-you-app",
+      "url": "https://www.withyou.app/",
+      "status": "parked",
+      "pricing": {},
+      "featureCount": 0,
+      "hasVoice": false,
+      "hasVideo": false,
+      "hasAI": false,
+      "hasBook": false,
+      "differentiatorCount": 0,
+      "weaknessCount": 0,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "Tales App",
+      "slug": "tales-app",
+      "url": "https://www.talesapp.com/",
+      "status": "unknown",
+      "pricing": {},
+      "featureCount": 0,
+      "hasVoice": false,
+      "hasVideo": false,
+      "hasAI": false,
+      "hasBook": false,
+      "differentiatorCount": 0,
+      "weaknessCount": 0,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "Legacy Tell",
+      "slug": "legacy-tell",
+      "url": "https://legacytell.com/",
+      "status": "unknown",
+      "pricing": {},
+      "featureCount": 0,
+      "hasVoice": false,
+      "hasVideo": false,
+      "hasAI": false,
+      "hasBook": false,
+      "differentiatorCount": 0,
+      "weaknessCount": 0,
+      "lastUpdated": "2026-02-24"
+    },
+    {
+      "name": "Inalife",
+      "slug": "inalife",
+      "url": "https://inalife.com/",
+      "status": "unknown",
+      "pricing": {},
+      "featureCount": 0,
+      "hasVoice": false,
+      "hasVideo": false,
+      "hasAI": false,
+      "hasBook": false,
+      "differentiatorCount": 0,
+      "weaknessCount": 0,
+      "lastUpdated": "2026-02-24"
+    }
+  ],
+  "ytAdvantages": [
+    "PostScripts - schedule messages for future delivery",
+    "Marketplace - attach physical gifts to messages",
+    "AI Avatar - conversational digital legacy",
+    "Visual organization - 3D globe, face detection",
+    "Comprehensive platform vs single feature"
+  ],
+  "marketInsights": {
+    "averagePrice": "$79-99/year",
+    "commonFeatures": [
+      "Voice recording",
+      "Photo upload",
+      "Family sharing",
+      "Weekly prompts"
+    ],
+    "gapsInMarket": [
+      "Future message delivery",
+      "Gift marketplace integration",
+      "AI avatar at affordable price",
+      "Real-time collaboration"
+    ]
+  }
+}
