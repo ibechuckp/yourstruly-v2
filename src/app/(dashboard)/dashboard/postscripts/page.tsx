@@ -7,6 +7,8 @@ import {
   ChevronRight, Sparkles, Heart, User, Users, Image as ImageIcon, Mic
 } from 'lucide-react'
 import Link from 'next/link'
+import '@/styles/page-styles.css'
+import '@/styles/engagement.css'
 import '@/styles/home.css'
 
 interface PostScript {
@@ -84,64 +86,65 @@ function PostScriptCard({ postscript }: { postscript: PostScript }) {
 
   return (
     <Link href={`/dashboard/postscripts/${postscript.id}`}>
-      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-gray-100 
-                      shadow-sm hover:shadow-md transition-all group cursor-pointer h-full">
-        {/* Image Preview */}
-        {firstImage && (
-          <div className="relative h-28 -mx-4 -mt-4 mb-3 rounded-t-xl overflow-hidden">
-            <img src={firstImage.file_url} alt="" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-          </div>
-        )}
-        
-        <div className="flex items-start gap-3">
-          {/* Recipient Avatar */}
-          <div className="flex-shrink-0">
-            {isCircle ? (
-              <div className="w-10 h-10 rounded-full bg-[#8DACAB] 
-                              flex items-center justify-center text-white">
-                <Users size={18} />
-              </div>
-            ) : postscript.recipient?.avatar_url ? (
-              <img 
-                src={postscript.recipient.avatar_url} 
-                alt={postscript.recipient_name}
-                className="w-10 h-10 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#C35F33] to-[#D9C61A] 
-                              flex items-center justify-center text-white text-sm font-medium">
-                {initials}
-              </div>
-            )}
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-sm truncate group-hover:text-[#C35F33] transition-colors">
-              {postscript.title}
-            </h3>
-            <p className="text-xs text-gray-500 truncate">
-              To: {displayName} {isCircle && <span className="text-[#8DACAB]">(Circle)</span>}
-            </p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${getStatusColor(postscript.status)}`}>
-            {getStatusIcon(postscript.status)}
-            <span className="capitalize">{postscript.status}</span>
-          </span>
+      <div className="bubble-tile glass-card group cursor-pointer h-full flex flex-col">
+        <div className="bubble-content flex flex-col h-full">
+          {/* Image Preview */}
+          {firstImage && (
+            <div className="relative h-28 -mx-4 -mt-4 mb-3 rounded-t-xl overflow-hidden">
+              <img src={firstImage.file_url} alt="" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+            </div>
+          )}
           
-          <div className="flex items-center gap-2 text-gray-400">
-            {hasAudio && <Mic size={12} />}
-            {postscript.attachments && postscript.attachments.length > 0 && (
-              <span className="flex items-center gap-0.5 text-xs">
-                <ImageIcon size={12} />
-                {postscript.attachments.length}
-              </span>
-            )}
+          <div className="flex items-start gap-3 flex-1">
+            {/* Recipient Avatar */}
+            <div className="flex-shrink-0">
+              {isCircle ? (
+                <div className="w-10 h-10 rounded-full bg-[#8DACAB] 
+                                flex items-center justify-center text-white">
+                  <Users size={18} />
+                </div>
+              ) : postscript.recipient?.avatar_url ? (
+                <img 
+                  src={postscript.recipient.avatar_url} 
+                  alt={postscript.recipient_name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#C35F33] to-[#D9C61A] 
+                                flex items-center justify-center text-white text-sm font-medium">
+                  {initials}
+                </div>
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 text-sm truncate group-hover:text-[#C35F33] transition-colors">
+                {postscript.title}
+              </h3>
+              <p className="text-xs text-gray-500 truncate">
+                To: {displayName} {isCircle && <span className="text-[#8DACAB]">(Circle)</span>}
+              </p>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${getStatusColor(postscript.status)}`}>
+              {getStatusIcon(postscript.status)}
+              <span className="capitalize">{postscript.status}</span>
+            </span>
+            
+            <div className="flex items-center gap-2 text-gray-400">
+              {hasAudio && <Mic size={12} />}
+              {postscript.attachments && postscript.attachments.length > 0 && (
+                <span className="flex items-center gap-0.5 text-xs">
+                  <ImageIcon size={12} />
+                  {postscript.attachments.length}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -207,15 +210,15 @@ export default function PostScriptsPage() {
   ]
 
   return (
-    <div className="min-h-screen relative pb-24">
-      {/* Warm background */}
-      <div className="home-background">
-        <div className="home-blob home-blob-1" />
-        <div className="home-blob home-blob-2" />
-        <div className="home-blob home-blob-3" />
+    <div className="page-container">
+      {/* Warm gradient background with blobs */}
+      <div className="page-background">
+        <div className="page-blob page-blob-1" />
+        <div className="page-blob page-blob-2" />
+        <div className="page-blob page-blob-3" />
       </div>
 
-      <div className="relative z-10 p-6">
+      <div className="relative z-10">
         {/* Header */}
         <header className="mb-8">
           <div className="flex items-center justify-between mb-2">
@@ -242,19 +245,19 @@ export default function PostScriptsPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-gray-100">
+          <div className="glass-card p-4">
             <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
             <div className="text-xs text-gray-500">Total</div>
           </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-gray-100">
+          <div className="glass-card p-4">
             <div className="text-2xl font-bold text-amber-600">{stats.scheduled || 0}</div>
             <div className="text-xs text-gray-500">Scheduled</div>
           </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-gray-100">
+          <div className="glass-card p-4">
             <div className="text-2xl font-bold text-blue-600">{stats.sent || 0}</div>
             <div className="text-xs text-gray-500">Sent</div>
           </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-gray-100">
+          <div className="glass-card p-4">
             <div className="text-2xl font-bold text-green-600">{stats.opened || 0}</div>
             <div className="text-xs text-gray-500">Opened</div>
           </div>
@@ -267,9 +270,9 @@ export default function PostScriptsPage() {
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all
-                ${filter === f.key 
-                  ? 'bg-[#C35F33] text-white' 
-                  : 'bg-white/80 text-gray-600 hover:bg-white'
+                ${filter === f.key
+                  ? 'bg-[#C35F33] text-white'
+                  : 'glass-card text-gray-600 hover:bg-white/90'
                 }`}
             >
               {f.label}
@@ -284,7 +287,7 @@ export default function PostScriptsPage() {
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#C35F33] border-t-transparent" />
             </div>
           ) : postscripts.length === 0 ? (
-            <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-12 text-center">
+            <div className="glass-card p-12 text-center">
               <div className="w-16 h-16 rounded-full bg-[#C35F33]/10 flex items-center justify-center mx-auto mb-4">
                 <Mail size={32} className="text-[#C35F33]" />
               </div>
@@ -292,9 +295,9 @@ export default function PostScriptsPage() {
               <p className="text-gray-600 mb-6">
                 Create your first future message to send to a loved one.
               </p>
-              <Link 
+              <Link
                 href="/dashboard/postscripts/new"
-                className="inline-flex items-center gap-2 bg-[#C35F33] text-white px-6 py-3 rounded-full 
+                className="inline-flex items-center gap-2 bg-[#C35F33] text-white px-6 py-3 rounded-full
                            font-medium hover:bg-[#A84E2A] transition-colors"
               >
                 <Plus size={20} />

@@ -278,7 +278,7 @@ export default function GalleryPage() {
           <button
             onClick={() => setShowUploadModal(true)}
             disabled={uploading}
-            className="glass-card-page w-14 h-14 flex items-center justify-center cursor-pointer hover:bg-white/90 transition-all self-start"
+            className="glass-card w-14 h-14 flex items-center justify-center cursor-pointer hover:bg-white/90 transition-all self-start"
           >
             {uploading ? (
               <div className="w-6 h-6 border-2 border-[#8a7c08] border-t-transparent rounded-full animate-spin" />
@@ -305,7 +305,7 @@ export default function GalleryPage() {
             <p className="text-[#666]">Loading gallery...</p>
           </div>
         ) : media.length === 0 ? (
-          <div className="glass-card-page p-12 text-center">
+          <div className="glass-card p-12 text-center">
             <div className="w-16 h-16 mx-auto mb-4 bg-[#406A56]/10 rounded-full flex items-center justify-center">
               <ImageIcon size={32} className="text-[#406A56]/50" />
             </div>
@@ -315,7 +315,7 @@ export default function GalleryPage() {
         ) : (
           <>
             {/* Globe - Full Width */}
-            <div className="glass-card-page p-0 overflow-hidden mb-5">
+            <div className="glass-card p-0 overflow-hidden mb-5">
               <GalleryGlobe
                 media={media}
                 selectedTimeframe={selectedYearRange ? { yearRange: selectedYearRange } : null}
@@ -324,45 +324,45 @@ export default function GalleryPage() {
             </div>
 
             {/* All Photos Grid */}
-            <div className="glass-card-page p-5">
+            <div className="glass-card p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-[#2d2d2d]">All Photos</h3>
                 <p className="text-xs text-[#666]">{media.length} photos</p>
               </div>
-              
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
                 {media.map((item) => (
-                  <div 
+                  <div
                     key={item.id}
                     onClick={() => handleGlobeSelect(item)}
-                    className="aspect-square rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#406A56] transition-all relative group"
+                    className="bubble-tile aspect-square rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#406A56] transition-all relative group"
                   >
-                    <img 
-                      src={item.file_url} 
+                    <img
+                      src={item.file_url}
                       alt=""
                       className="w-full h-full object-cover"
                     />
                     {/* Edit button on hover */}
                     <button
                       onClick={(e) => { e.stopPropagation(); setEditingMedia(item); }}
-                      className="absolute top-1 right-1 w-6 h-6 bg-black/50 backdrop-blur rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+                      className="absolute top-2 right-2 w-6 h-6 bg-black/50 backdrop-blur rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
                       title="Edit date & location"
                     >
                       <span className="text-white text-xs">✏️</span>
                     </button>
                     {/* Missing data indicator */}
                     {(!item.taken_at || (!item.exif_lat && !item.location_lat)) && (
-                      <div className="absolute top-1 left-1 w-5 h-5 bg-amber-500/90 backdrop-blur rounded-full flex items-center justify-center" title="Missing date or location">
+                      <div className="absolute top-2 left-2 w-5 h-5 bg-amber-500/90 backdrop-blur rounded-full flex items-center justify-center" title="Missing date or location">
                         <span className="text-white text-[10px]">!</span>
                       </div>
                     )}
                     {(item.location_lat && item.location_lng) || (item.exif_lat && item.exif_lng) ? (
-                      <div className="absolute bottom-1 right-1 w-5 h-5 bg-white/80 backdrop-blur rounded-full flex items-center justify-center">
+                      <div className="absolute bottom-2 right-2 w-5 h-5 bg-white/80 backdrop-blur rounded-full flex items-center justify-center">
                         <MapPin size={10} className="text-[#406A56]" />
                       </div>
                     ) : null}
                     {item.taken_at && (
-                      <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/50 backdrop-blur rounded text-[8px] text-white">
+                      <div className="absolute bottom-2 left-2 px-1.5 py-0.5 bg-black/50 backdrop-blur rounded text-[8px] text-white">
                         {new Date(item.taken_at).toLocaleDateString()}
                       </div>
                     )}
@@ -373,13 +373,13 @@ export default function GalleryPage() {
 
             {/* Orbital Album Carousel - Show with 2+ albums */}
             {autoAlbums.length >= 2 && (
-              <div className="glass-card-page p-5 mt-5 overflow-hidden">
+              <div className="glass-card p-5 mt-5 overflow-hidden">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-[#2d2d2d]">Your Albums</h3>
                   <p className="text-xs text-[#666]">Drag or click to explore</p>
                 </div>
-                
-                <OrbitalCarousel 
+
+                <OrbitalCarousel
                   albums={autoAlbums.map((album, i) => ({
                     id: `album-${i}`,
                     name: album.name,
@@ -399,21 +399,21 @@ export default function GalleryPage() {
 
             {/* Smart Albums Grid (fallback for fewer albums) */}
             {autoAlbums.length > 0 && autoAlbums.length < 3 && (
-              <div className="glass-card-page p-5 mt-5">
+              <div className="glass-card p-5 mt-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-[#2d2d2d]">Smart Albums</h3>
                   <p className="text-xs text-[#666]">Auto-generated from your photos</p>
                 </div>
-                
+
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
                   {autoAlbums.map((album, i) => (
-                    <div 
+                    <div
                       key={i}
-                      className="group cursor-pointer"
+                      className="bubble-tile glass-card group cursor-pointer overflow-hidden"
                     >
                       <div className="aspect-square rounded-xl overflow-hidden mb-2 relative">
-                        <img 
-                          src={album.cover} 
+                        <img
+                          src={album.cover}
                           alt={album.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         />
@@ -428,18 +428,18 @@ export default function GalleryPage() {
                       </div>
                     </div>
                   ))}
-                  
+
                   {/* People Album Placeholder */}
-                  <div className="group cursor-pointer opacity-50">
+                  <div className="bubble-tile glass-card group cursor-pointer opacity-50 overflow-hidden">
                     <div className="aspect-square rounded-xl bg-[#4A3552]/10 flex flex-col items-center justify-center mb-2">
                       <Users size={28} className="text-[#4A3552]/40 mb-2" />
                       <p className="text-[#4A3552]/60 text-xs">People</p>
                       <p className="text-[#4A3552]/40 text-[10px]">Coming soon</p>
                     </div>
                   </div>
-                  
+
                   {/* Pets Album Placeholder */}
-                  <div className="group cursor-pointer opacity-50">
+                  <div className="bubble-tile glass-card group cursor-pointer opacity-50 overflow-hidden">
                     <div className="aspect-square rounded-xl bg-[#C35F33]/10 flex flex-col items-center justify-center mb-2">
                       <PawPrint size={28} className="text-[#C35F33]/40 mb-2" />
                       <p className="text-[#C35F33]/60 text-xs">Pets</p>
@@ -452,21 +452,21 @@ export default function GalleryPage() {
             
             {/* Empty state for no albums */}
             {autoAlbums.length === 0 && (
-              <div className="glass-card-page p-5 mt-5">
+              <div className="glass-card p-5 mt-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-[#2d2d2d]">Smart Albums</h3>
                   <p className="text-xs text-[#666]">Add location data to photos to create albums</p>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="aspect-square rounded-xl bg-[#406A56]/5 flex flex-col items-center justify-center">
+                  <div className="bubble-tile glass-card aspect-square flex flex-col items-center justify-center">
                     <MapPin size={24} className="text-[#406A56]/30 mb-1" />
                     <p className="text-[#666] text-xs">Locations</p>
                   </div>
-                  <div className="aspect-square rounded-xl bg-[#4A3552]/5 flex flex-col items-center justify-center">
+                  <div className="bubble-tile glass-card aspect-square flex flex-col items-center justify-center">
                     <Users size={24} className="text-[#4A3552]/30 mb-1" />
                     <p className="text-[#666] text-xs">People</p>
                   </div>
-                  <div className="aspect-square rounded-xl bg-[#C35F33]/5 flex flex-col items-center justify-center">
+                  <div className="bubble-tile glass-card aspect-square flex flex-col items-center justify-center">
                     <PawPrint size={24} className="text-[#C35F33]/30 mb-1" />
                     <p className="text-[#666] text-xs">Pets</p>
                   </div>
@@ -492,7 +492,7 @@ export default function GalleryPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="glass-card-page p-6 w-full max-w-sm relative"
+              className="glass-card p-6 w-full max-w-sm relative"
             >
               {/* Close button */}
               <button

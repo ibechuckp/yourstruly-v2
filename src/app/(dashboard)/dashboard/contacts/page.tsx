@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Plus, Edit2, Trash2, X, Users, ChevronLeft, Calendar, MapPin, Phone, Mail, Heart, Search } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/page-styles.css'
+import '@/styles/engagement.css'
+import '@/styles/home.css'
 
 // ============================================
 // TYPES
@@ -274,53 +276,55 @@ export default function ContactsPage() {
               {filteredContacts.map(contact => (
                 <div 
                   key={contact.id} 
-                  className="content-card content-card-interactive group cursor-pointer"
+                  className="bubble-tile glass-card group cursor-pointer"
                   onClick={() => window.location.href = `/dashboard/contacts/${contact.id}`}
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="avatar-circle avatar-circle-initials">
-                        {contact.full_name.charAt(0)}
+                  <div className="bubble-content">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="bubble-contact-avatar">
+                          {contact.full_name.charAt(0)}
+                        </div>
+                        <div>
+                          <h3 className="text-[#2d2d2d] font-semibold">{contact.full_name}</h3>
+                          <p className="text-[#406A56] text-sm">{getRelationshipLabel(contact.relationship_type)}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-[#2d2d2d] font-semibold">{contact.full_name}</h3>
-                        <p className="text-[#406A56] text-sm">{getRelationshipLabel(contact.relationship_type)}</p>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => { setEditingContact(contact); setShowContactModal(true) }} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-colors">
+                          <Edit2 size={14} />
+                        </button>
+                        <button onClick={() => handleDeleteContact(contact.id)} className="p-2 text-[#406A56]/50 hover:text-[#C35F33] hover:bg-[#C35F33]/10 rounded-lg transition-colors">
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => { setEditingContact(contact); setShowContactModal(true) }} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-colors">
-                        <Edit2 size={14} />
-                      </button>
-                      <button onClick={() => handleDeleteContact(contact.id)} className="p-2 text-[#406A56]/50 hover:text-[#C35F33] hover:bg-[#C35F33]/10 rounded-lg transition-colors">
-                        <Trash2 size={14} />
-                      </button>
+                    <div className="space-y-1.5 text-sm">
+                      {contact.date_of_birth && (
+                        <div className="flex items-center gap-2 text-[#666]">
+                          <Calendar size={13} className="text-[#406A56]" />
+                          <span>{new Date(contact.date_of_birth).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        </div>
+                      )}
+                      {contact.email && (
+                        <div className="flex items-center gap-2 text-[#666]">
+                          <Mail size={13} className="text-[#406A56]" />
+                          <span className="truncate">{contact.email}</span>
+                        </div>
+                      )}
+                      {contact.phone && (
+                        <div className="flex items-center gap-2 text-[#666]">
+                          <Phone size={13} className="text-[#406A56]" />
+                          <span>{contact.phone}</span>
+                        </div>
+                      )}
+                      {(contact.city || contact.country) && (
+                        <div className="flex items-center gap-2 text-[#888]">
+                          <MapPin size={13} className="text-[#406A56]" />
+                          <span>{[contact.city, contact.state, contact.country].filter(Boolean).join(', ')}</span>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="space-y-1.5 text-sm">
-                    {contact.date_of_birth && (
-                      <div className="flex items-center gap-2 text-[#666]">
-                        <Calendar size={13} className="text-[#406A56]" />
-                        <span>{new Date(contact.date_of_birth).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                      </div>
-                    )}
-                    {contact.email && (
-                      <div className="flex items-center gap-2 text-[#666]">
-                        <Mail size={13} className="text-[#406A56]" />
-                        <span className="truncate">{contact.email}</span>
-                      </div>
-                    )}
-                    {contact.phone && (
-                      <div className="flex items-center gap-2 text-[#666]">
-                        <Phone size={13} className="text-[#406A56]" />
-                        <span>{contact.phone}</span>
-                      </div>
-                    )}
-                    {(contact.city || contact.country) && (
-                      <div className="flex items-center gap-2 text-[#888]">
-                        <MapPin size={13} className="text-[#406A56]" />
-                        <span>{[contact.city, contact.state, contact.country].filter(Boolean).join(', ')}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
               ))}
@@ -364,36 +368,38 @@ export default function ContactsPage() {
               {pets.map(pet => (
                 <div 
                   key={pet.id} 
-                  className={`content-card group cursor-pointer ${pet.is_deceased ? 'opacity-70' : 'content-card-interactive'}`}
+                  className={`bubble-tile glass-card group cursor-pointer ${pet.is_deceased ? 'opacity-70' : ''}`}
                   onClick={() => window.location.href = `/dashboard/pets/${pet.id}`}
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#C35F33] to-[#D87A55] flex items-center justify-center text-white font-semibold">
-                        {pet.name.charAt(0)}
+                  <div className="bubble-content">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#C35F33] to-[#D87A55] flex items-center justify-center text-white font-semibold">
+                          {pet.name.charAt(0)}
+                        </div>
+                        <div>
+                          <h3 className="text-[#2d2d2d] font-semibold">{pet.name}</h3>
+                          <p className="text-[#C35F33] text-sm">{pet.species}{pet.breed ? ` - ${pet.breed}` : ''}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-[#2d2d2d] font-semibold">{pet.name}</h3>
-                        <p className="text-[#C35F33] text-sm">{pet.species}{pet.breed ? ` - ${pet.breed}` : ''}</p>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => { setEditingPet(pet); setShowPetModal(true) }} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-colors">
+                          <Edit2 size={14} />
+                        </button>
+                        <button onClick={() => handleDeletePet(pet.id)} className="p-2 text-[#406A56]/50 hover:text-[#C35F33] hover:bg-[#C35F33]/10 rounded-lg transition-colors">
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => { setEditingPet(pet); setShowPetModal(true) }} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-colors">
-                        <Edit2 size={14} />
-                      </button>
-                      <button onClick={() => handleDeletePet(pet.id)} className="p-2 text-[#406A56]/50 hover:text-[#C35F33] hover:bg-[#C35F33]/10 rounded-lg transition-colors">
-                        <Trash2 size={14} />
-                      </button>
+                    <div className="space-y-1.5 text-sm">
+                      {pet.color && <p className="text-[#666]">Color: {pet.color}</p>}
+                      {pet.personality && <p className="text-[#666] line-clamp-1">{pet.personality}</p>}
+                      {pet.is_deceased && (
+                        <p className="text-[#888] italic">
+                          🌈 Rainbow Bridge {pet.date_of_passing ? `· ${new Date(pet.date_of_passing).toLocaleDateString()}` : ''}
+                        </p>
+                      )}
                     </div>
-                  </div>
-                  <div className="space-y-1.5 text-sm">
-                    {pet.color && <p className="text-[#666]">Color: {pet.color}</p>}
-                    {pet.personality && <p className="text-[#666] line-clamp-1">{pet.personality}</p>}
-                    {pet.is_deceased && (
-                      <p className="text-[#888] italic">
-                        🌈 Rainbow Bridge {pet.date_of_passing ? `· ${new Date(pet.date_of_passing).toLocaleDateString()}` : ''}
-                      </p>
-                    )}
                   </div>
                 </div>
               ))}

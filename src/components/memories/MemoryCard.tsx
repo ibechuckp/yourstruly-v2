@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Heart, MapPin, Users, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { ScopeIndicator } from '@/components/circles'
+import { getCategoryIcon } from '@/lib/dashboard/icons'
 
 interface Memory {
   id: string
@@ -48,6 +49,7 @@ export default function MemoryCard({ memory }: MemoryCardProps) {
   const coverMedia = memory.memory_media?.find(m => m.is_cover) || memory.memory_media?.[0]
   const mediaCount = memory.memory_media?.length || 0
   const moodGradient = MOOD_COLORS[memory.ai_mood] || MOOD_COLORS.neutral
+  const categoryIcon = memory.ai_category ? getCategoryIcon(memory.ai_category) : null
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return ''
@@ -55,10 +57,23 @@ export default function MemoryCard({ memory }: MemoryCardProps) {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
+  // Get color for category label based on ai_category
+  const getCategoryColor = (category: string) => {
+    const colorMap: Record<string, string> = {
+      'travel': 'yellow',
+      'family': 'green',
+      'celebration': 'red',
+      'nature': 'green',
+      'food': 'yellow',
+      'everyday': 'blue',
+    }
+    return colorMap[category?.toLowerCase()] || 'blue'
+  }
+
   return (
     <Link href={`/dashboard/memories/${memory.id}`}>
       <div
-        className="group relative aspect-square rounded-xl overflow-hidden bg-gray-800 cursor-pointer"
+        className="glass-card group relative aspect-square rounded-xl overflow-hidden cursor-pointer"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -103,11 +118,13 @@ export default function MemoryCard({ memory }: MemoryCardProps) {
           </div>
         )}
 
-        {/* AI Category Tag */}
+        {/* AI Category Tag with Torn Edge */}
         {memory.ai_category && (
-          <div className="absolute top-2 left-2 px-2 py-0.5 bg-amber-600/80 rounded-full text-white text-xs flex items-center gap-1">
-            <Sparkles size={10} />
-            {memory.ai_category}
+          <div className={`absolute top-2 left-2 bubble-type bubble-type-${getCategoryColor(memory.ai_category)}`}>
+            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
+              {categoryIcon && <img src={categoryIcon} alt="" className="w-3 h-3 opacity-70" />}
+              {memory.ai_category}
+            </span>
           </div>
         )}
 
