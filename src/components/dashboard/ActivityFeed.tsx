@@ -53,18 +53,19 @@ export interface XPCompletion {
   timestamp: string
 }
 
+// Use warm, cohesive colors that match the cream/terra cotta theme
 const ACTIVITY_ICONS: Record<string, { icon: typeof Heart; color: string; bg: string }> = {
-  memory_shared: { icon: Image, color: 'text-amber-600', bg: 'bg-amber-100' },
-  wisdom_shared: { icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-100' },
+  memory_shared: { icon: Image, color: 'text-[#C35F33]', bg: 'bg-[#C35F33]/10' },
+  wisdom_shared: { icon: BookOpen, color: 'text-[#4A3552]', bg: 'bg-[#4A3552]/10' },
   circle_message: { icon: MessageCircle, color: 'text-[#406A56]', bg: 'bg-[#406A56]/10' },
-  circle_invite: { icon: Users, color: 'text-blue-600', bg: 'bg-blue-100' },
-  circle_content: { icon: Heart, color: 'text-rose-600', bg: 'bg-rose-100' },
-  wisdom_comment: { icon: MessageCircle, color: 'text-purple-600', bg: 'bg-purple-100' },
-  xp_earned: { icon: Zap, color: 'text-[#D9C61A]', bg: 'bg-[#D9C61A]/20' },
-  photo_backstory: { icon: Camera, color: 'text-amber-600', bg: 'bg-amber-100' },
-  knowledge: { icon: Brain, color: 'text-purple-600', bg: 'bg-purple-100' },
+  circle_invite: { icon: Users, color: 'text-[#8DACAB]', bg: 'bg-[#8DACAB]/15' },
+  circle_content: { icon: Heart, color: 'text-[#C35F33]', bg: 'bg-[#C35F33]/10' },
+  wisdom_comment: { icon: MessageCircle, color: 'text-[#4A3552]', bg: 'bg-[#4A3552]/10' },
+  xp_earned: { icon: Zap, color: 'text-[#406A56]', bg: 'bg-[#406A56]/10' },
+  photo_backstory: { icon: Camera, color: 'text-[#C35F33]', bg: 'bg-[#C35F33]/10' },
+  knowledge: { icon: Brain, color: 'text-[#4A3552]', bg: 'bg-[#4A3552]/10' },
   quick_question: { icon: Users, color: 'text-[#406A56]', bg: 'bg-[#406A56]/10' },
-  missing_info: { icon: Users, color: 'text-blue-600', bg: 'bg-blue-100' },
+  missing_info: { icon: Users, color: 'text-[#8DACAB]', bg: 'bg-[#8DACAB]/15' },
 }
 
 function formatRelativeTime(timestamp: string): string {
@@ -94,68 +95,27 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
         }}
         className="relative overflow-hidden"
       >
-        {/* Celebration particles */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 0 }}
-          transition={{ duration: 2, delay: 0.5 }}
-        >
-          {[...Array(6)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 rounded-full bg-[#D9C61A]"
-              initial={{ 
-                x: '50%', 
-                y: '50%',
-                scale: 0,
-              }}
-              animate={{ 
-                x: `${20 + Math.random() * 60}%`,
-                y: `${Math.random() * 100}%`,
-                scale: [0, 1, 0],
-                opacity: [0, 1, 0],
-              }}
-              transition={{ 
-                duration: 0.8, 
-                delay: 0.2 + i * 0.1,
-                ease: 'easeOut',
-              }}
-            />
-          ))}
-        </motion.div>
-        
+        {/* Subtle celebration effect */}
         <Link 
           href={activity.link}
-          className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-r from-[#D9C61A]/10 to-[#D9C61A]/5 border border-[#D9C61A]/20 hover:from-[#D9C61A]/15 hover:to-[#D9C61A]/10 transition-all group"
+          className="flex items-start gap-3 p-3 rounded-xl bg-[#406A56]/5 border border-[#406A56]/15 hover:bg-[#406A56]/10 transition-all group"
         >
-          {/* XP Icon with glow */}
+          {/* XP Icon - warm green */}
           <div className="flex-shrink-0 relative">
-            <motion.div 
-              className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D9C61A] to-[#C35F33] flex items-center justify-center shadow-lg"
-              animate={{ 
-                boxShadow: ['0 0 0 0 rgba(217, 198, 26, 0.4)', '0 0 0 8px rgba(217, 198, 26, 0)', '0 0 0 0 rgba(217, 198, 26, 0)'],
-              }}
-              transition={{ duration: 1.5, repeat: 2 }}
-            >
-              <Zap size={18} className="text-white" />
-            </motion.div>
+            <div className="w-10 h-10 rounded-full bg-[#406A56] flex items-center justify-center shadow-sm">
+              <Sparkles size={16} className="text-white" />
+            </div>
           </div>
 
           {/* Content with XP badge */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <motion.span 
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D9C61A] text-white text-xs font-bold"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 0.3, delay: 0.5 }}
-              >
-                <Sparkles size={10} />
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#406A56] text-white text-xs font-semibold">
                 +{activity.xp} XP
-              </motion.span>
-              <span className="text-xs text-gray-500">earned!</span>
+              </span>
+              <span className="text-xs text-[#406A56]/70">earned</span>
             </div>
-            <p className="text-sm text-gray-800 leading-snug line-clamp-2">
+            <p className="text-sm text-gray-700 leading-snug line-clamp-2">
               {activity.description}
             </p>
             <p className="text-xs text-gray-400 mt-1">
@@ -169,7 +129,7 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
               <img 
                 src={activity.thumbnail} 
                 alt=""
-                className="w-12 h-12 rounded-lg object-cover shadow-sm ring-2 ring-[#D9C61A]/30"
+                className="w-12 h-12 rounded-lg object-cover shadow-sm ring-1 ring-[#406A56]/20"
               />
             </div>
           )}

@@ -3,6 +3,12 @@
  * Run with: npx tsx src/lib/marketplace/test-config.ts
  */
 
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// Load .env.local file
+config({ path: resolve(process.cwd(), '.env.local') });
+
 import { Floristone, Prodigi, Spocket } from './providers';
 
 console.log('=== Marketplace Provider Configuration Test ===\n');

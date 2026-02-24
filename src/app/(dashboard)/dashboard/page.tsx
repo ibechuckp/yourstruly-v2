@@ -675,6 +675,14 @@ export default function DashboardPage() {
                 )}
               </AnimatePresence>
 
+              {/* Backdrop for expanded tile */}
+              {expandedId && (
+                <div 
+                  className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+                  onClick={() => { setExpandedId(null); setTextValue(''); }}
+                />
+              )}
+
               {/* Tile grid: CSS Grid - 3 columns, photo tile spans 2 rows */}
               <div 
                 className="grid mx-auto mt-4"
@@ -734,7 +742,7 @@ export default function DashboardPage() {
                           delay: staggerDelay,
                         }}
                         onClick={() => !isExpanded && handleTileClick(prompt)}
-                        className={`bubble-tile ${isExpanded ? 'shadow-2xl fixed inset-4 z-50 m-auto max-w-md' : ''}`}
+                        className={`bubble-tile ${isExpanded ? 'shadow-xl !fixed !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2 z-50 w-[360px] max-h-[80vh] overflow-auto' : ''}`}
                         data-type={prompt.type}
                         style={{ 
                           ...gridStyle,
