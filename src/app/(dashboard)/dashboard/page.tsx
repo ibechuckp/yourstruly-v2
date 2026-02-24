@@ -12,7 +12,6 @@ import '@/styles/engagement.css'
 import '@/styles/conversation.css'
 import CommandBar from '@/components/dashboard/CommandBar'
 import ActivityFeed, { XPCompletion } from '@/components/dashboard/ActivityFeed'
-import { getTileIcon } from '@/lib/dashboard/icons'
 // import { PersonalityDashboard } from '@/components/personality/PersonalityDashboard' // TODO: Re-enable when analyzing real data
 
 // Type configs with color scheme
@@ -773,13 +772,8 @@ export default function DashboardPage() {
                         )}
 
                         <div className="bubble-content">
-                          {/* Header - category pill with torn edge and icon */}
-                          <div className="mb-3 flex items-center gap-2">
-                            <img 
-                              src={getTileIcon(prompt.type)} 
-                              alt="" 
-                              className="w-6 h-6 opacity-70"
-                            />
+                          {/* Header - category pill with torn edge */}
+                          <div className="mb-3">
                             <span className={`bubble-type bubble-type-${config.color}`}>{config.label}</span>
                           </div>
 

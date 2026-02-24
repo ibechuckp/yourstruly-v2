@@ -33,6 +33,7 @@ interface PostScript {
   created_at: string
   sent_at: string | null
   opened_at: string | null
+  access_token: string | null
   recipient?: {
     id: string
     full_name: string
@@ -495,6 +496,13 @@ export default function PostScriptDetailPage({ params }: { params: Promise<{ id:
 
             {/* Preview Button */}
             <button 
+              onClick={() => {
+                if (postscript.access_token) {
+                  window.open(`/postscript/${postscript.access_token}`, '_blank')
+                } else {
+                  alert('Preview not available - access token missing')
+                }
+              }}
               className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-white/90 backdrop-blur-sm 
                          text-[#C35F33] rounded-xl font-medium hover:bg-white transition-all
                          border border-[#C35F33]/20 hover:border-[#C35F33]/40 shadow-sm"

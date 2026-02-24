@@ -353,8 +353,8 @@ export default function ProfilePage() {
 
           {/* Center Column - Hero Section */}
           <div className="lg:col-span-6">
-            {/* Main Profile Card */}
-            <div className="glass-card-page glass-card-page-strong p-8 text-center mb-6 group relative">
+            {/* Main Profile Card - Combined with Biography */}
+            <div className="glass-card-page glass-card-page-strong p-8 mb-6 group relative">
               <button
                 onClick={() => openEdit('basics')}
                 className="absolute top-4 right-4 p-2 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all"
@@ -362,24 +362,24 @@ export default function ProfilePage() {
                 <Edit2 size={14} />
               </button>
 
-              {/* Avatar & Essence - Side by Side */}
+              {/* Avatar & Essence - Side by Side, Same Size */}
               <div className="flex items-center justify-center gap-8 mb-6">
-                {/* Avatar */}
+                {/* Avatar - 140px */}
                 <div className="flex-shrink-0">
                   {profile.avatar_url ? (
                     <img 
                       src={profile.avatar_url} 
                       alt={profile.full_name} 
-                      className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                      className="w-[140px] h-[140px] rounded-full object-cover border-4 border-white shadow-lg"
                     />
                   ) : (
-                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#406A56] to-[#5A8A72] flex items-center justify-center text-white text-5xl font-semibold shadow-lg border-4 border-white">
+                    <div className="w-[140px] h-[140px] rounded-full bg-gradient-to-br from-[#406A56] to-[#5A8A72] flex items-center justify-center text-white text-5xl font-semibold shadow-lg border-4 border-white">
                       {profile.full_name?.charAt(0) || '?'}
                     </div>
                   )}
                 </div>
 
-                {/* Essence Fingerprint */}
+                {/* Essence Fingerprint - 140px */}
                 <div className="flex flex-col items-center">
                   {hasProfileData({
                     personality_type: profile.personality_type,
@@ -393,79 +393,81 @@ export default function ProfilePage() {
                     <>
                       <EssenceFingerprintLoader 
                         essenceVector={essenceVector} 
-                        size={180}
+                        size={140}
                       />
                       <p className="text-xs text-[#406A56]/60 mt-1 italic">Essence Fingerprint</p>
                     </>
                   ) : (
-                    <div className="w-[180px] h-[180px] rounded-full border-2 border-dashed border-[#406A56]/20 
+                    <div className="w-[140px] h-[140px] rounded-full border-2 border-dashed border-[#406A56]/20 
                                     flex flex-col items-center justify-center text-center p-4">
-                      <Sparkles className="w-8 h-8 text-[#406A56]/30 mb-2" />
-                      <p className="text-xs text-[#406A56]/50">
-                        Add interests, traits, or hobbies to generate your Essence Fingerprint
+                      <Sparkles className="w-6 h-6 text-[#406A56]/30 mb-2" />
+                      <p className="text-[10px] text-[#406A56]/50">
+                        Add interests or traits for Essence
                       </p>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Name & Basic Info */}
-              <h2 className="text-3xl font-bold text-[#2d2d2d] mb-2">
-                {profile.full_name || 'Your Name'}
-              </h2>
-              
-              {/* Voice Clone Button */}
-              <div className="mb-4">
-                <VoiceCloneButton />
+              {/* Name & Basic Info - Centered */}
+              <div className="text-center mb-6">
+                <h2 className="text-3xl font-bold text-[#2d2d2d] mb-2">
+                  {profile.full_name || 'Your Name'}
+                </h2>
+                
+                {/* Voice Clone Button */}
+                <div className="mb-3">
+                  <VoiceCloneButton />
+                </div>
+                
+                {profile.occupation && (
+                  <p className="text-lg text-[#406A56] mb-2">{profile.occupation}</p>
+                )}
+                
+                <div className="flex items-center justify-center gap-4 text-gray-500 text-sm flex-wrap">
+                  {profile.date_of_birth && (
+                    <div className="flex items-center gap-1">
+                      <Calendar size={14} />
+                      <span>
+                        {new Date(profile.date_of_birth).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {calculateAge(profile.date_of_birth) && ` (${calculateAge(profile.date_of_birth)})`}
+                      </span>
+                    </div>
+                  )}
+
+                  {(profile.city || profile.country) && (
+                    <div className="flex items-center gap-1">
+                      <MapPin size={14} />
+                      <span>{formatLocation()}</span>
+                    </div>
+                  )}
+
+                  {profile.gender && (
+                    <span className="px-2 py-0.5 bg-[#406A56]/10 text-[#406A56] rounded-full text-xs">
+                      {profile.gender}
+                    </span>
+                  )}
+                </div>
               </div>
-              
-              {profile.occupation && (
-                <p className="text-lg text-[#406A56] mb-2">{profile.occupation}</p>
-              )}
-              
-              {profile.date_of_birth && (
-                <div className="flex items-center justify-center gap-2 text-gray-500 mb-4">
-                  <Calendar size={16} />
-                  <span>
-                    {new Date(profile.date_of_birth).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                    {calculateAge(profile.date_of_birth) && ` (${calculateAge(profile.date_of_birth)} years old)`}
-                  </span>
-                </div>
-              )}
 
-              {(profile.city || profile.country) && (
-                <div className="flex items-center justify-center gap-2 text-gray-500 mb-4">
-                  <MapPin size={16} />
-                  <span>{formatLocation()}</span>
+              {/* Biography - Merged into main card */}
+              <div className="border-t border-[#406A56]/10 pt-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <User size={16} className="text-[#406A56]" />
+                  <h3 className="font-semibold text-[#2d2d2d] text-sm">About Me</h3>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openEdit('bio'); }}
+                    className="ml-auto p-1.5 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all"
+                  >
+                    <Edit2 size={12} />
+                  </button>
                 </div>
-              )}
-
-              {profile.gender && (
-                <span className="inline-block px-3 py-1 bg-[#406A56]/10 text-[#406A56] rounded-full text-sm">
-                  {profile.gender}
-                </span>
-              )}
-            </div>
-
-            {/* Biography Card */}
-            <div className="glass-card-page p-6 mb-6 group relative">
-              <button
-                onClick={() => openEdit('bio')}
-                className="absolute top-4 right-4 p-2 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all"
-              >
-                <Edit2 size={14} />
-              </button>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-9 h-9 rounded-xl bg-[#406A56]/10 flex items-center justify-center">
-                  <User size={18} className="text-[#406A56]" />
-                </div>
-                <h3 className="font-semibold text-[#2d2d2d]">About Me</h3>
+                {profile.biography ? (
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm">{profile.biography}</p>
+                ) : (
+                  <p className="text-gray-400 italic text-sm">Tell your story... What makes you, you?</p>
+                )}
               </div>
-              {profile.biography ? (
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{profile.biography}</p>
-              ) : (
-                <p className="text-gray-400 italic">Tell your story... What makes you, you?</p>
-              )}
             </div>
 
             {/* Favorites Section */}
