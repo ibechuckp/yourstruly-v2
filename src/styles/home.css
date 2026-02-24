@@ -106,14 +106,16 @@
   75% { transform: translate(15px, 15px) scale(1.02); }
 }
 
-/* Main content container */
+/* Main content container - centered layout */
 .home-content {
   position: relative;
   z-index: 10;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 24px 24px 100px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 24px 120px;
 }
 
 /* Adjust content for left sidebar on large screens */
@@ -280,13 +282,15 @@
   flex-shrink: 0;
 }
 
-/* Engagement bubbles area */
+/* Engagement bubbles area - centered vertically */
 .home-bubbles {
   flex: 1;
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  padding-top: 20px;
+  padding: 40px 20px;
+  min-height: calc(100vh - 160px);
 }
 
 @media (max-width: 1024px) {
@@ -335,45 +339,10 @@
   border-color: rgba(195, 95, 51, 0.15);
 }
 
-/* Colored accent bars - gradient with glow */
+/* Accent bars hidden - using glow effect instead */
 .bubble-accent {
-  height: 5px;
-  width: 100%;
-  position: relative;
+  display: none;
 }
-
-.bubble-accent::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  filter: blur(4px);
-  opacity: 0.5;
-}
-
-.bubble-accent-yellow { 
-  background: linear-gradient(90deg, #D9C61A, #E8D84A); 
-}
-.bubble-accent-yellow::after { background: #D9C61A; }
-
-.bubble-accent-green { 
-  background: linear-gradient(90deg, #406A56, #5A8A72); 
-}
-.bubble-accent-green::after { background: #406A56; }
-
-.bubble-accent-red { 
-  background: linear-gradient(90deg, #C35F33, #D87A55); 
-}
-.bubble-accent-red::after { background: #C35F33; }
-
-.bubble-accent-blue { 
-  background: linear-gradient(90deg, #8DACAB, #A3C2C1); 
-}
-.bubble-accent-blue::after { background: #8DACAB; }
-
-.bubble-accent-purple { 
-  background: linear-gradient(90deg, #4A3552, #6A5572); 
-}
-.bubble-accent-purple::after { background: #4A3552; }
 
 /* Bubble content */
 .bubble-content {

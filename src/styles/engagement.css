@@ -18,15 +18,26 @@
   --yt-purple-light: #D8D3DA;
 }
 
-/* Masonry container - spacious layout */
+/* Masonry container - centered and spacious */
 .engagement-masonry {
   display: flex;
   flex-wrap: wrap;
-  gap: 32px;
+  gap: 40px;
   justify-content: center;
   align-items: flex-start;
+  padding: 32px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Page wrapper for vertical centering */
+.engagement-page-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
   padding: 24px;
-  max-width: 100%;
 }
 
 /* Progress tracker at top - Refined */
@@ -144,28 +155,7 @@
   position: relative;
 }
 
-/* Colored top border by type */
-.bubble-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  border-radius: 16px 16px 0 0;
-}
-
-.bubble-card[data-type="photo_backstory"]::before { background: var(--yt-yellow); }
-.bubble-card[data-type="tag_person"]::before { background: var(--yt-blue); }
-.bubble-card[data-type="missing_info"]::before { background: var(--yt-green); }
-.bubble-card[data-type="quick_question"]::before { background: var(--yt-green); }
-.bubble-card[data-type="memory_prompt"]::before { background: var(--yt-purple); }
-.bubble-card[data-type="knowledge"]::before { background: var(--yt-red); }
-.bubble-card[data-type="connect_dots"]::before { background: var(--yt-blue); }
-.bubble-card[data-type="highlight"]::before { background: var(--yt-yellow); }
-.bubble-card[data-type="postscript"]::before { background: var(--yt-purple); }
-.bubble-card[data-type="favorites_firsts"]::before { background: var(--yt-red); }
-.bubble-card[data-type="recipes_wisdom"]::before { background: var(--yt-yellow); }
+/* Top border removed - using glow effect instead */
 
 /* XP badge */
 .bubble-xp-badge {
@@ -675,46 +665,129 @@
    BUBBLE TILE (Used in dashboard)
    ============================================================================= */
 
-/* Engagement tile - matching home title tile style */
+/* Engagement tile - soft glow effect */
 .bubble-tile {
-  background: rgba(255, 255, 255, 0.9);
+  position: relative;
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.7);
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 
-    0 4px 12px rgba(195, 95, 51, 0.08),
-    0 12px 32px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    0 0 20px rgba(195, 95, 51, 0.08),
+    0 0 40px rgba(195, 95, 51, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.06);
   -webkit-user-drag: none;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  min-width: 240px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 260px;
 }
 
+/* Soft glow by type */
+.bubble-tile[data-type="photo_backstory"],
+.bubble-tile[data-type="highlight"],
+.bubble-tile[data-type="recipes_wisdom"] {
+  box-shadow: 
+    0 0 24px rgba(217, 198, 26, 0.15),
+    0 0 48px rgba(217, 198, 26, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.bubble-tile[data-type="tag_person"],
+.bubble-tile[data-type="connect_dots"] {
+  box-shadow: 
+    0 0 24px rgba(141, 172, 171, 0.2),
+    0 0 48px rgba(141, 172, 171, 0.1),
+    0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.bubble-tile[data-type="missing_info"],
+.bubble-tile[data-type="quick_question"] {
+  box-shadow: 
+    0 0 24px rgba(64, 106, 86, 0.15),
+    0 0 48px rgba(64, 106, 86, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.bubble-tile[data-type="memory_prompt"],
+.bubble-tile[data-type="postscript"] {
+  box-shadow: 
+    0 0 24px rgba(74, 53, 82, 0.15),
+    0 0 48px rgba(74, 53, 82, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.bubble-tile[data-type="knowledge"],
+.bubble-tile[data-type="favorites_firsts"] {
+  box-shadow: 
+    0 0 24px rgba(195, 95, 51, 0.15),
+    0 0 48px rgba(195, 95, 51, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+/* Hover - glow saturates */
 .bubble-tile:hover {
   transform: translateY(-6px);
+  border-color: rgba(255, 255, 255, 0.9);
+}
+
+.bubble-tile[data-type="photo_backstory"]:hover,
+.bubble-tile[data-type="highlight"]:hover,
+.bubble-tile[data-type="recipes_wisdom"]:hover {
   box-shadow: 
-    0 12px 32px rgba(195, 95, 51, 0.12),
-    0 24px 56px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  border-color: rgba(195, 95, 51, 0.2);
+    0 0 32px rgba(217, 198, 26, 0.35),
+    0 0 64px rgba(217, 198, 26, 0.2),
+    0 16px 40px rgba(0, 0, 0, 0.1);
+}
+
+.bubble-tile[data-type="tag_person"]:hover,
+.bubble-tile[data-type="connect_dots"]:hover {
+  box-shadow: 
+    0 0 32px rgba(141, 172, 171, 0.4),
+    0 0 64px rgba(141, 172, 171, 0.2),
+    0 16px 40px rgba(0, 0, 0, 0.1);
+}
+
+.bubble-tile[data-type="missing_info"]:hover,
+.bubble-tile[data-type="quick_question"]:hover {
+  box-shadow: 
+    0 0 32px rgba(64, 106, 86, 0.35),
+    0 0 64px rgba(64, 106, 86, 0.18),
+    0 16px 40px rgba(0, 0, 0, 0.1);
+}
+
+.bubble-tile[data-type="memory_prompt"]:hover,
+.bubble-tile[data-type="postscript"]:hover {
+  box-shadow: 
+    0 0 32px rgba(74, 53, 82, 0.35),
+    0 0 64px rgba(74, 53, 82, 0.18),
+    0 16px 40px rgba(0, 0, 0, 0.1);
+}
+
+.bubble-tile[data-type="knowledge"]:hover,
+.bubble-tile[data-type="favorites_firsts"]:hover {
+  box-shadow: 
+    0 0 32px rgba(195, 95, 51, 0.35),
+    0 0 64px rgba(195, 95, 51, 0.18),
+    0 16px 40px rgba(0, 0, 0, 0.1);
 }
 
 .bubble-content {
   padding: 20px;
 }
 
+/* Accent bar hidden - replaced with glow effect */
 .bubble-accent {
-  height: 4px;
-  width: 100%;
+  display: none;
 }
 
-.bubble-accent-yellow { background: var(--yt-yellow); }
-.bubble-accent-green { background: var(--yt-green); }
-.bubble-accent-blue { background: var(--yt-blue); }
-.bubble-accent-red { background: var(--yt-red); }
-.bubble-accent-purple { background: var(--yt-purple); }
+.bubble-accent-yellow,
+.bubble-accent-green,
+.bubble-accent-blue,
+.bubble-accent-red,
+.bubble-accent-purple {
+  display: none;
+}
 
 .bubble-xp {
   position: absolute;
@@ -735,23 +808,37 @@
 .bubble-xp-red { background: rgba(195, 95, 51, 0.12); color: var(--yt-red); }
 .bubble-xp-purple { background: rgba(74, 53, 82, 0.12); color: var(--yt-purple); }
 
-/* Tile category label - LARGER font like home title tiles */
+/* Tile category label - torn edge SVG background, larger font */
 .bubble-type {
-  font-family: var(--font-handwritten), 'Caveat', 'Patrick Hand', cursive;
-  font-size: 22px;
+  position: relative;
+  font-family: var(--font-inter-tight), 'Inter Tight', sans-serif;
+  font-size: 11px;
   font-weight: 700;
-  text-transform: none;
-  letter-spacing: 0.02em;
-  padding: 6px 14px;
-  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 10px 24px;
   display: inline-block;
+  color: #333;
 }
 
-.bubble-type-yellow { background: rgba(217, 198, 26, 0.2); color: #8a7c08; }
-.bubble-type-green { background: rgba(64, 106, 86, 0.15); color: var(--yt-green); }
-.bubble-type-blue { background: rgba(141, 172, 171, 0.25); color: #5d8585; }
-.bubble-type-red { background: rgba(195, 95, 51, 0.15); color: var(--yt-red); }
-.bubble-type-purple { background: rgba(74, 53, 82, 0.15); color: var(--yt-purple); }
+/* Torn edge background for category pill */
+.bubble-type::before {
+  content: '';
+  position: absolute;
+  inset: -4px -10px;
+  background-image: url('/images/nav-active-bg.svg');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: -1;
+  opacity: 0.95;
+}
+
+/* Color variations via text color */
+.bubble-type-yellow { color: #7a6d06; }
+.bubble-type-green { color: #2d4d3d; }
+.bubble-type-blue { color: #4a6b6a; }
+.bubble-type-red { color: #9e4a28; }
+.bubble-type-purple { color: #3a2942; }
 
 .bubble-contact {
   display: flex;

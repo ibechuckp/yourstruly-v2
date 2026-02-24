@@ -723,6 +723,7 @@ export default function DashboardPage() {
                         }}
                         onClick={() => !isExpanded && handleTileClick(prompt)}
                         className={`bubble-tile absolute ${isExpanded ? 'shadow-2xl' : ''}`}
+                        data-type={prompt.type}
                         style={{ 
                           left, 
                           top,
@@ -753,9 +754,8 @@ export default function DashboardPage() {
                         )}
 
                         <div className="bubble-content">
-                          {/* Header */}
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-lg">{config.icon}</span>
+                          {/* Header - category pill with torn edge */}
+                          <div className="mb-3">
                             <span className={`bubble-type bubble-type-${config.color}`}>{config.label}</span>
                           </div>
 
