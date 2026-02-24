@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Mic, Loader2, Check, AlertCircle, X, Shield, Sparkles } from 'lucide-react'
 
 // Minimum 3 minutes of voice needed for cloning
@@ -12,18 +11,19 @@ interface VoiceCloneStatus {
   totalDuration: number
   consentGiven: boolean
   errorMessage?: string
+  isConfigured?: boolean
 }
 
 export default function VoiceCloneButton() {
   const [status, setStatus] = useState<VoiceCloneStatus>({
     status: 'none',
     totalDuration: 0,
-    consentGiven: false
+    consentGiven: false,
+    isConfigured: true
   })
   const [loading, setLoading] = useState(true)
   const [showConsentModal, setShowConsentModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => {
     loadVoiceStatus()
@@ -31,31 +31,20 @@ export default function VoiceCloneButton() {
 
   const loadVoiceStatus = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      // Check existing voice clone
-      const { data: voiceClone } = await supabase
-        .from('voice_clones')
-        .select('status, consent_given_at, error_message')
-        .eq('user_id', user.id)
-        .single()
-
-      // Get voice duration from memories with audio
-      const { count } = await supabase
-        .from('memories')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .not('audio_url', 'is', null)
-
-      // Estimate ~30 seconds per voice recording
-      const estimatedDuration = (count || 0) * 30
-
+      // Use API endpoint which also tells us if ElevenLabs is configured
+      const res = await fetch('/api/voice/clone')
+      if (!res.ok) {
+        throw new Error('Failed to load voice status')
+      }
+      
+      const data = await res.json()
+      
       setStatus({
-        status: voiceClone?.status || 'none',
-        totalDuration: estimatedDuration,
-        consentGiven: !!voiceClone?.consent_given_at,
-        errorMessage: voiceClone?.error_message
+        status: data.voiceClone?.status || 'none',
+        totalDuration: data.estimatedDuration || 0,
+        consentGiven: !!data.voiceClone?.consent_given_at,
+        errorMessage: data.voiceClone?.error_message,
+        isConfigured: data.isConfigured ?? true
       })
     } catch (err) {
       console.error('Error loading voice status:', err)
@@ -89,11 +78,15 @@ export default function VoiceCloneButton() {
 
       if (!res.ok) {
         const err = await res.json()
+        if (err.code === 'ELEVENLABS_NOT_CONFIGURED') {
+          setStatus(s => ({ ...s, isConfigured: false }))
+        }
         throw new Error(err.error || 'Failed to start voice cloning')
       }
 
+      const result = await res.json()
       setShowConsentModal(false)
-      setStatus(s => ({ ...s, status: 'processing', consentGiven: true }))
+      setStatus(s => ({ ...s, status: result.status || 'processing', consentGiven: true }))
       
       // Poll for completion (but ElevenLabs integration not complete yet)
       // For now, it will stay in 'processing' - user can cancel
@@ -180,6 +173,16 @@ export default function VoiceCloneButton() {
             {Math.floor(status.totalDuration / 60)}m / 3m needed
           </span>
         </div>
+      </div>
+    )
+  }
+
+  // Voice cloning not configured
+  if (!status.isConfigured) {
+    return (
+      <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-500 rounded-full">
+        <Mic size={16} />
+        <span className="text-sm">Voice Cloning (Coming Soon)</span>
       </div>
     )
   }

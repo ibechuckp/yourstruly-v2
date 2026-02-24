@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
+import { cloneVoice, deleteVoice, isElevenLabsConfigured } from '@/lib/voice/elevenlabs'
 
 const MIN_VOICE_DURATION_SECONDS = 180 // 3 minutes minimum
 
@@ -11,6 +12,14 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Check if ElevenLabs is configured
+  if (!isElevenLabsConfigured()) {
+    return NextResponse.json({ 
+      error: 'Voice cloning is not configured. Please contact support.',
+      code: 'ELEVENLABS_NOT_CONFIGURED'
+    }, { status: 503 })
   }
 
   const body = await request.json()
@@ -49,17 +58,36 @@ export async function POST(request: NextRequest) {
              headersList.get('x-real-ip') || 
              'unknown'
 
+  // Get user profile for name
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user.id)
+    .single()
+
+  const userName = profile?.full_name || 'User'
+
   // Check if voice clone already exists
   const { data: existing } = await supabase
     .from('voice_clones')
-    .select('id, status')
+    .select('id, status, elevenlabs_voice_id')
     .eq('user_id', user.id)
     .single()
 
   let voiceCloneId: string
 
+  // If there's an existing clone that's already ready, don't re-clone
+  if (existing?.status === 'ready' && existing.elevenlabs_voice_id) {
+    return NextResponse.json({
+      success: true,
+      voiceCloneId: existing.id,
+      status: 'ready',
+      message: 'Voice already cloned'
+    })
+  }
+
   if (existing) {
-    // Update existing record
+    // Update existing record to processing
     const { data: updated, error: updateError } = await supabase
       .from('voice_clones')
       .update({
@@ -132,17 +160,54 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // TODO: In production, trigger actual voice cloning via ElevenLabs API
-  // For now, we'll simulate by setting status to 'pending' for manual processing
-  // The actual cloning would be done by a background job or webhook
+  // Actually clone the voice via ElevenLabs
+  const audioUrls = voiceMemories?.map(m => m.audio_url).filter(Boolean) || []
   
-  // Simulate async processing
-  // In production: await triggerElevenLabsCloning(voiceCloneId, voiceMemories)
+  const cloneResult = await cloneVoice(
+    `YoursTruly - ${userName}`,
+    `Voice clone for ${userName} on YoursTruly. Created ${new Date().toISOString()}`,
+    audioUrls
+  )
+
+  if (!cloneResult.success || !cloneResult.voiceId) {
+    // Update status to failed
+    await supabase
+      .from('voice_clones')
+      .update({
+        status: 'failed',
+        error_message: cloneResult.error || 'Voice cloning failed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', voiceCloneId)
+
+    console.error('Voice cloning failed:', cloneResult.error)
+    return NextResponse.json({ 
+      error: cloneResult.error || 'Voice cloning failed',
+      voiceCloneId,
+      status: 'failed'
+    }, { status: 500 })
+  }
+
+  // Update with success
+  const { error: successError } = await supabase
+    .from('voice_clones')
+    .update({
+      status: 'ready',
+      elevenlabs_voice_id: cloneResult.voiceId,
+      cloned_at: new Date().toISOString(),
+      error_message: null,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', voiceCloneId)
+
+  if (successError) {
+    console.error('Error updating voice clone success:', successError)
+  }
 
   return NextResponse.json({
     success: true,
     voiceCloneId,
-    status: 'processing',
+    status: 'ready',
     samplesUsed: voiceMemories?.length || 0,
     estimatedDuration
   })
@@ -182,7 +247,8 @@ export async function GET(request: NextRequest) {
     voiceMemoryCount: count || 0,
     estimatedDuration,
     minimumRequired: MIN_VOICE_DURATION_SECONDS,
-    canClone: estimatedDuration >= MIN_VOICE_DURATION_SECONDS
+    canClone: estimatedDuration >= MIN_VOICE_DURATION_SECONDS,
+    isConfigured: isElevenLabsConfigured()
   })
 }
 
@@ -206,8 +272,14 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'No voice clone found' }, { status: 404 })
   }
 
-  // TODO: In production, delete from ElevenLabs API if elevenlabs_voice_id exists
-  // await deleteElevenLabsVoice(voiceClone.elevenlabs_voice_id)
+  // Delete from ElevenLabs if it exists there
+  if (voiceClone.elevenlabs_voice_id && isElevenLabsConfigured()) {
+    const deleteResult = await deleteVoice(voiceClone.elevenlabs_voice_id)
+    if (!deleteResult.success) {
+      console.warn('Failed to delete from ElevenLabs:', deleteResult.error)
+      // Continue anyway - still delete from our DB
+    }
+  }
 
   // Delete from database (cascade will delete samples)
   const { error } = await supabase
