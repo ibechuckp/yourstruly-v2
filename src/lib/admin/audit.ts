@@ -240,6 +240,12 @@ export const AuditActions = {
   AI_MODEL_UPDATE: 'ai_model:update',
   PROMPT_UPDATE: 'prompt:update',
   
+  // Engagement prompts
+  ENGAGEMENT_PROMPT_CREATE: 'engagement_prompt:create',
+  ENGAGEMENT_PROMPT_UPDATE: 'engagement_prompt:update',
+  ENGAGEMENT_PROMPT_DELETE: 'engagement_prompt:delete',
+  ENGAGEMENT_PROMPT_TOGGLE: 'engagement_prompt:toggle',
+  
   // Auth
   ADMIN_LOGIN: 'admin:login',
   ADMIN_LOGOUT: 'admin:logout',
