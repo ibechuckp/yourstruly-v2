@@ -107,7 +107,7 @@
 }
 
 /* Main content container - top aligned with profile card */
-/* Nav bar is ~64px + 48px gap = 112px top padding */
+/* Layout already adds pt-14 (56px) for nav, so we just add 48px gap */
 .home-content {
   position: relative;
   z-index: 10;
@@ -116,7 +116,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 112px 24px 32px;
+  padding: 48px 24px 32px;
 }
 
 /* Adjust content for left sidebar on large screens */
@@ -127,6 +127,7 @@
 }
 
 /* Engagement column - contains both tiles and CommandBar for alignment */
+/* Centered in the content area; tiles + CommandBar share same 776px width */
 .engagement-column {
   width: 100%;
   max-width: 776px; /* 3×240px tiles + 2×28px gaps */
@@ -135,13 +136,14 @@
   align-items: center;
   position: relative;
   padding-bottom: 100px; /* Space for fixed CommandBar */
+  /* No extra top padding - parent home-content handles the 112px (nav+48px gap) */
 }
 
 /* Profile section - left aligned, below nav bar with 48px gap */
-/* Nav bar is ~64px, so top = 64 + 48 = 112px */
+/* Nav bar is h-14 (56px), so top = 56 + 48 = 104px */
 .home-profile {
   position: fixed;
-  top: 112px;
+  top: 104px;
   left: 48px;
   z-index: 20;
 }
