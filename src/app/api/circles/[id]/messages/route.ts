@@ -37,6 +37,8 @@ export async function GET(
   const before = searchParams.get('before') // cursor-based pagination
   const after = searchParams.get('after')
 
+  // Note: Can't do self-join with nested relations in PostgREST
+  // So we fetch reply_to separately if needed
   let query = supabase
     .from('circle_messages')
     .select(`
@@ -45,25 +47,16 @@ export async function GET(
       media_url,
       media_type,
       reply_to_id,
-      
       edited_at,
       created_at,
       sender:profiles!circle_messages_sender_id_fkey (
         id,
         full_name,
         avatar_url
-      ),
-      reply_to:circle_messages!circle_messages_reply_to_id_fkey (
-        id,
-        content,
-        sender:profiles!circle_messages_sender_id_fkey (
-          id,
-          full_name
-        )
       )
     `)
     .eq('circle_id', circleId)
-    
+    .eq('is_deleted', false)
     .order('created_at', { ascending: false })
     .limit(limit)
 
@@ -169,21 +162,12 @@ export async function POST(
       media_url,
       media_type,
       reply_to_id,
-      
       edited_at,
       created_at,
       sender:profiles!circle_messages_sender_id_fkey (
         id,
         full_name,
         avatar_url
-      ),
-      reply_to:circle_messages!circle_messages_reply_to_id_fkey (
-        id,
-        content,
-        sender:profiles!circle_messages_sender_id_fkey (
-          id,
-          full_name
-        )
       )
     `)
     .single()
@@ -256,7 +240,6 @@ export async function PATCH(
       media_url,
       media_type,
       reply_to_id,
-      
       edited_at,
       created_at,
       sender:profiles!circle_messages_sender_id_fkey (

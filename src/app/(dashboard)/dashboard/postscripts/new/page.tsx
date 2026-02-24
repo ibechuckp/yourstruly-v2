@@ -727,59 +727,74 @@ export default function NewPostScriptPage() {
             />
           </div>
 
-          {/* Photo Attachments & Gift */}
+          {/* Photo Attachments & Gift - Equal Size Tiles */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Photos */}
-            <div>
+            {/* Photos Tile */}
+            <div className="h-36">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Attach Photos <span className="text-gray-400 font-normal">(optional, max 5)</span>
+                📸 Attach Photos <span className="text-gray-400 font-normal">(max 5)</span>
               </label>
               
-              {/* Photo Grid */}
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                {form.attachments.map(att => (
-                  <div key={att.id} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
-                    <img src={att.preview} alt="" className="w-full h-full object-cover" />
-                    <button
-                      onClick={() => removeAttachment(att.id)}
-                      className="absolute top-1 right-1 p-1.5 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
-                    >
-                      <Trash2 size={12} className="text-white" />
-                    </button>
+              {form.attachments.length > 0 ? (
+                <div className="h-[calc(100%-28px)] rounded-xl border border-gray-200 bg-gray-50 p-2 overflow-hidden">
+                  <div className="flex gap-2 overflow-x-auto h-full items-center">
+                    {form.attachments.map(att => (
+                      <div key={att.id} className="relative h-full aspect-square flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                        <img src={att.preview} alt="" className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => removeAttachment(att.id)}
+                          className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+                        >
+                          <X size={10} className="text-white" />
+                        </button>
+                      </div>
+                    ))}
+                    {form.attachments.length < 5 && (
+                      <label className="h-full aspect-square flex-shrink-0 rounded-lg border-2 border-dashed border-gray-300 
+                                       hover:border-[#C35F33] hover:bg-[#C35F33]/5 
+                                       flex flex-col items-center justify-center cursor-pointer transition-all">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handlePhotoSelect}
+                          className="hidden"
+                        />
+                        <ImagePlus size={20} className="text-gray-400" />
+                      </label>
+                    )}
                   </div>
-                ))}
-                
-                {form.attachments.length < 5 && (
-                  <label className="aspect-square rounded-xl border-2 border-dashed border-gray-300 
-                                   hover:border-[#C35F33] hover:bg-[#C35F33]/5 
-                                   flex flex-col items-center justify-center cursor-pointer transition-all">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handlePhotoSelect}
-                      className="hidden"
-                    />
-                    <ImagePlus size={24} className="text-gray-400 mb-1" />
-                    <span className="text-xs text-gray-400">Add Photo</span>
-                  </label>
-                )}
-              </div>
+                </div>
+              ) : (
+                <label className="h-[calc(100%-28px)] rounded-xl border-2 border-dashed border-gray-300 
+                                 hover:border-[#C35F33] hover:bg-[#C35F33]/5 
+                                 flex flex-col items-center justify-center cursor-pointer transition-all">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                  />
+                  <ImagePlus size={28} className="text-gray-400 mb-1" />
+                  <span className="text-sm text-gray-400">Add Photos</span>
+                </label>
+              )}
             </div>
 
-            {/* Gift */}
-            <div>
+            {/* Gift Tile - Same Height */}
+            <div className="h-36">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Add Gift <span className="text-gray-400 font-normal">(optional)</span>
+                🎁 Add Gift <span className="text-gray-400 font-normal">(optional)</span>
               </label>
               
               {form.gift ? (
-                <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-[#C35F33]/10 to-[#D9C61A]/10 border border-[#C35F33]/20 p-3">
-                  <div className="flex items-center gap-3">
+                <div className="relative h-[calc(100%-28px)] rounded-xl overflow-hidden bg-gradient-to-br from-[#C35F33]/10 to-[#D9C61A]/10 border border-[#C35F33]/20 p-3">
+                  <div className="flex items-center gap-3 h-full">
                     <img 
                       src={form.gift.image_url} 
                       alt={form.gift.name}
-                      className="w-16 h-16 rounded-lg object-cover"
+                      className="h-full aspect-square rounded-lg object-cover"
                     />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 text-sm truncate">{form.gift.name}</p>
@@ -789,20 +804,20 @@ export default function NewPostScriptPage() {
                   </div>
                   <button
                     onClick={() => setForm({ ...form, gift: null })}
-                    className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+                    className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
                   >
-                    <X size={12} className="text-white" />
+                    <X size={10} className="text-white" />
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={() => setShowGiftModal(true)}
-                  className="w-full aspect-square rounded-xl border-2 border-dashed border-gray-300 
+                  className="w-full h-[calc(100%-28px)] rounded-xl border-2 border-dashed border-gray-300 
                            hover:border-[#C35F33] hover:bg-[#C35F33]/5 
                            flex flex-col items-center justify-center cursor-pointer transition-all"
                 >
-                  <Gift size={24} className="text-gray-400 mb-1" />
-                  <span className="text-xs text-gray-400">Add Gift</span>
+                  <Gift size={28} className="text-gray-400 mb-1" />
+                  <span className="text-sm text-gray-400">Browse Gifts</span>
                 </button>
               )}
             </div>

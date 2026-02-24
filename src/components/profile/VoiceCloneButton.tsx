@@ -64,6 +64,17 @@ export default function VoiceCloneButton() {
     }
   }
 
+  const handleCancelClone = async () => {
+    try {
+      const res = await fetch('/api/voice/clone', { method: 'DELETE' })
+      if (res.ok) {
+        setStatus(s => ({ ...s, status: 'none', consentGiven: false }))
+      }
+    } catch (err) {
+      console.error('Cancel clone error:', err)
+    }
+  }
+
   const handleCloneVoice = async () => {
     setSubmitting(true)
     try {
@@ -84,7 +95,8 @@ export default function VoiceCloneButton() {
       setShowConsentModal(false)
       setStatus(s => ({ ...s, status: 'processing', consentGiven: true }))
       
-      // Poll for completion
+      // Poll for completion (but ElevenLabs integration not complete yet)
+      // For now, it will stay in 'processing' - user can cancel
       setTimeout(loadVoiceStatus, 5000)
     } catch (err: any) {
       console.error('Voice clone error:', err)
@@ -120,9 +132,18 @@ export default function VoiceCloneButton() {
   // Processing
   if (status.status === 'processing') {
     return (
-      <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-600 rounded-full">
-        <Loader2 size={16} className="animate-spin" />
-        <span className="text-sm font-medium">Cloning in progress...</span>
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-600 rounded-full">
+          <Loader2 size={16} className="animate-spin" />
+          <span className="text-sm font-medium">Cloning in progress...</span>
+        </div>
+        <button
+          onClick={handleCancelClone}
+          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+          title="Cancel cloning"
+        >
+          <X size={16} />
+        </button>
       </div>
     )
   }

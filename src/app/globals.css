@@ -6,11 +6,12 @@
 @import "../styles/marketplace.css";
 
 :root {
-  --background: #030712;
-  --foreground: #ededed;
-  --yt-gradient-start: #FDF8F3;
-  --yt-gradient-mid: #F5EDE5;
-  --yt-gradient-end: #EDE4DC;
+  --background: #1a1512;
+  --foreground: #f5f0eb;
+  --yt-warm-dark: #2a1f1a;
+  --yt-warm-mid: #3d2d24;
+  --yt-warm-accent: #c9886d;
+  --yt-warm-glow: #d4a574;
 }
 
 @theme inline {
@@ -21,11 +22,22 @@
 }
 
 body {
-  background: linear-gradient(135deg, var(--yt-gradient-start) 0%, var(--yt-gradient-mid) 50%, var(--yt-gradient-end) 100%);
+  background: linear-gradient(135deg, #1a1512 0%, #2a1f1a 40%, #3d2d24 70%, #4a3528 100%);
   background-attachment: fixed;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100vh;
+}
+
+/* Warm ambient glow overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 30% 20%, rgba(212, 165, 116, 0.15) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(201, 136, 109, 0.1) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 html, body {
@@ -147,48 +159,55 @@ html, body {
   color: rgba(195, 95, 51, 0.6);
 }
 
-/* Glass/Frosted Effects - Lighter, more transparent */
+/* Glass/Frosted Effects - Warm Dark Glass (Dribbble style) */
 .glass {
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 4px 30px rgba(195, 95, 51, 0.05);
+  background: rgba(42, 31, 26, 0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .glass-subtle {
-  background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(12px) saturate(150%);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(42, 31, 26, 0.45);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .glass-warm {
-  background: rgba(253, 248, 243, 0.55);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 4px 30px rgba(195, 95, 51, 0.08);
+  background: rgba(61, 45, 36, 0.7);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .glass-modal {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(42, 31, 26, 0.85);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 
-    0 25px 50px -12px rgba(195, 95, 51, 0.12),
-    0 0 0 1px rgba(255, 255, 255, 0.6) inset,
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* Extra light glass for nav bar */
+/* Warm dark nav bar */
 .glass-nav {
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(20px) saturate(200%);
-  -webkit-backdrop-filter: blur(20px) saturate(200%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 1px 20px rgba(195, 95, 51, 0.06);
+  background: rgba(26, 21, 18, 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Light glass variant for cards that need contrast */
+.glass-light {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Enhanced Card Shadows */
