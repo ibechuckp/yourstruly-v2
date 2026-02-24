@@ -882,8 +882,8 @@ export default function DashboardPage() {
           )}
         </div>
         
-        {/* CommandBar - directly under engagement cluster */}
-        <div className="mt-8 w-full max-w-[648px]">
+        {/* CommandBar - aligned with engagement grid center */}
+        <div className="mt-8 mx-auto" style={{ width: 648 }}>
           <CommandBar />
         </div>
       </div>
