@@ -271,7 +271,7 @@ export default function ActivityFeed({ xpCompletions = [] }: ActivityFeedProps) 
   }, [])
 
   return (
-    <div className="bg-[#F2F1E5] rounded-lg shadow-sm overflow-hidden">
+    <div className="bg-[#FDF8F3] rounded-[20px] shadow-sm overflow-hidden border border-white/50">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#406A56]/10">
         <div className="flex items-center gap-2">
