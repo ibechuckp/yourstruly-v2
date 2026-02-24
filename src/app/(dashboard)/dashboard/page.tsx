@@ -676,7 +676,7 @@ export default function DashboardPage() {
               </AnimatePresence>
 
               {/* Tile grid: 2x2 + 1 tall on right */}
-              <div className="relative mx-auto" style={{ width: 648, height: 354, marginTop: 16 }}>
+              <div className="relative mx-auto" style={{ width: 656, height: 408, marginTop: 16 }}>
                 <AnimatePresence mode="popLayout">
                   {(() => {
                     // Reorder prompts: photo tasks go to position 4 (tall tile)
@@ -704,8 +704,8 @@ export default function DashboardPage() {
                     const isTall = (pos as any).tall === true || (i === 4 && hasPhoto)
 
                     const tileWidth = 200
-                    const tileHeight = 165
-                    const gap = 24  // Increased gap for better spacing
+                    const tileHeight = 190  // Increased to prevent content overflow
+                    const gap = 28  // More gap between tiles
                     const tallHeight = tileHeight * 2 + gap  // Full height for photo tiles
                     const left = pos.col * (tileWidth + gap)
                     const top = isTall ? 0 : pos.row * (tileHeight + gap)
