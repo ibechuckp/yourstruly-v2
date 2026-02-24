@@ -115,7 +115,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 88px 24px 120px; /* 56px nav + 32px gap */
+  padding: 32px 24px 120px;
 }
 
 /* Adjust content for left sidebar on large screens */

@@ -63,8 +63,8 @@ export default function Modal({
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4"
       onClick={(e) => e.target === overlayRef.current && onClose()}
     >
-      <div 
-        className={`bg-[#F2F1E5]/95 backdrop-blur-xl rounded-t-2xl sm:rounded-2xl border border-white/50 w-full ${maxWidth} max-h-[90vh] sm:max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 shadow-2xl`}
+      <div
+        className={`bg-[#FDF8F3]/85 backdrop-blur-[28px] backdrop-saturate-[160%] rounded-[20px] border border-white/50 w-full ${maxWidth} max-h-[90vh] sm:max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 shadow-[0_4px_16px_rgba(195,95,51,0.06),0_20px_60px_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.8)]`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

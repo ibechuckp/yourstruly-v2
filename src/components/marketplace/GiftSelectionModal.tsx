@@ -153,10 +153,10 @@ export default function GiftSelectionModal({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: '100%', opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className={`relative w-full ${maxWidth} max-h-[90vh] sm:max-h-[85vh] bg-[#F2F1E5] rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col`}
+        className={`relative w-full ${maxWidth} max-h-[90vh] sm:max-h-[85vh] bg-[#FDF8F3]/85 backdrop-blur-[28px] backdrop-saturate-[160%] border border-white/50 rounded-[20px] shadow-[0_4px_16px_rgba(195,95,51,0.06),0_20px_60px_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.8)] overflow-hidden flex flex-col`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-[#406A56]/10 bg-white/50">
+        <div className="flex items-center justify-between p-5 border-b border-white/40 bg-white/30 backdrop-blur-md">
           <div>
             <h3 className="font-playfair text-xl font-semibold text-[#2d2d2d] flex items-center gap-2">
               <Gift size={22} className="text-[#406A56]" />

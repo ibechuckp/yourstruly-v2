@@ -70,9 +70,9 @@ export function UpgradeModal({ isOpen, onClose, plan, billingCycle }: UpgradeMod
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div className="relative bg-[#FDF8F3]/90 backdrop-blur-[28px] backdrop-saturate-[160%] border border-white/50 rounded-[20px] shadow-[0_4px_16px_rgba(195,95,51,0.06),0_20px_60px_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.8)] w-full max-w-md overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#406A56] to-[#5A8A72] p-6">
+        <div className="bg-gradient-to-r from-[#406A56]/90 to-[#5A8A72]/90 backdrop-blur-md p-6">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
