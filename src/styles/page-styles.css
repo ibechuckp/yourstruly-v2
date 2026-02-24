@@ -5,6 +5,8 @@
 
 /* Import the color palette and base styles from home.css */
 @import './home.css';
+/* Import engagement styles (torn edges, bubble tiles, etc.) */
+@import './engagement.css';
 
 /* =============================================================================
    PAGE LAYOUT - Warm Background Container

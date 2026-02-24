@@ -115,7 +115,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 48px 24px 120px;
+  padding: 48px 24px 32px;
 }
 
 /* Adjust content for left sidebar on large screens */
@@ -125,7 +125,16 @@
   }
 }
 
-/* Activity feed is now in main content, no right sidebar padding needed */
+/* Engagement column - contains both tiles and CommandBar for alignment */
+.engagement-column {
+  width: 100%;
+  max-width: 776px; /* 3×240px tiles + 2×28px gaps */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding-bottom: 100px; /* Space for fixed CommandBar */
+}
 
 /* Profile section - left aligned with 48px top padding */
 .home-profile {

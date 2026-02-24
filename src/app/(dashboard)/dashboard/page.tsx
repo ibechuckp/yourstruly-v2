@@ -630,10 +630,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Main content - right column containing tiles + commandbar */}
       <div className="home-content">
-        <div className="home-bubbles">
-          {isLoading ? (
+        {/* Engagement column - contains both tiles and CommandBar for alignment */}
+        <div className="engagement-column">
+          <div className="home-bubbles">
+            {isLoading ? (
             <div className="flex flex-col items-center gap-4">
               <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>
                 <Sparkles size={28} className="text-[#D9C61A]" />
@@ -881,10 +883,11 @@ export default function DashboardPage() {
 
             </div>
           )}
-        </div>
+          </div>
         
-        {/* CommandBar - positions itself fixed at bottom */}
-        <CommandBar />
+          {/* CommandBar - now inside the engagement column for alignment */}
+          <CommandBar />
+        </div>
       </div>
     </div>
   )

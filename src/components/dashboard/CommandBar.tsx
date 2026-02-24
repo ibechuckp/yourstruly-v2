@@ -137,10 +137,10 @@ export default function CommandBar() {
 
   return (
     <>
-      {/* Expanded Chat Panel - Fixed position overlay, aligned with engagement grid */}
+      {/* Expanded Chat Panel - Fixed position overlay, aligned with engagement column */}
       {isExpanded && (
-        <div className="fixed bottom-20 left-0 right-0 z-40">
-          <div className="mx-auto px-4" style={{ maxWidth: 776 }}>
+        <div className="fixed bottom-20 left-0 right-0 lg:left-[328px] z-40">
+          <div className="mx-auto lg:ml-0 px-4" style={{ maxWidth: 776, width: '100%' }}>
             <div className="glass-modal rounded-refined-lg overflow-hidden">
               {/* Chat Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-[#C35F33]/10">
@@ -235,9 +235,10 @@ export default function CommandBar() {
         </div>
       )}
 
-      {/* Input Bar - Fixed at bottom, aligned with engagement grid (776px) */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pointer-events-none">
-        <div className="mx-auto pointer-events-auto" style={{ maxWidth: 776 }}>
+      {/* Input Bar - Fixed at bottom, aligned with engagement column */}
+      {/* On lg screens: offset left by 328px (profile sidebar width) to center with tiles */}
+      <div className="fixed bottom-0 left-0 right-0 lg:left-[328px] z-50 p-4 pointer-events-none">
+        <div className="mx-auto lg:ml-0 pointer-events-auto" style={{ maxWidth: 776, width: '100%' }}>
           <div className="flex items-center gap-3 px-4 py-3 glass rounded-refined-lg card-shadow-md">
             <button 
               onClick={() => setIsExpanded(!isExpanded)}
