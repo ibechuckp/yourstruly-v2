@@ -817,30 +817,27 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  padding: 10px 24px;
+  padding: 8px 20px;
   display: inline-block;
   color: #3d3d3d; /* Consistent dark color for all titles */
 }
 
-/* Torn edge background for category pill - tinted by color class */
+/* Torn edge background for category pill - different SVG per color */
 .bubble-type::before {
   content: '';
   position: absolute;
-  inset: -4px -10px;
-  background-image: url('/images/nav-active-bg.svg');
+  inset: -2px -6px;
   background-size: 100% 100%;
   background-repeat: no-repeat;
   z-index: -1;
-  opacity: 1;
-  transition: filter 0.2s ease;
 }
 
-/* Color tints for torn edge background via CSS filter */
-.bubble-type-yellow::before { filter: sepia(0.5) saturate(2) hue-rotate(-10deg) brightness(1.05); }
-.bubble-type-green::before { filter: sepia(0.6) saturate(1.5) hue-rotate(80deg) brightness(0.95); }
-.bubble-type-blue::before { filter: sepia(0.4) saturate(1.2) hue-rotate(150deg) brightness(1.05); }
-.bubble-type-red::before { filter: sepia(0.6) saturate(2) hue-rotate(-20deg) brightness(0.95); }
-.bubble-type-purple::before { filter: sepia(0.6) saturate(1.8) hue-rotate(220deg) brightness(0.9); }
+/* Different colored SVG for each category */
+.bubble-type-yellow::before { background-image: url('/images/torn-edge-yellow.svg'); }
+.bubble-type-green::before { background-image: url('/images/torn-edge-green.svg'); }
+.bubble-type-blue::before { background-image: url('/images/torn-edge-blue.svg'); }
+.bubble-type-red::before { background-image: url('/images/torn-edge-red.svg'); }
+.bubble-type-purple::before { background-image: url('/images/torn-edge-purple.svg'); }
 
 /* All titles use same dark color for consistency */
 .bubble-type-yellow,

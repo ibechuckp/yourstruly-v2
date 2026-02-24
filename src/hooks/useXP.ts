@@ -18,6 +18,9 @@ export function useXP() {
     const loadXP = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
+        // Reset state when no user to prevent data leakage
+        setUserXP(null)
+        setXPService(null)
         setLoading(false)
         return
       }

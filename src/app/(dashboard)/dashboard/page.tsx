@@ -150,6 +150,11 @@ export default function DashboardPage() {
         localStorage.removeItem('yt_completed_tiles')
         localStorage.removeItem('yt_total_xp')
         setCurrentUserId(user.id)
+      } else {
+        // No user - reset state to prevent data leakage
+        setCurrentUserId(null)
+        setCompletedTiles([])
+        setTotalXp(0)
       }
     }
     getUserId()
@@ -197,11 +202,14 @@ export default function DashboardPage() {
   }, [completedTiles, currentUserId])
 
   useEffect(() => {
-    loadProfile()
-    loadStats()
-    loadContacts()
-    loadUpcomingEvents()
-  }, [])
+    // Only load data when we have a confirmed user ID
+    if (currentUserId) {
+      loadProfile()
+      loadStats()
+      loadContacts()
+      loadUpcomingEvents()
+    }
+  }, [currentUserId])
 
   const loadProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser()

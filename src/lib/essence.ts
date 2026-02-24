@@ -280,7 +280,10 @@ export function generateEssenceVector(profile: ProfileData): EssenceVector {
   }
   
   // Create seeded random for consistent uniqueness per user
-  const seed = stringToSeed(profile.id || profile.full_name || 'default')
+  // IMPORTANT: Use profile.id as seed to ensure each user gets a unique fingerprint
+  // If no profile.id, generate a random seed so empty profiles don't all look identical
+  const seedSource = profile.id || profile.full_name || crypto.randomUUID()
+  const seed = stringToSeed(seedSource)
   const random = seededRandom(seed)
   
   // Apply MBTI type if present

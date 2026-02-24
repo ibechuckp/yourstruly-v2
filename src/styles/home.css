@@ -307,36 +307,9 @@
 }
 
 /* Expanded tile overlay */
-.bubble-tile {
-  transition: box-shadow 0.2s ease;
-}
-
+/* Bubble tiles - base styles only, specifics in engagement.css */
 .bubble-tile.shadow-2xl {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-
-/* Bubble cards - glass effect with warm accent shadows */
-.bubble-tile {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 
-    0 2px 8px rgba(195, 95, 51, 0.06),
-    0 8px 24px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  -webkit-user-drag: none;
-  user-select: none;
-}
-
-.bubble-tile:hover {
-  transform: translateY(-4px);
-  box-shadow: 
-    0 8px 24px rgba(195, 95, 51, 0.1),
-    0 16px 40px rgba(0, 0, 0, 0.08);
-  border-color: rgba(195, 95, 51, 0.15);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
 }
 
 /* Accent bars hidden - using glow effect instead */
@@ -344,29 +317,12 @@
   display: none;
 }
 
-/* Bubble content */
+/* Bubble content - base styles, engagement.css has tile-specific overrides */
 .bubble-content {
   padding: 16px;
 }
 
-.bubble-icon {
-  font-size: 24px;
-  margin-bottom: 8px;
-}
-
-.bubble-type {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 8px;
-}
-
-.bubble-type-yellow { color: #a39507; }
-.bubble-type-green { color: #406A56; }
-.bubble-type-red { color: #C35F33; }
-.bubble-type-blue { color: #5d8585; }
-.bubble-type-purple { color: #4A3552; }
+/* bubble-type styles are in engagement.css (with torn edge SVG backgrounds) */
 
 .bubble-text {
   font-size: 14px;
