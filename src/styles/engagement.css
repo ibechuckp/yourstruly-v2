@@ -665,111 +665,112 @@
    BUBBLE TILE (Used in dashboard)
    ============================================================================= */
 
-/* Engagement tile - soft glow effect */
+/* Engagement tile - prominent glow effect */
 .bubble-tile {
   position: relative;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   overflow: visible;
   box-shadow: 
-    0 0 20px rgba(195, 95, 51, 0.08),
-    0 0 40px rgba(195, 95, 51, 0.04),
-    0 8px 24px rgba(0, 0, 0, 0.06);
+    0 0 30px rgba(195, 95, 51, 0.2),
+    0 0 60px rgba(195, 95, 51, 0.1),
+    0 8px 24px rgba(0, 0, 0, 0.08);
   -webkit-user-drag: none;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  min-width: 260px;
 }
 
-/* Soft glow by type */
+/* Prominent glow by type - stronger colors */
 .bubble-tile[data-type="photo_backstory"],
 .bubble-tile[data-type="highlight"],
 .bubble-tile[data-type="recipes_wisdom"] {
   box-shadow: 
-    0 0 24px rgba(217, 198, 26, 0.15),
-    0 0 48px rgba(217, 198, 26, 0.08),
-    0 8px 24px rgba(0, 0, 0, 0.06);
+    0 0 35px rgba(217, 198, 26, 0.35),
+    0 0 70px rgba(217, 198, 26, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .bubble-tile[data-type="tag_person"],
 .bubble-tile[data-type="connect_dots"] {
   box-shadow: 
-    0 0 24px rgba(141, 172, 171, 0.2),
-    0 0 48px rgba(141, 172, 171, 0.1),
-    0 8px 24px rgba(0, 0, 0, 0.06);
+    0 0 35px rgba(141, 172, 171, 0.4),
+    0 0 70px rgba(141, 172, 171, 0.2),
+    0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .bubble-tile[data-type="missing_info"],
-.bubble-tile[data-type="quick_question"] {
+.bubble-tile[data-type="quick_question"],
+.bubble-tile[data-type="contact_info"] {
   box-shadow: 
-    0 0 24px rgba(64, 106, 86, 0.15),
-    0 0 48px rgba(64, 106, 86, 0.08),
-    0 8px 24px rgba(0, 0, 0, 0.06);
+    0 0 35px rgba(64, 106, 86, 0.35),
+    0 0 70px rgba(64, 106, 86, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .bubble-tile[data-type="memory_prompt"],
 .bubble-tile[data-type="postscript"] {
   box-shadow: 
-    0 0 24px rgba(74, 53, 82, 0.15),
-    0 0 48px rgba(74, 53, 82, 0.08),
-    0 8px 24px rgba(0, 0, 0, 0.06);
+    0 0 35px rgba(74, 53, 82, 0.35),
+    0 0 70px rgba(74, 53, 82, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .bubble-tile[data-type="knowledge"],
 .bubble-tile[data-type="favorites_firsts"] {
   box-shadow: 
-    0 0 24px rgba(195, 95, 51, 0.15),
-    0 0 48px rgba(195, 95, 51, 0.08),
-    0 8px 24px rgba(0, 0, 0, 0.06);
+    0 0 35px rgba(195, 95, 51, 0.35),
+    0 0 70px rgba(195, 95, 51, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
-/* Hover - glow saturates */
+/* Hover - glow intensifies dramatically */
 .bubble-tile:hover {
   transform: translateY(-6px);
-  border-color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 1);
 }
 
 .bubble-tile[data-type="photo_backstory"]:hover,
 .bubble-tile[data-type="highlight"]:hover,
 .bubble-tile[data-type="recipes_wisdom"]:hover {
   box-shadow: 
-    0 0 32px rgba(217, 198, 26, 0.35),
-    0 0 64px rgba(217, 198, 26, 0.2),
-    0 16px 40px rgba(0, 0, 0, 0.1);
+    0 0 50px rgba(217, 198, 26, 0.5),
+    0 0 100px rgba(217, 198, 26, 0.25),
+    0 16px 40px rgba(0, 0, 0, 0.12);
 }
 
 .bubble-tile[data-type="tag_person"]:hover,
 .bubble-tile[data-type="connect_dots"]:hover {
   box-shadow: 
-    0 0 32px rgba(141, 172, 171, 0.4),
-    0 0 64px rgba(141, 172, 171, 0.2),
-    0 16px 40px rgba(0, 0, 0, 0.1);
+    0 0 50px rgba(141, 172, 171, 0.55),
+    0 0 100px rgba(141, 172, 171, 0.3),
+    0 16px 40px rgba(0, 0, 0, 0.12);
 }
 
 .bubble-tile[data-type="missing_info"]:hover,
-.bubble-tile[data-type="quick_question"]:hover {
+.bubble-tile[data-type="quick_question"]:hover,
+.bubble-tile[data-type="contact_info"]:hover {
   box-shadow: 
-    0 0 32px rgba(64, 106, 86, 0.35),
-    0 0 64px rgba(64, 106, 86, 0.18),
-    0 16px 40px rgba(0, 0, 0, 0.1);
+    0 0 50px rgba(64, 106, 86, 0.5),
+    0 0 100px rgba(64, 106, 86, 0.25),
+    0 16px 40px rgba(0, 0, 0, 0.12);
 }
 
 .bubble-tile[data-type="memory_prompt"]:hover,
 .bubble-tile[data-type="postscript"]:hover {
   box-shadow: 
-    0 0 32px rgba(74, 53, 82, 0.35),
-    0 0 64px rgba(74, 53, 82, 0.18),
-    0 16px 40px rgba(0, 0, 0, 0.1);
+    0 0 50px rgba(74, 53, 82, 0.5),
+    0 0 100px rgba(74, 53, 82, 0.25),
+    0 16px 40px rgba(0, 0, 0, 0.12);
 }
 
 .bubble-tile[data-type="knowledge"]:hover,
 .bubble-tile[data-type="favorites_firsts"]:hover {
   box-shadow: 
-    0 0 32px rgba(195, 95, 51, 0.35),
-    0 0 64px rgba(195, 95, 51, 0.18),
-    0 16px 40px rgba(0, 0, 0, 0.1);
+    0 0 50px rgba(195, 95, 51, 0.5),
+    0 0 100px rgba(195, 95, 51, 0.25),
+    0 16px 40px rgba(0, 0, 0, 0.12);
 }
 
 .bubble-content {
@@ -812,16 +813,16 @@
 .bubble-type {
   position: relative;
   font-family: var(--font-inter-tight), 'Inter Tight', sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   padding: 10px 24px;
   display: inline-block;
-  color: #333;
+  color: #3d3d3d; /* Consistent dark color for all titles */
 }
 
-/* Torn edge background for category pill */
+/* Torn edge background for category pill - tinted by color class */
 .bubble-type::before {
   content: '';
   position: absolute;
@@ -830,15 +831,23 @@
   background-size: 100% 100%;
   background-repeat: no-repeat;
   z-index: -1;
-  opacity: 0.95;
+  opacity: 1;
+  transition: filter 0.2s ease;
 }
 
-/* Color variations via text color */
-.bubble-type-yellow { color: #7a6d06; }
-.bubble-type-green { color: #2d4d3d; }
-.bubble-type-blue { color: #4a6b6a; }
-.bubble-type-red { color: #9e4a28; }
-.bubble-type-purple { color: #3a2942; }
+/* Color tints for torn edge background via CSS filter */
+.bubble-type-yellow::before { filter: sepia(0.5) saturate(2) hue-rotate(-10deg) brightness(1.05); }
+.bubble-type-green::before { filter: sepia(0.6) saturate(1.5) hue-rotate(80deg) brightness(0.95); }
+.bubble-type-blue::before { filter: sepia(0.4) saturate(1.2) hue-rotate(150deg) brightness(1.05); }
+.bubble-type-red::before { filter: sepia(0.6) saturate(2) hue-rotate(-20deg) brightness(0.95); }
+.bubble-type-purple::before { filter: sepia(0.6) saturate(1.8) hue-rotate(220deg) brightness(0.9); }
+
+/* All titles use same dark color for consistency */
+.bubble-type-yellow,
+.bubble-type-green,
+.bubble-type-blue,
+.bubble-type-red,
+.bubble-type-purple { color: #3d3d3d; }
 
 .bubble-contact {
   display: flex;
