@@ -120,10 +120,10 @@ export default function MemoryCard({ memory }: MemoryCardProps) {
 
         {/* AI Category Tag with Torn Edge */}
         {memory.ai_category && (
-          <div className={`absolute top-2 left-2 bubble-type bubble-type-${getCategoryColor(memory.ai_category)}`}>
-            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
-              {categoryIcon && <img src={categoryIcon} alt="" className="w-3 h-3 opacity-70" />}
-              {memory.ai_category}
+          <div className="absolute top-3 left-3">
+            <span className={`bubble-type bubble-type-${getCategoryColor(memory.ai_category)} flex items-center gap-1.5`}>
+              {categoryIcon && <img src={categoryIcon} alt="" className="w-3.5 h-3.5 opacity-70" />}
+              <span className="text-[10px] font-bold uppercase tracking-wider">{memory.ai_category}</span>
             </span>
           </div>
         )}

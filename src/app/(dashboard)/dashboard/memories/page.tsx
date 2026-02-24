@@ -9,6 +9,7 @@ import MemoryCard from '@/components/memories/MemoryCard'
 import GlobeView from '@/components/memories/GlobeView'
 import { MemoryTimeline } from '@/components/memories/MemoryTimeline'
 import '@/styles/page-styles.css'
+import { getCategoryIcon } from '@/lib/dashboard/icons'
 
 interface Memory {
   id: string

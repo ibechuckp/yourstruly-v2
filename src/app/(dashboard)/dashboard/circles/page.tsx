@@ -5,6 +5,7 @@ import { Plus, Users, ChevronLeft, Crown, Shield, User, Search } from 'lucide-re
 import Link from 'next/link'
 import CreateCircleModal from '@/components/circles/CreateCircleModal'
 import '@/styles/page-styles.css'
+import { getCategoryIcon } from '@/lib/dashboard/icons'
 
 // ============================================
 // TYPES

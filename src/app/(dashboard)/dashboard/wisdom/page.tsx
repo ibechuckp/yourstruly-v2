@@ -8,6 +8,7 @@ import Link from 'next/link';
 import '@/styles/home.css';
 import '@/styles/page-styles.css';
 import '@/styles/engagement.css';
+import { getCategoryIcon } from '@/lib/dashboard/icons';
 
 interface WisdomEntry {
   id: string;
@@ -348,7 +349,7 @@ export default function WisdomPage() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl p-4 shadow-sm"
+            className="glass-card p-4"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#4A3552]/10 flex items-center justify-center">
@@ -365,7 +366,7 @@ export default function WisdomPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="bg-white rounded-2xl p-4 shadow-sm"
+            className="glass-card p-4"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#C35F33]/10 flex items-center justify-center">
@@ -384,7 +385,7 @@ export default function WisdomPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white rounded-2xl p-4 shadow-sm"
+            className="glass-card p-4"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#406A56]/10 flex items-center justify-center">
@@ -403,7 +404,7 @@ export default function WisdomPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="bg-white rounded-2xl p-4 shadow-sm"
+            className="glass-card p-4"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#D9C61A]/10 flex items-center justify-center">
@@ -432,17 +433,19 @@ export default function WisdomPage() {
           {/* Shared with Me Tab Content */}
           {tabMode === 'shared' ? (
             loadingShared ? (
-              <div className="bg-white rounded-2xl p-12 text-center">
+              <div className="glass-card p-12 text-center">
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>
                   <Brain size={32} className="text-[#4A3552] mx-auto" />
                 </motion.div>
                 <p className="text-gray-400 mt-4">Loading shared wisdom...</p>
               </div>
             ) : sharedEntries.length === 0 ? (
-              <div className="bg-white rounded-2xl p-12 text-center">
-                <Share2 size={48} className="mx-auto mb-4 text-[#4A3552]/30" />
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">No shared wisdom yet</h3>
-                <p className="text-gray-400">When someone shares their wisdom with you, it will appear here</p>
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <img src={getCategoryIcon('wisdom')} alt="" className="w-12 h-12 opacity-50" />
+                </div>
+                <h3 className="empty-state-title">No shared wisdom yet</h3>
+                <p className="empty-state-text">When someone shares their wisdom with you, it will appear here</p>
               </div>
             ) : (
               <AnimatePresence mode="popLayout">
@@ -453,7 +456,7 @@ export default function WisdomPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ delay: index * 0.05 }}
-                    className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                    className="glass-card p-5 hover:shadow-md transition-shadow cursor-pointer"
                     onClick={() => window.location.assign(`/dashboard/wisdom/${entry.id}`)}
                   >
                     <div className="flex items-start gap-4">
@@ -494,25 +497,29 @@ export default function WisdomPage() {
               </AnimatePresence>
             )
           ) : filteredEntries.length === 0 && entries.length > 0 ? (
-            <div className="bg-white rounded-2xl p-12 text-center">
-              <Search size={48} className="mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-semibold text-gray-600 mb-2">No matches found</h3>
-              <p className="text-gray-400 mb-6">Try a different search term or category</p>
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <Search size={32} className="text-[#4A3552]/50" />
+              </div>
+              <h3 className="empty-state-title">No matches found</h3>
+              <p className="empty-state-text mb-4">Try a different search term or category</p>
               <button 
                 onClick={clearFilters}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#4A3552] text-white rounded-xl hover:bg-[#5a4562] transition-colors"
+                className="btn-primary"
               >
                 Clear filters
               </button>
             </div>
           ) : entries.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 text-center">
-              <Sparkles size={48} className="mx-auto mb-4 text-[#D9C61A]/50" />
-              <h3 className="text-lg font-semibold text-gray-600 mb-2">No wisdom yet</h3>
-              <p className="text-gray-400 mb-6">Share your life lessons and insights to build your wisdom collection</p>
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <img src={getCategoryIcon('wisdom')} alt="" className="w-12 h-12 opacity-50" />
+              </div>
+              <h3 className="empty-state-title">No wisdom yet</h3>
+              <p className="empty-state-text mb-4">Share your life lessons and insights to build your wisdom collection</p>
               <Link 
                 href="/dashboard"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#4A3552] text-white rounded-xl hover:bg-[#5a4562] transition-colors"
+                className="btn-primary inline-flex"
               >
                 <Brain size={18} />
                 Share Wisdom
@@ -527,7 +534,7 @@ export default function WisdomPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ delay: index * 0.05 }}
-                  className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  className="glass-card p-5 hover:shadow-md transition-shadow cursor-pointer"
                   onClick={() => window.location.assign(`/dashboard/wisdom/${entry.id}`)}
                 >
                   <div className="flex items-start gap-4">

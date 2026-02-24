@@ -10,6 +10,7 @@ import Link from 'next/link'
 import '@/styles/page-styles.css'
 import '@/styles/engagement.css'
 import '@/styles/home.css'
+import { getCategoryIcon } from '@/lib/dashboard/icons'
 
 interface PostScript {
   id: string
@@ -51,13 +52,13 @@ function formatDate(dateStr: string | null): string {
   })
 }
 
-function getStatusColor(status: string): string {
+function getStatusColor(status: string): 'yellow' | 'blue' | 'green' | 'purple' {
   switch (status) {
-    case 'draft': return 'bg-gray-200 text-gray-700'
-    case 'scheduled': return 'bg-amber-100 text-amber-700'
-    case 'sent': return 'bg-blue-100 text-blue-700'
-    case 'opened': return 'bg-green-100 text-green-700'
-    default: return 'bg-gray-200 text-gray-700'
+    case 'draft': return 'purple'
+    case 'scheduled': return 'yellow'
+    case 'sent': return 'blue'
+    case 'opened': return 'green'
+    default: return 'purple'
   }
 }
 
@@ -131,7 +132,7 @@ function PostScriptCard({ postscript }: { postscript: PostScript }) {
 
           {/* Footer */}
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${getStatusColor(postscript.status)}`}>
+            <span className={`bubble-type bubble-type-${getStatusColor(postscript.status)} text-[10px] flex items-center gap-1`}>
               {getStatusIcon(postscript.status)}
               <span className="capitalize">{postscript.status}</span>
             </span>

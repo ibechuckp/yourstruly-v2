@@ -7,6 +7,7 @@ import Link from 'next/link'
 import '@/styles/page-styles.css'
 import '@/styles/engagement.css'
 import '@/styles/home.css'
+import { getCategoryIcon } from '@/lib/dashboard/icons'
 
 // ============================================
 // TYPES
@@ -159,6 +160,18 @@ export default function ContactsPage() {
     return id
   }
 
+  // Get color for relationship type (for torn edge labels)
+  const getRelationshipColor = (id: string): 'green' | 'blue' | 'yellow' | 'purple' => {
+    const familyIds = RELATIONSHIP_OPTIONS.find(g => g.category === 'Family')?.options.map(o => o.id) || []
+    const friendIds = RELATIONSHIP_OPTIONS.find(g => g.category === 'Friends')?.options.map(o => o.id) || []
+    const professionalIds = RELATIONSHIP_OPTIONS.find(g => g.category === 'Professional')?.options.map(o => o.id) || []
+    
+    if (familyIds.includes(id)) return 'green'
+    if (friendIds.includes(id)) return 'blue'
+    if (professionalIds.includes(id)) return 'yellow'
+    return 'purple'
+  }
+
   if (loading) {
     return (
       <div className="page-container">
@@ -253,16 +266,24 @@ export default function ContactsPage() {
 
           {contacts.length === 0 ? (
             <div className="empty-state">
-              <p className="empty-state-text mb-4">No contacts yet</p>
+              <div className="empty-state-icon">
+                <img src={getCategoryIcon('contact')} alt="" className="w-12 h-12 opacity-50" />
+              </div>
+              <h3 className="empty-state-title mb-2">No contacts yet</h3>
+              <p className="empty-state-text mb-4">Add people to your life story</p>
               <button
                 onClick={() => { setEditingContact(null); setShowContactModal(true) }}
                 className="btn-primary"
               >
+                <Plus size={16} />
                 Add Your First Contact
               </button>
             </div>
           ) : filteredContacts.length === 0 ? (
             <div className="empty-state">
+              <div className="empty-state-icon">
+                <Search size={32} className="text-[#406A56]/50" />
+              </div>
               <p className="empty-state-text mb-2">No contacts match your search</p>
               <button
                 onClick={() => { setSearchQuery(''); setSelectedCategory(null) }}
@@ -280,14 +301,16 @@ export default function ContactsPage() {
                   onClick={() => window.location.href = `/dashboard/contacts/${contact.id}`}
                 >
                   <div className="bubble-content">
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <div className="bubble-contact-avatar">
                           {contact.full_name.charAt(0)}
                         </div>
                         <div>
                           <h3 className="text-[#2d2d2d] font-semibold">{contact.full_name}</h3>
-                          <p className="text-[#406A56] text-sm">{getRelationshipLabel(contact.relationship_type)}</p>
+                          <span className={`bubble-type bubble-type-${getRelationshipColor(contact.relationship_type)} text-[10px] mt-1 inline-block`}>
+                            {getRelationshipLabel(contact.relationship_type)}
+                          </span>
                         </div>
                       </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
