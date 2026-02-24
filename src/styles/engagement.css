@@ -667,8 +667,8 @@
 
 /* Engagement tile - prominent glow effect */
 .bubble-tile {
-  position: relative;
-  background: rgba(255, 255, 255, 0.95);
+  /* position set via Tailwind 'absolute' class - don't override here */
+  background: rgba(253, 248, 243, 0.92); /* Warm cream to match title tiles */
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-radius: 20px;

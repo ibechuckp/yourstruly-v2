@@ -149,9 +149,20 @@ export default function MemoriesPage() {
   }, [supabase])
 
   useEffect(() => {
-    loadMemories()
-    loadSharedMemories()
-  }, [loadMemories, loadSharedMemories])
+    const checkAuthAndLoad = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        loadMemories()
+        loadSharedMemories()
+      } else {
+        // Reset state when no user to prevent data leakage
+        setMemories([])
+        setSharedMemories([])
+        setFilteredMemories([])
+      }
+    }
+    checkAuthAndLoad()
+  }, [loadMemories, loadSharedMemories, supabase])
 
   // Filter by search query
   useEffect(() => {

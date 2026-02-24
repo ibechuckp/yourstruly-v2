@@ -73,7 +73,18 @@ export function useSubscription(): UseSubscriptionReturn {
   }, []);
 
   useEffect(() => {
-    fetchSubscription();
+    const checkAuthAndFetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        fetchSubscription();
+      } else {
+        // Reset state when no user to prevent data leakage
+        setSubscription(null);
+        setProfile(null);
+        setError(null);
+      }
+    };
+    checkAuthAndFetch();
   }, [fetchSubscription]);
 
   const isActive = ['active', 'trialing'].includes(subscription?.status || profile?.subscription_status || '');

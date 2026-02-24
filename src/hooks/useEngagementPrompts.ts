@@ -252,10 +252,21 @@ export function useEngagementPrompts(count: number = 5): UseEngagementPromptsRet
     }
   }, [prompts.length, fetchPrompts, supabase]);
 
-  // Initial fetch
+  // Initial fetch - depends on auth state
   useEffect(() => {
-    fetchPrompts();
-  }, [fetchPrompts]);
+    const checkAuthAndFetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        fetchPrompts();
+      } else {
+        // Reset state when no user to prevent data leakage
+        setPrompts([]);
+        setStats(null);
+        setError(null);
+      }
+    };
+    checkAuthAndFetch();
+  }, [fetchPrompts, supabase]);
 
   return {
     prompts,

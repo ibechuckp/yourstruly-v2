@@ -75,8 +75,17 @@ export function useNotificationPreferences() {
   const supabase = createClient();
 
   useEffect(() => {
-    loadPreferences();
-  }, []);
+    const checkAuthAndLoad = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        loadPreferences();
+      } else {
+        // Reset to defaults when no user to prevent data leakage
+        setPreferences(DEFAULT_PREFERENCES);
+      }
+    };
+    checkAuthAndLoad();
+  }, [supabase]);
 
   const loadPreferences = async () => {
     try {

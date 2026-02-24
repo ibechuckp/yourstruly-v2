@@ -155,10 +155,6 @@ export default function PostScriptsPage() {
   const [filter, setFilter] = useState<string>('all')
   const [stats, setStats] = useState({ total: 0, scheduled: 0, sent: 0, opened: 0 })
 
-  useEffect(() => {
-    fetchPostScripts()
-  }, [filter])
-
   async function fetchPostScripts() {
     setLoading(true)
     try {
@@ -167,6 +163,15 @@ export default function PostScriptsPage() {
         : `/api/postscripts?status=${filter}`
       
       const res = await fetch(url)
+      
+      // Handle unauthorized - reset state to prevent data leakage
+      if (res.status === 401) {
+        setPostscripts([])
+        setStats({ total: 0, scheduled: 0, sent: 0, opened: 0 })
+        setLoading(false)
+        return
+      }
+      
       const data = await res.json()
       
       if (data.postscripts) {
@@ -188,6 +193,10 @@ export default function PostScriptsPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchPostScripts()
+  }, [filter])
 
   const filters = [
     { key: 'all', label: 'All' },

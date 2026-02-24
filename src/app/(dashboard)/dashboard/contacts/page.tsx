@@ -113,13 +113,15 @@ export default function ContactsPage() {
     return matchesSearch && matchesCategory
   })
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) {
+      // Reset state when no user to prevent data leakage
+      setContacts([])
+      setPets([])
+      setLoading(false)
+      return
+    }
 
     const [contactsRes, petsRes] = await Promise.all([
       supabase.from('contacts').select('*').eq('user_id', user.id).order('full_name'),
@@ -130,6 +132,10 @@ export default function ContactsPage() {
     setPets(petsRes.data || [])
     setLoading(false)
   }
+
+  useEffect(() => {
+    loadData()
+  }, [])
 
   const handleDeleteContact = async (id: string) => {
     if (!confirm('Delete this contact?')) return

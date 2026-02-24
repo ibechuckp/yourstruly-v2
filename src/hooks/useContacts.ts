@@ -130,8 +130,18 @@ export function useContacts(): UseContactsReturn {
   }, [supabase]);
 
   useEffect(() => {
-    fetchContacts();
-  }, [fetchContacts]);
+    const checkAuthAndFetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        fetchContacts();
+      } else {
+        // Reset state when no user to prevent data leakage
+        setContacts([]);
+        setError(null);
+      }
+    };
+    checkAuthAndFetch();
+  }, [fetchContacts, supabase]);
 
   return {
     contacts,
