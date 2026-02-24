@@ -665,112 +665,115 @@
    BUBBLE TILE (Used in dashboard)
    ============================================================================= */
 
-/* Engagement tile - prominent glow effect */
+/* Engagement tile - frosted glass effect */
 .bubble-tile {
   /* position set via Tailwind 'absolute' class - don't override here */
-  background: rgba(253, 248, 243, 0.92); /* Warm cream to match title tiles */
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(253, 248, 243, 0.65); /* More translucent for frost effect */
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   overflow: visible;
   box-shadow: 
-    0 0 30px rgba(195, 95, 51, 0.2),
-    0 0 60px rgba(195, 95, 51, 0.1),
-    0 8px 24px rgba(0, 0, 0, 0.08);
+    0 0 12px rgba(195, 95, 51, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.06),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6);
   -webkit-user-drag: none;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Prominent glow by type - stronger colors */
+/* Subtle glow by type - frosted glass with colored tint */
 .bubble-tile[data-type="photo_backstory"],
 .bubble-tile[data-type="highlight"],
 .bubble-tile[data-type="recipes_wisdom"] {
   box-shadow: 
-    0 0 35px rgba(217, 198, 26, 0.35),
-    0 0 70px rgba(217, 198, 26, 0.15),
-    0 8px 24px rgba(0, 0, 0, 0.08);
+    0 0 12px rgba(217, 198, 26, 0.12),
+    0 4px 16px rgba(0, 0, 0, 0.06),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6);
 }
 
 .bubble-tile[data-type="tag_person"],
 .bubble-tile[data-type="connect_dots"] {
   box-shadow: 
-    0 0 35px rgba(141, 172, 171, 0.4),
-    0 0 70px rgba(141, 172, 171, 0.2),
-    0 8px 24px rgba(0, 0, 0, 0.08);
+    0 0 12px rgba(141, 172, 171, 0.15),
+    0 4px 16px rgba(0, 0, 0, 0.06),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6);
 }
 
 .bubble-tile[data-type="missing_info"],
 .bubble-tile[data-type="quick_question"],
 .bubble-tile[data-type="contact_info"] {
   box-shadow: 
-    0 0 35px rgba(64, 106, 86, 0.35),
-    0 0 70px rgba(64, 106, 86, 0.15),
-    0 8px 24px rgba(0, 0, 0, 0.08);
+    0 0 12px rgba(64, 106, 86, 0.12),
+    0 4px 16px rgba(0, 0, 0, 0.06),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6);
 }
 
 .bubble-tile[data-type="memory_prompt"],
 .bubble-tile[data-type="postscript"] {
   box-shadow: 
-    0 0 35px rgba(74, 53, 82, 0.35),
-    0 0 70px rgba(74, 53, 82, 0.15),
-    0 8px 24px rgba(0, 0, 0, 0.08);
+    0 0 12px rgba(74, 53, 82, 0.12),
+    0 4px 16px rgba(0, 0, 0, 0.06),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6);
 }
 
 .bubble-tile[data-type="knowledge"],
 .bubble-tile[data-type="favorites_firsts"] {
   box-shadow: 
-    0 0 35px rgba(195, 95, 51, 0.35),
-    0 0 70px rgba(195, 95, 51, 0.15),
-    0 8px 24px rgba(0, 0, 0, 0.08);
+    0 0 12px rgba(195, 95, 51, 0.12),
+    0 4px 16px rgba(0, 0, 0, 0.06),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6);
 }
 
-/* Hover - glow intensifies dramatically */
+/* Hover - subtle lift with gentle glow increase */
 .bubble-tile:hover {
-  transform: translateY(-6px);
-  border-color: rgba(255, 255, 255, 1);
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(253, 248, 243, 0.75);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
 }
 
 .bubble-tile[data-type="photo_backstory"]:hover,
 .bubble-tile[data-type="highlight"]:hover,
 .bubble-tile[data-type="recipes_wisdom"]:hover {
   box-shadow: 
-    0 0 50px rgba(217, 198, 26, 0.5),
-    0 0 100px rgba(217, 198, 26, 0.25),
-    0 16px 40px rgba(0, 0, 0, 0.12);
+    0 0 20px rgba(217, 198, 26, 0.2),
+    0 8px 24px rgba(0, 0, 0, 0.1),
+    inset 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .bubble-tile[data-type="tag_person"]:hover,
 .bubble-tile[data-type="connect_dots"]:hover {
   box-shadow: 
-    0 0 50px rgba(141, 172, 171, 0.55),
-    0 0 100px rgba(141, 172, 171, 0.3),
-    0 16px 40px rgba(0, 0, 0, 0.12);
+    0 0 20px rgba(141, 172, 171, 0.25),
+    0 8px 24px rgba(0, 0, 0, 0.1),
+    inset 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .bubble-tile[data-type="missing_info"]:hover,
 .bubble-tile[data-type="quick_question"]:hover,
 .bubble-tile[data-type="contact_info"]:hover {
   box-shadow: 
-    0 0 50px rgba(64, 106, 86, 0.5),
-    0 0 100px rgba(64, 106, 86, 0.25),
-    0 16px 40px rgba(0, 0, 0, 0.12);
+    0 0 20px rgba(64, 106, 86, 0.2),
+    0 8px 24px rgba(0, 0, 0, 0.1),
+    inset 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .bubble-tile[data-type="memory_prompt"]:hover,
 .bubble-tile[data-type="postscript"]:hover {
   box-shadow: 
-    0 0 50px rgba(74, 53, 82, 0.5),
-    0 0 100px rgba(74, 53, 82, 0.25),
-    0 16px 40px rgba(0, 0, 0, 0.12);
+    0 0 20px rgba(74, 53, 82, 0.2),
+    0 8px 24px rgba(0, 0, 0, 0.1),
+    inset 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .bubble-tile[data-type="knowledge"]:hover,
 .bubble-tile[data-type="favorites_firsts"]:hover {
   box-shadow: 
-    0 0 50px rgba(195, 95, 51, 0.5),
-    0 0 100px rgba(195, 95, 51, 0.25),
-    0 16px 40px rgba(0, 0, 0, 0.12);
+    0 0 20px rgba(195, 95, 51, 0.2),
+    0 8px 24px rgba(0, 0, 0, 0.1),
+    inset 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .bubble-content {
