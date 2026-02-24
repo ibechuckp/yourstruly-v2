@@ -1,28 +1,31 @@
 # Frosted Glass Unification Audit Report
 
-## Canonical Style (Reference from home.css .glass-card)
+## Canonical Style (Reference: profile-card in home.css)
 
 ```css
-/* Frosted glass card */
-background: rgba(253, 248, 243, 0.55);
-backdrop-filter: blur(20px) saturate(140%);
--webkit-backdrop-filter: blur(20px) saturate(140%);
-border: 1px solid rgba(255, 255, 255, 0.4);
+/* Card style - CORRECT REFERENCE */
+background: rgba(255, 255, 255, 0.8);
+backdrop-filter: blur(20px);
+-webkit-backdrop-filter: blur(20px);
+border: 1px solid rgba(255, 255, 255, 0.5);
 border-radius: 20px;
 box-shadow: 
-  0 2px 8px rgba(195, 95, 51, 0.04),
-  0 8px 24px rgba(0, 0, 0, 0.05),
-  inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  0 4px 16px rgba(195, 95, 51, 0.06),
+  0 12px 32px rgba(0, 0, 0, 0.06);
 
 /* Hover */
-background: rgba(253, 248, 243, 0.65);
-backdrop-filter: blur(24px) saturate(150%);
+background: rgba(255, 255, 255, 0.85);
 transform: translateY(-2px);
 box-shadow: 
-  0 4px 12px rgba(195, 95, 51, 0.06),
-  0 12px 32px rgba(0, 0, 0, 0.07),
-  inset 0 1px 2px rgba(255, 255, 255, 0.8);
+  0 6px 20px rgba(195, 95, 51, 0.08),
+  0 16px 40px rgba(0, 0, 0, 0.08);
 ```
+
+**Key points:**
+- 80% white opacity (NOT cream, NOT 55%)
+- No saturate() filter
+- No inset shadow
+- Warmer, more opaque appearance
 
 ## Files to Update
 

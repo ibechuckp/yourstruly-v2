@@ -181,15 +181,23 @@
 
 .marketplace-search {
   position: relative;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid rgba(64, 106, 86, 0.2);
+  background: rgba(253, 248, 243, 0.55);
+  backdrop-filter: blur(16px) saturate(130%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 2px 8px rgba(195, 95, 51, 0.03),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5);
   transition: all 0.2s ease;
 }
 
 .marketplace-search:focus-within {
-  border-color: #406A56;
-  box-shadow: 0 0 0 3px rgba(64, 106, 86, 0.1);
+  background: rgba(253, 248, 243, 0.7);
+  backdrop-filter: blur(20px) saturate(140%);
+  border-color: rgba(64, 106, 86, 0.3);
+  box-shadow:
+    0 4px 12px rgba(195, 95, 51, 0.05),
+    inset 0 1px 2px rgba(255, 255, 255, 0.7);
 }
 
 .marketplace-search input {
@@ -260,17 +268,21 @@
    ========================================================================== */
 
 .gift-modal {
-  background: #F2F1E5;
-  border-radius: 24px;
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
+  background: rgba(253, 248, 243, 0.85);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  box-shadow:
+    0 4px 16px rgba(195, 95, 51, 0.06),
+    0 20px 60px rgba(0, 0, 0, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.8);
 }
 
 .gift-modal-header {
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(64, 106, 86, 0.1);
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(16px) saturate(140%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 /* ==========================================================================
@@ -279,10 +291,16 @@
 
 .product-gallery {
   position: relative;
-  background: white;
+  background: rgba(253, 248, 243, 0.55);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 2px 8px rgba(195, 95, 51, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.05),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6);
 }
 
 .product-thumbnail {

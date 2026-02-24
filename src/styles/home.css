@@ -115,7 +115,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 32px 24px 120px; /* Reduced top padding */
+  padding: 88px 24px 120px; /* 56px nav + 32px gap */
 }
 
 /* Adjust content for left sidebar on large screens */
@@ -127,10 +127,10 @@
 
 /* Activity feed is now in main content, no right sidebar padding needed */
 
-/* Profile section - left aligned */
+/* Profile section - left aligned, 32px below nav (nav is 56px) */
 .home-profile {
   position: fixed;
-  top: 32px;
+  top: 88px; /* 56px nav + 32px gap */
   left: 24px;
   z-index: 20;
 }
