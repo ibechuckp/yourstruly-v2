@@ -231,13 +231,13 @@ export default function MemoriesPage() {
             <div className="flex items-center gap-3">
               {/* Search */}
               <div className="relative">
-                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#406A56]/50" />
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#406A56]/50 z-10 pointer-events-none" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search memories..."
-                  className="form-input pl-10 pr-10 w-48 sm:w-64"
+                  className="form-input pl-10 pr-10 w-48 sm:w-64 placeholder:text-[#999]"
                 />
                 {searchQuery && (
                   <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#406A56]/50 hover:text-[#406A56]">

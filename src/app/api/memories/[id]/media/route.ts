@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import exifr from 'exifr'
 
 // Force dynamic to avoid build-time evaluation of canvas/face-api
 export const dynamic = 'force-dynamic'
@@ -39,12 +40,6 @@ export async function POST(
     return NextResponse.json({ error: 'No file provided' }, { status: 400 })
   }
 
-  // Extract EXIF data from form (sent by client after extraction)
-  const exifLat = formData.get('exif_lat') as string | null
-  const exifLng = formData.get('exif_lng') as string | null
-  const takenAt = formData.get('taken_at') as string | null
-  const camera = formData.get('camera') as string | null
-
   const fileType = file.type.startsWith('image/') ? 'image' : 
                    file.type.startsWith('video/') ? 'video' : null
 
@@ -58,6 +53,57 @@ export async function POST(
 
   const arrayBuffer = await file.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
+
+  // Extract EXIF data server-side
+  let exifLat: number | null = null
+  let exifLng: number | null = null
+  let takenAt: string | null = null
+  let cameraMake: string | null = null
+  let cameraModel: string | null = null
+  let dateSource: 'exif' | 'filename' | null = null
+
+  if (fileType === 'image') {
+    try {
+      const exif = await exifr.parse(buffer, {
+        pick: ['DateTimeOriginal', 'CreateDate', 'GPSLatitude', 'GPSLongitude', 'Make', 'Model'],
+        gps: true,
+      })
+      if (exif) {
+        // GPS coordinates
+        if (exif.latitude && exif.longitude) {
+          exifLat = exif.latitude
+          exifLng = exif.longitude
+        }
+        // Date taken from EXIF
+        const dateField = exif.DateTimeOriginal || exif.CreateDate
+        if (dateField) {
+          const exifDate = dateField instanceof Date ? dateField : new Date(dateField)
+          // Sanity check: date should be between 1990 and now+1year
+          const now = new Date()
+          const minDate = new Date('1990-01-01')
+          const maxDate = new Date(now.getFullYear() + 1, 11, 31)
+          if (exifDate >= minDate && exifDate <= maxDate) {
+            takenAt = exifDate.toISOString()
+            dateSource = 'exif'
+          }
+        }
+        // Camera info
+        cameraMake = exif.Make || null
+        cameraModel = exif.Model || null
+      }
+    } catch (e) {
+      console.log('EXIF extraction failed (normal for some images):', e)
+    }
+  }
+
+  // Fallback: Try to parse date from filename if no EXIF date
+  if (!takenAt) {
+    const parsedDate = parseDateFromFilename(file.name)
+    if (parsedDate) {
+      takenAt = parsedDate.toISOString()
+      dateSource = 'filename'
+    }
+  }
 
   const { error: uploadError } = await supabase.storage
     .from('memories')
@@ -143,12 +189,12 @@ export async function POST(
       width,
       height,
       is_cover: isCover,
-      // EXIF data
-      exif_lat: exifLat ? parseFloat(exifLat) : null,
-      exif_lng: exifLng ? parseFloat(exifLng) : null,
-      taken_at: takenAt || null,
-      camera_make: camera?.split(' ')[0] || null,
-      camera_model: camera?.split(' ').slice(1).join(' ') || null,
+      // EXIF data (extracted server-side)
+      exif_lat: exifLat,
+      exif_lng: exifLng,
+      taken_at: takenAt,
+      camera_make: cameraMake,
+      camera_model: cameraModel,
       // AI analysis
       ai_faces: detectedFaces.map(f => ({
         boundingBox: f.boundingBox,
@@ -186,6 +232,32 @@ export async function POST(
     }))
 
     await supabase.from('memory_face_tags').insert(faceRecords)
+  }
+
+  // Update parent memory with EXIF data if it doesn't have date/location yet
+  if (exifLat || exifLng || takenAt) {
+    const { data: currentMemory } = await supabase
+      .from('memories')
+      .select('memory_date, location_lat, location_lng')
+      .eq('id', memoryId)
+      .single()
+
+    const updates: Record<string, unknown> = {}
+    
+    // Update date if memory has no date or has today's placeholder date
+    if (takenAt && (!currentMemory?.memory_date || currentMemory.memory_date === new Date().toISOString().split('T')[0])) {
+      updates.memory_date = takenAt.split('T')[0]
+    }
+    
+    // Update location if memory has no location
+    if (exifLat && exifLng && !currentMemory?.location_lat) {
+      updates.location_lat = exifLat
+      updates.location_lng = exifLng
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await supabase.from('memories').update(updates).eq('id', memoryId)
+    }
   }
 
   return NextResponse.json({ 
@@ -227,4 +299,47 @@ function getImageDimensions(buffer: Buffer): { width: number; height: number } {
   }
 
   return { width: 0, height: 0 }
+}
+
+// Parse date from common filename patterns
+function parseDateFromFilename(filename: string): Date | null {
+  // Remove extension
+  const name = filename.replace(/\.[^/.]+$/, '')
+  
+  // Pattern: WhatsApp Image 2026-02-18 at 3.17.34 PM
+  const whatsappMatch = name.match(/(\d{4})-(\d{2})-(\d{2}) at (\d{1,2})\.(\d{2})\.(\d{2}) (AM|PM)/i)
+  if (whatsappMatch) {
+    let [, year, month, day, hour, min, sec, ampm] = whatsappMatch
+    let hourNum = parseInt(hour)
+    if (ampm.toUpperCase() === 'PM' && hourNum < 12) hourNum += 12
+    if (ampm.toUpperCase() === 'AM' && hourNum === 12) hourNum = 0
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day), hourNum, parseInt(min), parseInt(sec))
+  }
+  
+  // Pattern: IMG_20231225_143052 or VID_20231225_143052
+  const imgMatch = name.match(/(?:IMG|VID|PXL|DCIM)_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})/i)
+  if (imgMatch) {
+    const [, year, month, day, hour, min, sec] = imgMatch
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(min), parseInt(sec))
+  }
+  
+  // Pattern: Screenshot_2023-12-25-14-30-52 or Screenshot 2023-12-25 at 14.30.52
+  const screenshotMatch = name.match(/Screenshot[_\s](\d{4})-(\d{2})-(\d{2})[-_\s](?:at\s)?(\d{2})[-.](\d{2})[-.](\d{2})/i)
+  if (screenshotMatch) {
+    const [, year, month, day, hour, min, sec] = screenshotMatch
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(min), parseInt(sec))
+  }
+  
+  // Pattern: 2023-12-25 or 2023_12_25 or 20231225
+  const dateOnlyMatch = name.match(/(\d{4})[-_]?(\d{2})[-_]?(\d{2})/)
+  if (dateOnlyMatch) {
+    const [, year, month, day] = dateOnlyMatch
+    const yearNum = parseInt(year)
+    // Sanity check: year should be reasonable (1990-2030)
+    if (yearNum >= 1990 && yearNum <= 2030) {
+      return new Date(yearNum, parseInt(month) - 1, parseInt(day), 12, 0, 0)
+    }
+  }
+  
+  return null
 }

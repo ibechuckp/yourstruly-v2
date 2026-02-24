@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Save, Trash2, Sparkles, Edit2, Check, ChevronDown, ChevronUp, Image, X, Plus } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Save, Trash2, Sparkles, Edit2, Check, ChevronDown, ChevronUp, Image, X, Plus, Users, Search, UserPlus } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 interface Exchange {
   question: string;
@@ -11,11 +12,18 @@ interface Exchange {
   transcription?: string;
 }
 
+interface Contact {
+  id: string;
+  full_name: string;
+  avatar_url?: string;
+  relationship_type?: string;
+}
+
 interface ReviewScreenProps {
   exchanges: Exchange[];
   promptType: string;
   expectedXp?: number;
-  onSave: (summary: string, photos?: File[]) => void;
+  onSave: (summary: string, photos?: File[], taggedContactIds?: string[]) => void;
   onDiscard: () => void;
   isSaving?: boolean;
 }
@@ -47,6 +55,82 @@ export function ReviewScreen({
   const [expandedExchanges, setExpandedExchanges] = useState<number[]>([]);
   const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Contact tagging state
+  const [taggedContacts, setTaggedContacts] = useState<Contact[]>([]);
+  const [contactSearch, setContactSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<Contact[]>([]);
+  const [showContactDropdown, setShowContactDropdown] = useState(false);
+  const [loadingContacts, setLoadingContacts] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  const supabase = createClient();
+
+  // Search contacts
+  const searchContacts = useCallback(async (query: string) => {
+    if (query.length < 1) {
+      setSearchResults([]);
+      return;
+    }
+    
+    setLoadingContacts(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from('contacts')
+        .select('id, full_name, avatar_url, relationship_type')
+        .eq('user_id', user.id)
+        .ilike('full_name', `%${query}%`)
+        .limit(6);
+
+      if (data) {
+        // Filter out already tagged contacts
+        const taggedIds = new Set(taggedContacts.map(c => c.id));
+        setSearchResults(data.filter(c => !taggedIds.has(c.id)));
+      }
+    } catch (error) {
+      console.error('Error searching contacts:', error);
+    } finally {
+      setLoadingContacts(false);
+    }
+  }, [supabase, taggedContacts]);
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (contactSearch) {
+        searchContacts(contactSearch);
+      } else {
+        setSearchResults([]);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [contactSearch, searchContacts]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowContactDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const addContact = (contact: Contact) => {
+    setTaggedContacts(prev => [...prev, contact]);
+    setContactSearch('');
+    setSearchResults([]);
+    setShowContactDropdown(false);
+  };
+
+  const removeContact = (contactId: string) => {
+    setTaggedContacts(prev => prev.filter(c => c.id !== contactId));
+  };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -81,7 +165,12 @@ export function ReviewScreen({
 
   const handleSave = () => {
     const photoFiles = photos.map(p => p.file);
-    onSave(isEditing ? editedSummary : generatedSummary, photoFiles.length > 0 ? photoFiles : undefined);
+    const contactIds = taggedContacts.map(c => c.id);
+    onSave(
+      isEditing ? editedSummary : generatedSummary, 
+      photoFiles.length > 0 ? photoFiles : undefined,
+      contactIds.length > 0 ? contactIds : undefined
+    );
   };
 
   const toggleExchange = (index: number) => {
@@ -203,23 +292,122 @@ export function ReviewScreen({
         </div>
       </div>
 
-      {/* Tags suggestion */}
-      <div className="review-tags">
-        <span className="review-tags-label">Suggested tags:</span>
-        <div className="review-tags-list">
-          <span className="review-tag">{typeLabel}</span>
-          <span className="review-tag">Voice Memory</span>
-          <span className="review-tag">AI-Assisted</span>
+      {/* Tag People Section */}
+      <div className="review-tag-people">
+        <div className="review-section-header">
+          <Users size={16} className="text-[#406A56]" />
+          <span>Tag People</span>
+        </div>
+        <p className="review-section-hint">Tag contacts who appear in this memory</p>
+        
+        {/* Tagged contacts */}
+        {taggedContacts.length > 0 && (
+          <div className="review-tagged-contacts">
+            {taggedContacts.map(contact => (
+              <div key={contact.id} className="review-tagged-contact">
+                <div className="review-tagged-avatar">
+                  {contact.avatar_url ? (
+                    <img src={contact.avatar_url} alt="" />
+                  ) : (
+                    <span>{contact.full_name.charAt(0)}</span>
+                  )}
+                </div>
+                <span className="review-tagged-name">{contact.full_name}</span>
+                <button 
+                  onClick={() => removeContact(contact.id)}
+                  className="review-tagged-remove"
+                  aria-label={`Remove ${contact.full_name}`}
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Search input */}
+        <div className="review-contact-search" ref={dropdownRef}>
+          <div className="review-search-input-wrapper">
+            <Search size={16} className="review-search-icon" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={contactSearch}
+              onChange={(e) => {
+                setContactSearch(e.target.value);
+                setShowContactDropdown(true);
+              }}
+              onFocus={() => setShowContactDropdown(true)}
+              placeholder="Search contacts to tag..."
+              className="review-search-input"
+            />
+            {loadingContacts && (
+              <div className="review-search-loading">
+                <motion.span
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                >
+                  <Sparkles size={14} />
+                </motion.span>
+              </div>
+            )}
+          </div>
+
+          {/* Dropdown */}
+          <AnimatePresence>
+            {showContactDropdown && searchResults.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="review-contact-dropdown"
+              >
+                {searchResults.map(contact => (
+                  <button
+                    key={contact.id}
+                    onClick={() => addContact(contact)}
+                    className="review-contact-option"
+                  >
+                    <div className="review-contact-option-avatar">
+                      {contact.avatar_url ? (
+                        <img src={contact.avatar_url} alt="" />
+                      ) : (
+                        <span>{contact.full_name.charAt(0)}</span>
+                      )}
+                    </div>
+                    <div className="review-contact-option-info">
+                      <span className="review-contact-option-name">{contact.full_name}</span>
+                      {contact.relationship_type && (
+                        <span className="review-contact-option-relation">{contact.relationship_type}</span>
+                      )}
+                    </div>
+                    <UserPlus size={14} className="review-contact-option-add" />
+                  </button>
+                ))}
+              </motion.div>
+            )}
+
+            {showContactDropdown && contactSearch && searchResults.length === 0 && !loadingContacts && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="review-contact-dropdown review-contact-dropdown-empty"
+              >
+                <p>No contacts found for "{contactSearch}"</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
       {/* Optional Photo Upload */}
       <div className="review-photos">
-        <div className="review-photos-header">
-          <Image size={16} />
+        <div className="review-section-header">
+          <Image size={16} className="text-[#406A56]" />
           <span>Add Photos (Optional)</span>
         </div>
-        <p className="review-photos-hint">Add up to 5 photos to accompany this memory</p>
+        <p className="review-section-hint">Add up to 5 photos to accompany this memory</p>
         
         <div className="review-photos-grid">
           {photos.map((photo, index) => (
@@ -253,6 +441,16 @@ export function ReviewScreen({
           onChange={handlePhotoSelect}
           className="hidden"
         />
+      </div>
+
+      {/* Tags suggestion */}
+      <div className="review-tags">
+        <span className="review-tags-label">Suggested tags:</span>
+        <div className="review-tags-list">
+          <span className="review-tag">{typeLabel}</span>
+          <span className="review-tag">Voice Memory</span>
+          <span className="review-tag">AI-Assisted</span>
+        </div>
       </div>
 
       {/* Actions */}

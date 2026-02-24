@@ -11,7 +11,8 @@ import Link from 'next/link'
 import '@/styles/home.css'
 import '@/styles/page-styles.css'
 import EssenceFingerprintLoader from '@/components/profile/EssenceFingerprintLoader'
-import { generateEssenceVector } from '@/lib/essence'
+import VoiceCloneButton from '@/components/profile/VoiceCloneButton'
+import { generateEssenceVector, hasProfileData } from '@/lib/essence'
 import PersonalityQuiz from '@/components/profile/PersonalityQuiz'
 import { 
   OCCUPATION_OPTIONS, INTEREST_OPTIONS, LANGUAGE_OPTIONS, 
@@ -380,11 +381,31 @@ export default function ProfilePage() {
 
                 {/* Essence Fingerprint */}
                 <div className="flex flex-col items-center">
-                  <EssenceFingerprintLoader 
-                    essenceVector={essenceVector} 
-                    size={180}
-                  />
-                  <p className="text-xs text-[#406A56]/60 mt-1 italic">Essence Fingerprint</p>
+                  {hasProfileData({
+                    personality_type: profile.personality_type,
+                    personality_traits: profile.personality_traits,
+                    interests: profile.interests,
+                    hobbies: profile.hobbies,
+                    life_goals: profile.life_goals,
+                    occupation: profile.occupation,
+                    biography: profile.biography,
+                  }) ? (
+                    <>
+                      <EssenceFingerprintLoader 
+                        essenceVector={essenceVector} 
+                        size={180}
+                      />
+                      <p className="text-xs text-[#406A56]/60 mt-1 italic">Essence Fingerprint</p>
+                    </>
+                  ) : (
+                    <div className="w-[180px] h-[180px] rounded-full border-2 border-dashed border-[#406A56]/20 
+                                    flex flex-col items-center justify-center text-center p-4">
+                      <Sparkles className="w-8 h-8 text-[#406A56]/30 mb-2" />
+                      <p className="text-xs text-[#406A56]/50">
+                        Add interests, traits, or hobbies to generate your Essence Fingerprint
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -392,6 +413,11 @@ export default function ProfilePage() {
               <h2 className="text-3xl font-bold text-[#2d2d2d] mb-2">
                 {profile.full_name || 'Your Name'}
               </h2>
+              
+              {/* Voice Clone Button */}
+              <div className="mb-4">
+                <VoiceCloneButton />
+              </div>
               
               {profile.occupation && (
                 <p className="text-lg text-[#406A56] mb-2">{profile.occupation}</p>

@@ -295,29 +295,38 @@ export default function InviteMemberModal({
                   key={invite.id}
                   className="flex items-center justify-between p-3 bg-white border border-[#406A56]/10 rounded-xl"
                 >
-                  <div className="flex-1 min-w-0">
-                    {invite.email ? (
-                      <p className="text-sm text-[#2d2d2d]">{invite.email}</p>
-                    ) : invite.invite_link ? (
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm text-[#2d2d2d] font-mono truncate max-w-[200px]">
-                          {invite.invite_link}
-                        </p>
-                        <button
-                          onClick={() => handleCopyLink(invite.invite_link!)}
-                          className="p-1 hover:bg-[#406A56]/10 rounded transition-colors"
-                        >
-                          {copiedLink === invite.invite_link ? (
-                            <Check size={14} className="text-green-600" />
-                          ) : (
-                            <Copy size={14} className="text-[#406A56]" />
-                          )}
-                        </button>
-                      </div>
-                    ) : null}
-                    <p className="text-xs text-[#888] mt-0.5">
-                      Expires {formatDate(invite.expires_at)}
-                    </p>
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {/* Icon based on type */}
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#406A56]/20 to-[#8DACAB]/20 flex items-center justify-center flex-shrink-0">
+                      {invite.email ? (
+                        <User size={14} className="text-[#406A56]" />
+                      ) : (
+                        <LinkIcon size={14} className="text-[#406A56]" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {invite.email ? (
+                        <p className="text-sm text-[#2d2d2d] truncate">{invite.email}</p>
+                      ) : invite.invite_link ? (
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-[#2d2d2d]">Invite link</p>
+                          <button
+                            onClick={() => handleCopyLink(invite.invite_link!)}
+                            className="p-1 hover:bg-[#406A56]/10 rounded transition-colors"
+                            title="Copy link"
+                          >
+                            {copiedLink === invite.invite_link ? (
+                              <Check size={14} className="text-green-600" />
+                            ) : (
+                              <Copy size={14} className="text-[#406A56]" />
+                            )}
+                          </button>
+                        </div>
+                      ) : null}
+                      <p className="text-xs text-[#888] mt-0.5">
+                        Expires {formatDate(invite.expires_at)}
+                      </p>
+                    </div>
                   </div>
                   <button
                     onClick={() => onCancelInvite(invite.id)}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, 
@@ -11,7 +11,12 @@ import {
   Bell,
   ChevronRight,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  Star,
+  Trophy,
+  Zap,
+  Camera,
+  Brain
 } from 'lucide-react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
@@ -24,7 +29,7 @@ interface ActivityActor {
 
 interface ActivityItem {
   id: string
-  type: 'memory_shared' | 'wisdom_shared' | 'circle_message' | 'circle_invite' | 'circle_content' | 'wisdom_comment'
+  type: 'memory_shared' | 'wisdom_shared' | 'circle_message' | 'circle_invite' | 'circle_content' | 'wisdom_comment' | 'xp_earned'
   title: string
   description: string
   timestamp: string
@@ -32,6 +37,20 @@ interface ActivityItem {
   thumbnail?: string
   link: string
   metadata?: Record<string, any>
+  xp?: number
+  isNew?: boolean
+}
+
+// XP completion that can be added externally
+export interface XPCompletion {
+  id: string
+  type: string
+  icon: string
+  title: string
+  xp: number
+  photoUrl?: string
+  contactName?: string
+  timestamp: string
 }
 
 const ACTIVITY_ICONS: Record<string, { icon: typeof Heart; color: string; bg: string }> = {
@@ -41,6 +60,11 @@ const ACTIVITY_ICONS: Record<string, { icon: typeof Heart; color: string; bg: st
   circle_invite: { icon: Users, color: 'text-blue-600', bg: 'bg-blue-100' },
   circle_content: { icon: Heart, color: 'text-rose-600', bg: 'bg-rose-100' },
   wisdom_comment: { icon: MessageCircle, color: 'text-purple-600', bg: 'bg-purple-100' },
+  xp_earned: { icon: Zap, color: 'text-[#D9C61A]', bg: 'bg-[#D9C61A]/20' },
+  photo_backstory: { icon: Camera, color: 'text-amber-600', bg: 'bg-amber-100' },
+  knowledge: { icon: Brain, color: 'text-purple-600', bg: 'bg-purple-100' },
+  quick_question: { icon: Users, color: 'text-[#406A56]', bg: 'bg-[#406A56]/10' },
+  missing_info: { icon: Users, color: 'text-blue-600', bg: 'bg-blue-100' },
 }
 
 function formatRelativeTime(timestamp: string): string {
@@ -54,7 +78,107 @@ function formatRelativeTime(timestamp: string): string {
 function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: number }) {
   const config = ACTIVITY_ICONS[activity.type] || ACTIVITY_ICONS.memory_shared
   const Icon = config.icon
+  const isXPActivity = activity.type === 'xp_earned' || activity.xp
 
+  // XP earned activity gets special celebration styling
+  if (isXPActivity && activity.isNew) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8, y: -20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ 
+          type: 'spring',
+          stiffness: 400,
+          damping: 20,
+          delay: index * 0.05 
+        }}
+        className="relative overflow-hidden"
+      >
+        {/* Celebration particles */}
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 2, delay: 0.5 }}
+        >
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 rounded-full bg-[#D9C61A]"
+              initial={{ 
+                x: '50%', 
+                y: '50%',
+                scale: 0,
+              }}
+              animate={{ 
+                x: `${20 + Math.random() * 60}%`,
+                y: `${Math.random() * 100}%`,
+                scale: [0, 1, 0],
+                opacity: [0, 1, 0],
+              }}
+              transition={{ 
+                duration: 0.8, 
+                delay: 0.2 + i * 0.1,
+                ease: 'easeOut',
+              }}
+            />
+          ))}
+        </motion.div>
+        
+        <Link 
+          href={activity.link}
+          className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-r from-[#D9C61A]/10 to-[#D9C61A]/5 border border-[#D9C61A]/20 hover:from-[#D9C61A]/15 hover:to-[#D9C61A]/10 transition-all group"
+        >
+          {/* XP Icon with glow */}
+          <div className="flex-shrink-0 relative">
+            <motion.div 
+              className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D9C61A] to-[#C35F33] flex items-center justify-center shadow-lg"
+              animate={{ 
+                boxShadow: ['0 0 0 0 rgba(217, 198, 26, 0.4)', '0 0 0 8px rgba(217, 198, 26, 0)', '0 0 0 0 rgba(217, 198, 26, 0)'],
+              }}
+              transition={{ duration: 1.5, repeat: 2 }}
+            >
+              <Zap size={18} className="text-white" />
+            </motion.div>
+          </div>
+
+          {/* Content with XP badge */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <motion.span 
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D9C61A] text-white text-xs font-bold"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 0.3, delay: 0.5 }}
+              >
+                <Sparkles size={10} />
+                +{activity.xp} XP
+              </motion.span>
+              <span className="text-xs text-gray-500">earned!</span>
+            </div>
+            <p className="text-sm text-gray-800 leading-snug line-clamp-2">
+              {activity.description}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              {formatRelativeTime(activity.timestamp)}
+            </p>
+          </div>
+
+          {/* Thumbnail */}
+          {activity.thumbnail && (
+            <div className="flex-shrink-0">
+              <img 
+                src={activity.thumbnail} 
+                alt=""
+                className="w-12 h-12 rounded-lg object-cover shadow-sm ring-2 ring-[#D9C61A]/30"
+              />
+            </div>
+          )}
+        </Link>
+      </motion.div>
+    )
+  }
+
+  // Regular activity
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
@@ -96,6 +220,13 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
 
         {/* Content */}
         <div className="flex-1 min-w-0">
+          {/* Show XP badge for non-new XP activities too */}
+          {activity.xp && !activity.isNew && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#D9C61A]/20 text-[#8a7c08] text-[10px] font-semibold mb-1">
+              <Sparkles size={8} />
+              +{activity.xp} XP
+            </span>
+          )}
           <p className="text-sm text-gray-800 leading-snug line-clamp-2">
             {activity.description}
           </p>
@@ -125,11 +256,36 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
   )
 }
 
-export default function ActivityFeed() {
+interface ActivityFeedProps {
+  xpCompletions?: XPCompletion[]
+}
+
+export default function ActivityFeed({ xpCompletions = [] }: ActivityFeedProps) {
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Merge XP completions into activity feed
+  const mergedActivities = useCallback((): ActivityItem[] => {
+    const xpActivities: ActivityItem[] = xpCompletions.map(xp => ({
+      id: `xp-${xp.id}`,
+      type: 'xp_earned' as const,
+      title: xp.title,
+      description: xp.title,
+      timestamp: xp.timestamp,
+      link: xp.contactName ? '/dashboard/contacts' : '/dashboard/memories',
+      thumbnail: xp.photoUrl,
+      xp: xp.xp,
+      isNew: true,
+      metadata: { originalType: xp.type, contactName: xp.contactName }
+    }))
+    
+    // Combine and sort by timestamp (newest first)
+    return [...xpActivities, ...activities]
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 15) // Limit to 15 items
+  }, [xpCompletions, activities])
 
   const fetchActivities = async (showRefresh = false) => {
     if (showRefresh) setIsRefreshing(true)
@@ -200,19 +356,19 @@ export default function ActivityFeed() {
               Try again
             </button>
           </div>
-        ) : activities.length === 0 ? (
+        ) : mergedActivities().length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 gap-2">
             <div className="w-12 h-12 rounded-full bg-[#406A56]/5 flex items-center justify-center">
               <Sparkles size={20} className="text-[#406A56]/40" />
             </div>
             <span className="text-sm text-gray-500">No recent activity</span>
             <span className="text-xs text-gray-400 text-center px-4">
-              Activity from shared memories, wisdom, and circles will appear here
+              Complete prompts to earn XP and see your progress here!
             </span>
           </div>
         ) : (
-          <AnimatePresence>
-            {activities.map((activity, index) => (
+          <AnimatePresence mode="popLayout">
+            {mergedActivities().map((activity, index) => (
               <ActivityItemCard 
                 key={activity.id} 
                 activity={activity} 

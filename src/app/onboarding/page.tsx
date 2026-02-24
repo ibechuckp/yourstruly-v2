@@ -1,393 +1,128 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Camera, User, Calendar, ArrowRight, ArrowLeft, Check, Loader2, Upload, X, Heart, Sparkles } from 'lucide-react';
-import { HeartfeltQuestion } from '@/components/onboarding';
-import { CongratulationsAnimation } from '@/components/onboarding';
+import { Loader2 } from 'lucide-react';
+import { EnhancedOnboardingFlow } from '@/components/onboarding';
 
 interface OnboardingData {
-  fullName: string;
-  dateOfBirth: string;
-  photo: File | null;
-  photoPreview: string | null;
+  name: string;
+  interests: string[];
+  hobbies: string[];
+  skills: string[];
+  lifeGoals: string[];
+  personalityTraits: string[];
+  religion: string;
+  location: string;
+  favoriteQuote: string;
+  background: string;
+  heartfeltAnswer?: string;
 }
 
-// Total steps: 1=Name, 2=Photo, 3=DOB, 4=HeartfeltQuestion, 5=Congrats
-const TOTAL_STEPS = 5;
-
 export default function OnboardingPage() {
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [data, setData] = useState<OnboardingData>({
-    fullName: '',
-    dateOfBirth: '',
-    photo: null,
-    photoPreview: null,
-  });
-  const [showHeartfelt, setShowHeartfelt] = useState(false);
-  const [showCongrats, setShowCongrats] = useState(false);
-  const [heartfeltAnswer, setHeartfeltAnswer] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
-    const getUser = async () => {
+    const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push('/login');
         return;
       }
-      setUser(user);
-      // Pre-fill name from auth metadata
-      setData(prev => ({
-        ...prev,
-        fullName: user.user_metadata?.full_name || '',
-      }));
-    };
-    getUser();
-  }, [router, supabase]);
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Photo must be less than 5MB');
+      
+      // Check if onboarding already completed
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarding_completed, full_name')
+        .eq('id', user.id)
+        .single();
+      
+      if (profile?.onboarding_completed) {
+        router.push('/dashboard');
         return;
       }
-      setData(prev => ({
-        ...prev,
-        photo: file,
-        photoPreview: URL.createObjectURL(file),
-      }));
+      
+      setUser(user);
+      setLoading(false);
+    };
+    
+    checkUser();
+  }, [router, supabase]);
+
+  const handleOnboardingComplete = useCallback(async (data: OnboardingData) => {
+    if (!user) {
+      console.error('No user found');
+      router.push('/dashboard');
+      return;
     }
-  };
-
-  const removePhoto = () => {
-    setData(prev => ({
-      ...prev,
-      photo: null,
-      photoPreview: null,
-    }));
-  };
-
-  // Save profile data (called before heartfelt question)
-  const saveProfileData = async () => {
-    setSaving(true);
+    
     try {
-      let avatarUrl = null;
-
-      // Upload photo if selected
-      if (data.photo) {
-        const fileExt = data.photo.name.split('.').pop();
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        const filePath = `avatars/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('profiles')
-          .upload(filePath, data.photo);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('profiles')
-          .getPublicUrl(filePath);
-
-        avatarUrl = publicUrl;
-      }
-
-      // Update profile (but not complete yet)
-      const { error: updateError } = await supabase
+      // Build location string for city/state fields
+      const locationParts = data.location?.split(',').map(s => s.trim()) || [];
+      
+      // Update profile with all onboarding data
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          full_name: data.fullName,
-          date_of_birth: data.dateOfBirth || null,
-          avatar_url: avatarUrl,
-          onboarding_step: 3,
+          full_name: data.name,
+          interests: data.interests,
+          hobbies: data.hobbies,
+          skills: data.skills,
+          life_goals: data.lifeGoals,
+          personality_traits: data.personalityTraits,
+          religion: data.religion || null,
+          city: locationParts[0] || null,
+          state: locationParts[1] || null,
+          favorite_quote: data.favoriteQuote || null,
+          background: data.background || null,
+          onboarding_completed: true,
+          onboarding_step: 13,
         })
         .eq('id', user.id);
 
-      if (updateError) throw updateError;
-      return true;
-    } catch (error) {
-      console.error('Error saving profile:', error);
-      alert('Something went wrong. Please try again.');
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  };
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+      }
 
-  // Handle heartfelt question answer
-  const handleHeartfeltComplete = async (answer: string) => {
-    setHeartfeltAnswer(answer);
-    setShowHeartfelt(false);
-    
-    // Save the memory
-    try {
-      await supabase.from('memories').insert({
-        user_id: user.id,
-        title: 'My First Memory',
-        description: answer,
-        memory_date: new Date().toISOString(),
-        tags: ['onboarding', 'heartfelt'],
-      });
-    } catch (e) {
-      console.error('Error saving memory:', e);
-    }
-    
-    // Show congratulations
-    setShowCongrats(true);
-  };
+      // Save heartfelt answer as first memory if provided
+      if (data.heartfeltAnswer && data.heartfeltAnswer.trim()) {
+        const { error: memoryError } = await supabase.from('memories').insert({
+          user_id: user.id,
+          title: 'My First Reflection',
+          description: data.heartfeltAnswer,
+          memory_date: new Date().toISOString(),
+          tags: ['onboarding', 'reflection', 'first-memory'],
+        });
+        
+        if (memoryError) {
+          console.error('Memory creation error:', memoryError);
+        }
+      }
 
-  // Handle skip heartfelt
-  const handleHeartfeltSkip = () => {
-    setShowHeartfelt(false);
-    setShowCongrats(true);
-  };
-
-  // Final completion after congrats
-  const handleFinalComplete = async () => {
-    try {
-      await supabase
-        .from('profiles')
-        .update({ onboarding_completed: true })
-        .eq('id', user.id);
-      
+      // Navigate to dashboard
       router.push('/dashboard');
     } catch (error) {
       console.error('Error completing onboarding:', error);
-      router.push('/dashboard'); // Go anyway
+      // Navigate anyway - better UX than being stuck
+      router.push('/dashboard');
     }
-  };
+  }, [user, router, supabase]);
 
-  // Handle moving to heartfelt question step
-  const handleProceedToHeartfelt = async () => {
-    const saved = await saveProfileData();
-    if (saved) {
-      setShowHeartfelt(true);
-    }
-  };
-
-  // Legacy complete for backward compatibility
-  const handleComplete = handleProceedToHeartfelt;
-
-  const canProceed = () => {
-    if (step === 1) return data.fullName.trim().length > 0;
-    if (step === 2) return true; // Photo is optional
-    if (step === 3) return true; // DOB is optional
-    return true;
-  };
-
-  const renderStep = () => {
-    switch (step) {
-      case 1:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#406A56]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <User className="w-8 h-8 text-[#406A56]" />
-              </div>
-              <h2 className="text-2xl font-semibold text-[#2d2d2d]">What&apos;s your name?</h2>
-              <p className="text-gray-500 mt-2">This is how you&apos;ll appear to family members</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#2d2d2d] mb-2">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={data.fullName}
-                onChange={(e) => setData(prev => ({ ...prev, fullName: e.target.value }))}
-                className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56]/40 transition-all text-center text-lg"
-                placeholder="Enter your name"
-                autoFocus
-              />
-            </div>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#406A56]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Camera className="w-8 h-8 text-[#406A56]" />
-              </div>
-              <h2 className="text-2xl font-semibold text-[#2d2d2d]">Add a photo</h2>
-              <p className="text-gray-500 mt-2">Help family recognize you (optional)</p>
-            </div>
-
-            <div className="flex justify-center">
-              {data.photoPreview ? (
-                <div className="relative">
-                  <img
-                    src={data.photoPreview}
-                    alt="Preview"
-                    className="w-32 h-32 rounded-full object-cover border-4 border-[#406A56]/20"
-                  />
-                  <button
-                    onClick={removePhoto}
-                    className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <label className="w-32 h-32 rounded-full border-4 border-dashed border-[#406A56]/30 flex flex-col items-center justify-center cursor-pointer hover:border-[#406A56]/50 hover:bg-[#406A56]/5 transition-all">
-                  <Upload className="w-8 h-8 text-[#406A56]/50" />
-                  <span className="text-xs text-[#406A56]/50 mt-1">Add photo</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#406A56]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="w-8 h-8 text-[#406A56]" />
-              </div>
-              <h2 className="text-2xl font-semibold text-[#2d2d2d]">When were you born?</h2>
-              <p className="text-gray-500 mt-2">This helps us personalize your experience (optional)</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#2d2d2d] mb-2">
-                Date of Birth
-              </label>
-              <input
-                type="date"
-                value={data.dateOfBirth}
-                onChange={(e) => setData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
-                className="w-full px-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-[#2d2d2d] focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56]/40 transition-all text-center"
-              />
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  if (!user) {
+  if (loading) {
     return (
       <div className="min-h-screen home-background flex items-center justify-center">
+        <div className="home-blob home-blob-1" />
+        <div className="home-blob home-blob-2" />
         <Loader2 className="w-8 h-8 animate-spin text-[#406A56]" />
       </div>
     );
   }
 
-  // Show Heartfelt Question overlay
-  if (showHeartfelt) {
-    return (
-      <HeartfeltQuestion
-        userProfile={{ interests: [], background: data.fullName, values: [] }}
-        onComplete={handleHeartfeltComplete}
-        onSkip={handleHeartfeltSkip}
-      />
-    );
-  }
-
-  // Show Congratulations overlay
-  if (showCongrats) {
-    return (
-      <CongratulationsAnimation
-        userName={data.fullName}
-        onComplete={handleFinalComplete}
-      />
-    );
-  }
-
   return (
-    <div className="min-h-screen home-background flex items-center justify-center p-4">
-      <div className="home-blob home-blob-1" />
-      <div className="home-blob home-blob-2" />
-      
-      <div className="relative z-10 w-full max-w-md">
-        {/* Progress */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-[#406A56]">Step {step} of 3</span>
-            <span className="text-sm text-gray-500">{Math.round((step / 3) * 100)}%</span>
-          </div>
-          <div className="h-2 bg-white/50 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#406A56] transition-all duration-300"
-              style={{ width: `${(step / 3) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Card */}
-        <div className="glass-card glass-card-strong p-8">
-          {renderStep()}
-
-          {/* Navigation */}
-          <div className="flex items-center justify-between mt-8">
-            <button
-              onClick={() => setStep(prev => prev - 1)}
-              disabled={step === 1}
-              className="flex items-center gap-2 px-4 py-2 text-gray-500 hover:text-[#406A56] disabled:opacity-0 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-
-            {step < 3 ? (
-              <button
-                onClick={() => setStep(prev => prev + 1)}
-                disabled={!canProceed()}
-                className="flex items-center gap-2 px-6 py-2.5 bg-[#406A56] text-white rounded-xl font-medium hover:bg-[#355a48] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                Continue
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            ) : (
-              <button
-                onClick={handleComplete}
-                disabled={saving}
-                className="flex items-center gap-2 px-6 py-2.5 bg-[#406A56] text-white rounded-xl font-medium hover:bg-[#355a48] disabled:opacity-50 transition-all"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Heart className="w-4 h-4" />
-                    Continue to Your First Memory
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Skip option */}
-        {step < 3 && (
-          <button
-            onClick={() => setStep(3)}
-            className="block mx-auto mt-6 text-sm text-gray-400 hover:text-gray-600"
-          >
-            Skip for now
-          </button>
-        )}
-      </div>
-    </div>
+    <EnhancedOnboardingFlow onComplete={handleOnboardingComplete} />
   );
 }

@@ -2,18 +2,10 @@
 
 import { Lock, Users } from 'lucide-react'
 
-// Mock circle lookup - will be replaced with actual data
-const MOCK_CIRCLE_NAMES: Record<string, string> = {
-  'circle-1': 'Family',
-  'circle-2': 'Close Friends',
-  'circle-3': 'Grandkids',
-  'circle-4': 'Book Club',
-}
-
 export interface ScopeIndicatorProps {
   isPrivate?: boolean
   circleIds?: string[]
-  circleNames?: string[] // Optional: pass names directly instead of looking up
+  circleNames?: string[] // Pass actual circle names
   size?: 'sm' | 'md' | 'lg'
   variant?: 'badge' | 'inline' | 'minimal'
   className?: string
@@ -22,14 +14,17 @@ export interface ScopeIndicatorProps {
 export function ScopeIndicator({
   isPrivate = true,
   circleIds = [],
-  circleNames,
+  circleNames = [],
   size = 'sm',
   variant = 'badge',
   className = ''
 }: ScopeIndicatorProps) {
-  // Determine display names
-  const displayNames = circleNames || circleIds.map(id => MOCK_CIRCLE_NAMES[id] || 'Circle')
-  const hasCircles = displayNames.length > 0 && !isPrivate
+  // Use provided names, or show count if we only have IDs
+  const displayNames = circleNames.length > 0 
+    ? circleNames 
+    : circleIds.map(() => 'Circle')
+  
+  const hasCircles = (circleNames.length > 0 || circleIds.length > 0) && !isPrivate
 
   // Size classes
   const sizeClasses = {
@@ -75,12 +70,12 @@ export function ScopeIndicator({
   if (variant === 'inline') {
     return (
       <span 
-        className={`inline-flex items-center gap-1 text-gray-400 text-xs ${className}`}
+        className={`inline-flex items-center gap-1 text-gray-500 text-xs ${className}`}
         title={hasCircles ? displayNames.join(', ') : 'Private'}
       >
         {hasCircles ? (
           <>
-            <Users size={icon} />
+            <Users size={icon} className="text-[#406A56]" />
             <span>{getDisplayText()}</span>
           </>
         ) : (
@@ -98,8 +93,8 @@ export function ScopeIndicator({
     <span 
       className={`inline-flex items-center rounded-full ${container} ${
         hasCircles
-          ? 'bg-amber-500/20 text-amber-400'
-          : 'bg-gray-700/50 text-gray-400'
+          ? 'bg-[#406A56]/10 text-[#406A56]'
+          : 'bg-gray-100 text-gray-500'
       } ${className}`}
       title={hasCircles ? displayNames.join(', ') : 'Private'}
     >

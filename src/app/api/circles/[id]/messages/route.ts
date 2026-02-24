@@ -315,8 +315,7 @@ export async function DELETE(
   const { error } = await supabase
     .from('circle_messages')
     .update({
-      
-      deleted_at: new Date().toISOString()
+      is_deleted: true
     })
     .eq('id', messageId)
 

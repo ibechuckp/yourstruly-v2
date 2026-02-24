@@ -1,0 +1,490 @@
+/**
+ * YoursTruly Marketplace Styles
+ * Scrapbook-inspired aesthetic for the marketplace
+ */
+
+/* ==========================================================================
+   MARKETPLACE BACKGROUND
+   ========================================================================== */
+
+.marketplace-background {
+  background-color: #F2F1E5;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 20% 10%, rgba(217, 198, 26, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 90%, rgba(64, 106, 86, 0.05) 0%, transparent 50%);
+  background-blend-mode: soft-light, normal, normal;
+}
+
+/* ==========================================================================
+   POLAROID CARD EFFECTS
+   ========================================================================== */
+
+.polaroid-card {
+  position: relative;
+  background: white;
+  padding: 12px 12px 48px 12px;
+  box-shadow: 
+    2px 3px 8px rgba(0, 0, 0, 0.08),
+    0 8px 20px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.polaroid-card:hover {
+  transform: translateY(-4px) rotate(0deg) !important;
+  box-shadow: 
+    4px 8px 20px rgba(0, 0, 0, 0.12),
+    0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.polaroid-tape {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 24px;
+  background: rgba(242, 241, 229, 0.9);
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 4px,
+    rgba(0, 0, 0, 0.03) 4px,
+    rgba(0, 0, 0, 0.03) 8px
+  );
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* ==========================================================================
+   PROVIDER COLOR THEMES
+   ========================================================================== */
+
+.provider-flowers {
+  --provider-color: #C35F33;
+  --provider-bg: rgba(195, 95, 51, 0.1);
+  --provider-border: rgba(195, 95, 51, 0.3);
+}
+
+.provider-gifts {
+  --provider-color: #406A56;
+  --provider-bg: rgba(64, 106, 86, 0.1);
+  --provider-border: rgba(64, 106, 86, 0.3);
+}
+
+.provider-prints {
+  --provider-color: #4A3552;
+  --provider-bg: rgba(74, 53, 82, 0.1);
+  --provider-border: rgba(74, 53, 82, 0.3);
+}
+
+/* ==========================================================================
+   PRODUCT BADGES
+   ========================================================================== */
+
+.product-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-family: var(--font-handwritten), 'Caveat', cursive;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-new {
+  background: #406A56;
+  color: white;
+}
+
+.badge-bestseller {
+  background: #D9C61A;
+  color: #2d2d2d;
+}
+
+.badge-sale {
+  background: #C35F33;
+  color: white;
+}
+
+.badge-provider-flowers {
+  background: rgba(195, 95, 51, 0.1);
+  color: #C35F33;
+  border: 1px solid rgba(195, 95, 51, 0.2);
+}
+
+.badge-provider-gifts {
+  background: rgba(64, 106, 86, 0.1);
+  color: #406A56;
+  border: 1px solid rgba(64, 106, 86, 0.2);
+}
+
+.badge-provider-prints {
+  background: rgba(74, 53, 82, 0.1);
+  color: #4A3552;
+  border: 1px solid rgba(74, 53, 82, 0.2);
+}
+
+/* ==========================================================================
+   CATEGORY SIDEBAR STYLES
+   ========================================================================== */
+
+.category-sidebar {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid rgba(64, 106, 86, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.category-item:hover {
+  background: rgba(64, 106, 86, 0.05);
+}
+
+.category-item.active {
+  background: rgba(64, 106, 86, 0.1);
+  color: #406A56;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   SEARCH STYLES
+   ========================================================================== */
+
+.marketplace-search {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(64, 106, 86, 0.2);
+  transition: all 0.2s ease;
+}
+
+.marketplace-search:focus-within {
+  border-color: #406A56;
+  box-shadow: 0 0 0 3px rgba(64, 106, 86, 0.1);
+}
+
+.marketplace-search input {
+  width: 100%;
+  padding: 12px 16px 12px 48px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: #2d2d2d;
+}
+
+.marketplace-search input::placeholder {
+  color: #9ca3af;
+}
+
+.marketplace-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   FILTER PILLS
+   ========================================================================== */
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+  transition: all 0.2s ease;
+}
+
+.filter-pill:hover {
+  border-color: #406A56;
+  color: #406A56;
+}
+
+.filter-pill.active {
+  background: #406A56;
+  border-color: #406A56;
+  color: white;
+}
+
+.filter-pill .remove {
+  margin-left: 2px;
+  padding: 2px;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+}
+
+.filter-pill .remove:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================================================
+   GIFT SELECTION MODAL
+   ========================================================================== */
+
+.gift-modal {
+  background: #F2F1E5;
+  border-radius: 24px;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.gift-modal-header {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(64, 106, 86, 0.1);
+}
+
+/* ==========================================================================
+   PRODUCT DETAIL PAGE
+   ========================================================================== */
+
+.product-gallery {
+  position: relative;
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.product-thumbnail {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.product-thumbnail:hover {
+  border-color: #406A56;
+}
+
+.product-thumbnail.active {
+  border-color: #406A56;
+  box-shadow: 0 0 0 2px rgba(64, 106, 86, 0.2);
+}
+
+.variant-button {
+  padding: 10px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4b5563;
+  transition: all 0.2s ease;
+}
+
+.variant-button:hover {
+  border-color: #406A56;
+  color: #406A56;
+}
+
+.variant-button.active {
+  border-color: #406A56;
+  background: rgba(64, 106, 86, 0.05);
+  color: #406A56;
+}
+
+.quantity-control {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.quantity-control button {
+  padding: 10px 16px;
+  background: white;
+  border: none;
+  font-size: 18px;
+  font-weight: 500;
+  color: #4b5563;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.quantity-control button:hover {
+  background: #f3f4f6;
+}
+
+.quantity-control span {
+  padding: 10px 20px;
+  min-width: 60px;
+  text-align: center;
+  font-weight: 600;
+  color: #2d2d2d;
+}
+
+/* ==========================================================================
+   TRUST BADGES
+   ========================================================================== */
+
+.trust-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.trust-badge-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(64, 106, 86, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #406A56;
+}
+
+.trust-badge-text {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   LOADING STATES
+   ========================================================================== */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(64, 106, 86, 0.05) 25%,
+    rgba(64, 106, 86, 0.1) 50%,
+    rgba(64, 106, 86, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ==========================================================================
+   EMPTY STATE
+   ========================================================================== */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(64, 106, 86, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  color: #406A56;
+}
+
+.empty-state-title {
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #2d2d2d;
+  margin-bottom: 8px;
+}
+
+.empty-state-text {
+  font-size: 14px;
+  color: #6b7280;
+  max-width: 300px;
+}
+
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-slide-up {
+  animation: fadeSlideUp 0.4s ease-out forwards;
+}
+
+/* Stagger children animations */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeSlideUp 0.4s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+
+/* ==========================================================================
+   RESPONSIVE ADJUSTMENTS
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .polaroid-card {
+    padding: 8px 8px 36px 8px;
+  }
+  
+  .polaroid-tape {
+    width: 48px;
+    height: 18px;
+    top: -9px;
+  }
+  
+  .product-badge {
+    font-size: 12px;
+    padding: 3px 8px;
+  }
+  
+  .marketplace-search input {
+    padding: 10px 14px 10px 44px;
+    font-size: 15px;
+  }
+}

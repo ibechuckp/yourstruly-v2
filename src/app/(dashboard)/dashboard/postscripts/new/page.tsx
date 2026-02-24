@@ -34,6 +34,14 @@ interface Attachment {
   uploading?: boolean
 }
 
+interface SelectedGift {
+  id: string
+  name: string
+  price: number
+  image_url: string
+  provider: string
+}
+
 interface FormData {
   // Recipient
   recipient_type: 'contact' | 'circle'
@@ -55,6 +63,8 @@ interface FormData {
   audio_url: string
   audio_blob: Blob | null
   attachments: Attachment[]
+  // Gift
+  gift: SelectedGift | null
 }
 
 const EVENT_OPTIONS = [
@@ -107,8 +117,11 @@ export default function NewPostScriptPage() {
     video_url: '',
     audio_url: '',
     audio_blob: null,
-    attachments: []
+    attachments: [],
+    gift: null
   })
+  
+  const [showGiftModal, setShowGiftModal] = useState(false)
   
   // Audio recording state
   const [isRecording, setIsRecording] = useState(false)
@@ -371,6 +384,7 @@ export default function NewPostScriptPage() {
           video_url: form.video_url,
           audio_url: audioUrl,
           attachments: uploadedAttachments,
+          gift: form.gift,
           status
         })
       })
@@ -713,40 +727,83 @@ export default function NewPostScriptPage() {
             />
           </div>
 
-          {/* Photo Attachments */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Attach Photos <span className="text-gray-400 font-normal">(optional, max 5)</span>
-            </label>
-            
-            {/* Photo Grid */}
-            <div className="grid grid-cols-3 gap-3 mb-3">
-              {form.attachments.map(att => (
-                <div key={att.id} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
-                  <img src={att.preview} alt="" className="w-full h-full object-cover" />
+          {/* Photo Attachments & Gift */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Photos */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Attach Photos <span className="text-gray-400 font-normal">(optional, max 5)</span>
+              </label>
+              
+              {/* Photo Grid */}
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                {form.attachments.map(att => (
+                  <div key={att.id} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
+                    <img src={att.preview} alt="" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => removeAttachment(att.id)}
+                      className="absolute top-1 right-1 p-1.5 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+                    >
+                      <Trash2 size={12} className="text-white" />
+                    </button>
+                  </div>
+                ))}
+                
+                {form.attachments.length < 5 && (
+                  <label className="aspect-square rounded-xl border-2 border-dashed border-gray-300 
+                                   hover:border-[#C35F33] hover:bg-[#C35F33]/5 
+                                   flex flex-col items-center justify-center cursor-pointer transition-all">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                    <ImagePlus size={24} className="text-gray-400 mb-1" />
+                    <span className="text-xs text-gray-400">Add Photo</span>
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {/* Gift */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Add Gift <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              
+              {form.gift ? (
+                <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-[#C35F33]/10 to-[#D9C61A]/10 border border-[#C35F33]/20 p-3">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={form.gift.image_url} 
+                      alt={form.gift.name}
+                      className="w-16 h-16 rounded-lg object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 text-sm truncate">{form.gift.name}</p>
+                      <p className="text-[#C35F33] font-semibold">${form.gift.price.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500">{form.gift.provider}</p>
+                    </div>
+                  </div>
                   <button
-                    onClick={() => removeAttachment(att.id)}
-                    className="absolute top-1 right-1 p-1.5 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+                    onClick={() => setForm({ ...form, gift: null })}
+                    className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
                   >
-                    <Trash2 size={12} className="text-white" />
+                    <X size={12} className="text-white" />
                   </button>
                 </div>
-              ))}
-              
-              {form.attachments.length < 5 && (
-                <label className="aspect-square rounded-xl border-2 border-dashed border-gray-300 
-                                 hover:border-[#C35F33] hover:bg-[#C35F33]/5 
-                                 flex flex-col items-center justify-center cursor-pointer transition-all">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handlePhotoSelect}
-                    className="hidden"
-                  />
-                  <ImagePlus size={24} className="text-gray-400 mb-1" />
-                  <span className="text-xs text-gray-400">Add Photo</span>
-                </label>
+              ) : (
+                <button
+                  onClick={() => setShowGiftModal(true)}
+                  className="w-full aspect-square rounded-xl border-2 border-dashed border-gray-300 
+                           hover:border-[#C35F33] hover:bg-[#C35F33]/5 
+                           flex flex-col items-center justify-center cursor-pointer transition-all"
+                >
+                  <Gift size={24} className="text-gray-400 mb-1" />
+                  <span className="text-xs text-gray-400">Add Gift</span>
+                </button>
               )}
             </div>
           </div>
@@ -855,13 +912,96 @@ export default function NewPostScriptPage() {
             <p className="font-semibold text-gray-900 mb-2">{form.title}</p>
             <p className="text-gray-700 whitespace-pre-wrap text-sm">{form.message}</p>
           </div>
+
+          {/* Gift */}
+          {form.gift && (
+            <div className="p-4">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Gift Included</p>
+              <div className="flex items-center gap-3 bg-gradient-to-r from-[#C35F33]/5 to-[#D9C61A]/5 rounded-xl p-3">
+                <img 
+                  src={form.gift.image_url} 
+                  alt={form.gift.name}
+                  className="w-14 h-14 rounded-lg object-cover"
+                />
+                <div>
+                  <p className="font-medium text-gray-900">{form.gift.name}</p>
+                  <p className="text-[#C35F33] font-semibold">${form.gift.price.toFixed(2)}</p>
+                </div>
+                <Gift size={20} className="text-[#C35F33] ml-auto" />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )
   }
 
+  // Sample gift options (replace with API call later)
+  const giftOptions = [
+    { id: 'flowers-1', name: 'Spring Bouquet', price: 49.99, image_url: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=200', provider: 'Floristone' },
+    { id: 'flowers-2', name: 'Rose Arrangement', price: 79.99, image_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200', provider: 'Floristone' },
+    { id: 'gift-1', name: 'Cozy Blanket Set', price: 59.99, image_url: 'https://images.unsplash.com/photo-1580301762395-21ce84d00bc6?w=200', provider: 'Spocket' },
+    { id: 'gift-2', name: 'Artisan Candle Trio', price: 34.99, image_url: 'https://images.unsplash.com/photo-1602607206385-e3048cf3e7a0?w=200', provider: 'Spocket' },
+    { id: 'print-1', name: 'Custom Photo Book', price: 44.99, image_url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=200', provider: 'Prodigi' },
+    { id: 'print-2', name: 'Framed Memory Print', price: 29.99, image_url: 'https://images.unsplash.com/photo-1513519245088-0e12902e35ca?w=200', provider: 'Prodigi' },
+  ]
+
+  function selectGift(gift: SelectedGift) {
+    setForm({ ...form, gift })
+    setShowGiftModal(false)
+  }
+
   return (
     <div className="min-h-screen relative pb-32">
+      {/* Gift Selection Modal */}
+      {showGiftModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-lg text-gray-900">Add a Gift</h3>
+                <p className="text-sm text-gray-500">Surprise them with something special</p>
+              </div>
+              <button
+                onClick={() => setShowGiftModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X size={20} className="text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="p-4 overflow-y-auto max-h-[60vh]">
+              <div className="grid grid-cols-2 gap-3">
+                {giftOptions.map(gift => (
+                  <button
+                    key={gift.id}
+                    onClick={() => selectGift(gift)}
+                    className="bg-white border border-gray-200 rounded-xl p-3 hover:border-[#C35F33] 
+                             hover:shadow-md transition-all text-left"
+                  >
+                    <img 
+                      src={gift.image_url} 
+                      alt={gift.name}
+                      className="w-full aspect-square rounded-lg object-cover mb-2"
+                    />
+                    <p className="font-medium text-gray-900 text-sm truncate">{gift.name}</p>
+                    <p className="text-[#C35F33] font-semibold">${gift.price.toFixed(2)}</p>
+                    <p className="text-xs text-gray-400">{gift.provider}</p>
+                  </button>
+                ))}
+              </div>
+              
+              <Link 
+                href="/marketplace"
+                className="mt-4 block text-center text-[#C35F33] hover:underline text-sm"
+              >
+                Browse full marketplace →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Warm background */}
       <div className="home-background">
         <div className="home-blob home-blob-1" />
@@ -904,7 +1044,7 @@ export default function NewPostScriptPage() {
         </div>
 
         {/* Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 p-4">
+        <div className="fixed bottom-0 left-0 right-0 bg-[#FDF8F3]/98 backdrop-blur-sm border-t border-[#C35F33]/10 p-4">
           <div className="max-w-lg mx-auto flex gap-3">
             {step > 1 && (
               <button

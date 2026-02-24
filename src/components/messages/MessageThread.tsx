@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState, useMemo } from 'react'
 import { format, isToday, isYesterday, isSameDay } from 'date-fns'
-import { Brain, Users, MoreVertical, Phone, Video, Info } from 'lucide-react'
+import { Brain, Users, MoreVertical, Info } from 'lucide-react'
 import MessageBubble from './MessageBubble'
 import MessageInput from './MessageInput'
 import ThreadToolbar from './ThreadToolbar'
@@ -168,13 +168,10 @@ export default function MessageThread({
 
         {/* Actions */}
         <div className="flex items-center gap-1">
-          <button className="w-9 h-9 rounded-lg flex items-center justify-center text-[#666] hover:bg-[#406A56]/10 hover:text-[#406A56] transition-colors">
-            <Phone size={18} />
-          </button>
-          <button className="w-9 h-9 rounded-lg flex items-center justify-center text-[#666] hover:bg-[#406A56]/10 hover:text-[#406A56] transition-colors">
-            <Video size={18} />
-          </button>
-          <button className="w-9 h-9 rounded-lg flex items-center justify-center text-[#666] hover:bg-[#406A56]/10 hover:text-[#406A56] transition-colors">
+          <button 
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-[#666] hover:bg-[#406A56]/10 hover:text-[#406A56] transition-colors"
+            title="View members & details"
+          >
             <Info size={18} />
           </button>
           <button className="w-9 h-9 rounded-lg flex items-center justify-center text-[#666] hover:bg-[#406A56]/10 hover:text-[#406A56] transition-colors">

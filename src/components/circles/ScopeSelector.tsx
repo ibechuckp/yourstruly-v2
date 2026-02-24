@@ -2,15 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Lock, Users, Check, Sparkles } from 'lucide-react'
-
-// Mock circle data - will be replaced with API data
-const MOCK_CIRCLES = [
-  { id: 'circle-1', name: 'Family', memberCount: 8, color: '#F59E0B' },
-  { id: 'circle-2', name: 'Close Friends', memberCount: 5, color: '#10B981' },
-  { id: 'circle-3', name: 'Grandkids', memberCount: 3, color: '#8B5CF6' },
-  { id: 'circle-4', name: 'Book Club', memberCount: 12, color: '#EC4899' },
-]
+import { X, Lock, Users, Check, Sparkles, Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 export interface Circle {
   id: string
@@ -33,17 +26,75 @@ interface ScopeSelectorProps {
   title?: string
 }
 
+// Generate consistent color from circle name
+function getCircleColor(name: string): string {
+  const colors = ['#406A56', '#C35F33', '#D9C61A', '#8DACAB', '#4A3552', '#2C5F7C'];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
 export function ScopeSelector({
   isOpen,
   onClose,
   onSave,
   initialSelection,
   contentType = 'memory',
-  title = 'Where should this live?'
+  title = 'Who should see this?'
 }: ScopeSelectorProps) {
   const [isPrivate, setIsPrivate] = useState(true)
   const [selectedCircles, setSelectedCircles] = useState<string[]>([])
-  const [circles] = useState<Circle[]>(MOCK_CIRCLES) // TODO: Replace with API hook
+  const [circles, setCircles] = useState<Circle[]>([])
+  const [loading, setLoading] = useState(true)
+  
+  const supabase = createClient()
+
+  // Fetch user's circles
+  useEffect(() => {
+    if (!isOpen) return
+    
+    const fetchCircles = async () => {
+      setLoading(true)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        // Get circles where user is a member
+        const { data: memberships } = await supabase
+          .from('circle_members')
+          .select(`
+            circle:circles (
+              id,
+              name
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('invite_status', 'accepted')
+
+        if (memberships) {
+          const userCircles: Circle[] = memberships
+            .filter(m => m.circle)
+            .map(m => {
+              const circle = Array.isArray(m.circle) ? m.circle[0] : m.circle
+              return {
+                id: circle.id,
+                name: circle.name,
+                color: getCircleColor(circle.name)
+              }
+            })
+          setCircles(userCircles)
+        }
+      } catch (error) {
+        console.error('Error fetching circles:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCircles()
+  }, [isOpen, supabase])
   
   // Initialize from props
   useEffect(() => {
@@ -118,7 +169,7 @@ export function ScopeSelector({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/80 flex items-center justify-center z-[9999] p-4"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
         onClick={handleDismiss}
       >
         <motion.div
@@ -126,23 +177,23 @@ export function ScopeSelector({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-md overflow-hidden"
+          className="bg-white rounded-2xl shadow-xl border border-[#406A56]/10 w-full max-w-md overflow-hidden"
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-gray-800">
+          <div className="flex items-center justify-between p-5 border-b border-[#406A56]/10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#406A56] to-[#8DACAB] flex items-center justify-center">
                 <Sparkles size={20} className="text-white" />
               </div>
               <div>
-                <h3 className="text-white font-semibold text-lg">{title}</h3>
-                <p className="text-gray-400 text-sm">Choose who sees this {getContentLabel()}</p>
+                <h3 className="text-[#2d2d2d] font-semibold text-lg">{title}</h3>
+                <p className="text-gray-500 text-sm">Choose who sees this {getContentLabel()}</p>
               </div>
             </div>
             <button
               onClick={handleDismiss}
-              className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-lg"
+              className="text-gray-400 hover:text-[#2d2d2d] transition-colors p-2 hover:bg-[#406A56]/5 rounded-lg"
             >
               <X size={20} />
             </button>
@@ -155,34 +206,41 @@ export function ScopeSelector({
               onClick={handlePrivateToggle}
               className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left ${
                 isPrivate && selectedCircles.length === 0
-                  ? 'bg-amber-600/20 border-2 border-amber-500/50'
-                  : 'bg-gray-800 hover:bg-gray-700 border-2 border-transparent'
+                  ? 'bg-[#406A56]/10 border-2 border-[#406A56]/30'
+                  : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
               }`}
             >
               <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
                 isPrivate && selectedCircles.length === 0
-                  ? 'bg-amber-600'
-                  : 'bg-gray-700'
+                  ? 'bg-[#406A56]'
+                  : 'bg-gray-200'
               }`}>
-                <Lock size={20} className="text-white" />
+                <Lock size={20} className={isPrivate && selectedCircles.length === 0 ? 'text-white' : 'text-gray-500'} />
               </div>
               <div className="flex-1">
-                <p className="text-white font-medium">Private</p>
-                <p className="text-gray-400 text-sm">Just for me</p>
+                <p className="text-[#2d2d2d] font-medium">Private</p>
+                <p className="text-gray-500 text-sm">Only visible to you</p>
               </div>
               {isPrivate && selectedCircles.length === 0 && (
-                <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-[#406A56] flex items-center justify-center">
                   <Check size={14} className="text-white" />
                 </div>
               )}
             </button>
 
+            {/* Loading state */}
+            {loading && (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-[#406A56]" />
+              </div>
+            )}
+
             {/* Circles Section */}
-            {circles.length > 0 && (
+            {!loading && circles.length > 0 && (
               <>
                 <div className="flex items-center gap-2 pt-2">
-                  <Users size={14} className="text-gray-500" />
-                  <span className="text-gray-500 text-xs uppercase tracking-wider">
+                  <Users size={14} className="text-gray-400" />
+                  <span className="text-gray-400 text-xs uppercase tracking-wider font-medium">
                     Share with Circles
                   </span>
                 </div>
@@ -193,26 +251,26 @@ export function ScopeSelector({
                     onClick={() => handleCircleToggle(circle.id)}
                     className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left ${
                       selectedCircles.includes(circle.id)
-                        ? 'bg-amber-600/20 border-2 border-amber-500/50'
-                        : 'bg-gray-800 hover:bg-gray-700 border-2 border-transparent'
+                        ? 'bg-[#406A56]/10 border-2 border-[#406A56]/30'
+                        : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
                     }`}
                   >
                     <div
                       className="w-12 h-12 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: circle.color || '#6B7280' }}
+                      style={{ backgroundColor: circle.color || '#406A56' }}
                     >
                       <Users size={20} className="text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-white font-medium">{circle.name}</p>
+                      <p className="text-[#2d2d2d] font-medium">{circle.name}</p>
                       {circle.memberCount && (
-                        <p className="text-gray-400 text-sm">
+                        <p className="text-gray-500 text-sm">
                           {circle.memberCount} {circle.memberCount === 1 ? 'member' : 'members'}
                         </p>
                       )}
                     </div>
                     {selectedCircles.includes(circle.id) && (
-                      <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center">
+                      <div className="w-6 h-6 rounded-full bg-[#406A56] flex items-center justify-center">
                         <Check size={14} className="text-white" />
                       </div>
                     )}
@@ -220,19 +278,28 @@ export function ScopeSelector({
                 ))}
               </>
             )}
+
+            {/* No circles message */}
+            {!loading && circles.length === 0 && (
+              <div className="text-center py-6">
+                <Users size={32} className="mx-auto text-gray-300 mb-2" />
+                <p className="text-gray-500 text-sm">No circles yet</p>
+                <p className="text-gray-400 text-xs mt-1">Create circles to share with family & friends</p>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
-          <div className="p-5 border-t border-gray-800 flex gap-3">
+          <div className="p-5 border-t border-[#406A56]/10 flex gap-3">
             <button
               onClick={handleDismiss}
-              className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
+              className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-[#2d2d2d] rounded-xl font-medium transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all"
+              className="flex-1 px-4 py-3 bg-[#406A56] hover:bg-[#355a48] text-white rounded-xl font-medium transition-all"
             >
               Save
             </button>

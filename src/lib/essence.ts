@@ -250,13 +250,34 @@ interface ProfileData {
 }
 
 /**
+ * Check if profile has meaningful data for essence generation
+ */
+export function hasProfileData(profile: ProfileData): boolean {
+  return !!(
+    profile.personality_type ||
+    (profile.personality_traits && profile.personality_traits.length > 0) ||
+    (profile.interests && profile.interests.length > 0) ||
+    (profile.hobbies && profile.hobbies.length > 0) ||
+    (profile.life_goals && profile.life_goals.length > 0) ||
+    profile.occupation ||
+    profile.biography
+  )
+}
+
+/**
  * Generate essence vector from profile data
+ * Returns neutral (all 0.5) vector if no profile data exists
  */
 export function generateEssenceVector(profile: ProfileData): EssenceVector {
   // Initialize all 48 dimensions to 0.5 (neutral)
   const dimensions: Record<string, number> = {}
   const allDimensions = Object.values(ESSENCE_LAYERS).flatMap(l => l.dimensions)
   allDimensions.forEach(d => dimensions[d] = 0.5)
+  
+  // If no meaningful profile data, return completely neutral vector
+  if (!hasProfileData(profile)) {
+    return allDimensions.map(() => 0.5)
+  }
   
   // Create seeded random for consistent uniqueness per user
   const seed = stringToSeed(profile.id || profile.full_name || 'default')

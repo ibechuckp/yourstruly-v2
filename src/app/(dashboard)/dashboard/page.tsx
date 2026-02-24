@@ -11,7 +11,7 @@ import '@/styles/home.css'
 import '@/styles/engagement.css'
 import '@/styles/conversation.css'
 import CommandBar from '@/components/dashboard/CommandBar'
-import ActivityFeed from '@/components/dashboard/ActivityFeed'
+import ActivityFeed, { XPCompletion } from '@/components/dashboard/ActivityFeed'
 // import { PersonalityDashboard } from '@/components/personality/PersonalityDashboard' // TODO: Re-enable when analyzing real data
 
 // Type configs with color scheme
@@ -138,10 +138,29 @@ export default function DashboardPage() {
 
   const prompts = uniquePrompts.slice(0, 5)
 
-  // Load saved state from localStorage
+  // Track current user ID for scoped localStorage
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  
+  // Get user ID first and clean up old non-scoped localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('yt_completed_tiles')
-    const savedXp = localStorage.getItem('yt_total_xp')
+    const getUserId = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        // Clean up old non-scoped keys (from before user-scoping was added)
+        localStorage.removeItem('yt_completed_tiles')
+        localStorage.removeItem('yt_total_xp')
+        setCurrentUserId(user.id)
+      }
+    }
+    getUserId()
+  }, [])
+
+  // Load saved state from user-scoped localStorage
+  useEffect(() => {
+    if (!currentUserId) return
+    
+    const saved = localStorage.getItem(`yt_completed_tiles_${currentUserId}`)
+    const savedXp = localStorage.getItem(`yt_total_xp_${currentUserId}`)
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
@@ -157,18 +176,25 @@ export default function DashboardPage() {
       } catch (e) {
         console.error('Failed to parse completed tiles:', e)
       }
+    } else {
+      // Reset for new user
+      setCompletedTiles([])
     }
     if (savedXp) {
       setTotalXp(parseInt(savedXp, 10) || 0)
+    } else {
+      // Reset for new user
+      setTotalXp(0)
     }
-  }, [])
+  }, [currentUserId])
   
-  // Save completed tiles to localStorage
+  // Save completed tiles to user-scoped localStorage
   useEffect(() => {
+    if (!currentUserId) return
     if (completedTiles.length > 0) {
-      localStorage.setItem('yt_completed_tiles', JSON.stringify(completedTiles))
+      localStorage.setItem(`yt_completed_tiles_${currentUserId}`, JSON.stringify(completedTiles))
     }
-  }, [completedTiles])
+  }, [completedTiles, currentUserId])
 
   useEffect(() => {
     loadProfile()
@@ -313,7 +339,9 @@ export default function DashboardPage() {
       setXpAnimating(true)
       setTotalXp(prev => {
         const newXp = prev + xpGained
-        localStorage.setItem('yt_total_xp', String(newXp))
+        if (currentUserId) {
+          localStorage.setItem(`yt_total_xp_${currentUserId}`, String(newXp))
+        }
         return newXp
       })
       setTimeout(() => setXpAnimating(false), 1500)
@@ -364,7 +392,9 @@ export default function DashboardPage() {
         setXpAnimating(true)
         setTotalXp(prev => {
           const newXp = prev + config.xp
-          localStorage.setItem('yt_total_xp', String(newXp))
+          if (currentUserId) {
+            localStorage.setItem(`yt_total_xp_${currentUserId}`, String(newXp))
+          }
           return newXp
         })
         setTimeout(() => setXpAnimating(false), 1500)
@@ -400,6 +430,12 @@ export default function DashboardPage() {
   }
 
   const getPromptText = (prompt: any) => {
+    // Always prefer the actual prompt text from the database if it exists
+    // This contains the personalized, interesting questions from prompt_templates
+    if (prompt.promptText && prompt.promptText.trim()) {
+      return prompt.promptText
+    }
+    
     if (isContactPrompt(prompt.type)) {
       const contactName = prompt.contactName || prompt.metadata?.contact?.name || 'this contact'
       if (prompt.missingField) {
@@ -411,26 +447,40 @@ export default function DashboardPage() {
           how_met: 'story of how you met',
           relationship: 'relationship to you',
           nickname: 'nickname',
-          notes: 'story',
+          notes: 'a story about them',
           address: 'address',
           company: 'workplace',
           job_title: 'job title',
         }
         // Use better phrasing for narrative fields
         if (prompt.missingField === 'how_met') {
-          return `How did you meet ${contactName}?`
+          return `How did you and ${contactName} first meet?`
         }
         if (prompt.missingField === 'relationship') {
-          return `What is your relationship to ${contactName}?`
+          return `How would you describe your relationship with ${contactName}?`
         }
-        if (prompt.missingField === 'notes') {
-          return `Tell us about ${contactName}`
+        if (prompt.missingField === 'notes' || prompt.missingField === 'contact_story') {
+          // Fallback to interesting questions if no prompt text
+          const fallbackQuestions = [
+            `What's your favorite memory with ${contactName}?`,
+            `What makes ${contactName} special to you?`,
+            `What's something ${contactName} taught you?`,
+            `What would ${contactName} want to be remembered for?`,
+          ]
+          return fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)]
         }
         return `What is ${contactName}'s ${labels[prompt.missingField] || prompt.missingField.replace(/_/g, ' ')}?`
       }
-      return `Tell us more about ${contactName}`
+      // No missing field - this is a "quick_question" about a contact
+      // Should have promptText, but fallback to something better than generic
+      const genericFallbacks = [
+        `What's a great memory you have with ${contactName}?`,
+        `What do you admire about ${contactName}?`,
+        `What's something unique about ${contactName}?`,
+      ]
+      return genericFallbacks[Math.floor(Math.random() * genericFallbacks.length)]
     }
-    return prompt.promptText || ''
+    return prompt.promptText || 'Share something meaningful...'
   }
 
   return (
@@ -557,7 +607,18 @@ export default function DashboardPage() {
         
         {/* Activity Feed - In left column, below profile card, same width */}
         <div className="mt-6" style={{ width: 280 }}>
-          <ActivityFeed />
+          <ActivityFeed 
+            xpCompletions={completedTiles.slice(0, 10).map(tile => ({
+              id: tile.id,
+              type: tile.type,
+              icon: tile.icon,
+              title: tile.title,
+              xp: tile.xp || 0,
+              photoUrl: tile.photoUrl,
+              contactName: tile.contactName,
+              timestamp: tile.answeredAt,
+            }))}
+          />
         </div>
       </div>
 
@@ -585,88 +646,26 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4">
-              {/* Progress Tracker with XP Counter */}
-              <div className="w-full" style={{ maxWidth: 816 }}>
-                <motion.div 
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="progress-tracker"
-                >
-                  {/* XP Counter */}
-                  <div className="flex items-center gap-3">
+              {/* Floating XP Counter (shows when XP earned) */}
+              <AnimatePresence>
+                {xpAnimating && lastXpGain > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -20, scale: 0.8 }}
+                    className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#D9C61A] to-[#C35F33] text-white font-bold shadow-2xl"
+                  >
                     <motion.div
-                      className="xp-counter"
-                      animate={xpAnimating ? { scale: [1, 1.2, 1] } : {}}
-                      transition={{ duration: 0.4 }}
+                      animate={{ rotate: [0, 360] }}
+                      transition={{ duration: 0.5 }}
                     >
-                      <Sparkles size={14} className="text-[#D9C61A]" />
-                      <span className="xp-value">{totalXp}</span>
-                      <span className="xp-label">XP</span>
+                      <Sparkles size={18} />
                     </motion.div>
-                    
-                    <AnimatePresence>
-                      {xpAnimating && lastXpGain > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, x: -10, scale: 0.8 }}
-                          animate={{ opacity: 1, x: 0, scale: 1 }}
-                          exit={{ opacity: 0, x: 10, scale: 0.8 }}
-                          className="xp-gain-popup"
-                        >
-                          +{lastXpGain} 🎉
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  
-                  <div className="progress-tracker-divider" />
-                  
-                  {/* Completed tiles */}
-                  <div className="progress-tiles-container">
-                    {completedTiles.length === 0 ? (
-                      <span className="progress-tracker-empty">Answer prompts to earn XP</span>
-                    ) : (
-                      <AnimatePresence mode="popLayout">
-                        {completedTiles.map((tile, index) => (
-                          <motion.div
-                            key={`${tile.id}-${tile.answeredAt}`}
-                            initial={{ scale: 0, opacity: 0, x: -30 }}
-                            animate={{ scale: 1, opacity: 1, x: 0 }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            transition={{ type: 'spring', stiffness: 500, damping: 25, delay: index === 0 ? 0.3 : 0 }}
-                            className="progress-tile cursor-pointer hover:ring-2 hover:ring-[#406A56]/30 hover:scale-110 transition-transform"
-                            title={`${tile.title}${tile.xp ? ` (+${tile.xp} XP)` : ''}`}
-                            onClick={() => {
-                              if (tile.type === 'quick_question' || tile.type === 'missing_info') {
-                                if (tile.contactId) window.location.assign(`/dashboard/contacts/${tile.contactId}`)
-                                else window.location.assign('/dashboard/contacts')
-                              } else if (tile.type === 'knowledge') {
-                                // Link to dedicated wisdom detail page
-                                if (tile.resultMemoryId || tile.memoryId) {
-                                  window.location.assign(`/dashboard/wisdom/${tile.resultMemoryId || tile.memoryId}`)
-                                } else {
-                                  window.location.assign('/dashboard/wisdom')
-                                }
-                              } else if (tile.resultMemoryId || tile.memoryId) {
-                                window.location.assign(`/dashboard/memories/${tile.resultMemoryId || tile.memoryId}`)
-                              } else {
-                                window.location.assign('/dashboard/memories')
-                              }
-                            }}
-                          >
-                            {tile.photoUrl ? (
-                              <img src={tile.photoUrl} alt={tile.title} />
-                            ) : tile.contactName ? (
-                              <div className="progress-tile-avatar">{tile.contactName.charAt(0).toUpperCase()}</div>
-                            ) : (
-                              <span>{tile.icon}</span>
-                            )}
-                          </motion.div>
-                        ))}
-                      </AnimatePresence>
-                    )}
-                  </div>
-                </motion.div>
-              </div>
+                    <span className="text-lg">+{lastXpGain} XP</span>
+                    <span className="text-sm opacity-80">🎉</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Tile grid: 2x2 + 1 tall on right */}
               <div className="relative mx-auto" style={{ width: 720, height: 400, marginTop: 16 }}>
@@ -862,14 +861,27 @@ export default function DashboardPage() {
                 </AnimatePresence>
               </div>
 
-              {/* Shuffle button */}
-              <button
-                onClick={handleShuffle}
-                className="mt-4 flex items-center gap-2 px-4 py-2 text-[#406A56]/60 hover:text-[#406A56] transition-colors"
-              >
-                <RefreshCw size={16} />
-                <span className="text-sm">Shuffle prompts</span>
-              </button>
+              {/* Footer with XP and Shuffle */}
+              <div className="mt-4 flex items-center justify-center gap-4">
+                {/* Mini XP Counter */}
+                <motion.div 
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#D9C61A]/10 border border-[#D9C61A]/20"
+                  animate={xpAnimating ? { scale: [1, 1.1, 1] } : {}}
+                >
+                  <Sparkles size={14} className="text-[#D9C61A]" />
+                  <span className="text-sm font-semibold text-[#8a7c08]">{totalXp}</span>
+                  <span className="text-xs text-[#8a7c08]/60">XP</span>
+                </motion.div>
+                
+                {/* Shuffle button */}
+                <button
+                  onClick={handleShuffle}
+                  className="flex items-center gap-2 px-4 py-2 text-[#406A56]/60 hover:text-[#406A56] transition-colors"
+                >
+                  <RefreshCw size={16} />
+                  <span className="text-sm">Shuffle prompts</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

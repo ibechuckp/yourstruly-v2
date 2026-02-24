@@ -6,9 +6,11 @@ import { ChevronLeft, Image as ImageIcon, MapPin, Plus, Users, PawPrint, Upload,
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import GalleryStatsPanel from '@/components/gallery/GalleryStatsPanel'
 import TimelineRuler from '@/components/gallery/TimelineRuler'
 import DigitizeModal from '@/components/gallery/DigitizeModal'
+import PhotoMetadataModal from '@/components/gallery/PhotoMetadataModal'
+import PhotoPreviewPanel from '@/components/gallery/PhotoPreviewPanel'
+import OrbitalCarousel from '@/components/gallery/OrbitalCarousel'
 import '@/styles/page-styles.css'
 import '@/styles/gallery.css'
 
@@ -44,11 +46,11 @@ export default function GalleryPage() {
   const [media, setMedia] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedYearRange, setSelectedYearRange] = useState<[number, number] | null>(null)
-  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null)
-  const [relatedMedia, setRelatedMedia] = useState<MediaItem[]>([])
+  const [previewMedia, setPreviewMedia] = useState<MediaItem | null>(null)
   const [uploading, setUploading] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [showDigitizeModal, setShowDigitizeModal] = useState(false)
+  const [editingMedia, setEditingMedia] = useState<MediaItem | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
@@ -143,14 +145,7 @@ export default function GalleryPage() {
   useEffect(() => { loadMedia() }, [loadMedia])
 
   const handleGlobeSelect = (item: MediaItem) => {
-    const related = media.filter(m => 
-      m.id !== item.id && (
-        m.memory_id === item.memory_id ||
-        (m.memory?.location_name && m.memory.location_name === item.memory?.location_name)
-      )
-    )
-    setRelatedMedia([item, ...related])
-    setSelectedMedia(item)
+    setPreviewMedia(item)
   }
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,6 +179,29 @@ export default function GalleryPage() {
     }
     
     setUploading(false)
+    loadMedia()
+  }
+
+  const handleSaveMetadata = async (updates: { taken_at?: string; exif_lat?: number; exif_lng?: number; location_name?: string }) => {
+    if (!editingMedia) return
+    
+    console.log('Saving metadata for media:', editingMedia.id, updates)
+    
+    const res = await fetch(`/api/media/${editingMedia.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    })
+    
+    const result = await res.json()
+    console.log('Save result:', result)
+    
+    if (!res.ok) {
+      console.error('Save failed:', result)
+      throw new Error('Failed to save')
+    }
+    
+    // Reload media to show updated data
     loadMedia()
   }
 
@@ -257,34 +275,95 @@ export default function GalleryPage() {
           </div>
         ) : (
           <>
-            {/* Globe + Stats Split */}
-            <div className="gallery-split-view mb-5">
-              <div className="gallery-globe-half">
-                <GalleryGlobe
-                  media={media}
-                  selectedTimeframe={selectedYearRange ? { yearRange: selectedYearRange } : null}
-                  onSelectMedia={handleGlobeSelect}
-                />
+            {/* Globe - Full Width */}
+            <div className="glass-card-page p-0 overflow-hidden mb-5">
+              <GalleryGlobe
+                media={media}
+                selectedTimeframe={selectedYearRange ? { yearRange: selectedYearRange } : null}
+                onSelectMedia={handleGlobeSelect}
+              />
+            </div>
+
+            {/* All Photos Grid */}
+            <div className="glass-card-page p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-[#2d2d2d]">All Photos</h3>
+                <p className="text-xs text-[#666]">{media.length} photos</p>
               </div>
-              <div className="gallery-stats-half">
-                <GalleryStatsPanel
-                  media={media}
-                  selectedMedia={selectedMedia}
-                  relatedMedia={relatedMedia}
-                  onClose={() => { setSelectedMedia(null); setRelatedMedia([]) }}
-                  onNavigate={(m) => setSelectedMedia(m as MediaItem)}
-                />
+              
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                {media.map((item) => (
+                  <div 
+                    key={item.id}
+                    onClick={() => handleGlobeSelect(item)}
+                    className="aspect-square rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#406A56] transition-all relative group"
+                  >
+                    <img 
+                      src={item.file_url} 
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Edit button on hover */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditingMedia(item); }}
+                      className="absolute top-1 right-1 w-6 h-6 bg-black/50 backdrop-blur rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+                      title="Edit date & location"
+                    >
+                      <span className="text-white text-xs">✏️</span>
+                    </button>
+                    {/* Missing data indicator */}
+                    {(!item.taken_at || (!item.exif_lat && !item.location_lat)) && (
+                      <div className="absolute top-1 left-1 w-5 h-5 bg-amber-500/90 backdrop-blur rounded-full flex items-center justify-center" title="Missing date or location">
+                        <span className="text-white text-[10px]">!</span>
+                      </div>
+                    )}
+                    {(item.location_lat && item.location_lng) || (item.exif_lat && item.exif_lng) ? (
+                      <div className="absolute bottom-1 right-1 w-5 h-5 bg-white/80 backdrop-blur rounded-full flex items-center justify-center">
+                        <MapPin size={10} className="text-[#406A56]" />
+                      </div>
+                    ) : null}
+                    {item.taken_at && (
+                      <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/50 backdrop-blur rounded text-[8px] text-white">
+                        {new Date(item.taken_at).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Auto Albums Row */}
-            <div className="glass-card-page p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-[#2d2d2d]">Smart Albums</h3>
-                <p className="text-xs text-[#666]">Auto-generated from your photos</p>
+            {/* Orbital Album Carousel */}
+            {autoAlbums.length >= 3 && (
+              <div className="glass-card-page p-5 mt-5 overflow-hidden">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-[#2d2d2d]">Your Albums</h3>
+                  <p className="text-xs text-[#666]">Drag or click to explore</p>
+                </div>
+                
+                <OrbitalCarousel 
+                  albums={autoAlbums.map((album, i) => ({
+                    id: `album-${i}`,
+                    name: album.name,
+                    cover: album.cover,
+                    count: album.count,
+                    type: album.type,
+                    images: media
+                      .filter(m => m.memory?.location_name === album.name)
+                      .map(m => m.file_url)
+                  }))}
+                  onAlbumClick={(album) => console.log('Album clicked:', album)}
+                />
               </div>
-              
-              {autoAlbums.length > 0 ? (
+            )}
+
+            {/* Smart Albums Grid (fallback for fewer albums) */}
+            {autoAlbums.length > 0 && autoAlbums.length < 3 && (
+              <div className="glass-card-page p-5 mt-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-[#2d2d2d]">Smart Albums</h3>
+                  <p className="text-xs text-[#666]">Auto-generated from your photos</p>
+                </div>
+                
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
                   {autoAlbums.map((album, i) => (
                     <div 
@@ -327,7 +406,16 @@ export default function GalleryPage() {
                     </div>
                   </div>
                 </div>
-              ) : (
+              </div>
+            )}
+            
+            {/* Empty state for no albums */}
+            {autoAlbums.length === 0 && (
+              <div className="glass-card-page p-5 mt-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-[#2d2d2d]">Smart Albums</h3>
+                  <p className="text-xs text-[#666]">Add location data to photos to create albums</p>
+                </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="aspect-square rounded-xl bg-[#406A56]/5 flex flex-col items-center justify-center">
                     <MapPin size={24} className="text-[#406A56]/30 mb-1" />
@@ -342,8 +430,8 @@ export default function GalleryPage() {
                     <p className="text-[#666] text-xs">Pets</p>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -425,6 +513,29 @@ export default function GalleryPage() {
           loadMedia()
         }}
       />
+
+      {/* Photo Metadata Editor */}
+      {editingMedia && (
+        <PhotoMetadataModal
+          media={editingMedia}
+          onClose={() => setEditingMedia(null)}
+          onSave={handleSaveMetadata}
+        />
+      )}
+
+      {/* Photo Preview Panel */}
+      {previewMedia && (
+        <PhotoPreviewPanel
+          media={previewMedia}
+          allMedia={media}
+          onClose={() => setPreviewMedia(null)}
+          onNavigate={(m) => setPreviewMedia(m)}
+          onEdit={(m) => {
+            setPreviewMedia(null)
+            setEditingMedia(m)
+          }}
+        />
+      )}
     </div>
   )
 }
