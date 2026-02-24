@@ -80,10 +80,10 @@ export default function MarketplacePage() {
           {/* Title and cart */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="font-playfair text-3xl md:text-4xl font-bold text-white mb-2">
+              <h1 className="font-playfair text-3xl md:text-4xl font-bold text-gray-800 mb-2">
                 Keepsakes & Gifts
               </h1>
-              <p className="text-white/60 font-handwritten text-lg">
+              <p className="text-gray-800/60 font-handwritten text-lg">
                 Thoughtful gifts to accompany your messages
               </p>
             </div>
@@ -92,7 +92,7 @@ export default function MarketplacePage() {
             <button className="relative p-3 glass rounded-xl hover:bg-white/15 transition-colors">
               <ShoppingBag size={24} className="text-[#d4a574]" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#C35F33] text-white text-xs font-bold rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#C35F33] text-gray-800 text-xs font-bold rounded-full flex items-center justify-center">
                   {cartCount}
                 </span>
               )}
@@ -101,18 +101,18 @@ export default function MarketplacePage() {
 
           {/* Search bar */}
           <div className="relative max-w-2xl mb-6">
-            <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+            <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-800/40" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search for flowers, gifts, or personalized prints..."
-              className="w-full pl-12 pr-4 py-3.5 glass rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#d4a574]/30 transition-all"
+              className="w-full pl-12 pr-4 py-3.5 glass rounded-xl text-gray-800 placeholder:text-gray-800/40 focus:outline-none focus:ring-2 focus:ring-[#d4a574]/30 transition-all"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-white/40 hover:text-white"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-800/40 hover:text-gray-800"
               >
                 <X size={16} />
               </button>
@@ -155,10 +155,10 @@ export default function MarketplacePage() {
             {/* Filter bar */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
-                <h2 className="font-playfair text-xl font-semibold text-white">
+                <h2 className="font-playfair text-xl font-semibold text-gray-800">
                   {searchQuery ? 'Search Results' : selectedCategory ? selectedCategory.replace(/-/g, ' ') : 'All Products'}
                 </h2>
-                <span className="text-sm text-white/50">
+                <span className="text-sm text-gray-800/50">
                   {filteredProducts.length} items
                 </span>
               </div>
@@ -168,7 +168,7 @@ export default function MarketplacePage() {
                 {(activeProvider !== 'all' || selectedCategory || searchQuery) && (
                   <button
                     onClick={clearFilters}
-                    className="flex items-center gap-1 px-3 py-2 text-sm text-white/60 hover:text-white transition-colors"
+                    className="flex items-center gap-1 px-3 py-2 text-sm text-gray-800/60 hover:text-gray-800 transition-colors"
                   >
                     <X size={14} />
                     Clear filters
@@ -181,7 +181,7 @@ export default function MarketplacePage() {
             {(activeProvider !== 'all' || selectedCategory) && (
               <div className="flex flex-wrap items-center gap-2 mb-6">
                 {activeProvider !== 'all' && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 glass text-white rounded-full text-sm">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 glass text-gray-800 rounded-full text-sm">
                     {activeProvider.charAt(0).toUpperCase() + activeProvider.slice(1)}
                     <button
                       onClick={() => setActiveProvider('all')}

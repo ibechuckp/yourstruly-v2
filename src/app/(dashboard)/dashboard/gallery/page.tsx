@@ -93,10 +93,12 @@ export default function GalleryPage() {
     return counts
   }, [media])
 
-  // Auto-albums based on locations, etc.
+  // Auto-albums based on locations, dates, etc.
   const autoAlbums = useMemo(() => {
-    const locationAlbums: Record<string, MediaItem[]> = {}
+    const albums: Array<{ name: string; count: number; cover: string; type: 'location' | 'time' | 'recent' }> = []
     
+    // 1. Location-based albums
+    const locationAlbums: Record<string, MediaItem[]> = {}
     media.forEach(m => {
       if (m.memory?.location_name) {
         const loc = m.memory.location_name
@@ -104,17 +106,54 @@ export default function GalleryPage() {
         locationAlbums[loc].push(m)
       }
     })
-
-    return Object.entries(locationAlbums)
+    
+    Object.entries(locationAlbums)
       .filter(([_, items]) => items.length >= 2)
       .sort((a, b) => b[1].length - a[1].length)
-      .slice(0, 6)
-      .map(([name, items]) => ({
-        name,
-        count: items.length,
-        cover: items[0].file_url,
-        type: 'location' as const
-      }))
+      .slice(0, 4)
+      .forEach(([name, items]) => {
+        albums.push({
+          name,
+          count: items.length,
+          cover: items[0].file_url,
+          type: 'location'
+        })
+      })
+    
+    // 2. Year-based albums (if we have dated photos)
+    const yearAlbums: Record<number, MediaItem[]> = {}
+    media.forEach(m => {
+      if (m.taken_at) {
+        const year = new Date(m.taken_at).getFullYear()
+        if (!yearAlbums[year]) yearAlbums[year] = []
+        yearAlbums[year].push(m)
+      }
+    })
+    
+    Object.entries(yearAlbums)
+      .filter(([_, items]) => items.length >= 3)
+      .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+      .slice(0, 3)
+      .forEach(([year, items]) => {
+        albums.push({
+          name: `Year ${year}`,
+          count: items.length,
+          cover: items[0].file_url,
+          type: 'time'
+        })
+      })
+    
+    // 3. Recent Photos album (always show if we have any media)
+    if (media.length >= 3 && albums.length < 6) {
+      albums.push({
+        name: 'Recent Photos',
+        count: Math.min(media.length, 20),
+        cover: media[0].file_url,
+        type: 'recent'
+      })
+    }
+    
+    return albums.slice(0, 6)
   }, [media])
 
   const loadMedia = useCallback(async () => {
@@ -332,8 +371,8 @@ export default function GalleryPage() {
               </div>
             </div>
 
-            {/* Orbital Album Carousel */}
-            {autoAlbums.length >= 3 && (
+            {/* Orbital Album Carousel - Show with 2+ albums */}
+            {autoAlbums.length >= 2 && (
               <div className="glass-card-page p-5 mt-5 overflow-hidden">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-[#2d2d2d]">Your Albums</h3>
@@ -347,9 +386,11 @@ export default function GalleryPage() {
                     cover: album.cover,
                     count: album.count,
                     type: album.type,
-                    images: media
-                      .filter(m => m.memory?.location_name === album.name)
-                      .map(m => m.file_url)
+                    images: album.type === 'location'
+                      ? media.filter(m => m.memory?.location_name === album.name).map(m => m.file_url)
+                      : album.type === 'time'
+                      ? media.filter(m => m.taken_at && new Date(m.taken_at).getFullYear().toString() === album.name.replace('Year ', '')).map(m => m.file_url)
+                      : media.slice(0, 20).map(m => m.file_url)
                   }))}
                   onAlbumClick={(album) => console.log('Album clicked:', album)}
                 />

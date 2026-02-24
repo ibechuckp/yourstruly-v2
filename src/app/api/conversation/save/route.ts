@@ -49,6 +49,9 @@ export async function POST(request: NextRequest) {
     // Build tags - include memoryType for easier querying
     const tags = [promptType, memoryType, 'conversation'].filter((v, i, a) => a.indexOf(v) === i);
 
+    // Map prompt type to a display-friendly category
+    const aiCategory = getAICategoryFromPromptType(promptType);
+
     // Create memory record - use existing columns
     const { data: memory, error: memoryError } = await supabase
       .from('memories')
@@ -58,6 +61,7 @@ export async function POST(request: NextRequest) {
         description: storyContent,        // Full Q&A content
         ai_summary: aiInsights,            // AI-generated insights
         memory_type: memoryType,
+        ai_category: aiCategory,           // Category for UI pills
         audio_url: primaryAudioUrl,
         tags,
         memory_date: new Date().toISOString().split('T')[0],
@@ -224,6 +228,23 @@ function getKnowledgeCategory(promptType: string): string | null {
     photo_backstory: 'life_lessons',
   };
   return categoryMap[promptType] || null;
+}
+
+function getAICategoryFromPromptType(promptType: string): string {
+  // Map prompt types to user-friendly category names for display
+  const categoryMap: Record<string, string> = {
+    photo_backstory: 'Photo Stories',
+    memory_prompt: 'Personal Memories',
+    knowledge: 'Life Wisdom',
+    favorites_firsts: 'Favorites & Firsts',
+    recipes_wisdom: 'Recipes & Tips',
+    connect_dots: 'Connections',
+    highlight: 'Highlights',
+    postscript: 'Future Messages',
+    quick_question: 'Quick Answers',
+    missing_info: 'Contact Info',
+  };
+  return categoryMap[promptType] || 'Memories';
 }
 
 function generateMemoryContent(exchanges: Exchange[], summary: string): string {

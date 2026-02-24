@@ -107,7 +107,7 @@ export default function TopNav({ user, profile }: TopNavProps) {
           {/* Left: Logo + Primary Nav */}
           <div className="flex items-center gap-1">
             <Link href="/dashboard" className="mr-4 flex-shrink-0">
-              <h1 className="text-xl title-elegant-bold text-[#d4a574]">YoursTruly</h1>
+              <h1 className="text-xl title-elegant-bold text-[#C35F33]">YoursTruly</h1>
             </Link>
 
             {/* Desktop Nav */}
@@ -122,8 +122,8 @@ export default function TopNav({ user, profile }: TopNavProps) {
                     href={item.href}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                       isActive
-                        ? 'bg-[#d4a574]/20 text-[#d4a574]'
-                        : 'text-white/70 hover:bg-white/10 hover:text-white'
+                        ? 'bg-[#C35F33]/15 text-[#C35F33]'
+                        : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
                     }`}
                   >
                     <Icon size={16} />
@@ -141,8 +141,8 @@ export default function TopNav({ user, profile }: TopNavProps) {
                   onClick={() => { setMyStoryOpen(!myStoryOpen); setPeopleOpen(false); setToolsOpen(false) }}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     myStoryItems.some(i => pathname === i.href)
-                      ? 'bg-[#d4a574]/20 text-[#d4a574]'
-                      : 'text-white/70 hover:bg-white/10 hover:text-[#d4a574]'
+                      ? 'bg-[#C35F33]/15 text-[#C35F33]'
+                      : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
                   }`}
                 >
                   <BookOpen size={16} />
@@ -162,8 +162,8 @@ export default function TopNav({ user, profile }: TopNavProps) {
                           onClick={() => setMyStoryOpen(false)}
                           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
                             isActive
-                              ? 'bg-[#d4a574]/20 text-[#d4a574]'
-                              : 'text-white/70 hover:bg-white/10 hover:text-[#d4a574]'
+                              ? 'bg-[#C35F33]/15 text-[#C35F33]'
+                              : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
                           }`}
                         >
                           <Icon size={16} />
@@ -181,8 +181,8 @@ export default function TopNav({ user, profile }: TopNavProps) {
                   onClick={() => { setPeopleOpen(!peopleOpen); setMyStoryOpen(false); setToolsOpen(false) }}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     peopleItems.some(i => pathname === i.href)
-                      ? 'bg-[#d4a574]/20 text-[#d4a574]'
-                      : 'text-white/70 hover:bg-white/10 hover:text-[#d4a574]'
+                      ? 'bg-[#C35F33]/15 text-[#C35F33]'
+                      : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
                   }`}
                 >
                   <Users size={16} />
@@ -202,8 +202,8 @@ export default function TopNav({ user, profile }: TopNavProps) {
                           onClick={() => setPeopleOpen(false)}
                           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
                             isActive
-                              ? 'bg-[#d4a574]/20 text-[#d4a574]'
-                              : 'text-white/70 hover:bg-white/10 hover:text-[#d4a574]'
+                              ? 'bg-[#C35F33]/15 text-[#C35F33]'
+                              : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
                           }`}
                         >
                           <Icon size={16} />
@@ -221,8 +221,8 @@ export default function TopNav({ user, profile }: TopNavProps) {
                   onClick={() => { setToolsOpen(!toolsOpen); setMyStoryOpen(false); setPeopleOpen(false) }}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     toolsItems.some(i => pathname === i.href)
-                      ? 'bg-[#d4a574]/20 text-[#d4a574]'
-                      : 'text-white/70 hover:bg-white/10 hover:text-[#d4a574]'
+                      ? 'bg-[#C35F33]/15 text-[#C35F33]'
+                      : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
                   }`}
                 >
                   <Wrench size={16} />
@@ -246,16 +246,16 @@ export default function TopNav({ user, profile }: TopNavProps) {
                           }}
                           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
                             isActive
-                              ? 'bg-[#d4a574]/20 text-[#d4a574]'
+                              ? 'bg-[#C35F33]/15 text-[#C35F33]'
                               : isDisabled
-                              ? 'text-white/50 cursor-not-allowed'
-                              : 'text-white/70 hover:bg-white/10 hover:text-[#d4a574]'
+                              ? 'text-gray-400 cursor-not-allowed'
+                              : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
                           }`}
                         >
                           <Icon size={16} />
                           <span>{item.label}</span>
                           {isDisabled && (
-                            <span className="ml-auto text-[10px] bg-gray-100 text-white/50 px-1.5 py-0.5 rounded">Soon</span>
+                            <span className="ml-auto text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">Soon</span>
                           )}
                         </Link>
                       )
@@ -271,7 +271,7 @@ export default function TopNav({ user, profile }: TopNavProps) {
             {/* Settings - Desktop */}
             <Link
               href="/dashboard/settings"
-              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-white/60 hover:bg-white/10 hover:text-[#d4a574] transition-all"
+              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-[#C35F33]/5 hover:text-[#C35F33] transition-all"
             >
               <Settings size={16} />
             </Link>
@@ -280,12 +280,12 @@ export default function TopNav({ user, profile }: TopNavProps) {
             <div ref={userRef} className="relative">
               <button
                 onClick={() => setUserOpen(!userOpen)}
-                className="flex items-center gap-2 px-2 py-1 rounded-lg text-white/70 hover:bg-white/10 transition-all"
+                className="flex items-center gap-2 px-2 py-1 rounded-lg text-gray-600 hover:bg-[#C35F33]/5 transition-all"
               >
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#C35F33] to-[#D9C61A] flex items-center justify-center text-white font-semibold text-sm">
                   {profile?.full_name?.charAt(0) || user.email?.charAt(0).toUpperCase()}
                 </div>
-                <span className="hidden xl:block text-sm font-medium text-white/80 max-w-[120px] truncate">
+                <span className="hidden xl:block text-sm font-medium text-gray-700 max-w-[120px] truncate">
                   {profile?.full_name || 'Welcome'}
                 </span>
                 <ChevronDown size={14} className={`transition-transform ${userOpen ? 'rotate-180' : ''}`} />
@@ -293,14 +293,14 @@ export default function TopNav({ user, profile }: TopNavProps) {
 
               {userOpen && (
                 <div className="absolute top-full right-0 mt-1 w-56 glass-modal rounded-refined p-1.5">
-                  <div className="px-3 py-2 border-b border-white/10 mb-1">
+                  <div className="px-3 py-2 border-b border-[#C35F33]/10 mb-1">
                     <p className="text-sm font-medium text-gray-900 truncate">{profile?.full_name || 'Welcome!'}</p>
-                    <p className="text-xs text-white/60 truncate">{user.email}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
                   </div>
                   <Link
                     href="/dashboard/profile"
                     onClick={() => setUserOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-white/70 hover:bg-white/10 hover:text-[#d4a574] transition-all"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33] transition-all"
                   >
                     <UserIcon size={16} />
                     <span>My Profile</span>
@@ -308,7 +308,7 @@ export default function TopNav({ user, profile }: TopNavProps) {
                   <Link
                     href="/dashboard/settings"
                     onClick={() => setUserOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-white/70 hover:bg-white/10 hover:text-[#d4a574] transition-all"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33] transition-all"
                   >
                     <Settings size={16} />
                     <span>Settings</span>
@@ -327,7 +327,7 @@ export default function TopNav({ user, profile }: TopNavProps) {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg text-white/70 hover:bg-white/10 transition-all"
+              className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg text-gray-600 hover:bg-[#C35F33]/5 transition-all"
             >
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -350,8 +350,8 @@ export default function TopNav({ user, profile }: TopNavProps) {
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base transition-all ${
                     isActive
-                      ? 'bg-[#d4a574]/20 text-[#d4a574]'
-                      : 'text-white/70 hover:bg-white/10 hover:text-[#d4a574]'
+                      ? 'bg-[#C35F33]/15 text-[#C35F33]'
+                      : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
                   }`}
                 >
                   <Icon size={20} />
@@ -362,7 +362,7 @@ export default function TopNav({ user, profile }: TopNavProps) {
 
             {/* My Story Section */}
             <div className="pt-3 pb-1">
-              <p className="px-4 text-xs font-semibold text-[#d4a574]/60 uppercase tracking-wider">My Story</p>
+              <p className="px-4 text-xs font-semibold text-[#C35F33]/60 uppercase tracking-wider">My Story</p>
             </div>
             {myStoryItems.map((item) => {
               const Icon = item.icon
@@ -374,8 +374,8 @@ export default function TopNav({ user, profile }: TopNavProps) {
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base transition-all ${
                     isActive
-                      ? 'bg-[#d4a574]/20 text-[#d4a574]'
-                      : 'text-white/70 hover:bg-white/10 hover:text-[#d4a574]'
+                      ? 'bg-[#C35F33]/15 text-[#C35F33]'
+                      : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
                   }`}
                 >
                   <Icon size={20} />
@@ -386,7 +386,7 @@ export default function TopNav({ user, profile }: TopNavProps) {
 
             {/* People Section */}
             <div className="pt-3 pb-1">
-              <p className="px-4 text-xs font-semibold text-[#d4a574]/60 uppercase tracking-wider">People</p>
+              <p className="px-4 text-xs font-semibold text-[#C35F33]/60 uppercase tracking-wider">People</p>
             </div>
             {peopleItems.map((item) => {
               const Icon = item.icon
@@ -398,8 +398,8 @@ export default function TopNav({ user, profile }: TopNavProps) {
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base transition-all ${
                     isActive
-                      ? 'bg-[#d4a574]/20 text-[#d4a574]'
-                      : 'text-white/70 hover:bg-white/10 hover:text-[#d4a574]'
+                      ? 'bg-[#C35F33]/15 text-[#C35F33]'
+                      : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
                   }`}
                 >
                   <Icon size={20} />
@@ -410,7 +410,7 @@ export default function TopNav({ user, profile }: TopNavProps) {
 
             {/* Tools Section */}
             <div className="pt-3 pb-1">
-              <p className="px-4 text-xs font-semibold text-[#d4a574]/60 uppercase tracking-wider">Tools</p>
+              <p className="px-4 text-xs font-semibold text-[#C35F33]/60 uppercase tracking-wider">Tools</p>
             </div>
             {toolsItems.map((item) => {
               const Icon = item.icon
@@ -426,26 +426,26 @@ export default function TopNav({ user, profile }: TopNavProps) {
                   }}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base transition-all ${
                     isActive
-                      ? 'bg-[#d4a574]/20 text-[#d4a574]'
+                      ? 'bg-[#C35F33]/15 text-[#C35F33]'
                       : isDisabled
-                      ? 'text-white/50'
-                      : 'text-white/70 hover:bg-white/10 hover:text-[#d4a574]'
+                      ? 'text-gray-400'
+                      : 'text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33]'
                   }`}
                 >
                   <Icon size={20} />
                   <span>{item.label}</span>
                   {isDisabled && (
-                    <span className="ml-auto text-xs bg-gray-100 text-white/50 px-2 py-0.5 rounded">Soon</span>
+                    <span className="ml-auto text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded">Soon</span>
                   )}
                 </Link>
               )
             })}
 
-            <div className="border-t border-white/10 my-3" />
+            <div className="border-t border-[#C35F33]/10 my-3" />
             <Link
               href="/dashboard/settings"
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-white/70 hover:bg-white/10 hover:text-[#d4a574] transition-all"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-gray-600 hover:bg-[#C35F33]/5 hover:text-[#C35F33] transition-all"
             >
               <Settings size={20} />
               <span>Settings</span>
