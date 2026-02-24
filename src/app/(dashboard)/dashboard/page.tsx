@@ -685,10 +685,10 @@ export default function DashboardPage() {
 
               {/* Tile grid: CSS Grid - 3 columns, photo tile spans 2 rows */}
               <div 
-                className="grid mx-auto mt-4"
+                className="grid mx-auto"
                 style={{ 
                   gridTemplateColumns: '200px 200px 200px',
-                  gridTemplateRows: '1fr 1fr',
+                  gridTemplateRows: 'auto auto',
                   gap: '24px',
                   width: 'fit-content',
                 }}
@@ -878,35 +878,15 @@ export default function DashboardPage() {
                 </AnimatePresence>
               </div>
 
-              {/* Footer with XP and Shuffle */}
-              <div className="mt-4 flex items-center justify-center gap-4">
-                {/* Mini XP Counter */}
-                <motion.div 
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#D9C61A]/10 border border-[#D9C61A]/20"
-                  animate={xpAnimating ? { scale: [1, 1.1, 1] } : {}}
-                >
-                  <Sparkles size={14} className="text-[#D9C61A]" />
-                  <span className="text-sm font-semibold text-[#8a7c08]">{totalXp}</span>
-                  <span className="text-xs text-[#8a7c08]/60">XP</span>
-                </motion.div>
-                
-                {/* Shuffle button */}
-                <button
-                  onClick={handleShuffle}
-                  className="flex items-center gap-2 px-4 py-2 text-[#406A56]/60 hover:text-[#406A56] transition-colors"
-                >
-                  <RefreshCw size={16} />
-                  <span className="text-sm">Shuffle prompts</span>
-                </button>
-              </div>
             </div>
           )}
         </div>
         
+        {/* CommandBar - directly under engagement cluster */}
+        <div className="mt-8 w-full max-w-[648px]">
+          <CommandBar />
+        </div>
       </div>
-      
-      {/* CommandBar - RAG interface */}
-      <CommandBar />
     </div>
   )
 }

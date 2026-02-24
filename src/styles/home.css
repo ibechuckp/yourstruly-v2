@@ -106,7 +106,7 @@
   75% { transform: translate(15px, 15px) scale(1.02); }
 }
 
-/* Main content container - centered layout */
+/* Main content container - top aligned with profile card */
 .home-content {
   position: relative;
   z-index: 10;
@@ -114,8 +114,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 24px 24px 120px;
+  justify-content: flex-start;
+  padding: 80px 24px 120px; /* Match profile card top position */
 }
 
 /* Adjust content for left sidebar on large screens */
@@ -284,13 +284,11 @@
 
 /* Engagement bubbles area - centered vertically */
 .home-bubbles {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  min-height: calc(100vh - 160px);
+  justify-content: flex-start;
+  padding: 0 20px;
 }
 
 @media (max-width: 1024px) {
