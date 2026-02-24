@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { User } from '@supabase/supabase-js'
 import { useState, useRef, useEffect } from 'react'
+import ScrambleLink from '@/components/ScrambleLink'
 import { 
   User as UserIcon, 
   Users, 
@@ -116,18 +117,20 @@ export default function TopNav({ user, profile }: TopNavProps) {
             </Link>
 
             {/* Desktop Nav */}
-            <div className="hidden lg:flex items-center gap-0.5">
-              {/* Primary items - simple underline hover like Webflow */}
+            <div className="hidden lg:flex items-center gap-1">
+              {/* Primary items - scramble text + underline animation like Webflow */}
               {primaryNav.map((item) => {
                 const isActive = pathname === item.href
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`nav-link-underline mx-3 text-sm font-medium ${isActive ? 'active' : ''}`}
-                  >
-                    {item.label}
-                  </Link>
+                  <div key={item.href} className="mx-3">
+                    <ScrambleLink
+                      href={item.href}
+                      isActive={isActive}
+                      className="text-sm"
+                    >
+                      {item.label}
+                    </ScrambleLink>
+                  </div>
                 )
               })}
 
@@ -135,15 +138,16 @@ export default function TopNav({ user, profile }: TopNavProps) {
               <div className="w-px h-5 bg-black/10 mx-4" />
 
               {/* My Story Dropdown */}
-              <div ref={myStoryRef} className="relative">
+              <div ref={myStoryRef} className="relative mx-3">
                 <button
                   onClick={() => { setMyStoryOpen(!myStoryOpen); setPeopleOpen(false); setToolsOpen(false) }}
-                  className={`nav-link-underline mx-3 text-sm font-medium flex items-center gap-1 ${
+                  className={`scramble-link text-sm flex items-center gap-1 ${
                     myStoryItems.some(i => pathname === i.href) ? 'active' : ''
                   }`}
                 >
-                  <span>My Story</span>
+                  <span className="scramble-text">My Story</span>
                   <ChevronDown size={14} className={`transition-transform ${myStoryOpen ? 'rotate-180' : ''}`} />
+                  <span className="scramble-underline" />
                 </button>
                 
                 {myStoryOpen && (
@@ -172,15 +176,16 @@ export default function TopNav({ user, profile }: TopNavProps) {
               </div>
 
               {/* People Dropdown */}
-              <div ref={peopleRef} className="relative">
+              <div ref={peopleRef} className="relative mx-3">
                 <button
                   onClick={() => { setPeopleOpen(!peopleOpen); setMyStoryOpen(false); setToolsOpen(false) }}
-                  className={`nav-link-underline mx-3 text-sm font-medium flex items-center gap-1 ${
+                  className={`scramble-link text-sm flex items-center gap-1 ${
                     peopleItems.some(i => pathname === i.href) ? 'active' : ''
                   }`}
                 >
-                  <span>People</span>
+                  <span className="scramble-text">People</span>
                   <ChevronDown size={14} className={`transition-transform ${peopleOpen ? 'rotate-180' : ''}`} />
+                  <span className="scramble-underline" />
                 </button>
                 
                 {peopleOpen && (
@@ -209,15 +214,16 @@ export default function TopNav({ user, profile }: TopNavProps) {
               </div>
 
               {/* Tools Dropdown */}
-              <div ref={toolsRef} className="relative">
+              <div ref={toolsRef} className="relative mx-3">
                 <button
                   onClick={() => { setToolsOpen(!toolsOpen); setMyStoryOpen(false); setPeopleOpen(false) }}
-                  className={`nav-link-underline mx-3 text-sm font-medium flex items-center gap-1 ${
+                  className={`scramble-link text-sm flex items-center gap-1 ${
                     toolsItems.some(i => pathname === i.href) ? 'active' : ''
                   }`}
                 >
-                  <span>Tools</span>
+                  <span className="scramble-text">Tools</span>
                   <ChevronDown size={14} className={`transition-transform ${toolsOpen ? 'rotate-180' : ''}`} />
+                  <span className="scramble-underline" />
                 </button>
                 
                 {toolsOpen && (
