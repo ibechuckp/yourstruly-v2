@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS photobook_pages (
     
     -- Linked Memory (for QR code)
     linked_memory_id UUID REFERENCES memories(id) ON DELETE SET NULL,
-    linked_wisdom_id UUID REFERENCES wisdom_entries(id) ON DELETE SET NULL,
+    linked_wisdom_id UUID, -- No FK - wisdom table may not exist yet
     
     -- QR Token (auto-generated)
     qr_token_id UUID,
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS qr_access_tokens (
     
     -- What is being shared
     memory_id UUID REFERENCES memories(id) ON DELETE CASCADE,
-    wisdom_id UUID REFERENCES wisdom_entries(id) ON DELETE CASCADE,
+    wisdom_id UUID, -- No FK - wisdom table may not exist yet
     photobook_page_id UUID REFERENCES photobook_pages(id) ON DELETE CASCADE,
     
     -- Token (used in URL)
