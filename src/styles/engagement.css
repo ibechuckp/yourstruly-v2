@@ -18,14 +18,14 @@
   --yt-purple-light: #D8D3DA;
 }
 
-/* Masonry container - stable grid, comfortable spacing */
+/* Masonry container - spacious layout */
 .engagement-masonry {
   display: flex;
   flex-wrap: wrap;
-  gap: 24px;
+  gap: 32px;
   justify-content: center;
   align-items: flex-start;
-  padding: 20px;
+  padding: 24px;
   max-width: 100%;
 }
 
@@ -675,30 +675,34 @@
    BUBBLE TILE (Used in dashboard)
    ============================================================================= */
 
+/* Engagement tile - matching home title tile style */
 .bubble-tile {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
   overflow: hidden;
   box-shadow: 
-    0 2px 8px rgba(195, 95, 51, 0.06),
-    0 8px 24px rgba(0, 0, 0, 0.06);
+    0 4px 12px rgba(195, 95, 51, 0.08),
+    0 12px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
   -webkit-user-drag: none;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 240px;
 }
 
 .bubble-tile:hover {
-  transform: translateY(-4px);
+  transform: translateY(-6px);
   box-shadow: 
-    0 8px 24px rgba(195, 95, 51, 0.1),
-    0 16px 40px rgba(0, 0, 0, 0.08);
-  border-color: rgba(195, 95, 51, 0.15);
+    0 12px 32px rgba(195, 95, 51, 0.12),
+    0 24px 56px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border-color: rgba(195, 95, 51, 0.2);
 }
 
 .bubble-content {
-  padding: 16px;
+  padding: 20px;
 }
 
 .bubble-accent {
@@ -731,21 +735,23 @@
 .bubble-xp-red { background: rgba(195, 95, 51, 0.12); color: var(--yt-red); }
 .bubble-xp-purple { background: rgba(74, 53, 82, 0.12); color: var(--yt-purple); }
 
+/* Tile category label - LARGER font like home title tiles */
 .bubble-type {
   font-family: var(--font-handwritten), 'Caveat', 'Patrick Hand', cursive;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
   text-transform: none;
-  letter-spacing: 0.01em;
-  padding: 4px 12px;
-  border-radius: 10px;
+  letter-spacing: 0.02em;
+  padding: 6px 14px;
+  border-radius: 12px;
+  display: inline-block;
 }
 
-.bubble-type-yellow { background: rgba(217, 198, 26, 0.15); color: #8a7c08; }
-.bubble-type-green { background: rgba(64, 106, 86, 0.12); color: var(--yt-green); }
-.bubble-type-blue { background: rgba(141, 172, 171, 0.2); color: #5d8585; }
-.bubble-type-red { background: rgba(195, 95, 51, 0.12); color: var(--yt-red); }
-.bubble-type-purple { background: rgba(74, 53, 82, 0.12); color: var(--yt-purple); }
+.bubble-type-yellow { background: rgba(217, 198, 26, 0.2); color: #8a7c08; }
+.bubble-type-green { background: rgba(64, 106, 86, 0.15); color: var(--yt-green); }
+.bubble-type-blue { background: rgba(141, 172, 171, 0.25); color: #5d8585; }
+.bubble-type-red { background: rgba(195, 95, 51, 0.15); color: var(--yt-red); }
+.bubble-type-purple { background: rgba(74, 53, 82, 0.15); color: var(--yt-purple); }
 
 .bubble-contact {
   display: flex;

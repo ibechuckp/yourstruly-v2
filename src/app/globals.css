@@ -24,11 +24,12 @@
 
 body {
   background: linear-gradient(165deg, 
-    #F2F1E5 0%, 
-    #EDE8DC 25%,
-    #E8E2D4 50%,
-    #DFD8C8 75%,
-    #D8D0BD 100%
+    #E8E4D6 0%, 
+    #DDD8C8 20%,
+    #D4CDB8 40%,
+    #C9C0A8 60%,
+    #BEB498 80%,
+    #B3A888 100%
   );
   background-attachment: fixed;
   color: #333;
@@ -48,17 +49,17 @@ body::before {
   inset: 0;
   background: radial-gradient(
     ellipse 80% 60% at 50% 100%,
-    rgba(195, 95, 51, 0.08) 0%,
+    rgba(195, 95, 51, 0.12) 0%,
     transparent 50%
   ),
   radial-gradient(
     ellipse 60% 40% at 100% 0%,
-    rgba(64, 106, 86, 0.06) 0%,
+    rgba(64, 106, 86, 0.1) 0%,
     transparent 50%
   ),
   radial-gradient(
     ellipse 50% 50% at 0% 50%,
-    rgba(74, 53, 82, 0.04) 0%,
+    rgba(74, 53, 82, 0.08) 0%,
     transparent 50%
   );
   pointer-events: none;
@@ -434,14 +435,15 @@ body::before {
 }
 
 /* =============================================================================
-   SCRAMBLE LINK - Webflow-style hover animation
+   SLIDE-UP LINK - Webflow-style hover animation
+   Text slides up on hover, underline slides in from left
    ============================================================================= */
 
-.scramble-link {
+.slide-up-link {
   position: relative;
   display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  gap: 4px;
   color: #333;
   text-decoration: none;
   padding: 8px 0;
@@ -449,22 +451,46 @@ body::before {
   font-size: inherit;
   font-weight: 500;
   letter-spacing: -0.01em;
-  overflow: hidden;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 
-.scramble-text {
+/* Text wrapper with overflow hidden for slide effect */
+.slide-up-text-wrapper {
+  position: relative;
   display: inline-block;
-  transition: color 0.2s ease;
+  overflow: hidden;
+  height: 1.2em;
+  line-height: 1.2em;
 }
 
-.scramble-link:hover .scramble-text {
+/* Both text layers */
+.slide-up-text {
+  display: block;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-up-text-top {
+  position: relative;
+}
+
+.slide-up-text-bottom {
+  position: absolute;
+  top: 100%;
+  left: 0;
   color: #C35F33;
 }
 
+/* On hover, slide both texts up */
+.slide-up-link:hover .slide-up-text {
+  transform: translateY(-100%);
+}
+
 /* Underline that slides in from left */
-.scramble-underline {
+.slide-up-underline {
   position: absolute;
-  bottom: 6px;
+  bottom: 4px;
   left: 0;
   height: 2px;
   width: 100%;
@@ -474,21 +500,35 @@ body::before {
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.scramble-link:hover .scramble-underline {
+.slide-up-link:hover .slide-up-underline {
   transform: scaleX(1);
 }
 
-/* Active state - always show underline */
-.scramble-link.active .scramble-text {
-  color: #C35F33;
+/* Active state - torn edge SVG background + underline */
+.slide-up-link.active {
   font-weight: 600;
 }
 
-.scramble-link.active .scramble-underline {
+.slide-up-link.active::before {
+  content: '';
+  position: absolute;
+  inset: -6px -12px;
+  background-image: url('/images/nav-active-bg.svg');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: -1;
+  opacity: 0.9;
+}
+
+.slide-up-link.active .slide-up-text-top {
+  color: #C35F33;
+}
+
+.slide-up-link.active .slide-up-underline {
   transform: scaleX(1);
 }
 
-/* Nav link fallback (for non-scramble links) */
+/* Nav link fallback (for non-slide links) */
 .nav-link-underline {
   position: relative;
   color: #333;
@@ -500,7 +540,7 @@ body::before {
 .nav-link-underline::after {
   content: '';
   position: absolute;
-  bottom: 6px;
+  bottom: 4px;
   left: 0;
   height: 2px;
   width: 100%;
@@ -521,6 +561,17 @@ body::before {
 .nav-link-underline.active {
   color: #C35F33;
   font-weight: 600;
+}
+
+.nav-link-underline.active::before {
+  content: '';
+  position: absolute;
+  inset: -6px -12px;
+  background-image: url('/images/nav-active-bg.svg');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: -1;
+  opacity: 0.9;
 }
 
 .nav-link-underline.active::after {

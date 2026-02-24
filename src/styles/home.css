@@ -572,20 +572,20 @@
   margin: 0 auto 24px;
 }
 
-/* Masonry layout - comfortable spacing */
+/* Masonry layout - spacious with larger tiles */
 .home-masonry {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 240px));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 260px));
+  gap: 32px;
   justify-content: center;
   align-content: center;
-  max-width: 850px;
+  max-width: 920px;
 }
 
 /* Staggered masonry effect for visual interest */
-.home-masonry > *:nth-child(2n) { margin-top: 20px; }
-.home-masonry > *:nth-child(3n) { margin-top: 12px; }
-.home-masonry > *:nth-child(5n) { margin-top: 28px; }
+.home-masonry > *:nth-child(2n) { margin-top: 24px; }
+.home-masonry > *:nth-child(3n) { margin-top: 16px; }
+.home-masonry > *:nth-child(5n) { margin-top: 32px; }
 
 /* Responsive */
 @media (max-width: 768px) {
