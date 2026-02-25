@@ -13,7 +13,7 @@ import {
   Poll,
   ScheduleProposal
 } from '@/components/messages'
-import TornEdge from '@/components/ui/TornEdge'
+import { TornPaperEdge } from '@/components/brand'
 
 // ============================================
 // MOCK DATA
@@ -588,7 +588,7 @@ export default function MessagesPage() {
                   <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-white/60 to-[#F2F1E5]/40">
                     <div className="relative">
                       <div className="absolute -top-2 left-4 right-4">
-                        <TornEdge variant="d" position="top" color="white" height={8} />
+                        <TornPaperEdge variant={4} position="top" color="white" height={8} />
                       </div>
                       <div className="text-center px-8 py-8 bg-white rounded-lg shadow-sm mx-4">
                         <div className="w-20 h-20 rounded-full bg-[#4A3552]/10 flex items-center justify-center mx-auto mb-4">
@@ -603,7 +603,7 @@ export default function MessagesPage() {
                         </p>
                       </div>
                       <div className="absolute -bottom-2 left-4 right-4">
-                        <TornEdge variant="c" position="bottom" color="white" height={8} />
+                        <TornPaperEdge variant={4} position="bottom" color="white" height={8} />
                       </div>
                     </div>
                   </div>

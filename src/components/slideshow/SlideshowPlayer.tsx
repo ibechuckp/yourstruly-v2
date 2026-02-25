@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   X, Play, Pause, SkipBack, SkipForward, 
   Download, Volume2, VolumeX, Maximize, Minimize,
-  Music, ChevronLeft, ChevronRight
+  Music, ChevronLeft, ChevronRight, Loader2, Check
 } from 'lucide-react'
+import Image from 'next/image'
 
 interface SlideItem {
   id: string
@@ -16,26 +17,33 @@ interface SlideItem {
   date?: string
 }
 
+interface MusicTrack {
+  id: string
+  name: string
+  url: string
+  duration?: string
+}
+
 interface SlideshowPlayerProps {
   items: SlideItem[]
   title?: string
   isOpen: boolean
   onClose: () => void
-  // Audio options
   voiceRecordingUrl?: string
   backgroundMusicUrl?: string
-  // Settings
   autoPlay?: boolean
-  slideDuration?: number // seconds
+  slideDuration?: number
   showDownload?: boolean
-  logoUrl?: string
 }
 
-// Default background music tracks
-const AMBIENT_TRACKS = [
-  '/audio/ambient-piano.mp3',
-  '/audio/soft-strings.mp3',
-  '/audio/gentle-acoustic.mp3',
+// Available music tracks
+const MUSIC_TRACKS: MusicTrack[] = [
+  { id: 'none', name: 'No Music', url: '' },
+  { id: 'piano', name: 'Gentle Piano', url: '/audio/slideshow/gentle-piano.mp3', duration: '3:24' },
+  { id: 'acoustic', name: 'Soft Acoustic', url: '/audio/slideshow/soft-acoustic.mp3', duration: '2:58' },
+  { id: 'strings', name: 'Warm Strings', url: '/audio/slideshow/warm-strings.mp3', duration: '4:12' },
+  { id: 'memories', name: 'Precious Memories', url: '/audio/slideshow/precious-memories.mp3', duration: '3:45' },
+  { id: 'family', name: 'Family Moments', url: '/audio/slideshow/family-moments.mp3', duration: '3:30' },
 ]
 
 export default function SlideshowPlayer({
@@ -48,45 +56,48 @@ export default function SlideshowPlayer({
   autoPlay = true,
   slideDuration = 5,
   showDownload = true,
-  logoUrl = '/images/yourstruly-logo.svg',
 }: SlideshowPlayerProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(autoPlay)
   const [isMuted, setIsMuted] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [showMusicPicker, setShowMusicPicker] = useState(false)
+  const [selectedTrack, setSelectedTrack] = useState<MusicTrack>(
+    backgroundMusicUrl 
+      ? { id: 'custom', name: 'Custom', url: backgroundMusicUrl }
+      : MUSIC_TRACKS[0]
+  )
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportProgress, setExportProgress] = useState(0)
   
   const containerRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
   const voiceRef = useRef<HTMLAudioElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const progressRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Total slides including final logo slide
   const totalSlides = items.length + 1
   const isLastSlide = currentIndex === items.length
 
   // Handle slide progression
   useEffect(() => {
-    if (!isOpen || !isPlaying) return
+    if (!isOpen || !isPlaying || isExporting) return
 
-    // Clear any existing timers
     if (timerRef.current) clearTimeout(timerRef.current)
     if (progressRef.current) clearInterval(progressRef.current)
 
-    // Progress bar animation
     setProgress(0)
-    const progressStep = 100 / (slideDuration * 20) // Update 20 times per second
+    const progressStep = 100 / (slideDuration * 20)
     progressRef.current = setInterval(() => {
       setProgress(prev => Math.min(prev + progressStep, 100))
     }, 50)
 
-    // Auto-advance timer
     timerRef.current = setTimeout(() => {
       if (currentIndex < items.length) {
         setCurrentIndex(prev => prev + 1)
       } else {
-        // End of slideshow - loop or stop
         setIsPlaying(false)
       }
     }, slideDuration * 1000)
@@ -95,23 +106,23 @@ export default function SlideshowPlayer({
       if (timerRef.current) clearTimeout(timerRef.current)
       if (progressRef.current) clearInterval(progressRef.current)
     }
-  }, [currentIndex, isPlaying, isOpen, slideDuration, items.length])
+  }, [currentIndex, isPlaying, isOpen, slideDuration, items.length, isExporting])
 
   // Handle audio playback
   useEffect(() => {
     if (!isOpen) return
 
-    // Play voice recording if available, otherwise background music
     const audio = voiceRecordingUrl ? voiceRef.current : audioRef.current
-    if (audio) {
+    if (audio && selectedTrack.url) {
       audio.muted = isMuted
-      if (isPlaying) {
+      audio.src = selectedTrack.url
+      if (isPlaying && !isExporting) {
         audio.play().catch(() => {})
       } else {
         audio.pause()
       }
     }
-  }, [isOpen, isPlaying, isMuted, voiceRecordingUrl])
+  }, [isOpen, isPlaying, isMuted, voiceRecordingUrl, selectedTrack, isExporting])
 
   // Cleanup on close
   useEffect(() => {
@@ -119,6 +130,8 @@ export default function SlideshowPlayer({
       setCurrentIndex(0)
       setProgress(0)
       setIsPlaying(autoPlay)
+      setShowMusicPicker(false)
+      setIsExporting(false)
       if (audioRef.current) audioRef.current.pause()
       if (voiceRef.current) voiceRef.current.pause()
     }
@@ -126,7 +139,7 @@ export default function SlideshowPlayer({
 
   // Keyboard controls
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen || isExporting) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
@@ -154,7 +167,7 @@ export default function SlideshowPlayer({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, isExporting])
 
   const goToPrevious = useCallback(() => {
     setCurrentIndex(prev => Math.max(0, prev - 1))
@@ -178,21 +191,177 @@ export default function SlideshowPlayer({
     }
   }, [])
 
-  const handleDownload = useCallback(async () => {
-    // TODO: Generate and download video slideshow
-    // For now, download current image
-    const currentItem = items[currentIndex]
-    if (currentItem && !isLastSlide) {
-      const link = document.createElement('a')
-      link.href = currentItem.url
-      link.download = `${title || 'slideshow'}-${currentIndex + 1}.jpg`
-      link.click()
+  // Export as MP4
+  const handleExport = useCallback(async () => {
+    if (items.length === 0) return
+    
+    setIsExporting(true)
+    setExportProgress(0)
+    setIsPlaying(false)
+
+    try {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('Could not get canvas context')
+
+      // Set video dimensions
+      canvas.width = 1920
+      canvas.height = 1080
+
+      // Prepare MediaRecorder
+      const stream = canvas.captureStream(30)
+      
+      // Add audio track if music selected
+      if (selectedTrack.url && audioRef.current) {
+        try {
+          const audioCtx = new AudioContext()
+          const source = audioCtx.createMediaElementSource(audioRef.current)
+          const dest = audioCtx.createMediaStreamDestination()
+          source.connect(dest)
+          source.connect(audioCtx.destination)
+          stream.addTrack(dest.stream.getAudioTracks()[0])
+        } catch (e) {
+          console.log('Could not add audio track:', e)
+        }
+      }
+
+      const chunks: Blob[] = []
+      const recorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp9',
+        videoBitsPerSecond: 5000000
+      })
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data)
+      }
+
+      const recordingComplete = new Promise<void>((resolve) => {
+        recorder.onstop = () => resolve()
+      })
+
+      recorder.start()
+
+      // Load and draw all images
+      const loadImage = (url: string): Promise<HTMLImageElement> => {
+        return new Promise((resolve, reject) => {
+          const img = document.createElement('img')
+          img.crossOrigin = 'anonymous'
+          img.onload = () => resolve(img)
+          img.onerror = reject
+          img.src = url
+        })
+      }
+
+      // Draw each slide
+      for (let i = 0; i <= items.length; i++) {
+        setExportProgress(Math.round((i / (items.length + 1)) * 100))
+
+        if (i < items.length) {
+          // Photo slide
+          const item = items[i]
+          try {
+            const img = await loadImage(item.url)
+            
+            // Fill background
+            ctx.fillStyle = '#000000'
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+            // Calculate dimensions to fit image
+            const scale = Math.min(
+              canvas.width / img.width,
+              canvas.height / img.height
+            ) * 0.85
+
+            const w = img.width * scale
+            const h = img.height * scale
+            const x = (canvas.width - w) / 2
+            const y = (canvas.height - h) / 2
+
+            // Draw rounded rectangle clip path
+            ctx.save()
+            ctx.beginPath()
+            const radius = 16
+            ctx.roundRect(x, y, w, h, radius)
+            ctx.clip()
+            ctx.drawImage(img, x, y, w, h)
+            ctx.restore()
+
+            // Draw title if exists
+            if (item.title || item.date) {
+              ctx.fillStyle = 'rgba(0,0,0,0.5)'
+              ctx.fillRect(0, canvas.height - 120, canvas.width, 120)
+              
+              ctx.fillStyle = '#ffffff'
+              ctx.font = 'bold 32px sans-serif'
+              ctx.textAlign = 'center'
+              if (item.title) {
+                ctx.fillText(item.title, canvas.width / 2, canvas.height - 70)
+              }
+              if (item.date) {
+                ctx.font = '24px sans-serif'
+                ctx.fillStyle = 'rgba(255,255,255,0.7)'
+                ctx.fillText(item.date, canvas.width / 2, canvas.height - 35)
+              }
+            }
+          } catch (e) {
+            console.error('Failed to load image:', item.url, e)
+            ctx.fillStyle = '#1a1a1a'
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+          }
+        } else {
+          // Final logo slide
+          // Brand gradient background
+          const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
+          gradient.addColorStop(0, '#F2F1E5')
+          gradient.addColorStop(0.5, '#E8E4D6')
+          gradient.addColorStop(1, '#DED8C8')
+          ctx.fillStyle = gradient
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+          // Draw logo text (since we can't easily load SVG)
+          ctx.fillStyle = '#406A56'
+          ctx.font = 'italic bold 72px Georgia, serif'
+          ctx.textAlign = 'center'
+          ctx.fillText('YoursTruly', canvas.width / 2, canvas.height / 2 - 20)
+          
+          ctx.fillStyle = '#406A56'
+          ctx.globalAlpha = 0.6
+          ctx.font = '28px sans-serif'
+          ctx.fillText('Document Your Life', canvas.width / 2, canvas.height / 2 + 40)
+          
+          ctx.globalAlpha = 0.4
+          ctx.font = '20px sans-serif'
+          ctx.fillText('yourstruly.love', canvas.width / 2, canvas.height / 2 + 80)
+          ctx.globalAlpha = 1
+        }
+
+        // Hold each frame for slide duration
+        await new Promise(resolve => setTimeout(resolve, slideDuration * 1000))
+      }
+
+      recorder.stop()
+      await recordingComplete
+
+      // Create download link
+      const blob = new Blob(chunks, { type: 'video/webm' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${title || 'slideshow'}-${Date.now()}.webm`
+      a.click()
+      URL.revokeObjectURL(url)
+
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert('Export failed. Please try again.')
+    } finally {
+      setIsExporting(false)
+      setExportProgress(0)
     }
-  }, [currentIndex, items, isLastSlide, title])
+  }, [items, title, slideDuration, selectedTrack])
 
   if (!isOpen) return null
 
-  // Handle empty items array
   if (items.length === 0) {
     return (
       <motion.div
@@ -223,11 +392,22 @@ export default function SlideshowPlayer({
       className="fixed inset-0 z-50 bg-black flex flex-col"
     >
       {/* Audio Elements */}
-      {backgroundMusicUrl && (
-        <audio ref={audioRef} src={backgroundMusicUrl} loop />
-      )}
-      {voiceRecordingUrl && (
-        <audio ref={voiceRef} src={voiceRecordingUrl} />
+      <audio ref={audioRef} loop />
+      {voiceRecordingUrl && <audio ref={voiceRef} src={voiceRecordingUrl} />}
+
+      {/* Export Progress Overlay */}
+      {isExporting && (
+        <div className="absolute inset-0 z-50 bg-black/80 flex flex-col items-center justify-center">
+          <Loader2 className="w-12 h-12 text-white animate-spin mb-4" />
+          <p className="text-white text-lg mb-2">Creating your video...</p>
+          <div className="w-64 h-2 bg-white/20 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-[#406A56] transition-all duration-300"
+              style={{ width: `${exportProgress}%` }}
+            />
+          </div>
+          <p className="text-white/60 text-sm mt-2">{exportProgress}%</p>
+        </div>
       )}
 
       {/* Header */}
@@ -240,9 +420,7 @@ export default function SlideshowPlayer({
             >
               <X size={20} />
             </button>
-            {title && (
-              <h2 className="text-white font-semibold">{title}</h2>
-            )}
+            {title && <h2 className="text-white font-semibold">{title}</h2>}
           </div>
           
           <div className="flex items-center gap-2">
@@ -257,22 +435,31 @@ export default function SlideshowPlayer({
       <div className="flex-1 flex items-center justify-center relative overflow-hidden">
         <AnimatePresence mode="wait">
           {isLastSlide ? (
-            // Final Logo Slide
+            // Final Logo Slide - Brand background with centered logo
             <motion.div
               key="logo"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.1 }}
               transition={{ duration: 0.5 }}
-              className="flex flex-col items-center justify-center gap-6"
+              className="absolute inset-0 flex flex-col items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, #F2F1E5 0%, #E8E4D6 50%, #DED8C8 100%)'
+              }}
             >
-              <img 
-                src={logoUrl} 
-                alt="YoursTruly" 
-                className="w-48 h-auto opacity-90"
-              />
-              <p className="text-white/60 text-lg">Document Your Life</p>
-              <p className="text-white/40 text-sm">yourstruly.love</p>
+              <div className="text-center">
+                <h1 
+                  className="text-6xl md:text-7xl font-bold italic mb-4"
+                  style={{ 
+                    color: '#406A56',
+                    fontFamily: 'Georgia, serif'
+                  }}
+                >
+                  YoursTruly
+                </h1>
+                <p className="text-xl text-[#406A56]/60 mb-2">Document Your Life</p>
+                <p className="text-sm text-[#406A56]/40">yourstruly.love</p>
+              </div>
             </motion.div>
           ) : (
             // Photo Slide
@@ -290,7 +477,6 @@ export default function SlideshowPlayer({
                 className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
               />
               
-              {/* Photo Info Overlay */}
               {(currentItem?.title || currentItem?.date) && (
                 <div className="absolute bottom-16 left-0 right-0 px-8">
                   <div className="bg-black/40 backdrop-blur-sm rounded-lg p-4 max-w-md mx-auto text-center">
@@ -299,9 +485,6 @@ export default function SlideshowPlayer({
                     )}
                     {currentItem?.date && (
                       <p className="text-white/70 text-sm">{currentItem.date}</p>
-                    )}
-                    {currentItem?.description && (
-                      <p className="text-white/60 text-sm mt-2">{currentItem.description}</p>
                     )}
                   </div>
                 </div>
@@ -326,6 +509,59 @@ export default function SlideshowPlayer({
           <ChevronRight size={24} />
         </button>
       </div>
+
+      {/* Music Picker Modal */}
+      <AnimatePresence>
+        {showMusicPicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-30 bg-black/80 flex items-center justify-center p-4"
+            onClick={() => setShowMusicPicker(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#1a1a1a] rounded-2xl p-6 max-w-sm w-full"
+              onClick={e => e.stopPropagation()}
+            >
+              <h3 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
+                <Music size={20} />
+                Select Music
+              </h3>
+              <div className="space-y-2">
+                {MUSIC_TRACKS.map(track => (
+                  <button
+                    key={track.id}
+                    onClick={() => {
+                      setSelectedTrack(track)
+                      setShowMusicPicker(false)
+                    }}
+                    className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
+                      selectedTrack.id === track.id
+                        ? 'bg-[#406A56] text-white'
+                        : 'bg-white/5 hover:bg-white/10 text-white/80'
+                    }`}
+                  >
+                    <span>{track.name}</span>
+                    <div className="flex items-center gap-2">
+                      {track.duration && (
+                        <span className="text-sm opacity-60">{track.duration}</span>
+                      )}
+                      {selectedTrack.id === track.id && <Check size={16} />}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <p className="text-white/40 text-xs mt-4 text-center">
+                Music will play during the slideshow
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Progress Bar */}
       <div className="absolute bottom-20 left-8 right-8">
@@ -378,6 +614,17 @@ export default function SlideshowPlayer({
 
           <div className="w-px h-6 bg-white/20 mx-2" />
 
+          {/* Music Button */}
+          <button
+            onClick={() => setShowMusicPicker(true)}
+            className={`p-2 rounded-full hover:bg-white/10 transition-colors ${
+              selectedTrack.id !== 'none' ? 'text-[#406A56]' : 'text-white'
+            }`}
+            title="Select music"
+          >
+            <Music size={20} />
+          </button>
+
           <button
             onClick={() => setIsMuted(prev => !prev)}
             className="p-2 rounded-full hover:bg-white/10 text-white transition-colors"
@@ -394,9 +641,10 @@ export default function SlideshowPlayer({
 
           {showDownload && (
             <button
-              onClick={handleDownload}
-              className="p-2 rounded-full hover:bg-white/10 text-white transition-colors"
-              title="Download"
+              onClick={handleExport}
+              disabled={isExporting}
+              className="p-2 rounded-full hover:bg-white/10 text-white transition-colors disabled:opacity-50"
+              title="Export as video"
             >
               <Download size={20} />
             </button>

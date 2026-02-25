@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Search, MessageSquare, Brain, Users, CircleDot, LucideIcon } from 'lucide-react'
 import ConversationItem from './ConversationItem'
 import { Conversation } from './types'
-import TornEdge from '@/components/ui/TornEdge'
+import { TornPaperEdge } from '@/components/brand'
 
 type FilterType = 'all' | 'memory-threads' | 'direct' | 'circles'
 
@@ -93,8 +93,8 @@ export default function ConversationList({
               </button>
               {/* Torn bottom edge */}
               <div className="absolute -bottom-[6px] left-0 right-0">
-                <TornEdge 
-                  variant={(['a', 'b', 'c', 'd', 'e'] as const)[index % 5]} 
+                <TornPaperEdge 
+                  variant={4}
                   position="bottom" 
                   color={filter === id ? '#406A56' : '#F8F6EE'} 
                   height={8} 

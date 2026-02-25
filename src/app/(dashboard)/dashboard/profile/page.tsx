@@ -10,8 +10,6 @@ import {
 import Link from 'next/link'
 import '@/styles/home.css'
 import '@/styles/page-styles.css'
-import TornEdge from '@/components/ui/TornEdge'
-import { TornEdgeDecoration } from '@/components/ui/TornPaper'
 import { TornPaperEdge, YellowFlower, BlueHeart, OrangeStar } from '@/components/brand'
 import EssenceFingerprintLoader from '@/components/profile/EssenceFingerprintLoader'
 import VoiceCloneButton from '@/components/profile/VoiceCloneButton'

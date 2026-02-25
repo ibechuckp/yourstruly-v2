@@ -1,4 +1,4 @@
-export { default as TornPaperEdge, TornPaperCard } from './TornPaperEdge'
+export { default as TornPaperEdge, TornPaperCard, BrandTornEdge, TornPaperDivider } from './TornPaperEdge'
 export { 
   YellowFlower, 
   BlueHeart, 
