@@ -141,6 +141,32 @@ export default function GalleryPage() {
     return albums.slice(0, 6)
   }, [media])
 
+  // Helper to get photos for an album
+  const getAlbumPhotos = useCallback((albumName: string, albumType: 'location' | 'time' | 'recent'): MediaItem[] => {
+    if (albumType === 'location') {
+      return media.filter(m => m.memory?.location_name === albumName)
+    }
+    if (albumType === 'time') {
+      const yearMatch = albumName.match(/Year (\d{4})/)
+      if (yearMatch) {
+        const year = parseInt(yearMatch[1])
+        return media.filter(m => m.taken_at && new Date(m.taken_at).getFullYear() === year)
+      }
+    }
+    if (albumType === 'recent') {
+      return media.slice(0, 20)
+    }
+    return []
+  }, [media])
+
+  // Open slideshow for an album
+  const openAlbumSlideshow = useCallback((albumName: string, albumType: 'location' | 'time' | 'recent') => {
+    const photos = getAlbumPhotos(albumName, albumType)
+    if (photos.length > 0) {
+      setSlideshowAlbum({ name: albumName, photos })
+    }
+  }, [getAlbumPhotos])
+
   const loadMedia = useCallback(async () => {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -371,13 +397,9 @@ export default function GalleryPage() {
                     cover: album.cover,
                     count: album.count,
                     type: album.type,
-                    images: album.type === 'location'
-                      ? media.filter(m => m.memory?.location_name === album.name).map(m => m.file_url)
-                      : album.type === 'time'
-                      ? media.filter(m => m.taken_at && new Date(m.taken_at).getFullYear().toString() === album.name.replace('Year ', '')).map(m => m.file_url)
-                      : media.slice(0, 20).map(m => m.file_url)
+                    images: getAlbumPhotos(album.name, album.type).map(m => m.file_url)
                   }))}
-                  onAlbumClick={(album) => console.log('Album clicked:', album)}
+                  onAlbumClick={(album) => openAlbumSlideshow(album.name, album.type as 'location' | 'time' | 'recent')}
                 />
               </div>
             )}
@@ -395,18 +417,7 @@ export default function GalleryPage() {
                     <div
                       key={i}
                       className="bubble-tile glass-card group cursor-pointer overflow-hidden"
-                      onClick={() => {
-                        // Get all photos for this album
-                        const albumPhotos = media.filter(m => {
-                          if (album.name.match(/^\d{4}$/)) {
-                            // Year album
-                            return m.taken_at && new Date(m.taken_at).getFullYear() === parseInt(album.name)
-                          }
-                          // Location album
-                          return m.location === album.name
-                        })
-                        setSlideshowAlbum({ name: album.name, photos: albumPhotos })
-                      }}
+                      onClick={() => openAlbumSlideshow(album.name, album.type)}
                     >
                       <div className="aspect-square rounded-xl overflow-hidden mb-2 relative">
                         <img
@@ -589,8 +600,8 @@ export default function GalleryPage() {
         items={(slideshowAlbum?.photos || []).map(p => ({
           id: p.id,
           url: p.file_url,
-          title: p.caption,
-          description: p.location,
+          title: p.memory?.title,
+          description: p.memory?.location_name,
           date: p.taken_at ? new Date(p.taken_at).toLocaleDateString('en-US', { 
             year: 'numeric', 
             month: 'long', 
@@ -598,6 +609,7 @@ export default function GalleryPage() {
           }) : undefined
         }))}
         slideDuration={4}
+        autoPlay={true}
       />
     </div>
   )

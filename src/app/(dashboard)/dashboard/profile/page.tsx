@@ -260,7 +260,7 @@ export default function ProfilePage() {
         {tornEdge && (
           <div className="-mx-5 mt-3">
             <TornPaperEdge 
-              variant={(title.charCodeAt(0) % 6 + 1) as 1|2|3|4|5|6}
+              variant={4}
               color="#E8DFD0"
               height={18}
             />

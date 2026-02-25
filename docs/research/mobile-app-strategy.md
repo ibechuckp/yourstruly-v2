@@ -1865,12 +1865,21 @@ const uri = recording.getURI();
 - Feature-complete beta build
 - Native share working
 
-### Phase 3: Widgets & Polish (Weeks 7-8)
+### Phase 3: Widgets & Watch (Weeks 7-8)
 
-**Goal:** Engagement features + polish
+**Goal:** Engagement features + wearables + polish
 
 - [ ] iOS home screen widgets (3 sizes)
-- [ ] Android home screen widgets
+- [ ] Android home screen widgets  
+- [ ] **Apple Watch App**
+  - [ ] Quick voice capture (tap to record memory)
+  - [ ] Daily engagement prompt notification
+  - [ ] Streak counter complication
+  - [ ] "On This Day" memory glance
+- [ ] **Apple Watch Complications**
+  - [ ] Streak counter (circular)
+  - [ ] Quick capture shortcut
+  - [ ] Memory of the day thumbnail
 - [ ] App Clips / Instant Apps (invitation flow)
 - [ ] Performance optimization
 - [ ] Accessibility audit
@@ -1879,6 +1888,7 @@ const uri = recording.getURI();
 **Deliverables:**
 - Production-ready build
 - Widget variations complete
+- WatchOS app with complications
 
 ### Phase 4: Launch Prep (Weeks 9-10)
 

@@ -122,7 +122,7 @@ export default function DashboardPage() {
   
   const supabase = createClient()
   const { subscription } = useSubscription()
-  const { prompts: rawPrompts, isLoading, shuffle, answerPrompt, skipPrompt } = useEngagementPrompts(8)
+  const { prompts: rawPrompts, isLoading, shuffle, answerPrompt, skipPrompt, stats: engagementStats } = useEngagementPrompts(8)
   
   // Track locally answered prompts (to remove from display without full refetch)
   const [answeredPromptIds, setAnsweredPromptIds] = useState<string[]>([])
@@ -599,6 +599,22 @@ export default function DashboardPage() {
             </Link>
           </div>
           
+          {/* Streak Counter */}
+          {engagementStats?.currentStreakDays > 0 && (
+            <div className="flex items-center justify-center gap-2 mt-4 px-4 py-2 bg-gradient-to-r from-[#D9C61A]/10 to-[#C35F33]/10 rounded-xl">
+              <span className="text-xl">🔥</span>
+              <div className="text-center">
+                <div className="text-lg font-bold text-[#C35F33]">{engagementStats.currentStreakDays}</div>
+                <div className="text-[10px] text-[#406A56]/60 uppercase tracking-wide">Day Streak</div>
+              </div>
+              {engagementStats.longestStreakDays > engagementStats.currentStreakDays && (
+                <div className="text-xs text-[#406A56]/50 ml-2">
+                  Best: {engagementStats.longestStreakDays}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Upcoming Birthdays */}
           {upcomingEvents.length > 0 && (
             <div className="profile-events">
@@ -924,6 +940,15 @@ export default function DashboardPage() {
           {/* Quick Action Links */}
           <div className="quick-actions mt-8 flex items-center justify-center gap-6">
             <button
+              onClick={() => shuffle()}
+              className="quick-action-btn"
+            >
+              <div className="quick-action-icon">
+                <RefreshCw size={20} />
+              </div>
+              <span>Shuffle</span>
+            </button>
+            <button
               onClick={() => setShowPhotoUpload(true)}
               className="quick-action-btn"
             >
@@ -939,7 +964,7 @@ export default function DashboardPage() {
               <div className="quick-action-icon">
                 <FileText size={20} />
               </div>
-              <span>Add Post script</span>
+              <span>PostScript</span>
             </button>
             <button
               onClick={() => setShowContactModal(true)}

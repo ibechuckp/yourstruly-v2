@@ -192,6 +192,26 @@ export default function SlideshowPlayer({
 
   if (!isOpen) return null
 
+  // Handle empty items array
+  if (items.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center"
+      >
+        <p className="text-white/60 text-lg mb-4">No photos in this album</p>
+        <button
+          onClick={onClose}
+          className="px-6 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+        >
+          Close
+        </button>
+      </motion.div>
+    )
+  }
+
   const currentItem = items[currentIndex]
 
   return (
