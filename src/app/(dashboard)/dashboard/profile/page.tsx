@@ -12,6 +12,7 @@ import '@/styles/home.css'
 import '@/styles/page-styles.css'
 import TornEdge from '@/components/ui/TornEdge'
 import { TornEdgeDecoration } from '@/components/ui/TornPaper'
+import { TornPaperEdge, YellowFlower, BlueHeart, OrangeStar } from '@/components/brand'
 import EssenceFingerprintLoader from '@/components/profile/EssenceFingerprintLoader'
 import VoiceCloneButton from '@/components/profile/VoiceCloneButton'
 import { generateEssenceVector, hasProfileData } from '@/lib/essence'
@@ -257,12 +258,11 @@ export default function ProfilePage() {
           {children}
         </div>
         {tornEdge && (
-          <div className="-mx-5 mt-3 overflow-hidden">
-            <TornEdgeDecoration 
+          <div className="-mx-5 mt-3">
+            <TornPaperEdge 
+              variant={(title.charCodeAt(0) % 6 + 1) as 1|2|3|4|5|6}
               color="#E8DFD0"
-              height={14}
-              intensity={6}
-              seed={title.charCodeAt(0) * 100}
+              height={18}
             />
           </div>
         )}
