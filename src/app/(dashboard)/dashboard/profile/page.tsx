@@ -11,6 +11,7 @@ import Link from 'next/link'
 import '@/styles/home.css'
 import '@/styles/page-styles.css'
 import TornEdge from '@/components/ui/TornEdge'
+import { TornEdgeDecoration } from '@/components/ui/TornPaper'
 import EssenceFingerprintLoader from '@/components/profile/EssenceFingerprintLoader'
 import VoiceCloneButton from '@/components/profile/VoiceCloneButton'
 import { generateEssenceVector, hasProfileData } from '@/lib/essence'
@@ -256,12 +257,12 @@ export default function ProfilePage() {
           {children}
         </div>
         {tornEdge && (
-          <div className="-mx-5 mt-2">
-            <TornEdge 
-              variant={tornVariants[title.charCodeAt(0) % tornVariants.length]} 
-              position="bottom" 
-              color="#D4B896"
-              height={16} 
+          <div className="-mx-5 mt-3 overflow-hidden">
+            <TornEdgeDecoration 
+              color="#E8DFD0"
+              height={14}
+              intensity={6}
+              seed={title.charCodeAt(0) * 100}
             />
           </div>
         )}

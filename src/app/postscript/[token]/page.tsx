@@ -138,12 +138,17 @@ export default function PostScriptRecipientPage({ params }: { params: Promise<{ 
 
   if (error || !postscript) {
     return (
-      <div className="min-h-screen home-background flex items-center justify-center p-4">
-        <div className="glass-card glass-card-strong p-8 max-w-md text-center">
-          <Heart className="w-12 h-12 mx-auto mb-4 text-red-400" />
+      <div className="min-h-screen flex items-center justify-center p-4" style={{
+        background: 'linear-gradient(135deg, #F2F1E5 0%, #E8E4D6 50%, #DED8C8 100%)'
+      }}>
+        <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-8 max-w-md text-center shadow-xl border border-white/50">
+          <Heart className="w-12 h-12 mx-auto mb-4 text-[#C35F33]" />
           <h1 className="text-xl font-semibold text-[#2d2d2d] mb-2">Oops!</h1>
-          <p className="text-gray-600">{error}</p>
-          <Link href="/" className="inline-block mt-6 text-[#406A56] hover:underline">
+          <p className="text-gray-600 mb-6">{error || 'This PostScript was not found.'}</p>
+          <Link 
+            href="/" 
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#406A56] text-white rounded-xl hover:bg-[#4a7a64] transition-colors"
+          >
             Go to YoursTruly
           </Link>
         </div>
