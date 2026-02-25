@@ -239,7 +239,7 @@ export default function ProfilePage() {
     tornEdge?: boolean
   }) => (
     <div className="relative mb-4">
-      <div className="glass-card-page p-5 group relative">
+      <div className={`glass-card-page p-5 group relative ${tornEdge ? 'pb-0 rounded-b-none' : ''}`}>
         <button
           onClick={() => openEdit(section)}
           className="absolute top-4 right-4 p-2 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all z-10"
@@ -252,18 +252,20 @@ export default function ProfilePage() {
           </div>
           <h3 className="font-semibold text-[#2d2d2d]">{title}</h3>
         </div>
-        {children}
-      </div>
-      {tornEdge && (
-        <div className="absolute bottom-0 left-2 right-2 translate-y-[6px]">
-          <TornEdge 
-            variant={tornVariants[title.charCodeAt(0) % tornVariants.length]} 
-            position="bottom" 
-            color="rgba(255,255,255,0.8)" 
-            height={6} 
-          />
+        <div className={tornEdge ? 'pb-4' : ''}>
+          {children}
         </div>
-      )}
+        {tornEdge && (
+          <div className="-mx-5 mt-2">
+            <TornEdge 
+              variant={tornVariants[title.charCodeAt(0) % tornVariants.length]} 
+              position="bottom" 
+              color="#D4B896"
+              height={16} 
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 
