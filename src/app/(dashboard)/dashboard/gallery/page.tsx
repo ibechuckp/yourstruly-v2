@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { ChevronLeft, Image as ImageIcon, MapPin, Plus, Users, PawPrint, Upload, Scan, X } from 'lucide-react'
+import { ChevronLeft, Image as ImageIcon, MapPin, Plus, Users, PawPrint, Upload, Scan, X, Play } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
@@ -11,6 +11,7 @@ import DigitizeModal from '@/components/gallery/DigitizeModal'
 import PhotoMetadataModal from '@/components/gallery/PhotoMetadataModal'
 import PhotoPreviewPanel from '@/components/gallery/PhotoPreviewPanel'
 import OrbitalCarousel from '@/components/gallery/OrbitalCarousel'
+import { SlideshowPlayer, PlayButtonOverlay } from '@/components/slideshow'
 import '@/styles/page-styles.css'
 import '@/styles/gallery.css'
 
@@ -34,6 +35,7 @@ export default function GalleryPage() {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [showDigitizeModal, setShowDigitizeModal] = useState(false)
   const [editingMedia, setEditingMedia] = useState<MediaItem | null>(null)
+  const [slideshowAlbum, setSlideshowAlbum] = useState<{ name: string; photos: MediaItem[] } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
@@ -393,6 +395,18 @@ export default function GalleryPage() {
                     <div
                       key={i}
                       className="bubble-tile glass-card group cursor-pointer overflow-hidden"
+                      onClick={() => {
+                        // Get all photos for this album
+                        const albumPhotos = media.filter(m => {
+                          if (album.name.match(/^\d{4}$/)) {
+                            // Year album
+                            return m.taken_at && new Date(m.taken_at).getFullYear() === parseInt(album.name)
+                          }
+                          // Location album
+                          return m.location === album.name
+                        })
+                        setSlideshowAlbum({ name: album.name, photos: albumPhotos })
+                      }}
                     >
                       <div className="aspect-square rounded-xl overflow-hidden mb-2 relative">
                         <img
@@ -407,6 +421,12 @@ export default function GalleryPage() {
                         </div>
                         <div className="absolute top-2 right-2 w-6 h-6 bg-white/20 backdrop-blur rounded-full flex items-center justify-center">
                           <MapPin size={12} className="text-white" />
+                        </div>
+                        {/* Play button overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                            <Play size={20} className="text-[#406A56] ml-0.5" />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -560,6 +580,25 @@ export default function GalleryPage() {
           }}
         />
       )}
+
+      {/* Album Slideshow Player */}
+      <SlideshowPlayer
+        isOpen={!!slideshowAlbum}
+        onClose={() => setSlideshowAlbum(null)}
+        title={slideshowAlbum?.name}
+        items={(slideshowAlbum?.photos || []).map(p => ({
+          id: p.id,
+          url: p.file_url,
+          title: p.caption,
+          description: p.location,
+          date: p.taken_at ? new Date(p.taken_at).toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          }) : undefined
+        }))}
+        slideDuration={4}
+      />
     </div>
   )
 }

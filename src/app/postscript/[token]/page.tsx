@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Heart, Calendar, User, Gift, Video, Paperclip, ArrowLeft } from 'lucide-react'
 import { EnvelopeMessage } from '@/components/postscripts'
 import Link from 'next/link'
@@ -33,8 +32,6 @@ export default function PostScriptRecipientPage({ params }: { params: Promise<{ 
   const [error, setError] = useState<string | null>(null)
   const [envelopeOpened, setEnvelopeOpened] = useState(false)
   const [showFullContent, setShowFullContent] = useState(false)
-  
-  const supabase = createClient()
 
   useEffect(() => {
     loadPostScript()
@@ -42,60 +39,36 @@ export default function PostScriptRecipientPage({ params }: { params: Promise<{ 
 
   const loadPostScript = async () => {
     try {
-      // Fetch postscript by access token
-      const { data, error: fetchError } = await supabase
-        .from('postscripts')
-        .select(`
-          id,
-          title,
-          message,
-          delivery_date,
-          has_gift,
-          gift_type,
-          gift_details,
-          video_url,
-          status,
-          opened_at,
-          sender:profiles!postscripts_user_id_fkey(
-            full_name,
-            avatar_url
-          ),
-          postscript_attachments(
-            id,
-            file_url,
-            file_type,
-            file_name
-          )
-        `)
-        .eq('access_token', token)
-        .single()
+      // Fetch postscript via API (bypasses RLS for public access)
+      const res = await fetch(`/api/postscripts/view/${token}`)
+      const data = await res.json()
 
-      if (fetchError || !data) {
-        setError('This PostScript was not found or the link has expired.')
+      if (!res.ok || !data.postscript) {
+        setError(data.error || 'This PostScript was not found or the link has expired.')
         setLoading(false)
         return
       }
 
+      const ps = data.postscript
+
       // Check if already opened
-      if (data.opened_at) {
+      if (ps.opened_at) {
         setEnvelopeOpened(true)
         setShowFullContent(true)
       }
 
-      const sender = Array.isArray(data.sender) ? data.sender[0] : data.sender
-
       setPostscript({
-        id: data.id,
-        title: data.title,
-        message: data.message || '',
-        sender_name: sender?.full_name || 'Someone special',
-        sender_avatar: sender?.avatar_url,
-        delivery_date: data.delivery_date,
-        has_gift: data.has_gift,
-        gift_type: data.gift_type,
-        gift_details: data.gift_details,
-        video_url: data.video_url,
-        attachments: data.postscript_attachments
+        id: ps.id,
+        title: ps.title,
+        message: ps.message || '',
+        sender_name: ps.sender_name,
+        sender_avatar: ps.sender_avatar,
+        delivery_date: ps.delivery_date,
+        has_gift: ps.has_gift,
+        gift_type: ps.gift_type,
+        gift_details: ps.gift_details,
+        video_url: ps.video_url,
+        attachments: ps.attachments
       })
     } catch (err) {
       console.error('Error loading postscript:', err)
@@ -108,15 +81,13 @@ export default function PostScriptRecipientPage({ params }: { params: Promise<{ 
   const handleEnvelopeOpen = async () => {
     setEnvelopeOpened(true)
     
-    // Mark as opened in database
+    // Mark as opened via API
     if (postscript) {
-      await supabase
-        .from('postscripts')
-        .update({ 
-          status: 'opened',
-          opened_at: new Date().toISOString()
-        })
-        .eq('id', postscript.id)
+      try {
+        await fetch(`/api/postscripts/view/${token}`, { method: 'POST' })
+      } catch (err) {
+        console.error('Error marking as opened:', err)
+      }
     }
     
     // Show full content after animation
