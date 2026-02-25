@@ -62,8 +62,8 @@ const ACTIVITY_ICONS: Record<string, { icon: typeof Heart; color: string; bg: st
   circle_content: { icon: Heart, color: 'text-[#C35F33]', bg: 'bg-[#C35F33]/10' },
   wisdom_comment: { icon: MessageCircle, color: 'text-[#4A3552]', bg: 'bg-[#4A3552]/10' },
   xp_earned: { icon: Zap, color: 'text-[#406A56]', bg: 'bg-[#406A56]/10' },
-  photo_backstory: { icon: Camera, color: 'text-[#C35F33]', bg: 'bg-[#C35F33]/10' },
-  knowledge: { icon: Brain, color: 'text-[#4A3552]', bg: 'bg-[#4A3552]/10' },
+  photo_backstory: { icon: Camera, color: 'text-[#D9C61A]', bg: 'bg-[#D9C61A]/15' },
+  knowledge: { icon: Brain, color: 'text-[#C35F33]', bg: 'bg-[#C35F33]/10' },
   quick_question: { icon: Users, color: 'text-[#406A56]', bg: 'bg-[#406A56]/10' },
   missing_info: { icon: Users, color: 'text-[#8DACAB]', bg: 'bg-[#8DACAB]/15' },
 }

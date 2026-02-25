@@ -3,25 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-
-interface MediaItem {
-  id: string
-  file_url: string
-  file_type: string
-  location_lat: number | null
-  location_lng: number | null
-  exif_lat: number | null
-  exif_lng: number | null
-  taken_at: string | null
-  memory_id: string
-  memory?: {
-    id: string
-    title: string
-    location_name: string
-    location_lat: number | null
-    location_lng: number | null
-  }
-}
+import { GalleryMediaItem as MediaItem } from '@/types/gallery'
 
 interface GalleryGlobeProps {
   media: MediaItem[]

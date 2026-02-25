@@ -23,24 +23,7 @@ const GalleryGlobe = dynamic(() => import('@/components/gallery/GalleryGlobe'), 
   )
 })
 
-interface MediaItem {
-  id: string
-  file_url: string
-  file_type: string
-  location_lat: number | null
-  location_lng: number | null
-  taken_at: string | null
-  exif_lat: number | null
-  exif_lng: number | null
-  memory_id: string
-  memory?: {
-    id: string
-    title: string
-    location_name: string
-    location_lat: number | null
-    location_lng: number | null
-  }
-}
+import { GalleryMediaItem as MediaItem } from '@/types/gallery'
 
 export default function GalleryPage() {
   const [media, setMedia] = useState<MediaItem[]>([])

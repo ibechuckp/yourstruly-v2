@@ -1,7 +1,7 @@
 // Admin library barrel exports
 
 // Auth
-export { requireAdmin, getAdminUser } from './auth';
+export { requireAdmin, getCurrentAdmin, requirePermission, isAdmin, checkPermission } from './auth';
 
 // Audit - async functions only (server actions)
 export { 

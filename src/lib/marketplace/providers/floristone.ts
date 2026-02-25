@@ -233,7 +233,7 @@ export async function calculateShipping(
   const shippingPromises = uniqueProducts.map(async (productId) => {
     const url = new URL(`${FLORISTONE_API_URL}/gettotal`);
     url.searchParams.append('products', productId);
-    url.searchParams.append('zipcode', address.zip);
+    url.searchParams.append('zipcode', address.zip || '');
     
     const response = await fetch(url.toString(), {
       method: 'GET',

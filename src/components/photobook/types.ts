@@ -52,9 +52,21 @@ export type PhotobookLayoutType =
   | 'quad'             // Four photo grid
   | 'with_text'        // Photo(s) with text area
   | 'full_bleed'       // Photo bleeds to edges
+  | 'full-bleed'       // Alias with dash
   | 'qr_only'          // QR code centered (for linking)
   | 'qr_with_photo'    // Photo with QR code overlay
   | 'text_only'        // Text/dedication page
+  // Extended layout types for PageEditor
+  | 'two-horizontal'   // Two photos stacked horizontally
+  | 'two-vertical'     // Two photos side by side
+  | 'three-top-heavy'  // One large top, two small bottom
+  | 'three-bottom-heavy' // Two small top, one large bottom
+  | 'grid-2x2'         // 2x2 grid
+  | 'collage-5'        // 5 photo collage
+  | 'hero-left'        // Large left, small stacked right
+  | 'hero-right'       // Small stacked left, large right
+  | 'text-left'        // Text left, photo right
+  | 'text-bottom'      // Photo top, text bottom
 
 export interface PageContent {
   photos?: PagePhoto[]
@@ -70,24 +82,22 @@ export interface PagePhoto {
   file_type?: string
   width?: number
   height?: number
+  position?: number  // slot index
   crop?: {
     x: number
     y: number
     width: number
     height: number
   }
-  position?: {
-    x: number
-    y: number
-  }
   scale?: number
   rotation?: number
 }
 
 export interface PageText {
+  content?: string
   title?: string
   body?: string
-  position: 'top' | 'bottom' | 'left' | 'right' | 'center'
+  position?: 'top' | 'bottom' | 'left' | 'right' | 'center'
   font?: 'serif' | 'sans' | 'handwriting'
   fontSize?: 'small' | 'medium' | 'large'
   color?: string
@@ -151,115 +161,23 @@ export interface PhotobookMemorySelection {
 export interface LayoutTemplate {
   id: string
   name: string
-  type: PhotobookLayoutType
-  icon: string
-  description: string
-  preview: string
-  maxPhotos: number
-  supportsText: boolean
-  supportsQR: boolean
+  photoSlots: number
+  hasTextArea: boolean
 }
 
 export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
-  {
-    id: 'single',
-    name: 'Single Photo',
-    type: 'single',
-    icon: 'Square',
-    description: 'One photo fills the entire page',
-    preview: 'single.svg',
-    maxPhotos: 1,
-    supportsText: false,
-    supportsQR: true
-  },
-  {
-    id: 'double',
-    name: 'Double Photo',
-    type: 'double',
-    icon: 'Columns',
-    description: 'Two photos side by side',
-    preview: 'double.svg',
-    maxPhotos: 2,
-    supportsText: false,
-    supportsQR: true
-  },
-  {
-    id: 'triple',
-    name: 'Triple Photo',
-    type: 'triple',
-    icon: 'LayoutGrid',
-    description: 'Three photos in a grid',
-    preview: 'triple.svg',
-    maxPhotos: 3,
-    supportsText: false,
-    supportsQR: true
-  },
-  {
-    id: 'quad',
-    name: 'Quad Grid',
-    type: 'quad',
-    icon: 'LayoutGrid',
-    description: 'Four photos in a 2x2 grid',
-    preview: 'quad.svg',
-    maxPhotos: 4,
-    supportsText: false,
-    supportsQR: true
-  },
-  {
-    id: 'with_text',
-    name: 'Photo with Text',
-    type: 'with_text',
-    icon: 'Type',
-    description: 'Photo with space for caption or story',
-    preview: 'with_text.svg',
-    maxPhotos: 1,
-    supportsText: true,
-    supportsQR: true
-  },
-  {
-    id: 'full_bleed',
-    name: 'Full Bleed',
-    type: 'full_bleed',
-    icon: 'Maximize',
-    description: 'Photo extends to page edges',
-    preview: 'full_bleed.svg',
-    maxPhotos: 1,
-    supportsText: false,
-    supportsQR: false
-  },
-  {
-    id: 'qr_only',
-    name: 'QR Code Only',
-    type: 'qr_only',
-    icon: 'QrCode',
-    description: 'Centered QR code with optional text',
-    preview: 'qr_only.svg',
-    maxPhotos: 0,
-    supportsText: true,
-    supportsQR: true
-  },
-  {
-    id: 'qr_with_photo',
-    name: 'Photo with QR',
-    type: 'qr_with_photo',
-    icon: 'ImagePlus',
-    description: 'Photo with embedded QR code',
-    preview: 'qr_with_photo.svg',
-    maxPhotos: 1,
-    supportsText: false,
-    supportsQR: true
-  },
-  {
-    id: 'text_only',
-    name: 'Text Only',
-    type: 'text_only',
-    icon: 'FileText',
-    description: 'Dedication or story page',
-    preview: 'text_only.svg',
-    maxPhotos: 0,
-    supportsText: true,
-    supportsQR: false
-  }
+  { id: 'single', name: 'Single Photo', photoSlots: 1, hasTextArea: false },
+  { id: 'two-horizontal', name: 'Two Horizontal', photoSlots: 2, hasTextArea: false },
+  { id: 'two-vertical', name: 'Two Vertical', photoSlots: 2, hasTextArea: false },
+  { id: 'three-top-heavy', name: 'Hero Top', photoSlots: 3, hasTextArea: false },
+  { id: 'three-bottom-heavy', name: 'Hero Bottom', photoSlots: 3, hasTextArea: false },
+  { id: 'grid-2x2', name: 'Grid 2x2', photoSlots: 4, hasTextArea: false },
+  { id: 'collage-5', name: 'Collage', photoSlots: 5, hasTextArea: false },
+  { id: 'hero-left', name: 'Hero Left', photoSlots: 3, hasTextArea: false },
+  { id: 'hero-right', name: 'Hero Right', photoSlots: 3, hasTextArea: false },
+  { id: 'full-bleed', name: 'Full Bleed', photoSlots: 1, hasTextArea: false },
+  { id: 'text-left', name: 'Text Left', photoSlots: 1, hasTextArea: true },
+  { id: 'text-bottom', name: 'Text Bottom', photoSlots: 1, hasTextArea: true },
 ]
 
 // Prodigi configuration

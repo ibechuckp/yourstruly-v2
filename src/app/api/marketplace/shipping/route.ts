@@ -135,9 +135,9 @@ export async function POST(request: NextRequest) {
     // Calculate shipping
     const rates = await service.calculateShipping(shippingItems, shippingAddress);
     
-    // For Printful, also get full order estimate
+    // For Prodigi, also get full order estimate
     let estimate = null;
-    if (provider === 'printful') {
+    if (provider === 'prodigi') {
       estimate = await service.estimateOrder(shippingItems, shippingAddress);
     }
     

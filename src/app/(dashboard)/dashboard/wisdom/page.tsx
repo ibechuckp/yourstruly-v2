@@ -9,6 +9,9 @@ import '@/styles/home.css';
 import '@/styles/page-styles.css';
 import '@/styles/engagement.css';
 import { getCategoryIcon } from '@/lib/dashboard/icons';
+import { QuestionPromptBar, type WisdomQuestion } from '@/components/wisdom/QuestionPromptBar';
+import { ConversationView } from '@/components/conversation';
+import type { EngagementPrompt } from '@/types/engagement';
 
 interface WisdomEntry {
   id: string;
@@ -57,6 +60,9 @@ export default function WisdomPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [tabMode, setTabMode] = useState<TabMode>('mine');
+  
+  // Conversation modal state for answering instant questions
+  const [conversationPrompt, setConversationPrompt] = useState<EngagementPrompt | null>(null);
   
   const supabase = createClient();
 
@@ -292,6 +298,31 @@ export default function WisdomPage() {
             </div>
           </div>
         </div>
+
+        {/* Question Prompt Bar - suggest unanswered wisdom questions */}
+        {tabMode === 'mine' && (
+          <QuestionPromptBar 
+            onCreateWisdom={(question: WisdomQuestion) => {
+              // Convert the wisdom question to an EngagementPrompt format
+              // to open the ConversationView modal
+              const prompt: EngagementPrompt = {
+                id: question.id,
+                userId: '', // Will be set by the conversation
+                type: 'knowledge',
+                category: question.category,
+                promptText: question.question_text,
+                status: 'pending',
+                priority: 1,
+                metadata: {
+                  question_text: question.question_text,
+                  source: 'instant_question',
+                },
+                createdAt: new Date().toISOString(),
+              };
+              setConversationPrompt(prompt);
+            }} 
+          />
+        )}
 
         {/* Category Filter Pills - only show for My Wisdom tab */}
         {tabMode === 'mine' && (
@@ -648,6 +679,21 @@ export default function WisdomPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Conversation View Modal - for answering instant wisdom questions */}
+        {conversationPrompt && (
+          <ConversationView
+            prompt={conversationPrompt}
+            expectedXp={100}
+            onComplete={(result) => {
+              // Reload the wisdom entries to show the new one
+              loadWisdom();
+              // Close the conversation modal
+              setConversationPrompt(null);
+            }}
+            onClose={() => setConversationPrompt(null)}
+          />
+        )}
       </div>
     </div>
   );

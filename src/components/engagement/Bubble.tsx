@@ -20,17 +20,17 @@ interface BubbleProps {
 }
 
 const TYPE_CONFIG: Record<string, { icon: string; label: string; xp: number; categoryClass: string }> = {
-  photo_backstory: { icon: '📸', label: 'Photo Story', xp: 15, categoryClass: 'category-pill-photo' },
-  tag_person: { icon: '👤', label: 'Tag Person', xp: 5, categoryClass: 'category-pill-contact' },
-  missing_info: { icon: '📝', label: 'Contact Info', xp: 5, categoryClass: 'category-pill-contact' },
-  memory_prompt: { icon: '💭', label: 'Memory', xp: 20, categoryClass: 'category-pill-memory' },
-  knowledge: { icon: '🧠', label: 'Knowledge', xp: 15, categoryClass: 'category-pill-knowledge' },
-  connect_dots: { icon: '🔗', label: 'Connect', xp: 10, categoryClass: 'category-pill-contact' },
-  highlight: { icon: '⭐', label: 'Highlight', xp: 5, categoryClass: 'category-pill-photo' },
-  quick_question: { icon: '👤', label: 'Contact Info', xp: 5, categoryClass: 'category-pill-contact' },
-  postscript: { icon: '💌', label: 'Future Message', xp: 20, categoryClass: 'category-pill-memory' },
-  favorites_firsts: { icon: '🏆', label: 'Favorites', xp: 10, categoryClass: 'category-pill-knowledge' },
-  recipes_wisdom: { icon: '📖', label: 'Wisdom', xp: 15, categoryClass: 'category-pill-knowledge' },
+  photo_backstory: { icon: '📸', label: 'Photo Story', xp: 15, categoryClass: 'category-pill-yellow' },
+  tag_person: { icon: '👤', label: 'Tag Person', xp: 5, categoryClass: 'category-pill-blue' },
+  missing_info: { icon: '📝', label: 'Contact Info', xp: 5, categoryClass: 'category-pill-green' },
+  memory_prompt: { icon: '💭', label: 'Memory', xp: 20, categoryClass: 'category-pill-purple' },
+  knowledge: { icon: '🧠', label: 'Knowledge', xp: 15, categoryClass: 'category-pill-red' },
+  connect_dots: { icon: '🔗', label: 'Connect', xp: 10, categoryClass: 'category-pill-blue' },
+  highlight: { icon: '⭐', label: 'Highlight', xp: 5, categoryClass: 'category-pill-yellow' },
+  quick_question: { icon: '👤', label: 'Contact Info', xp: 5, categoryClass: 'category-pill-green' },
+  postscript: { icon: '💌', label: 'Future Message', xp: 20, categoryClass: 'category-pill-purple' },
+  favorites_firsts: { icon: '🏆', label: 'Favorites', xp: 10, categoryClass: 'category-pill-red' },
+  recipes_wisdom: { icon: '📖', label: 'Wisdom', xp: 15, categoryClass: 'category-pill-yellow' },
 };
 
 // Contact fields to display when expanded
@@ -392,7 +392,7 @@ export function Bubble({
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-800">{contactDisplayName}</h3>
-                <p className="text-sm text-[var(--yt-green)]">{contactMeta.relationship || 'Family member'}</p>
+                <p className="text-sm text-[var(--yt-green)]">{contactMeta.relationship_type || 'Family member'}</p>
               </div>
             </div>
 
@@ -433,7 +433,9 @@ export function Bubble({
         {!isExpanded && (
           <div className="bubble-hint-container">
             <p className="bubble-hint">
-              {showConversationIndicator ? (
+              {isContactPrompt ? (
+                <>tap to update info →</>
+              ) : showConversationIndicator ? (
                 <>
                   <MessageCircle size={12} />
                   Tap for voice conversation

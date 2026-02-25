@@ -16,6 +16,7 @@
   position: relative;
   min-height: 100vh;
   padding: 24px;
+  padding-top: 24px; /* Content already has pt-14 from layout, this adds breathing room */
   padding-bottom: 100px;
 }
 

@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Image as ImageIcon, Calendar, MapPin, Sparkles, Grid, List, Globe, ChevronLeft, Search, X, Clock, Users, Share2 } from 'lucide-react'
+import { Plus, Image as ImageIcon, Calendar, MapPin, Sparkles, Grid, List, Globe, ChevronLeft, Search, X, Clock, Users, Share2, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import CreateMemoryModal from '@/components/memories/CreateMemoryModal'
 import MemoryCard from '@/components/memories/MemoryCard'
 import GlobeView from '@/components/memories/GlobeView'
 import { MemoryTimeline } from '@/components/memories/MemoryTimeline'
+import MilestonePrompt from '@/components/photobook/MilestonePrompt'
 import '@/styles/page-styles.css'
 import { getCategoryIcon } from '@/lib/dashboard/icons'
 
@@ -59,6 +60,7 @@ export default function MemoriesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [dateFilter, setDateFilter] = useState<{ start: string; end: string }>({ start: '', end: '' })
   const [showFilters, setShowFilters] = useState(false)
+  const [userId, setUserId] = useState<string | undefined>()
   const supabase = createClient()
 
   const loadMemories = useCallback(async () => {
@@ -153,6 +155,7 @@ export default function MemoriesPage() {
     const checkAuthAndLoad = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
+        setUserId(user.id)
         loadMemories()
         loadSharedMemories()
       } else {
@@ -160,6 +163,7 @@ export default function MemoriesPage() {
         setMemories([])
         setSharedMemories([])
         setFilteredMemories([])
+        setUserId(undefined)
       }
     }
     checkAuthAndLoad()
@@ -279,6 +283,15 @@ export default function MemoriesPage() {
                   <Globe size={18} />
                 </button>
               </div>
+
+              {/* Create Photo Book Button */}
+              <Link
+                href={`/dashboard/photobook/create${memories.length > 0 ? '?source=memories' : ''}`}
+                className="btn-secondary flex items-center gap-2"
+              >
+                <BookOpen size={18} />
+                <span className="hidden sm:inline">📚 Create Book</span>
+              </Link>
 
               {/* Create Button */}
               <button
@@ -506,6 +519,9 @@ export default function MemoriesPage() {
           setShowCreateModal(false)
         }}
       />
+
+      {/* Milestone Prompt for Photobook */}
+      <MilestonePrompt memoryCount={memories.length} userId={userId} />
     </div>
   )
 }

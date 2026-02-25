@@ -10,7 +10,7 @@ interface Album {
   name: string
   cover: string
   count: number
-  type: 'location' | 'people' | 'time' | 'custom'
+  type: 'location' | 'people' | 'time' | 'custom' | 'recent'
   images?: string[]
 }
 

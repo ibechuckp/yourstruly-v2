@@ -44,9 +44,11 @@ import MemorySelector from './MemorySelector'
 interface PhotobookBuilderProps {
   project?: PhotobookProject
   userId: string
+  preSelectFromMemories?: boolean
+  productType?: 'photobook' | 'calendar' | string
 }
 
-export default function PhotobookBuilder({ project, userId }: PhotobookBuilderProps) {
+export default function PhotobookBuilder({ project, userId, preSelectFromMemories, productType = 'photobook' }: PhotobookBuilderProps) {
   const router = useRouter()
   const supabase = createClient()
   
@@ -287,7 +289,7 @@ export default function PhotobookBuilder({ project, userId }: PhotobookBuilderPr
                 <Input
                   id="title"
                   value={projectTitle}
-                  onChange={(e) => setProjectTitle(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProjectTitle(e.target.value)}
                   placeholder="e.g., Summer Vacation 2024"
                   className="bg-gray-700/50 border-white/10 text-white mt-2"
                 />
@@ -317,7 +319,7 @@ export default function PhotobookBuilder({ project, userId }: PhotobookBuilderPr
           <div className="flex items-center justify-between mb-3">
             <Input
               value={projectTitle}
-              onChange={(e) => setProjectTitle(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProjectTitle(e.target.value)}
               onBlur={saveProject}
               className="bg-transparent border-0 text-white font-semibold p-0 focus-visible:ring-0"
             />
@@ -375,15 +377,14 @@ export default function PhotobookBuilder({ project, userId }: PhotobookBuilderPr
                       variant="ghost"
                       size="sm"
                       className="h-6 w-6 p-0 bg-black/60 hover:bg-black/80 text-white"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     >
                       <MoreVertical className="w-3 h-3" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="bg-gray-800 border-white/10">
                     <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation()
+                      onClick={() => {
                         deletePage(page.id)
                       }}
                       className="text-red-400 focus:text-red-400 focus:bg-red-500/10"

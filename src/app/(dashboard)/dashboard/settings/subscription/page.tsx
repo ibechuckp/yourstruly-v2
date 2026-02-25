@@ -73,9 +73,9 @@ export default function SubscriptionSettings() {
     }
   };
 
-  const handleSelectPlan = (plan: Plan, billingCycle: 'monthly' | 'yearly') => {
+  const handleSelectPlan = (plan: Plan, billingCycle?: 'monthly' | 'yearly') => {
     setSelectedPlan(plan);
-    setSelectedBillingCycle(billingCycle);
+    setSelectedBillingCycle(billingCycle || 'monthly');
     setShowUpgradeModal(true);
   };
 

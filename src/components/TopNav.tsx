@@ -54,6 +54,7 @@ const myStoryItems = [
   { href: '/dashboard/wisdom', label: 'Wisdom', icon: Lightbulb },
   { href: '/dashboard/gallery', label: 'Gallery', icon: FolderOpen },
   { href: '/dashboard/postscripts', label: 'PostScripts', icon: Gift },
+  { href: '/dashboard/photobook/create', label: '📚 Create Book', icon: BookOpen },
 ]
 
 // People dropdown - who you share with

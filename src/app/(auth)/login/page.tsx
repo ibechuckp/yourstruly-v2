@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
+import '@/styles/home.css';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -64,7 +65,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56]/40 transition-all"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-[#406A56]/30 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/40 focus:border-[#406A56]/50 transition-all shadow-sm"
                   placeholder="you@example.com"
                   required
                 />
@@ -81,7 +82,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56]/40 transition-all"
+                  className="w-full pl-10 pr-12 py-3 rounded-xl bg-white border border-[#406A56]/30 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/40 focus:border-[#406A56]/50 transition-all shadow-sm"
                   placeholder="••••••••"
                   required
                 />

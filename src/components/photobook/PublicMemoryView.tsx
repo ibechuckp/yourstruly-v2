@@ -149,7 +149,7 @@ export default function PublicMemoryView({ token, data }: PublicMemoryViewProps)
                     src={currentMedia.file_url}
                     className="w-full h-full object-contain"
                     controls
-                    poster={media.find(m => m.file_type === 'image')?.file_url}
+                    poster={media.find((m: { file_type: string; file_url: string }) => m.file_type === 'image')?.file_url}
                   />
                 </div>
               ) : (
@@ -180,7 +180,7 @@ export default function PublicMemoryView({ token, data }: PublicMemoryViewProps)
                   
                   {/* Dots */}
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                    {media.map((_, i) => (
+                    {media.map((_: unknown, i: number) => (
                       <button
                         key={i}
                         onClick={() => setCurrentMediaIndex(i)}

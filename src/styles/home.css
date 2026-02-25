@@ -111,23 +111,25 @@
 .home-content {
   position: relative;
   z-index: 10;
-  min-height: 100vh;
+  height: calc(100vh - 56px); /* Full height minus nav */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 48px 24px 32px;
+  padding: 48px 24px 24px;
+  overflow: hidden;
 }
 
 /* Adjust content for left sidebar on large screens */
 @media (min-width: 1024px) {
   .home-content {
-    padding-left: 328px; /* 280px profile + 24px margin + 24px gap */
+    padding-left: 328px; /* 280px profile + 48px gap */
+    align-items: center; /* Center over command bar */
   }
 }
 
 /* Engagement column - contains both tiles and CommandBar for alignment */
-/* Centered in the content area; tiles + CommandBar share same 776px width */
+/* Left-aligned with profile card on large screens */
 .engagement-column {
   width: 100%;
   max-width: 776px; /* 3×240px tiles + 2×28px gaps */
@@ -135,8 +137,59 @@
   flex-direction: column;
   align-items: center;
   position: relative;
-  padding-bottom: 100px; /* Space for fixed CommandBar */
-  /* No extra top padding - parent home-content handles the 112px (nav+48px gap) */
+  flex: 1;
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .engagement-column {
+    align-items: center; /* Center over command bar */
+  }
+}
+
+/* Quick action buttons below engagement tiles */
+.quick-actions {
+  width: 100%;
+  max-width: 776px;
+  padding: 0 12px;
+}
+
+.quick-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 24px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(64, 106, 86, 0.1);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-action-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(64, 106, 86, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.quick-action-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(64, 106, 86, 0.1), rgba(64, 106, 86, 0.05));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #406A56;
+}
+
+.quick-action-btn span {
+  font-size: 13px;
+  font-weight: 500;
+  color: #406A56;
 }
 
 /* Profile section - left aligned, below nav bar with 48px gap */

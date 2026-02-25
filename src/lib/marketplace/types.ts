@@ -13,6 +13,7 @@ export interface Product {
   description: string;
   price: number;
   originalPrice?: number; // Before markup
+  comparePrice?: number; // For showing "was $X" pricing
   currency: string;
   images: string[];
   thumbnail: string;
@@ -30,6 +31,9 @@ export interface Product {
   
   // Provider-specific metadata
   providerData?: Record<string, unknown>;
+  
+  // Tags for filtering
+  tags?: string[];
   
   // Shipping info
   shippingWeight?: number;
@@ -52,7 +56,7 @@ export interface ProductVariant {
   price: number;
   originalPrice?: number;
   sku?: string;
-  attributes: Record<string, string>;
+  attributes: Record<string, string | number | undefined>;
   inStock: boolean;
   quantity?: number;
   image?: string;
@@ -71,15 +75,17 @@ export interface Category {
 
 // Shipping types
 export interface ShippingAddress {
-  name: string;
-  address1: string;
+  name?: string;
+  address1?: string;
   address2?: string;
-  city: string;
-  state: string;
-  stateCode: string;
-  zip: string;
-  country: string;
-  countryCode: string;
+  line1?: string; // Alias for address1
+  line2?: string; // Alias for address2
+  city?: string;
+  state?: string;
+  stateCode?: string;
+  zip?: string;
+  country?: string;
+  countryCode?: string;
   phone?: string;
   email?: string;
 }
@@ -94,6 +100,7 @@ export interface ShippingItem {
     width: number;
     height: number;
   };
+  attributes?: Record<string, string>;
 }
 
 export interface ShippingRate {

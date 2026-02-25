@@ -4,14 +4,18 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { useEngagementPrompts } from '@/hooks/useEngagementPrompts'
-import { RefreshCw, Sparkles, X, Send, Gift } from 'lucide-react'
+import { RefreshCw, Sparkles, X, Send, Gift, Image, FileText, UserPlus, Search, Users, ChevronRight, Calendar, MessageSquare, Check, Mail, Phone, Mic, Trash2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ConversationView } from '@/components/conversation'
 import '@/styles/home.css'
 import '@/styles/engagement.css'
 import '@/styles/conversation.css'
 import CommandBar from '@/components/dashboard/CommandBar'
+import { AddContactModal } from '@/components/contacts/AddContactModal'
 import ActivityFeed, { XPCompletion } from '@/components/dashboard/ActivityFeed'
+import { StorageUsageBar } from '@/components/subscription/StorageUsageBar'
+import { useSubscription } from '@/hooks/useSubscription'
 // import { PersonalityDashboard } from '@/components/personality/PersonalityDashboard' // TODO: Re-enable when analyzing real data
 
 // Type configs with color scheme
@@ -95,6 +99,11 @@ export default function DashboardPage() {
   const [xpAnimating, setXpAnimating] = useState(false)
   const [lastXpGain, setLastXpGain] = useState(0)
   const [tilesKey, setTilesKey] = useState(0)
+  
+  // Quick action modals
+  const [showPhotoUpload, setShowPhotoUpload] = useState(false)
+  const [showPostscriptModal, setShowPostscriptModal] = useState(false)
+  const [showContactModal, setShowContactModal] = useState(false)
   const [completedTiles, setCompletedTiles] = useState<Array<{
     id: string;
     type: string;
@@ -112,6 +121,7 @@ export default function DashboardPage() {
   }>>([])
   
   const supabase = createClient()
+  const { subscription } = useSubscription()
   const { prompts: rawPrompts, isLoading, shuffle, answerPrompt, skipPrompt } = useEngagementPrompts(8)
   
   // Track locally answered prompts (to remove from display without full refetch)
@@ -492,7 +502,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="h-screen overflow-hidden">
       {/* Background */}
       <div className="home-background">
         <div className="home-blob home-blob-1" />
@@ -609,6 +619,32 @@ export default function DashboardPage() {
               ))}
             </div>
           )}
+
+          {/* Storage Usage - Sleek inline bar */}
+          <div className="mt-5 pt-4 border-t border-[#406A56]/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-[#406A56]/70 uppercase tracking-wide">Storage</span>
+              <span className="text-xs text-gray-500">
+                {subscription?.storage 
+                  ? `${(subscription.storage.total_bytes / (1024*1024*1024)).toFixed(1)} / ${(subscription.storage.limit_bytes / (1024*1024*1024)).toFixed(0)} GB`
+                  : '0 / 10 GB'
+                }
+              </span>
+            </div>
+            <div className="h-2 bg-[#F2F1E5] rounded-full overflow-hidden">
+              <motion.div 
+                className="h-full rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(subscription?.storage?.percentage || 0, 100)}%` }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                style={{ 
+                  background: (subscription?.storage?.percentage || 0) >= 90 
+                    ? 'linear-gradient(90deg, #C35F33, #dc2626)' 
+                    : 'linear-gradient(90deg, #406A56, #8DACAB)'
+                }}
+              />
+            </div>
+          </div>
         </div>
         
         {/* Personality/Essence Graph - TODO: Add back when properly analyzing data */}
@@ -884,11 +920,480 @@ export default function DashboardPage() {
             </div>
           )}
           </div>
+          
+          {/* Quick Action Links */}
+          <div className="quick-actions mt-8 flex items-center justify-center gap-6">
+            <button
+              onClick={() => setShowPhotoUpload(true)}
+              className="quick-action-btn"
+            >
+              <div className="quick-action-icon">
+                <Image size={20} />
+              </div>
+              <span>Add Photos</span>
+            </button>
+            <button
+              onClick={() => setShowPostscriptModal(true)}
+              className="quick-action-btn"
+            >
+              <div className="quick-action-icon">
+                <FileText size={20} />
+              </div>
+              <span>Add Post script</span>
+            </button>
+            <button
+              onClick={() => setShowContactModal(true)}
+              className="quick-action-btn"
+            >
+              <div className="quick-action-icon">
+                <UserPlus size={20} />
+              </div>
+              <span>Add Contact</span>
+            </button>
+          </div>
         
           {/* CommandBar - now inside the engagement column for alignment */}
           <CommandBar />
         </div>
       </div>
+      
+      {/* Photo Upload Modal */}
+      <AnimatePresence>
+        {showPhotoUpload && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowPhotoUpload(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#F2F1E5] rounded-2xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-[#406A56]">Add Photos</h3>
+                <button onClick={() => setShowPhotoUpload(false)} className="p-2 hover:bg-[#406A56]/10 rounded-lg">
+                  <X size={20} className="text-[#406A56]" />
+                </button>
+              </div>
+              <p className="text-[#406A56]/70 mb-4">Upload photos to create new memories</p>
+              
+              <div className="border-2 border-dashed border-[#406A56]/30 rounded-xl p-8 text-center hover:border-[#406A56]/50 transition-colors cursor-pointer">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  id="photo-upload"
+                  onChange={(e) => {
+                    // TODO: Handle file upload
+                    console.log('Files:', e.target.files)
+                    setShowPhotoUpload(false)
+                  }}
+                />
+                <label htmlFor="photo-upload" className="cursor-pointer">
+                  <Image size={48} className="mx-auto text-[#406A56]/40 mb-3" />
+                  <p className="text-[#406A56] font-medium">Click to upload photos</p>
+                  <p className="text-sm text-[#406A56]/50 mt-1">or drag and drop</p>
+                </label>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Postscript Modal - Step 1: Select Recipient */}
+      <AnimatePresence>
+        {showPostscriptModal && (
+          <PostscriptRecipientModal 
+            onClose={() => setShowPostscriptModal(false)}
+          />
+        )}
+      </AnimatePresence>
+      
+      {/* Add Contact Modal */}
+      <AnimatePresence>
+        {showContactModal && (
+          <AddContactModal 
+            onClose={() => setShowContactModal(false)}
+            onSave={() => {
+              // Could refresh data here if needed
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
+  )
+}
+
+// ============================================
+// INLINE POSTSCRIPT MODAL - Complete flow in modal
+// ============================================
+
+const EVENT_OPTIONS = [
+  { key: 'birthday', label: 'Birthday', icon: '🎂' },
+  { key: 'wedding', label: 'Wedding', icon: '💒' },
+  { key: 'graduation', label: 'Graduation', icon: '🎓' },
+  { key: 'anniversary', label: 'Anniversary', icon: '💕' },
+  { key: 'first_child', label: 'First Child', icon: '👶' },
+  { key: '18th_birthday', label: '18th Birthday', icon: '🎉' },
+  { key: 'christmas', label: 'Christmas', icon: '🎄' },
+  { key: 'tough_times', label: 'Tough Times', icon: '💪' },
+]
+
+function PostscriptRecipientModal({ onClose }: { onClose: () => void }) {
+  const supabase = createClient()
+  const [step, setStep] = useState(1)
+  const [contacts, setContacts] = useState<Array<{ id: string; full_name: string; relationship_type: string | null; email?: string }>>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  
+  // Form state
+  const [form, setForm] = useState({
+    recipient_contact_id: null as string | null,
+    recipient_name: '',
+    recipient_email: '',
+    delivery_type: 'date' as 'date' | 'event' | 'after_passing',
+    delivery_date: '',
+    delivery_event: '',
+    title: '',
+    message: '',
+  })
+
+  useEffect(() => {
+    loadContacts()
+  }, [])
+
+  const loadContacts = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    
+    const { data } = await supabase
+      .from('contacts')
+      .select('id, full_name, relationship_type, email')
+      .eq('user_id', user.id)
+      .order('full_name')
+    
+    setContacts(data || [])
+    setLoading(false)
+  }
+
+  const filteredContacts = contacts.filter(c => 
+    c.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const selectContact = (contact: typeof contacts[0]) => {
+    setForm({
+      ...form,
+      recipient_contact_id: contact.id,
+      recipient_name: contact.full_name,
+      recipient_email: contact.email || ''
+    })
+    setStep(2)
+  }
+
+  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  const getAvatarColor = (name: string) => {
+    const colors = ['#C35F33', '#406A56', '#4A3552', '#8DACAB', '#D9C61A']
+    return colors[name.charCodeAt(0) % colors.length]
+  }
+
+  const canProceed = () => {
+    switch (step) {
+      case 1: return form.recipient_name.trim().length > 0
+      case 2: return form.delivery_type === 'after_passing' || (form.delivery_type === 'date' ? form.delivery_date : form.delivery_event)
+      case 3: return form.title.trim() && form.message.trim()
+      default: return true
+    }
+  }
+
+  const handleSave = async (status: 'draft' | 'scheduled') => {
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/postscripts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipient_contact_id: form.recipient_contact_id,
+          recipient_name: form.recipient_name,
+          recipient_email: form.recipient_email,
+          delivery_type: form.delivery_type,
+          delivery_date: form.delivery_date,
+          delivery_event: form.delivery_event,
+          title: form.title,
+          message: form.message,
+          status
+        })
+      })
+      if (!res.ok) throw new Error('Failed to save')
+      onClose()
+    } catch (err: any) {
+      setError(err.message)
+      setSaving(false)
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="bg-[#F2F1E5] rounded-2xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="p-5 pb-3">
+          <div className="flex items-center gap-3 mb-3">
+            <button onClick={step > 1 ? () => setStep(step - 1) : onClose} className="p-2 hover:bg-[#406A56]/10 rounded-lg">
+              {step > 1 ? <ChevronRight size={20} className="text-[#406A56] rotate-180" /> : <X size={20} className="text-[#406A56]" />}
+            </button>
+            <div className="flex-1">
+              <h2 className="text-lg font-bold text-[#2d2d2d]">Create PostScript</h2>
+              <p className="text-xs text-[#406A56]/60">Step {step} of 4</p>
+            </div>
+          </div>
+          <div className="flex gap-1.5">
+            {[1,2,3,4].map(s => (
+              <div key={s} className={`flex-1 h-1 rounded-full ${s <= step ? 'bg-[#C35F33]' : 'bg-[#406A56]/20'}`} />
+            ))}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="px-5 flex-1 overflow-y-auto pb-4">
+          {/* Step 1: Recipient */}
+          {step === 1 && (
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <div className="w-12 h-12 bg-[#C35F33]/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Users size={24} className="text-[#C35F33]" />
+                </div>
+                <h3 className="font-semibold text-[#2d2d2d]">Who is this for?</h3>
+              </div>
+
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#406A56]/40" />
+                <input
+                  type="text"
+                  placeholder="Search contacts..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#406A56]/20 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
+                />
+              </div>
+
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {loading ? (
+                  <div className="text-center py-6 text-[#406A56]/50 text-sm">Loading...</div>
+                ) : filteredContacts.slice(0, 8).map(contact => (
+                  <button
+                    key={contact.id}
+                    onClick={() => selectContact(contact)}
+                    className="w-full flex items-center gap-2.5 p-2.5 bg-white rounded-xl hover:bg-[#406A56]/5 transition-colors text-left"
+                  >
+                    <div 
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium"
+                      style={{ backgroundColor: getAvatarColor(contact.full_name) }}
+                    >
+                      {getInitials(contact.full_name)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-[#2d2d2d] truncate">{contact.full_name}</p>
+                      {contact.relationship_type && (
+                        <p className="text-xs text-[#406A56]/60">{contact.relationship_type}</p>
+                      )}
+                    </div>
+                    <ChevronRight size={16} className="text-[#406A56]/30 flex-shrink-0" />
+                  </button>
+                ))}
+              </div>
+
+              <div className="border-t border-[#406A56]/10 pt-3">
+                <p className="text-xs text-[#406A56]/60 mb-2">Or enter manually:</p>
+                <input
+                  type="text"
+                  placeholder="Recipient name"
+                  value={form.recipient_name}
+                  onChange={(e) => setForm({ ...form, recipient_name: e.target.value, recipient_contact_id: null })}
+                  className="w-full px-3 py-2.5 bg-white border border-[#406A56]/20 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Occasion */}
+          {step === 2 && (
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <div className="w-12 h-12 bg-[#D9C61A]/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Calendar size={24} className="text-[#D9C61A]" />
+                </div>
+                <h3 className="font-semibold text-[#2d2d2d]">When to deliver?</h3>
+              </div>
+
+              <div className="flex bg-white/50 rounded-xl p-1 gap-1">
+                {(['date', 'event', 'after_passing'] as const).map(type => (
+                  <button
+                    key={type}
+                    onClick={() => setForm({ ...form, delivery_type: type })}
+                    className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition-all ${
+                      form.delivery_type === type ? 'bg-white shadow-sm text-[#406A56]' : 'text-[#406A56]/60'
+                    }`}
+                  >
+                    {type === 'date' ? 'Date' : type === 'event' ? 'Event' : 'After'}
+                  </button>
+                ))}
+              </div>
+
+              {form.delivery_type === 'date' && (
+                <input
+                  type="date"
+                  value={form.delivery_date}
+                  onChange={(e) => setForm({ ...form, delivery_date: e.target.value })}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-3 py-2.5 bg-white border border-[#406A56]/20 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
+                />
+              )}
+
+              {form.delivery_type === 'event' && (
+                <div className="grid grid-cols-2 gap-2">
+                  {EVENT_OPTIONS.map(event => (
+                    <button
+                      key={event.key}
+                      onClick={() => setForm({ ...form, delivery_event: event.key })}
+                      className={`p-3 rounded-xl border text-center transition-all ${
+                        form.delivery_event === event.key 
+                          ? 'border-[#C35F33] bg-[#C35F33]/5' 
+                          : 'border-[#406A56]/10 bg-white hover:border-[#406A56]/30'
+                      }`}
+                    >
+                      <span className="text-xl block">{event.icon}</span>
+                      <span className="text-xs font-medium text-[#406A56]">{event.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {form.delivery_type === 'after_passing' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
+                  This message will be delivered after your passing.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: Message */}
+          {step === 3 && (
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <div className="w-12 h-12 bg-[#8DACAB]/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <MessageSquare size={24} className="text-[#8DACAB]" />
+                </div>
+                <h3 className="font-semibold text-[#2d2d2d]">Your message</h3>
+              </div>
+
+              <input
+                type="text"
+                placeholder="Title (e.g., Happy Birthday!)"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                className="w-full px-3 py-2.5 bg-white border border-[#406A56]/20 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
+              />
+
+              <textarea
+                placeholder="Write your heartfelt message..."
+                value={form.message}
+                onChange={(e) => setForm({ ...form, message: e.target.value })}
+                rows={6}
+                className="w-full px-3 py-2.5 bg-white border border-[#406A56]/20 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
+              />
+            </div>
+          )}
+
+          {/* Step 4: Review */}
+          {step === 4 && (
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Check size={24} className="text-green-600" />
+                </div>
+                <h3 className="font-semibold text-[#2d2d2d]">Review & Schedule</h3>
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl text-sm">
+                  {error}
+                </div>
+              )}
+
+              <div className="bg-white rounded-xl divide-y divide-[#406A56]/10">
+                <div className="p-3">
+                  <p className="text-xs text-[#406A56]/60 uppercase">To</p>
+                  <p className="font-medium text-[#2d2d2d]">{form.recipient_name}</p>
+                </div>
+                <div className="p-3">
+                  <p className="text-xs text-[#406A56]/60 uppercase">Delivery</p>
+                  <p className="font-medium text-[#2d2d2d]">
+                    {form.delivery_type === 'date' && form.delivery_date && new Date(form.delivery_date).toLocaleDateString()}
+                    {form.delivery_type === 'event' && EVENT_OPTIONS.find(e => e.key === form.delivery_event)?.label}
+                    {form.delivery_type === 'after_passing' && "After I'm gone"}
+                  </p>
+                </div>
+                <div className="p-3">
+                  <p className="text-xs text-[#406A56]/60 uppercase">Message</p>
+                  <p className="font-semibold text-[#2d2d2d]">{form.title}</p>
+                  <p className="text-sm text-[#406A56]/80 line-clamp-3">{form.message}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-5 pt-3 border-t border-[#406A56]/10">
+          {step < 4 ? (
+            <button
+              onClick={() => setStep(step + 1)}
+              disabled={!canProceed()}
+              className="w-full py-3 bg-[#406A56] text-white font-semibold rounded-xl hover:bg-[#4a7a64] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Continue
+              <ChevronRight size={18} />
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleSave('draft')}
+                disabled={saving}
+                className="flex-1 py-3 bg-[#406A56]/10 text-[#406A56] font-semibold rounded-xl hover:bg-[#406A56]/20 transition-colors disabled:opacity-50"
+              >
+                Save Draft
+              </button>
+              <button
+                onClick={() => handleSave('scheduled')}
+                disabled={saving}
+                className="flex-1 py-3 bg-[#C35F33] text-white font-semibold rounded-xl hover:bg-[#A84E2A] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {saving ? '...' : <><Send size={16} /> Schedule</>}
+              </button>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
   )
 }

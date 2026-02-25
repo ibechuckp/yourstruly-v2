@@ -8,8 +8,25 @@ import {
   Mic, Phone, Globe, Download, Lock
 } from 'lucide-react';
 
+// Types for competitor pricing - flexible to handle all variations
+interface PricingTier {
+  name: string;
+  price: string;
+  upfront?: string;
+  features: string[];
+}
+
+interface CompetitorPricing {
+  main: string;
+  includes?: string[];
+  extras?: string[];
+  freeTrial?: string;
+  renewal?: string;
+  tiers?: PricingTier[];
+}
+
 // Detailed competitor data with research from Feb 2026
-const competitorDetails = {
+const competitorDetails: Record<string, { pricing: CompetitorPricing; [key: string]: any }> = {
   storyworth: {
     name: 'StoryWorth',
     tagline: 'Everyone has a story worth sharing',
@@ -593,17 +610,17 @@ function CompetitorCard({ id, data }: { id: string; data: typeof competitorDetai
             {/* Pricing Tab */}
             {activeTab === 'pricing' && (
               <div className="space-y-6">
-                {data.pricing.tiers ? (
+                {data.pricing.tiers && data.pricing.tiers.length > 0 ? (
                   <div className="grid md:grid-cols-3 gap-4">
-                    {data.pricing.tiers.map((tier, idx) => (
+                    {data.pricing.tiers.map((tier: PricingTier, idx: number) => (
                       <div key={tier.name} className={`rounded-xl p-4 ${idx === 1 ? 'bg-[#406A56]/10 border-2 border-[#406A56]' : 'bg-[#F2F1E5]'}`}>
                         <h4 className="font-bold text-[#2a1f1a]">{tier.name}</h4>
                         <p className="text-2xl font-bold text-[#406A56] mt-1">{tier.price}</p>
-                        {'upfront' in tier && tier.upfront !== '$0' && (
+                        {tier.upfront && tier.upfront !== '$0' && (
                           <p className="text-xs text-[#C35F33]">+ {tier.upfront} upfront</p>
                         )}
                         <ul className="mt-3 space-y-1">
-                          {tier.features.map((f, i) => (
+                          {tier.features.map((f: string, i: number) => (
                             <li key={i} className="text-sm text-[#2a1f1a]/70 flex items-start gap-2">
                               <CheckCircle className="w-4 h-4 text-[#406A56] mt-0.5 flex-shrink-0" />
                               {f}
@@ -621,7 +638,7 @@ function CompetitorCard({ id, data }: { id: string; data: typeof competitorDetai
                         What's Included
                       </h4>
                       <ul className="grid md:grid-cols-2 gap-2">
-                        {data.pricing.includes.map((item, i) => (
+                        {(data.pricing.includes || []).map((item: string, i: number) => (
                           <li key={i} className="text-sm text-[#2a1f1a]/70 flex items-start gap-2">
                             <span className="text-[#406A56]">•</span>
                             {item}
@@ -694,7 +711,7 @@ function CompetitorCard({ id, data }: { id: string; data: typeof competitorDetai
             {/* FAQs Tab */}
             {activeTab === 'faqs' && (
               <div className="space-y-4">
-                {data.faqs.map((faq, i) => (
+                {data.faqs.map((faq: { q: string; a: string }, i: number) => (
                   <div key={i} className="bg-[#F2F1E5] rounded-lg p-4">
                     <h4 className="font-semibold text-[#2a1f1a] mb-2">{faq.q}</h4>
                     <p className="text-sm text-[#2a1f1a]/70">{faq.a}</p>
@@ -715,7 +732,7 @@ function CompetitorCard({ id, data }: { id: string; data: typeof competitorDetai
                     Security Highlights
                   </h4>
                   <ul className="grid md:grid-cols-2 gap-2">
-                    {data.security.highlights.map((item, i) => (
+                    {data.security.highlights.map((item: string, i: number) => (
                       <li key={i} className="text-sm text-[#2a1f1a]/70 flex items-start gap-2">
                         <Shield className="w-4 h-4 text-[#406A56] mt-0.5 flex-shrink-0" />
                         {item}
@@ -735,7 +752,7 @@ function CompetitorCard({ id, data }: { id: string; data: typeof competitorDetai
                 <div>
                   <h4 className="font-semibold text-[#2a1f1a] mb-3">Key Ease-of-Use Points</h4>
                   <ul className="space-y-2">
-                    {data.easeOfUse.highlights.map((item, i) => (
+                    {data.easeOfUse.highlights.map((item: string, i: number) => (
                       <li key={i} className="text-sm text-[#2a1f1a]/70 flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-[#4A3552] mt-0.5 flex-shrink-0" />
                         {item}

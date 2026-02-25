@@ -43,7 +43,7 @@ export default function PhotoMetadataModal({ media, onClose, onSave }: Props) {
   const [searching, setSearching] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showResults, setShowResults] = useState(false)
-  const searchTimeout = useRef<NodeJS.Timeout>()
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Debounced location search using OpenStreetMap Nominatim (free)

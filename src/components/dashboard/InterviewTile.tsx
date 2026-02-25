@@ -303,8 +303,20 @@ export default function InterviewTile({ session, onUpdate, onDelete }: Interview
               onClick={() => setIsExpanded(!isExpanded)}
               className="interview-quick-btn"
             >
-              {isExpanded ? 'Hide' : 'View'} Responses
+              {isExpanded ? 'Hide' : 'View'}
             </button>
+            
+            {/* Primary Ask Follow-up Button - visible directly on tile */}
+            {(session.status === 'sent' || session.status === 'completed' || session.status === 'recording') && 
+             session.allow_followup_questions !== false && (
+              <button 
+                onClick={handleOpenFollowup}
+                className="interview-quick-btn interview-followup-btn"
+              >
+                <Plus size={16} />
+                Ask More
+              </button>
+            )}
             
             <div className="relative" ref={menuRef}>
               <button 

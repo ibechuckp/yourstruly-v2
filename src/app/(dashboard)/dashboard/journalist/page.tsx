@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  Video, Plus, Send, Clock, CheckCircle, 
-  MessageSquare, ChevronLeft, User, Play,
-  Sparkles, FileText, ExternalLink
+  Video, Plus, Clock, CheckCircle, ChevronLeft, User, Play,
+  Sparkles, ExternalLink, X, Search, Heart
 } from 'lucide-react'
 import Link from 'next/link'
-import Modal from '@/components/ui/Modal'
 
 interface Contact {
   id: string
@@ -22,7 +21,7 @@ interface Question {
   question_text: string
   category: string
   is_system: boolean
-  times_used: number
+  is_favorite: boolean
 }
 
 interface Session {
@@ -30,9 +29,6 @@ interface Session {
   title: string
   status: string
   access_token: string
-  sent_via: string
-  sent_at: string
-  completed_at: string
   created_at: string
   contact: {
     id: string
@@ -46,25 +42,20 @@ interface Session {
   video_responses: {
     id: string
     duration: number
-    transcript: string
     ai_summary: string
   }[]
 }
 
 const CATEGORIES = [
-  { id: 'all', label: 'All Questions' },
-  { id: 'childhood', label: 'Childhood' },
-  { id: 'teen', label: 'Teen Years' },
-  { id: 'career', label: 'Career' },
-  { id: 'relationships', label: 'Relationships' },
-  { id: 'wisdom', label: 'Wisdom & Values' },
-  { id: 'general', label: 'Memories' },
-  { id: 'adversity', label: 'Challenges' },
-  { id: 'history', label: 'History' },
-  { id: 'health', label: 'Health' },
-  { id: 'spirituality', label: 'Faith' },
-  { id: 'fun', label: 'Fun & Personality' },
-  { id: 'custom', label: 'My Questions' },
+  { id: 'childhood', label: 'Childhood', emoji: '💒' },
+  { id: 'relationships', label: 'Relationships', emoji: '❤️' },
+  { id: 'career', label: 'Career', emoji: '💼' },
+  { id: 'wisdom', label: 'Wisdom', emoji: '🦉' },
+  { id: 'adversity', label: 'Challenges', emoji: '💪' },
+  { id: 'fun', label: 'Fun', emoji: '🎉' },
+  { id: 'history', label: 'History', emoji: '📜' },
+  { id: 'spirituality', label: 'Faith', emoji: '🙏' },
+  { id: 'custom', label: 'My Questions', emoji: '✨' },
 ]
 
 export default function JournalistPage() {
@@ -72,12 +63,18 @@ export default function JournalistPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
+  
+  // Modal state
   const [showNewSession, setShowNewSession] = useState(false)
+  const [step, setStep] = useState<'contact' | 'question'>('contact')
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
-  const [selectedQuestions, setSelectedQuestions] = useState<string[]>([])
-  const [questionCategory, setQuestionCategory] = useState('all')
+  const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null) // Single question
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [sessionTitle, setSessionTitle] = useState('')
+  const [customQuestion, setCustomQuestion] = useState('')
   const [creating, setCreating] = useState(false)
+  const [copied, setCopied] = useState<string | null>(null)
+  
   const supabase = createClient()
 
   useEffect(() => {
@@ -89,60 +86,81 @@ export default function JournalistPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Load sessions
-    const { data: sessionsData } = await supabase
-      .from('interview_sessions')
-      .select(`
-        *,
-        contact:contacts(id, full_name),
-        session_questions(id, question_text, status),
-        video_responses(id, duration, transcript, ai_summary)
-      `)
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
+    const [sessionsRes, contactsRes, questionsRes] = await Promise.all([
+      supabase
+        .from('interview_sessions')
+        .select(`
+          *, contact:contacts(id, full_name),
+          session_questions(id, question_text, status),
+          video_responses(id, duration, ai_summary)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('contacts')
+        .select('id, full_name, phone, email')
+        .eq('user_id', user.id)
+        .order('full_name'),
+      supabase
+        .from('interview_questions')
+        .select('*')
+        .or(`user_id.eq.${user.id},is_system.eq.true`)
+        .order('category'),
+    ])
 
-    setSessions(sessionsData || [])
-
-    // Load contacts
-    const { data: contactsData } = await supabase
-      .from('contacts')
-      .select('id, full_name, phone, email')
-      .eq('user_id', user.id)
-      .order('full_name')
-
-    setContacts(contactsData || [])
-
-    // Load questions
-    const { data: questionsData } = await supabase
-      .from('interview_questions')
-      .select('*')
-      .or(`user_id.eq.${user.id},is_system.eq.true`)
-      .order('category')
-
-    setQuestions(questionsData || [])
+    setSessions(sessionsRes.data || [])
+    setContacts(contactsRes.data || [])
+    setQuestions(questionsRes.data || [])
     setLoading(false)
   }
 
-  const filteredQuestions = questions.filter(q => 
-    questionCategory === 'all' || 
-    (questionCategory === 'custom' ? !q.is_system : q.category === questionCategory)
-  )
+  const filteredQuestions = selectedCategory 
+    ? questions.filter(q => 
+        selectedCategory === 'custom' ? !q.is_system : q.category === selectedCategory
+      )
+    : []
 
-  const toggleQuestion = (id: string) => {
-    setSelectedQuestions(prev => 
-      prev.includes(id) ? prev.filter(q => q !== id) : [...prev, id]
-    )
+  const handleSelectContact = (contact: Contact) => {
+    setSelectedContact(contact)
+    setStep('question')
+  }
+
+  const handleSelectQuestion = (questionId: string) => {
+    setSelectedQuestion(questionId === selectedQuestion ? null : questionId)
   }
 
   const handleCreateSession = async () => {
-    if (!selectedContact || selectedQuestions.length === 0) return
+    if (!selectedContact || (!selectedQuestion && !customQuestion.trim())) return
 
     setCreating(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
     try {
-      // Create session
+      // Determine question text
+      let questionText = ''
+      let questionId = selectedQuestion
+      
+      if (customQuestion.trim()) {
+        // Save custom question to question bank first
+        const { data: savedQuestion } = await supabase
+          .from('interview_questions')
+          .insert({
+            user_id: user.id,
+            question_text: customQuestion.trim(),
+            category: 'custom',
+            is_system: false
+          })
+          .select()
+          .single()
+        
+        questionId = savedQuestion?.id || null
+        questionText = customQuestion.trim()
+      } else {
+        const question = questions.find(q => q.id === selectedQuestion)
+        questionText = question?.question_text || ''
+      }
+      
       const { data: session, error: sessionError } = await supabase
         .from('interview_sessions')
         .insert({
@@ -156,28 +174,16 @@ export default function JournalistPage() {
 
       if (sessionError) throw sessionError
 
-      // Add questions to session
-      const sessionQuestions = selectedQuestions.map((qId, i) => {
-        const question = questions.find(q => q.id === qId)
-        return {
-          session_id: session.id,
-          question_id: qId,
-          question_text: question?.question_text || '',
-          sort_order: i,
-        }
+      // Add single question to session
+      await supabase.from('session_questions').insert({
+        session_id: session.id,
+        question_id: questionId,
+        question_text: questionText,
+        sort_order: 0,
       })
 
-      await supabase.from('session_questions').insert(sessionQuestions)
-
-      // Update question usage counts
-      for (const qId of selectedQuestions) {
-        await supabase.rpc('increment_question_usage', { question_id: qId })
-      }
-
-      setShowNewSession(false)
-      setSelectedContact(null)
-      setSelectedQuestions([])
-      setSessionTitle('')
+      // Reset and close
+      closeModal()
       loadData()
     } catch (error) {
       console.error('Error creating session:', error)
@@ -187,42 +193,52 @@ export default function JournalistPage() {
     }
   }
 
-  const getStatusColor = (status: string) => {
+  const closeModal = () => {
+    setShowNewSession(false)
+    setStep('contact')
+    setSelectedContact(null)
+    setSelectedQuestion(null)
+    setSelectedCategory(null)
+    setSessionTitle('')
+    setCustomQuestion('')
+  }
+
+  const copyLink = (token: string, sessionId: string) => {
+    navigator.clipboard.writeText(`${window.location.origin}/interview/${token}`)
+    setCopied(sessionId)
+    setTimeout(() => setCopied(null), 2000)
+  }
+
+  const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'completed': return 'text-green-500 bg-green-500/10'
-      case 'recording': return 'text-blue-500 bg-blue-500/10'
-      case 'sent': return 'text-amber-500 bg-amber-500/10'
-      default: return 'text-gray-400 bg-gray-500/10'
+      case 'completed': return 'bg-[#406A56]/10 text-[#406A56]'
+      case 'recording': return 'bg-blue-50 text-blue-600'
+      case 'sent': return 'bg-[#D9C61A]/10 text-[#9a8c12]'
+      default: return 'bg-gray-100 text-gray-500'
     }
   }
 
-  const getInterviewLink = (token: string) => {
-    return `${window.location.origin}/interview/${token}`
-  }
-
-  const copyLink = (token: string) => {
-    navigator.clipboard.writeText(getInterviewLink(token))
-    alert('Link copied to clipboard!')
-  }
-
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen bg-[#F2F1E5]">
       {/* Header */}
-      <header className="mb-6">
-        <div className="flex items-center justify-between">
+      <header className="px-6 py-6">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="p-2 bg-gray-900/90 rounded-xl text-white/70 hover:bg-white/20 hover:text-white transition-all">
+            <Link 
+              href="/dashboard" 
+              className="p-2.5 bg-white/80 backdrop-blur-sm rounded-xl text-[#406A56] hover:bg-white transition-all shadow-sm"
+            >
               <ChevronLeft size={20} />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-white">Video Journalist</h1>
-              <p className="text-white/50 text-sm">Capture family stories remotely</p>
+              <h1 className="text-2xl font-bold text-[#2d2d2d]">Video Journalist</h1>
+              <p className="text-[#666] text-sm">Capture family stories remotely</p>
             </div>
           </div>
 
           <button
             onClick={() => setShowNewSession(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#C35F33] hover:bg-[#a54d28] text-white rounded-xl transition-all shadow-md"
           >
             <Plus size={18} />
             <span className="hidden sm:inline">New Interview</span>
@@ -230,232 +246,296 @@ export default function JournalistPage() {
         </div>
       </header>
 
-      <main>
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-white/60">Loading...</div>
-          </div>
-        ) : sessions.length === 0 ? (
-          <div className="bg-gray-900/90 rounded-2xl p-12 border border-white/10 text-center">
-            <Video size={48} className="text-white/30 mb-4 mx-auto" />
-            <h3 className="text-lg font-medium text-white mb-2">No interviews yet</h3>
-            <p className="text-white/50 mb-4 max-w-md mx-auto">
-              Send questions to your family and friends, and they can record video responses from anywhere.
-            </p>
-            <button
-              onClick={() => setShowNewSession(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl transition-all mx-auto"
-            >
-              <Plus size={18} />
-              Start your first interview
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {sessions.map((session) => (
-              <div
-                key={session.id}
-                className="bg-gray-900/90 rounded-2xl p-5 border border-white/10 hover:bg-white/15 transition-all"
+      {/* Main Content */}
+      <main className="px-6 pb-12">
+        <div className="max-w-4xl mx-auto">
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-[#666]">Loading...</div>
+            </div>
+          ) : sessions.length === 0 ? (
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-12 text-center shadow-sm">
+              <div className="w-16 h-16 bg-[#4A3552]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Video size={32} className="text-[#4A3552]" />
+              </div>
+              <h3 className="text-lg font-semibold text-[#2d2d2d] mb-2">No interviews yet</h3>
+              <p className="text-[#666] mb-6 max-w-md mx-auto">
+                Send a question to family or friends, and they can record a video response from anywhere.
+              </p>
+              <button
+                onClick={() => setShowNewSession(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#C35F33] hover:bg-[#a54d28] text-white rounded-xl transition-all"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                      <User size={24} className="text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-semibold">{session.title}</h3>
-                      <p className="text-white/50 text-sm">with {session.contact?.full_name}</p>
-                      <div className="flex items-center gap-4 mt-2">
-                        <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${getStatusColor(session.status)}`}>
-                          {session.status}
-                        </span>
-                        <span className="text-white/40 text-xs">
-                          {session.session_questions?.length} questions
-                        </span>
-                        {session.video_responses?.length > 0 && (
-                          <span className="text-green-400 text-xs flex items-center gap-1">
-                            <Play size={12} />
-                            {session.video_responses.length} responses
-                          </span>
-                        )}
+                <Plus size={18} />
+                Start your first interview
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {sessions.map((session) => (
+                <motion.div
+                  key={session.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-sm hover:shadow-md transition-all"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#4A3552] to-[#6b4a7a] flex items-center justify-center text-white font-semibold">
+                        {session.contact?.full_name?.charAt(0) || '?'}
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {session.status === 'pending' && (
-                      <button
-                        onClick={() => copyLink(session.access_token)}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-sm rounded-lg transition-all"
-                      >
-                        <ExternalLink size={14} />
-                        Copy Link
-                      </button>
-                    )}
-                    <Link
-                      href={`/dashboard/journalist/${session.id}`}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition-all"
-                    >
-                      View
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Video previews */}
-                {session.video_responses?.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-white/10">
-                    <div className="flex gap-3 overflow-x-auto pb-2">
-                      {session.video_responses.slice(0, 4).map((video) => (
-                        <div
-                          key={video.id}
-                          className="flex-shrink-0 w-32 p-3 bg-white/5 rounded-xl"
-                        >
-                          <div className="flex items-center gap-2 text-white/50 text-xs mb-2">
-                            <Play size={12} />
-                            {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
-                          </div>
-                          {video.ai_summary && (
-                            <p className="text-white/70 text-xs line-clamp-2">{video.ai_summary}</p>
+                      <div>
+                        <h3 className="text-[#2d2d2d] font-semibold">{session.title}</h3>
+                        <p className="text-[#888] text-sm">with {session.contact?.full_name}</p>
+                        <div className="flex items-center gap-3 mt-2">
+                          <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${getStatusStyle(session.status)}`}>
+                            {session.status}
+                          </span>
+                          {session.video_responses?.length > 0 && (
+                            <span className="text-[#406A56] text-xs flex items-center gap-1">
+                              <CheckCircle size={12} />
+                              Answered
+                            </span>
                           )}
                         </div>
-                      ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {session.status === 'pending' && (
+                        <button
+                          onClick={() => copyLink(session.access_token, session.id)}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-[#D9C61A]/10 hover:bg-[#D9C61A]/20 text-[#9a8c12] text-sm rounded-lg transition-all"
+                        >
+                          <ExternalLink size={14} />
+                          {copied === session.id ? 'Copied!' : 'Copy Link'}
+                        </button>
+                      )}
+                      {(session.status === 'sent' || session.status === 'completed') && (
+                        <Link
+                          href={`/dashboard/journalist/${session.id}?followup=true`}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-[#4A3552] hover:bg-[#5d4466] text-white text-sm rounded-lg transition-all"
+                        >
+                          <Plus size={14} />
+                          Ask More
+                        </Link>
+                      )}
+                      <Link
+                        href={`/dashboard/journalist/${session.id}`}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-[#406A56]/10 hover:bg-[#406A56]/20 text-[#406A56] text-sm rounded-lg transition-all"
+                      >
+                        View
+                      </Link>
                     </div>
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+
+                  {/* Show question */}
+                  {session.session_questions?.[0] && (
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <p className="text-sm text-[#666] italic">
+                        "{session.session_questions[0].question_text}"
+                      </p>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
 
       {/* New Interview Modal */}
-      <Modal 
-        isOpen={showNewSession} 
-        onClose={() => setShowNewSession(false)} 
-        title="New Interview" 
-        maxWidth="max-w-2xl"
-        showDone={false}
-      >
-        {!selectedContact ? (
-          /* Step 1: Select Contact */
-          <div>
-            <p className="text-gray-400 text-sm mb-4">Who do you want to interview?</p>
-            {contacts.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500 mb-4">No contacts yet</p>
-                <Link href="/dashboard/contacts" className="text-amber-500 hover:underline">
-                  Add contacts first
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {contacts.map((contact) => (
-                  <button
-                    key={contact.id}
-                    onClick={() => setSelectedContact(contact)}
-                    className="w-full flex items-center gap-4 p-4 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors text-left"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-amber-600 flex items-center justify-center text-white font-medium">
-                      {contact.full_name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-white font-medium">{contact.full_name}</p>
-                      <p className="text-gray-400 text-sm">{contact.phone || contact.email || 'No contact info'}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Step 2: Select Questions */
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <button
-                onClick={() => setSelectedContact(null)}
-                className="text-amber-500 text-sm hover:underline"
-              >
-                ← Change person
-              </button>
-              <div className="flex items-center gap-2">
-                <User size={16} className="text-amber-500" />
-                <span className="text-white text-sm">{selectedContact.full_name}</span>
-              </div>
-            </div>
-
-            {/* Session Title */}
-            <div className="mb-4">
-              <input
-                type="text"
-                value={sessionTitle}
-                onChange={(e) => setSessionTitle(e.target.value)}
-                placeholder={`Interview with ${selectedContact.full_name}`}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
-
-            {/* Category Tabs */}
-            <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setQuestionCategory(cat.id)}
-                  className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
-                    questionCategory === cat.id
-                      ? 'bg-amber-600 text-white'
-                      : 'bg-gray-800 text-gray-400 hover:text-white'
-                  }`}
-                >
-                  {cat.label}
+      <AnimatePresence>
+        {showNewSession && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={closeModal}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#F2F1E5] rounded-2xl max-w-lg w-full max-h-[85vh] overflow-hidden shadow-xl"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E7DC]">
+                <div>
+                  <h2 className="text-lg font-semibold text-[#2d2d2d]">New Interview</h2>
+                  <p className="text-sm text-[#888]">
+                    {step === 'contact' ? 'Choose who to interview' : 'Pick a question to ask'}
+                  </p>
+                </div>
+                <button onClick={closeModal} className="p-2 hover:bg-white/50 rounded-lg transition-all">
+                  <X size={20} className="text-[#666]" />
                 </button>
-              ))}
-            </div>
+              </div>
 
-            {/* Questions List */}
-            <div className="space-y-2 max-h-64 overflow-y-auto mb-4">
-              {filteredQuestions.map((q) => (
-                <button
-                  key={q.id}
-                  onClick={() => toggleQuestion(q.id)}
-                  className={`w-full flex items-start gap-3 p-3 rounded-xl transition-colors text-left ${
-                    selectedQuestions.includes(q.id)
-                      ? 'bg-amber-600/20 border border-amber-500/50'
-                      : 'bg-gray-800 hover:bg-gray-700 border border-transparent'
-                  }`}
-                >
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    selectedQuestions.includes(q.id)
-                      ? 'border-amber-500 bg-amber-500'
-                      : 'border-gray-600'
-                  }`}>
-                    {selectedQuestions.includes(q.id) && (
-                      <CheckCircle size={12} className="text-white" />
+              {/* Step 1: Select Contact */}
+              {step === 'contact' && (
+                <div className="p-6">
+                  {contacts.length === 0 ? (
+                    <div className="text-center py-8">
+                      <User size={40} className="text-[#888] mx-auto mb-3" />
+                      <p className="text-[#666] mb-4">No contacts yet</p>
+                      <Link href="/dashboard/contacts" className="text-[#C35F33] hover:underline">
+                        Add contacts first →
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-80 overflow-y-auto">
+                      {contacts.map((contact) => (
+                        <button
+                          key={contact.id}
+                          onClick={() => handleSelectContact(contact)}
+                          className="w-full flex items-center gap-4 p-4 bg-white/70 hover:bg-white rounded-xl transition-all text-left"
+                        >
+                          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#4A3552] to-[#6b4a7a] flex items-center justify-center text-white font-medium">
+                            {contact.full_name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="text-[#2d2d2d] font-medium">{contact.full_name}</p>
+                            <p className="text-[#888] text-sm">{contact.phone || contact.email || 'No contact info'}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Step 2: Select Question */}
+              {step === 'question' && selectedContact && (
+                <div className="flex flex-col h-[calc(85vh-80px)]">
+                  {/* Contact pill + back */}
+                  <div className="flex items-center justify-between px-6 py-3 bg-white/50">
+                    <button
+                      onClick={() => { setStep('contact'); setSelectedCategory(null); setSelectedQuestion(null); setCustomQuestion('') }}
+                      className="text-[#C35F33] text-sm hover:underline"
+                    >
+                      ← Change person
+                    </button>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#4A3552]/10 rounded-full">
+                      <User size={14} className="text-[#4A3552]" />
+                      <span className="text-[#4A3552] text-sm font-medium">{selectedContact.full_name}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto">
+                    {/* 1. Custom Question at TOP */}
+                    <div className="px-6 pt-4 pb-3">
+                      <label className="block text-sm font-medium text-[#2d2d2d] mb-2">
+                        Write your own question:
+                      </label>
+                      <textarea
+                        value={customQuestion}
+                        onChange={(e) => { setCustomQuestion(e.target.value); setSelectedQuestion(null); setSelectedCategory(null) }}
+                        placeholder="What's a story from your childhood that shaped who you are today?"
+                        rows={2}
+                        className="w-full px-4 py-3 bg-white border border-[#E8E7DC] rounded-xl text-[#2d2d2d] placeholder-[#aaa] focus:outline-none focus:ring-2 focus:ring-[#406A56] resize-none"
+                      />
+                    </div>
+
+                    {/* Divider */}
+                    <div className="flex items-center gap-3 px-6 py-2">
+                      <div className="flex-1 h-px bg-[#E8E7DC]" />
+                      <span className="text-[#888] text-xs">or browse by category</span>
+                      <div className="flex-1 h-px bg-[#E8E7DC]" />
+                    </div>
+
+                    {/* 2. Horizontal Scrollable Categories */}
+                    <div className="px-6 py-3">
+                      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                        {CATEGORIES.map((cat) => (
+                          <button
+                            key={cat.id}
+                            onClick={() => { setSelectedCategory(cat.id); setCustomQuestion('') }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-all ${
+                              selectedCategory === cat.id
+                                ? 'bg-[#4A3552] text-white'
+                                : 'bg-white/70 text-[#2d2d2d] hover:bg-white'
+                            }`}
+                          >
+                            <span>{cat.emoji}</span>
+                            <span className="text-sm font-medium">{cat.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 3. Questions List (when category selected) */}
+                    {selectedCategory && (
+                      <div className="px-6 pb-4">
+                        {filteredQuestions.length === 0 ? (
+                          <div className="text-center py-6 text-[#888] text-sm">
+                            No questions in this category yet
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {filteredQuestions.map((q) => (
+                              <button
+                                key={q.id}
+                                onClick={() => { handleSelectQuestion(q.id); setCustomQuestion('') }}
+                                className={`w-full flex items-start gap-3 p-4 rounded-xl transition-all text-left ${
+                                  selectedQuestion === q.id
+                                    ? 'bg-[#406A56]/10 ring-2 ring-[#406A56]'
+                                    : 'bg-white/70 hover:bg-white'
+                                }`}
+                              >
+                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                                  selectedQuestion === q.id
+                                    ? 'border-[#406A56] bg-[#406A56]'
+                                    : 'border-[#ccc]'
+                                }`}>
+                                  {selectedQuestion === q.id && (
+                                    <CheckCircle size={12} className="text-white" />
+                                  )}
+                                </div>
+                                <p className="text-[#2d2d2d] text-sm leading-relaxed">{q.question_text}</p>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                  <div>
-                    <p className="text-white text-sm">{q.question_text}</p>
-                    <p className="text-gray-500 text-xs capitalize mt-1">{q.category}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
 
-            {/* Selected count & Create */}
-            <div className="flex items-center justify-between pt-4 border-t border-gray-800">
-              <span className="text-gray-400 text-sm">
-                {selectedQuestions.length} questions selected
-              </span>
-              <button
-                onClick={handleCreateSession}
-                disabled={selectedQuestions.length === 0 || creating}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg transition-colors"
-              >
-                {creating ? 'Creating...' : 'Create Interview'}
-              </button>
-            </div>
-          </div>
+                  {/* Create Button - show when custom question OR selected question */}
+                  {(customQuestion.trim() || selectedQuestion) && (
+                    <div className="px-6 py-4 border-t border-[#E8E7DC] bg-white/50">
+                      <div className="mb-3">
+                        <input
+                          type="text"
+                          value={sessionTitle}
+                          onChange={(e) => setSessionTitle(e.target.value)}
+                          placeholder={`Interview with ${selectedContact.full_name}`}
+                          className="w-full px-4 py-2.5 bg-white border border-[#E8E7DC] rounded-xl text-[#2d2d2d] placeholder-[#aaa] focus:outline-none focus:ring-2 focus:ring-[#406A56]"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-[#888] text-sm">
+                          <Clock size={14} />
+                          <span>~2-3 min to answer</span>
+                        </div>
+                        <button
+                          onClick={handleCreateSession}
+                          disabled={creating}
+                          className="flex items-center gap-2 px-5 py-2.5 bg-[#406A56] hover:bg-[#4a7a64] disabled:opacity-50 text-white rounded-xl transition-all"
+                        >
+                          {creating ? 'Creating...' : 'Create Interview'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
         )}
-      </Modal>
+      </AnimatePresence>
     </div>
   )
 }

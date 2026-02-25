@@ -435,7 +435,7 @@ export async function getProductShippingRates(
     setMarketplaceCache('spocket', cacheKey, rates);
   }
   
-  return rates;
+  return rates || [];
 }
 
 /**

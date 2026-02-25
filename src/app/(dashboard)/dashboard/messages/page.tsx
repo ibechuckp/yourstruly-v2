@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { MessageSquare, ArrowLeft } from 'lucide-react'
+import { MessageSquare, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import '@/styles/page-styles.css'
 import { 
   ConversationList, 
   MessageThread, 
@@ -14,6 +13,7 @@ import {
   Poll,
   ScheduleProposal
 } from '@/components/messages'
+import TornEdge from '@/components/ui/TornEdge'
 
 // ============================================
 // MOCK DATA
@@ -522,148 +522,97 @@ export default function MessagesPage() {
     : []
 
   return (
-    <div className="messages-page-container">
-      {/* Background */}
-      <div className="page-background">
-        <div className="page-blob page-blob-1" />
-        <div className="page-blob page-blob-2" />
-        <div className="page-blob page-blob-3" />
-      </div>
+    <div className="min-h-screen bg-[#F2F1E5]">
+      {/* Main Content - Full Height */}
+      <main className="px-4 lg:px-6 py-4 lg:py-6">
+        <div className="max-w-6xl mx-auto">
+          {/* Messages Panel - Glass Card */}
+          <div className="bg-white/80 backdrop-blur-xl rounded-[20px] shadow-lg border border-white/50 overflow-hidden h-[calc(100vh-140px)] lg:h-[calc(100vh-160px)]">
+            <div className="flex h-full">
+              {/* Conversation List - Left Panel */}
+              <div 
+                className={`w-full lg:w-[360px] border-r border-[#406A56]/10 bg-[#F2F1E5]/50 flex-shrink-0 flex flex-col ${
+                  activeConversation ? 'hidden lg:flex' : 'flex'
+                }`}
+              >
+                <ConversationList
+                  conversations={conversations}
+                  activeId={activeConversation?.id || null}
+                  onSelect={handleSelectConversation}
+                />
+              </div>
 
-      {/* Content */}
-      <div className="messages-content">
-        {/* Header - Mobile only */}
-        <div className="messages-mobile-header lg:hidden">
-          <div className="page-header">
-            <Link href="/dashboard" className="page-header-back">
-              <ArrowLeft size={18} />
-            </Link>
-            <div>
-              <h1 className="page-header-title">Messages</h1>
-              <p className="page-header-subtitle">Stay connected with your loved ones</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Layout */}
-        <div className="messages-panel glass-card-page overflow-hidden">
-          <div className="flex h-full">
-            {/* Conversation List - Left Panel */}
-            <div 
-              className={`w-full lg:w-[360px] border-r border-[#406A56]/10 bg-white/40 flex-shrink-0 flex flex-col ${
-                activeConversation ? 'hidden lg:flex' : 'flex'
-              }`}
-            >
-              <ConversationList
-                conversations={conversations}
-                activeId={activeConversation?.id || null}
-                onSelect={handleSelectConversation}
-              />
-            </div>
-
-            {/* Message Thread - Right Panel */}
-            <div className={`flex-1 flex flex-col min-w-0 ${!activeConversation ? 'hidden lg:flex' : 'flex'}`}>
-              {activeConversation ? (
-                <>
-                  {/* Mobile back button */}
-                  <button
-                    onClick={() => setActiveConversation(null)}
-                    className="lg:hidden flex items-center gap-2 px-4 py-2 text-[#406A56] border-b border-[#406A56]/10 flex-shrink-0"
-                  >
-                    <ArrowLeft size={16} />
-                    <span className="text-sm font-medium">Back to conversations</span>
-                  </button>
-                  <div className="flex-1 overflow-hidden min-h-0">
-                    {activeConversation.type === 'circle' && activeConversation.circleId ? (
-                      <CircleMessageThread
-                        circleId={activeConversation.circleId}
-                        circleName={activeConversation.name}
-                        memberCount={activeConversation.participants || 0}
-                        onOpenDetail={() => handleOpenCircleDetail(activeConversation.circleId!)}
-                        onMessageSent={() => {
-                          // Update conversation preview when message is sent
-                          setConversations(prev =>
-                            prev.map(c =>
-                              c.id === activeConversation.id
-                                ? { ...c, lastMessage: 'You: Message sent', timestamp: new Date() }
-                                : c
+              {/* Message Thread - Right Panel */}
+              <div className={`flex-1 flex flex-col min-w-0 bg-white/40 ${!activeConversation ? 'hidden lg:flex' : 'flex'}`}>
+                {activeConversation ? (
+                  <>
+                    {/* Mobile back button */}
+                    <button
+                      onClick={() => setActiveConversation(null)}
+                      className="lg:hidden flex items-center gap-2 px-4 py-3 text-[#406A56] bg-white/60 border-b border-[#406A56]/10 flex-shrink-0 hover:bg-white/80 transition-all"
+                    >
+                      <ChevronLeft size={18} />
+                      <span className="text-sm font-medium">Back to conversations</span>
+                    </button>
+                    <div className="flex-1 overflow-hidden min-h-0">
+                      {activeConversation.type === 'circle' && activeConversation.circleId ? (
+                        <CircleMessageThread
+                          circleId={activeConversation.circleId}
+                          circleName={activeConversation.name}
+                          memberCount={activeConversation.participants || 0}
+                          onOpenDetail={() => handleOpenCircleDetail(activeConversation.circleId!)}
+                          onMessageSent={() => {
+                            // Update conversation preview when message is sent
+                            setConversations(prev =>
+                              prev.map(c =>
+                                c.id === activeConversation.id
+                                  ? { ...c, lastMessage: 'You: Message sent', timestamp: new Date() }
+                                  : c
+                              )
                             )
-                          )
-                        }}
-                      />
-                    ) : (
-                      <MessageThread
-                        conversation={activeConversation}
-                        messages={currentMessages}
-                        onSendMessage={handleSendMessage}
-                        onReact={handleReact}
-                        onPin={handlePin}
-                      />
-                    )}
-                  </div>
-                </>
-              ) : (
-                /* Empty State */
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center px-6">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#406A56]/10 to-[#D9C61A]/10 flex items-center justify-center mx-auto mb-4">
-                      <MessageSquare size={32} className="text-[#406A56]" />
+                          }}
+                        />
+                      ) : (
+                        <MessageThread
+                          conversation={activeConversation}
+                          messages={currentMessages}
+                          onSendMessage={handleSendMessage}
+                          onReact={handleReact}
+                          onPin={handlePin}
+                        />
+                      )}
                     </div>
-                    <h3 className="text-lg font-semibold text-[#2d2d2d] mb-2">
-                      Select a conversation
-                    </h3>
-                    <p className="text-sm text-[#666] max-w-sm">
-                      Choose a conversation from the list to start messaging, 
-                      or browse memory threads to collaborate with family.
-                    </p>
+                  </>
+                ) : (
+                  /* Empty State with torn edge card */
+                  <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-white/60 to-[#F2F1E5]/40">
+                    <div className="relative">
+                      <div className="absolute -top-2 left-4 right-4">
+                        <TornEdge variant="d" position="top" color="white" height={8} />
+                      </div>
+                      <div className="text-center px-8 py-8 bg-white rounded-lg shadow-sm mx-4">
+                        <div className="w-20 h-20 rounded-full bg-[#4A3552]/10 flex items-center justify-center mx-auto mb-4">
+                          <MessageSquare size={32} className="text-[#4A3552]" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-[#2d2d2d] mb-2">
+                          Select a conversation
+                        </h3>
+                        <p className="text-sm text-[#666] max-w-sm">
+                          Choose a conversation from the list to start messaging, 
+                          or browse memory threads to collaborate with family.
+                        </p>
+                      </div>
+                      <div className="absolute -bottom-2 left-4 right-4">
+                        <TornEdge variant="c" position="bottom" color="white" height={8} />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Styles for full-height layout */}
-      <style jsx>{`
-        .messages-page-container {
-          position: fixed;
-          inset: 0;
-          overflow: hidden;
-        }
-        
-        .messages-content {
-          position: relative;
-          z-index: 10;
-          height: 100vh;
-          display: flex;
-          flex-direction: column;
-          padding: 16px;
-          padding-top: 80px; /* Account for nav */
-        }
-        
-        .messages-mobile-header {
-          flex-shrink: 0;
-          margin-bottom: 16px;
-        }
-        
-        .messages-panel {
-          flex: 1;
-          min-height: 0;
-          display: flex;
-          flex-direction: column;
-        }
-        
-        @media (min-width: 1024px) {
-          .messages-content {
-            padding: 24px;
-            padding-top: 88px;
-            max-width: 1600px;
-            margin: 0 auto;
-            width: 100%;
-          }
-        }
-      `}</style>
+      </main>
     </div>
   )
 }

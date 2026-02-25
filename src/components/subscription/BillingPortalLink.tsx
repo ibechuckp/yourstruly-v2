@@ -1,50 +1,44 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { CreditCard, ExternalLink, Loader2 } from 'lucide-react';
+import { useState } from 'react'
+import { ExternalLink, Loader2, CreditCard } from 'lucide-react'
 
-export function BillingPortalLink() {
-  const [isLoading, setIsLoading] = useState(false);
+interface BillingPortalLinkProps {
+  className?: string
+  children?: React.ReactNode
+}
+
+export function BillingPortalLink({ className = '', children }: BillingPortalLinkProps) {
+  const [loading, setLoading] = useState(false)
 
   const handleClick = async () => {
-    setIsLoading(true);
+    setLoading(true)
     try {
-      const response = await fetch('/api/stripe/create-portal-session', {
-        method: 'POST',
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create portal session');
-      }
-
-      // Redirect to Stripe Billing Portal
-      window.location.href = data.url;
-    } catch (error) {
-      console.error('Error opening billing portal:', error);
-      setIsLoading(false);
+      const res = await fetch('/api/stripe/portal', { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to create portal session')
+      const { url } = await res.json()
+      if (url) window.location.href = url
+    } catch (err) {
+      console.error('Portal error:', err)
+      alert('Failed to open billing portal')
+    } finally {
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <button
       onClick={handleClick}
-      disabled={isLoading}
-      className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#406A56]/20 rounded-lg text-[#406A56] font-medium hover:bg-[#406A56]/5 transition-colors disabled:opacity-50"
+      disabled={loading}
+      className={`inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 ${className}`}
     >
-      {isLoading ? (
-        <>
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Loading...
-        </>
+      {loading ? (
+        <Loader2 size={16} className="animate-spin" />
       ) : (
-        <>
-          <CreditCard className="w-4 h-4" />
-          Manage Billing
-          <ExternalLink className="w-3 h-3" />
-        </>
+        <CreditCard size={16} />
       )}
+      {children || 'Manage Billing'}
+      <ExternalLink size={14} className="opacity-50" />
     </button>
-  );
+  )
 }

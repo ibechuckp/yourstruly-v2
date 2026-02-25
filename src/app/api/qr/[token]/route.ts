@@ -54,7 +54,7 @@ export async function GET(
     await supabase.from('qr_access_logs').insert({
       token_id: access.token_id,
       user_id: userId,
-      ip_address: request.ip || null,
+      ip_address: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || null,
       user_agent: request.headers.get('user-agent') || null,
       was_granted: access.can_access,
       denial_reason: access.denial_reason

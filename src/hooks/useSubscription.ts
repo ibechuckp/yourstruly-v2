@@ -1,132 +1,196 @@
-'use client';
+'use client'
 
-import { useEffect, useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
-
-interface Plan {
-  id: string;
-  name: string;
-  limits: {
-    memories_per_month: number;
-    storage_gb: number;
-    ai_interviews: number;
-    family_members: number;
-    video_messages: number;
-    postscripts: number;
-  };
-}
-
-interface Subscription {
-  id: string;
-  status: string;
-  current_period_end: string;
-  cancel_at_period_end: boolean;
-  plan_id: string;
-  plan: Plan;
-}
+import { useState, useEffect, useCallback } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { 
+  UserSubscription, 
+  SubscriptionPlan, 
+  SubscriptionSeat,
+  StorageBreakdown,
+  SubscriptionWithDetails,
+  FeatureKey,
+  SeatPricing,
+  calculateTotalMonthlyCost
+} from '@/types/subscription'
 
 interface UseSubscriptionReturn {
-  subscription: Subscription | null;
-  profile: {
-    subscription_status: string;
-    current_plan_id: string | null;
-  } | null;
-  plan: Plan | null;
-  isLoading: boolean;
-  isActive: boolean;
-  isPremium: boolean;
-  error: Error | null;
-  refetch: () => void;
-  checkFeatureLimit: (feature: keyof Plan['limits'], currentUsage: number) => {
-    allowed: boolean;
-    remaining: number;
-    limit: number;
-  };
+  subscription: SubscriptionWithDetails | null
+  isLoading: boolean
+  error: string | null
+  isPremium: boolean
+  hasFeature: (feature: FeatureKey) => boolean
+  getStoragePercentage: () => number
+  isStorageFull: () => boolean
+  refetch: () => Promise<void>
 }
 
 export function useSubscription(): UseSubscriptionReturn {
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [profile, setProfile] = useState<{ subscription_status: string; current_plan_id: string | null } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const supabase = createClient();
+  const [subscription, setSubscription] = useState<SubscriptionWithDetails | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [seatPricing, setSeatPricing] = useState<SeatPricing[]>([])
+  
+  const supabase = createClient()
 
   const fetchSubscription = useCallback(async () => {
     try {
-      setIsLoading(true);
-      setError(null);
+      setIsLoading(true)
+      setError(null)
 
-      const response = await fetch('/api/subscription/status');
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch subscription');
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setSubscription(null)
+        return
       }
 
-      setSubscription(data.subscription);
-      setProfile(data.profile);
+      // Fetch user subscription with plan
+      const { data: subData, error: subError } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          plan:subscription_plans(*)
+        `)
+        .eq('user_id', user.id)
+        .single()
+
+      // Fetch seat pricing for cost calculation
+      const { data: pricingData } = await supabase
+        .from('seat_pricing')
+        .select('*')
+        .order('min_seat')
+      
+      if (pricingData) {
+        setSeatPricing(pricingData)
+      }
+
+      // If no subscription, create default free subscription
+      if (subError?.code === 'PGRST116' || !subData) {
+        // Get free plan
+        const { data: freePlan } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('name', 'free')
+          .single()
+
+        if (freePlan) {
+          // Create free subscription for user
+          const { data: newSub } = await supabase
+            .from('user_subscriptions')
+            .insert({
+              user_id: user.id,
+              plan_id: freePlan.id,
+              status: 'active',
+              storage_used_bytes: 0
+            })
+            .select(`*, plan:subscription_plans(*)`)
+            .single()
+
+          if (newSub) {
+            const fullSub = await buildFullSubscription(newSub, user.id, pricingData || [])
+            setSubscription(fullSub)
+          }
+        }
+        return
+      }
+
+      const fullSub = await buildFullSubscription(subData, user.id, pricingData || [])
+      setSubscription(fullSub)
+
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
+      console.error('Error fetching subscription:', err)
+      setError('Failed to load subscription')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, []);
+  }, [])
+
+  const buildFullSubscription = async (
+    subData: any, 
+    userId: string,
+    pricing: SeatPricing[]
+  ): Promise<SubscriptionWithDetails> => {
+    // Fetch seats
+    const { data: seatsData } = await supabase
+      .from('subscription_seats')
+      .select('*')
+      .eq('subscription_id', subData.id)
+      .order('seat_number')
+
+    // Fetch storage breakdown
+    const { data: storageData } = await supabase
+      .from('storage_usage')
+      .select('content_type, size_bytes')
+      .eq('user_id', userId)
+
+    const storageByType = {
+      video: 0,
+      image: 0,
+      audio: 0,
+      document: 0
+    }
+
+    let totalBytes = 0
+    if (storageData) {
+      storageData.forEach(item => {
+        storageByType[item.content_type as keyof typeof storageByType] += item.size_bytes
+        totalBytes += item.size_bytes
+      })
+    }
+
+    const limitBytes = subData.plan?.storage_limit_bytes || 10737418240 // 10GB default
+
+    const storage: StorageBreakdown = {
+      total_bytes: totalBytes,
+      limit_bytes: limitBytes,
+      percentage: (totalBytes / limitBytes) * 100,
+      by_type: storageByType
+    }
+
+    // Calculate monthly cost
+    const seatCount = seatsData?.filter(s => s.status === 'active').length || 1
+    const monthly_cost_cents = calculateTotalMonthlyCost(
+      subData.plan?.price_cents || 0,
+      seatCount,
+      pricing
+    )
+
+    return {
+      ...subData,
+      seats: seatsData || [],
+      storage,
+      monthly_cost_cents
+    }
+  }
 
   useEffect(() => {
-    const checkAuthAndFetch = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        fetchSubscription();
-      } else {
-        // Reset state when no user to prevent data leakage
-        setSubscription(null);
-        setProfile(null);
-        setError(null);
-      }
-    };
-    checkAuthAndFetch();
-  }, [fetchSubscription]);
+    fetchSubscription()
+  }, [fetchSubscription])
 
-  const isActive = ['active', 'trialing'].includes(subscription?.status || profile?.subscription_status || '');
-  const isPremium = isActive && profile?.subscription_status !== 'free';
+  const isPremium = subscription?.plan?.name === 'premium' && subscription?.status === 'active'
 
-  const checkFeatureLimit = useCallback((
-    feature: keyof Plan['limits'],
-    currentUsage: number
-  ) => {
-    const plan = subscription?.plan;
-    const limit = plan?.limits?.[feature] ?? 0;
-
-    // -1 means unlimited
-    if (limit === -1) {
-      return { allowed: true, remaining: Infinity, limit };
+  const hasFeature = useCallback((feature: FeatureKey): boolean => {
+    if (!subscription?.plan?.features) {
+      return false // Default to no access
     }
+    return !!subscription.plan.features[feature]
+  }, [subscription])
 
-    const remaining = limit - currentUsage;
-    return { allowed: remaining > 0, remaining, limit };
-  }, [subscription]);
+  const getStoragePercentage = useCallback((): number => {
+    return subscription?.storage?.percentage || 0
+  }, [subscription])
+
+  const isStorageFull = useCallback((): boolean => {
+    return getStoragePercentage() >= 100
+  }, [getStoragePercentage])
 
   return {
     subscription,
-    profile,
-    plan: subscription?.plan || null,
     isLoading,
-    isActive,
-    isPremium,
     error,
-    refetch: fetchSubscription,
-    checkFeatureLimit,
-  };
-}
-
-// Hook for tracking usage against limits
-export function useFeatureLimit(feature: keyof Plan['limits'], currentUsage: number) {
-  const { checkFeatureLimit, isLoading } = useSubscription();
-  
-  const result = checkFeatureLimit(feature, currentUsage);
-  
-  return {
-    ...result,
-    isLoading,
-  };
+    isPremium,
+    hasFeature,
+    getStoragePercentage,
+    isStorageFull,
+    refetch: fetchSubscription
+  }
 }

@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Mic, Keyboard, RotateCcw } from 'lucide-react';
-import { VoiceRecorder } from './VoiceRecorder';
+import { MediaRecorder } from './MediaRecorder';
 import { TranscriptionPreview } from './TranscriptionPreview';
 import { ConversationHistory } from './ConversationHistory';
 import { AIPromptBubble } from './AIPromptBubble';
@@ -132,13 +132,17 @@ export function ConversationView({ prompt, expectedXp = 15, onComplete, onClose 
   }, [prompt.promptText]);
 
   // Handle recording complete (recorded mode) - transcribe via API
-  const handleRecordingComplete = useCallback(async (audioBlob: Blob, duration: number) => {
+  const handleRecordingComplete = useCallback(async (blob: Blob, duration: number, type: 'video' | 'audio') => {
     setIsTranscribing(true);
     setError(null);
 
     try {
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
+      // Use appropriate filename based on recording type
+      const extension = type === 'video' ? 'webm' : 'webm';
+      const filename = type === 'video' ? `recording.${extension}` : `recording.${extension}`;
+      formData.append('audio', blob, filename);
+      formData.append('mediaType', type); // Pass type for potential video handling
 
       const response = await fetch('/api/conversation/transcribe', {
         method: 'POST',
@@ -447,7 +451,7 @@ export function ConversationView({ prompt, expectedXp = 15, onComplete, onClose 
                   className={`input-mode-btn ${inputMode === 'voice' ? 'active' : ''}`}
                 >
                   <Mic size={16} />
-                  Voice
+                  Record
                 </button>
                 <button
                   onClick={toggleInputMode}
@@ -458,7 +462,7 @@ export function ConversationView({ prompt, expectedXp = 15, onComplete, onClose 
                 </button>
               </div>
 
-              {/* Voice input */}
+              {/* Video/Voice recording input */}
               {inputMode === 'voice' && (
                 isTranscribing ? (
                   <div className="conversation-transcribing">
@@ -471,11 +475,12 @@ export function ConversationView({ prompt, expectedXp = 15, onComplete, onClose 
                     <p>Transcribing your response...</p>
                   </div>
                 ) : (
-                  <VoiceRecorder
+                  <MediaRecorder
                     onRecordingComplete={handleRecordingComplete}
-                    onLiveTranscript={handleLiveTranscript}
                     onSkip={handleSkip}
                     isLoading={isGeneratingFollowup}
+                    allowVideo={true}
+                    defaultMode="voice"
                   />
                 )
               )}

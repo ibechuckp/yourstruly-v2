@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, SlidersHorizontal, ShoppingBag, Heart, X, Loader2 } from 'lucide-react';
+import { Search, SlidersHorizontal, ShoppingBag, Heart, X, Loader2, BookOpen, Calendar, Printer, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 import ProductGrid from '@/components/marketplace/ProductGrid';
 import ProviderTabs from '@/components/marketplace/ProviderTabs';
 import { CategoryChips } from '@/components/marketplace/CategorySidebar';
@@ -22,7 +23,7 @@ export default function MarketplacePage() {
   const [activeProvider, setActiveProvider] = useState<ProviderType | 'all'>('all');
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
-  const [priceRange, setPriceRange] = useState<{ min: number; max: number }>(PRICE_RANGES[0]);
+  const [priceRange, setPriceRange] = useState<{ label: string; min: number; max: number }>(PRICE_RANGES[0]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [cartCount, setCartCount] = useState(0);
@@ -65,9 +66,9 @@ export default function MarketplacePage() {
     // For now, we'll estimate based on the current fetch
     return {
       all: total,
-      flowers: activeProvider === 'flowers' ? total : undefined,
-      gifts: activeProvider === 'gifts' ? total : undefined,
-      prints: activeProvider === 'prints' ? total : undefined,
+      flowers: activeProvider === 'flowers' ? total : 0,
+      gifts: activeProvider === 'gifts' ? total : 0,
+      prints: activeProvider === 'prints' ? total : 0,
     };
   }, [total, activeProvider]);
 
@@ -160,6 +161,91 @@ export default function MarketplacePage() {
               counts={providerCounts}
               variant="pills"
             />
+          </div>
+        </div>
+      </div>
+
+      {/* Printing Section */}
+      <div className="bg-gradient-to-r from-[#406A56]/5 via-[#D9C61A]/5 to-[#C35F33]/5 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Printer size={20} className="text-[#C35F33]" />
+            <h2 className="font-playfair text-xl font-semibold text-gray-800">
+              📚 Printing & Keepsakes
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Photo Book Card */}
+            <Link
+              href="/dashboard/photobook/create?source=marketplace&product=photobook"
+              className="group glass rounded-2xl p-5 hover:bg-white/80 transition-all border border-[#406A56]/10 hover:border-[#406A56]/30 hover:shadow-lg"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#D9C61A] to-[#C35F33] flex items-center justify-center flex-shrink-0">
+                  <BookOpen size={28} className="text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-800 group-hover:text-[#C35F33] transition-colors flex items-center gap-2">
+                    Photo Book
+                    <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Turn your memories into a beautiful printed book with QR-linked videos
+                  </p>
+                  <p className="text-xs text-[#406A56] mt-2 font-medium">
+                    Starting at $24.99
+                  </p>
+                </div>
+              </div>
+            </Link>
+
+            {/* Calendar Card */}
+            <Link
+              href="/dashboard/photobook/create?source=marketplace&product=calendar"
+              className="group glass rounded-2xl p-5 hover:bg-white/80 transition-all border border-[#406A56]/10 hover:border-[#406A56]/30 hover:shadow-lg"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#406A56] to-[#5A8A76] flex items-center justify-center flex-shrink-0">
+                  <Calendar size={28} className="text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-800 group-hover:text-[#406A56] transition-colors flex items-center gap-2">
+                    Photo Calendar
+                    <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Create a custom wall calendar featuring your favorite moments
+                  </p>
+                  <p className="text-xs text-[#406A56] mt-2 font-medium">
+                    Starting at $19.99
+                  </p>
+                </div>
+              </div>
+            </Link>
+
+            {/* Prints Card */}
+            <Link
+              href="/dashboard/photobook/create?source=marketplace&product=prints"
+              className="group glass rounded-2xl p-5 hover:bg-white/80 transition-all border border-[#406A56]/10 hover:border-[#406A56]/30 hover:shadow-lg"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#C35F33] to-[#E07A4E] flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">🖼️</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-800 group-hover:text-[#C35F33] transition-colors flex items-center gap-2">
+                    Photo Prints
+                    <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    High-quality prints in various sizes to frame and display
+                  </p>
+                  <p className="text-xs text-[#406A56] mt-2 font-medium">
+                    Starting at $4.99
+                  </p>
+                </div>
+              </div>
+            </Link>
           </div>
         </div>
       </div>

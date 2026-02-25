@@ -5,23 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Calendar, MapPin, Users, BookOpen, Lightbulb, ChevronLeft, ChevronRight, Edit2, UserPlus, Check, Search } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-
-interface MediaItem {
-  id: string
-  file_url: string
-  file_type: string
-  taken_at: string | null
-  exif_lat: number | null
-  exif_lng: number | null
-  location_lat: number | null
-  location_lng: number | null
-  memory_id: string
-  memory?: {
-    id: string
-    title: string
-    location_name: string
-  }
-}
+import { GalleryMediaItem as MediaItem } from '@/types/gallery'
 
 interface FaceTag {
   id: string

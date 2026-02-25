@@ -23,7 +23,7 @@ export default async function AdminDashboardPage() {
   // Fetch stats - wrap in try/catch for missing tables
   let totalUsers = 0, newUsersToday = 0, activeSubscriptions = 0;
   let totalMemories = 0, totalContacts = 0, totalInterviews = 0;
-  let auditStats = { totalActions: 0, actionsByType: {}, topAdmins: [] };
+  let auditStats: { totalActions: number; actionsByType: Record<string, number>; topAdmins: Array<{ admin_email: string; count: number }> } = { totalActions: 0, actionsByType: {}, topAdmins: [] };
 
   try {
     const [

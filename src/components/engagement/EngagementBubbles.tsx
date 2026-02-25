@@ -5,11 +5,20 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEngagementPrompts } from '@/hooks/useEngagementPrompts';
 import { Bubble } from './Bubble';
-import { RefreshCw, Sparkles } from 'lucide-react';
+import { ContactInfoModal } from './ContactInfoModal';
+import { RefreshCw, Sparkles, MapPin, Calendar } from 'lucide-react';
 import type { EngagementPrompt } from '@/types/engagement';
+import PhotoMetadataModal from '@/components/gallery/PhotoMetadataModal';
+import { createClient } from '@/lib/supabase/client';
 
 // Lazy load ConversationView for code splitting
 const ConversationView = lazy(() => import('@/components/conversation/ConversationView').then(mod => ({ default: mod.ConversationView })));
+
+// Prompt types that should show the contact info modal (NOT conversation view)
+const MISSING_INFO_TYPES = ['missing_info', 'quick_question'];
+
+// Prompt types that show the photo metadata modal
+const PHOTO_METADATA_TYPES = ['photo_metadata', 'photo_location', 'photo_date'];
 
 interface CompletedTile {
   id: string;
@@ -40,6 +49,9 @@ const TYPE_ICONS: Record<string, string> = {
   postscript: '💌',
   favorites_firsts: '🏆',
   recipes_wisdom: '📖',
+  photo_metadata: '📍',
+  photo_location: '🗺️',
+  photo_date: '📅',
 };
 
 // Prompt types that benefit from conversation view
@@ -81,19 +93,56 @@ export function EngagementBubbles({
   
   // Conversation view state
   const [activeConversationPrompt, setActiveConversationPrompt] = useState<EngagementPrompt | null>(null);
+  
+  // Missing info modal state
+  const [activeMissingInfoPrompt, setActiveMissingInfoPrompt] = useState<EngagementPrompt | null>(null);
+  
+  // Photo metadata modal state
+  const [activePhotoMetadataPrompt, setActivePhotoMetadataPrompt] = useState<EngagementPrompt | null>(null);
+  const [photoMetadataMedia, setPhotoMetadataMedia] = useState<any>(null);
+  const supabase = createClient();
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setExpandedId(null);
         setActiveConversationPrompt(null);
+        setActiveMissingInfoPrompt(null);
+        setActivePhotoMetadataPrompt(null);
+        setPhotoMetadataMedia(null);
       }
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, []);
 
-  const handleBubbleClick = (prompt: EngagementPrompt) => {
+  const handleBubbleClick = async (prompt: EngagementPrompt) => {
+    // Check if this is a missing info prompt - show modal instead of conversation
+    if (MISSING_INFO_TYPES.includes(prompt.type)) {
+      setActiveMissingInfoPrompt(prompt);
+      return;
+    }
+    
+    // Check if this is a photo metadata prompt - load photo and show modal
+    if (PHOTO_METADATA_TYPES.includes(prompt.type)) {
+      setActivePhotoMetadataPrompt(prompt);
+      // Fetch the photo data
+      if (prompt.photoId) {
+        const { data: media } = await supabase
+          .from('memory_media')
+          .select('id, file_url, taken_at, exif_lat, exif_lng, memory:memories(title, location_name)')
+          .eq('id', prompt.photoId)
+          .single();
+        if (media) {
+          setPhotoMetadataMedia({
+            ...media,
+            memory: Array.isArray(media.memory) ? media.memory[0] : media.memory
+          });
+        }
+      }
+      return;
+    }
+    
     // Check if this prompt type should use conversation view
     if (enableConversationView && CONVERSATION_TYPES.includes(prompt.type)) {
       setActiveConversationPrompt(prompt);
@@ -172,6 +221,54 @@ export function EngagementBubbles({
     // Note: The API should have already updated the prompt status
   }, [activeConversationPrompt]);
 
+  // Handler for missing info modal completion
+  const handleMissingInfoComplete = useCallback((result: {
+    contactUpdated: boolean;
+    xpAwarded: number;
+    contactId?: string;
+  }) => {
+    if (!activeMissingInfoPrompt) return;
+
+    const prompt = activeMissingInfoPrompt;
+
+    // Add to completed tiles
+    const completedTile: CompletedTile = {
+      id: prompt.id,
+      type: prompt.type,
+      icon: TYPE_ICONS[prompt.type] || '✓',
+      contactName: prompt.contactName,
+      contactPhotoUrl: prompt.contactPhotoUrl,
+      contactId: result.contactId || prompt.contactId,
+    };
+    setCompletedTiles(prev => [completedTile, ...prev]);
+    setActiveMissingInfoPrompt(null);
+
+    // Remove from local prompts state since API already marked it answered
+    // This prevents it from showing again
+  }, [activeMissingInfoPrompt]);
+
+  // Skip handler for missing info modal
+  const handleMissingInfoSkip = useCallback(async () => {
+    if (!activeMissingInfoPrompt) return;
+    try {
+      await skipPrompt(activeMissingInfoPrompt.id);
+    } catch (err) {
+      console.error('Failed to skip:', err);
+    }
+    setActiveMissingInfoPrompt(null);
+  }, [activeMissingInfoPrompt, skipPrompt]);
+
+  // Dismiss handler for missing info modal
+  const handleMissingInfoDismiss = useCallback(async () => {
+    if (!activeMissingInfoPrompt) return;
+    try {
+      await dismissPrompt(activeMissingInfoPrompt.id);
+    } catch (err) {
+      console.error('Failed to dismiss:', err);
+    }
+    setActiveMissingInfoPrompt(null);
+  }, [activeMissingInfoPrompt, dismissPrompt]);
+
   const handleSkip = async (promptId: string) => {
     try {
       await skipPrompt(promptId);
@@ -196,6 +293,7 @@ export function EngagementBubbles({
     setIsRefreshing(true);
     setExpandedId(null);
     setActiveConversationPrompt(null);
+    setActiveMissingInfoPrompt(null);
     await shuffle();
     setIsRefreshing(false);
   };
@@ -369,6 +467,65 @@ export function EngagementBubbles({
               onClose={() => setActiveConversationPrompt(null)}
             />
           </Suspense>
+        )}
+      </AnimatePresence>
+
+      {/* Contact Info Modal for missing_info prompts */}
+      <AnimatePresence>
+        {activeMissingInfoPrompt && (
+          <ContactInfoModal
+            prompt={activeMissingInfoPrompt}
+            onComplete={handleMissingInfoComplete}
+            onClose={() => setActiveMissingInfoPrompt(null)}
+            onSkip={handleMissingInfoSkip}
+            onDismiss={handleMissingInfoDismiss}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Photo Metadata Modal for photo_metadata prompts */}
+      <AnimatePresence>
+        {activePhotoMetadataPrompt && photoMetadataMedia && (
+          <PhotoMetadataModal
+            media={photoMetadataMedia}
+            onClose={() => {
+              setActivePhotoMetadataPrompt(null);
+              setPhotoMetadataMedia(null);
+            }}
+            onSave={async (updates) => {
+              try {
+                // Update memory_media
+                await supabase
+                  .from('memory_media')
+                  .update({
+                    taken_at: updates.taken_at,
+                    exif_lat: updates.exif_lat,
+                    exif_lng: updates.exif_lng,
+                  })
+                  .eq('id', photoMetadataMedia.id);
+                
+                // Update memory location if provided
+                if (updates.location_name && photoMetadataMedia.memory?.id) {
+                  await supabase
+                    .from('memories')
+                    .update({ location_name: updates.location_name })
+                    .eq('id', photoMetadataMedia.memory.id);
+                }
+                
+                // Mark prompt as answered (+10 XP)
+                if (activePhotoMetadataPrompt) {
+                  await handleAnswer(activePhotoMetadataPrompt.id, { 
+                    text: `Added ${updates.location_name || ''} ${updates.taken_at || ''}`.trim() 
+                  });
+                }
+                
+                setActivePhotoMetadataPrompt(null);
+                setPhotoMetadataMedia(null);
+              } catch (error) {
+                console.error('Failed to save photo metadata:', error);
+              }
+            }}
+          />
         )}
       </AnimatePresence>
     </div>

@@ -47,7 +47,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         </TabsList>
 
         <TabsContent value="general" className="space-y-6">
-          <SystemSettings settings={systemSettings || []} />
+          <SystemSettings />
         </TabsContent>
 
         <TabsContent value="features" className="space-y-6">

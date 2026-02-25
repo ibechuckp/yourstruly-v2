@@ -215,31 +215,31 @@ CREATE TABLE IF NOT EXISTS photobook_memory_selections (
 -- ============================================
 
 -- Photobook projects
-CREATE INDEX idx_photobook_projects_user ON photobook_projects(user_id);
-CREATE INDEX idx_photobook_projects_status ON photobook_projects(status);
-CREATE INDEX idx_photobook_projects_created ON photobook_projects(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_photobook_projects_user ON photobook_projects(user_id);
+CREATE INDEX IF NOT EXISTS idx_photobook_projects_status ON photobook_projects(status);
+CREATE INDEX IF NOT EXISTS idx_photobook_projects_created ON photobook_projects(created_at DESC);
 
 -- Photobook pages
-CREATE INDEX idx_photobook_pages_project ON photobook_pages(project_id);
-CREATE INDEX idx_photobook_pages_number ON photobook_pages(project_id, page_number);
-CREATE INDEX idx_photobook_pages_memory ON photobook_pages(linked_memory_id);
-CREATE INDEX idx_photobook_pages_wisdom ON photobook_pages(linked_wisdom_id);
+CREATE INDEX IF NOT EXISTS idx_photobook_pages_project ON photobook_pages(project_id);
+CREATE INDEX IF NOT EXISTS idx_photobook_pages_number ON photobook_pages(project_id, page_number);
+CREATE INDEX IF NOT EXISTS idx_photobook_pages_memory ON photobook_pages(linked_memory_id);
+CREATE INDEX IF NOT EXISTS idx_photobook_pages_wisdom ON photobook_pages(linked_wisdom_id);
 
 -- QR access tokens
-CREATE INDEX idx_qr_tokens_token ON qr_access_tokens(token);
-CREATE INDEX idx_qr_tokens_memory ON qr_access_tokens(memory_id);
-CREATE INDEX idx_qr_tokens_wisdom ON qr_access_tokens(wisdom_id);
-CREATE INDEX idx_qr_tokens_active ON qr_access_tokens(is_active, expires_at);
-CREATE INDEX idx_qr_tokens_created_by ON qr_access_tokens(created_by_user_id);
+CREATE INDEX IF NOT EXISTS idx_qr_tokens_token ON qr_access_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_qr_tokens_memory ON qr_access_tokens(memory_id);
+CREATE INDEX IF NOT EXISTS idx_qr_tokens_wisdom ON qr_access_tokens(wisdom_id);
+CREATE INDEX IF NOT EXISTS idx_qr_tokens_active ON qr_access_tokens(is_active, expires_at);
+CREATE INDEX IF NOT EXISTS idx_qr_tokens_created_by ON qr_access_tokens(created_by_user_id);
 
 -- QR access logs
-CREATE INDEX idx_qr_access_logs_token ON qr_access_logs(token_id);
-CREATE INDEX idx_qr_access_logs_user ON qr_access_logs(user_id);
-CREATE INDEX idx_qr_access_logs_accessed ON qr_access_logs(accessed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_qr_access_logs_token ON qr_access_logs(token_id);
+CREATE INDEX IF NOT EXISTS idx_qr_access_logs_user ON qr_access_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_qr_access_logs_accessed ON qr_access_logs(accessed_at DESC);
 
 -- Photobook memory selections
-CREATE INDEX idx_photobook_selections_project ON photobook_memory_selections(project_id);
-CREATE INDEX idx_photobook_selections_memory ON photobook_memory_selections(memory_id);
+CREATE INDEX IF NOT EXISTS idx_photobook_selections_project ON photobook_memory_selections(project_id);
+CREATE INDEX IF NOT EXISTS idx_photobook_selections_memory ON photobook_memory_selections(memory_id);
 
 -- ============================================
 -- ROW LEVEL SECURITY
@@ -255,15 +255,19 @@ ALTER TABLE photobook_memory_selections ENABLE ROW LEVEL SECURITY;
 -- PHOTOBOOK PROJECTS POLICIES
 -- --------------------------------------------
 
+DROP POLICY IF EXISTS "Users can view own photobook projects" ON photobook_projects;
 CREATE POLICY "Users can view own photobook projects" ON photobook_projects
     FOR SELECT USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can create photobook projects" ON photobook_projects;
 CREATE POLICY "Users can create photobook projects" ON photobook_projects
     FOR INSERT WITH CHECK (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can update own photobook projects" ON photobook_projects;
 CREATE POLICY "Users can update own photobook projects" ON photobook_projects
     FOR UPDATE USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can delete own photobook projects" ON photobook_projects;
 CREATE POLICY "Users can delete own photobook projects" ON photobook_projects
     FOR DELETE USING (user_id = auth.uid());
 
@@ -271,6 +275,7 @@ CREATE POLICY "Users can delete own photobook projects" ON photobook_projects
 -- PHOTOBOOK PAGES POLICIES
 -- --------------------------------------------
 
+DROP POLICY IF EXISTS "Users can view pages in own projects" ON photobook_pages;
 CREATE POLICY "Users can view pages in own projects" ON photobook_pages
     FOR SELECT USING (
         EXISTS (
@@ -279,6 +284,7 @@ CREATE POLICY "Users can view pages in own projects" ON photobook_pages
         )
     );
 
+DROP POLICY IF EXISTS "Users can manage pages in own projects" ON photobook_pages;
 CREATE POLICY "Users can manage pages in own projects" ON photobook_pages
     FOR ALL USING (
         EXISTS (
@@ -291,19 +297,24 @@ CREATE POLICY "Users can manage pages in own projects" ON photobook_pages
 -- QR ACCESS TOKENS POLICIES
 -- --------------------------------------------
 
+DROP POLICY IF EXISTS "Users can view own QR tokens" ON qr_access_tokens;
 CREATE POLICY "Users can view own QR tokens" ON qr_access_tokens
     FOR SELECT USING (created_by_user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can create QR tokens" ON qr_access_tokens;
 CREATE POLICY "Users can create QR tokens" ON qr_access_tokens
     FOR INSERT WITH CHECK (created_by_user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can update own QR tokens" ON qr_access_tokens;
 CREATE POLICY "Users can update own QR tokens" ON qr_access_tokens
     FOR UPDATE USING (created_by_user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can delete own QR tokens" ON qr_access_tokens;
 CREATE POLICY "Users can delete own QR tokens" ON qr_access_tokens
     FOR DELETE USING (created_by_user_id = auth.uid());
 
 -- Service role can view all tokens (for QR validation)
+DROP POLICY IF EXISTS "Service role can view all QR tokens" ON qr_access_tokens;
 CREATE POLICY "Service role can view all QR tokens" ON qr_access_tokens
     FOR SELECT USING (true);
 
@@ -311,6 +322,7 @@ CREATE POLICY "Service role can view all QR tokens" ON qr_access_tokens
 -- QR ACCESS LOGS POLICIES
 -- --------------------------------------------
 
+DROP POLICY IF EXISTS "Users can view logs for own tokens" ON qr_access_logs;
 CREATE POLICY "Users can view logs for own tokens" ON qr_access_logs
     FOR SELECT USING (
         EXISTS (
@@ -319,6 +331,7 @@ CREATE POLICY "Users can view logs for own tokens" ON qr_access_logs
         )
     );
 
+DROP POLICY IF EXISTS "Service role can create access logs" ON qr_access_logs;
 CREATE POLICY "Service role can create access logs" ON qr_access_logs
     FOR INSERT WITH CHECK (true);
 
@@ -326,6 +339,7 @@ CREATE POLICY "Service role can create access logs" ON qr_access_logs
 -- PHOTOBOOK MEMORY SELECTIONS POLICIES
 -- --------------------------------------------
 
+DROP POLICY IF EXISTS "Users can view own photobook selections" ON photobook_memory_selections;
 CREATE POLICY "Users can view own photobook selections" ON photobook_memory_selections
     FOR SELECT USING (
         EXISTS (
@@ -334,6 +348,7 @@ CREATE POLICY "Users can view own photobook selections" ON photobook_memory_sele
         )
     );
 
+DROP POLICY IF EXISTS "Users can manage own photobook selections" ON photobook_memory_selections;
 CREATE POLICY "Users can manage own photobook selections" ON photobook_memory_selections
     FOR ALL USING (
         EXISTS (
@@ -347,14 +362,17 @@ CREATE POLICY "Users can manage own photobook selections" ON photobook_memory_se
 -- ============================================
 
 -- Auto-update updated_at timestamps
+DROP TRIGGER IF EXISTS photobook_projects_updated_at ON photobook_projects;
 CREATE TRIGGER photobook_projects_updated_at
     BEFORE UPDATE ON photobook_projects
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS photobook_pages_updated_at ON photobook_pages;
 CREATE TRIGGER photobook_pages_updated_at
     BEFORE UPDATE ON photobook_pages
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS qr_access_tokens_updated_at ON qr_access_tokens;
 CREATE TRIGGER qr_access_tokens_updated_at
     BEFORE UPDATE ON qr_access_tokens
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
@@ -376,6 +394,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_photobook_page_count_trigger ON photobook_pages;
 CREATE TRIGGER update_photobook_page_count_trigger
     AFTER INSERT OR DELETE ON photobook_pages
     FOR EACH ROW EXECUTE FUNCTION update_photobook_page_count();
@@ -424,6 +443,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS auto_create_qr_token_trigger ON photobook_memory_selections;
 CREATE TRIGGER auto_create_qr_token_trigger
     BEFORE INSERT ON photobook_memory_selections
     FOR EACH ROW EXECUTE FUNCTION auto_create_qr_token_for_memory();

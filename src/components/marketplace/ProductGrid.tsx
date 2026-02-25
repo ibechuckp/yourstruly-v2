@@ -116,10 +116,10 @@ export default function ProductGrid({
       y: 0,
       transition: {
         duration: 0.3,
-        ease: 'easeOut',
+        ease: 'easeOut' as const,
       },
     },
-  };
+  } as const;
 
   // Polaroid grid has different layout
   if (variant === 'polaroid') {

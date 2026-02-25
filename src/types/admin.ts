@@ -14,7 +14,7 @@ export interface AdminUser {
   full_name?: string;
 }
 
-export interface AdminUserWithEmail extends AdminUser {
+export interface AdminUserWithEmail extends Omit<AdminUser, 'email' | 'full_name'> {
   email: string;
   full_name: string | null;
 }

@@ -1,0 +1,659 @@
+/* ============================================
+   Storage Usage Bar - Google Drive Style
+   ============================================ */
+
+.storage-usage-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(64, 106, 86, 0.1);
+}
+
+.storage-usage-card.storage-full {
+  border-color: rgba(220, 38, 38, 0.3);
+  background: rgba(254, 242, 242, 0.9);
+}
+
+.storage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.storage-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.storage-amount {
+  font-size: 14px;
+  color: #666;
+}
+
+.storage-used {
+  font-weight: 600;
+  color: #333;
+}
+
+.storage-separator {
+  color: #999;
+}
+
+.storage-limit {
+  color: #666;
+}
+
+/* Progress bar */
+.storage-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.storage-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.storage-bar-segments {
+  display: flex;
+  height: 100%;
+}
+
+.storage-segment {
+  height: 100%;
+  min-width: 2px;
+}
+
+.storage-segment:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.storage-segment:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.storage-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.storage-percentage {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Warning messages */
+.storage-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #fef3c7;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #92400e;
+}
+
+.storage-warning-critical {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.storage-upgrade-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.storage-upgrade-btn:hover {
+  background: #b91c1c;
+}
+
+/* Breakdown legend */
+.storage-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.storage-breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #666;
+}
+
+.storage-breakdown-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.storage-breakdown-label {
+  color: #333;
+}
+
+.storage-breakdown-size {
+  color: #999;
+  font-size: 12px;
+}
+
+/* Compact version */
+.storage-compact {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.storage-compact-bar {
+  flex: 1;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.storage-compact-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.storage-compact-text {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+}
+
+/* ============================================
+   Subscription Plans
+   ============================================ */
+
+.subscription-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.subscription-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.subscription-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.subscription-header p {
+  color: #666;
+  font-size: 16px;
+}
+
+.plan-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.plan-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 32px;
+  border: 2px solid transparent;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.plan-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.plan-card.plan-current {
+  border-color: #406A56;
+}
+
+.plan-card.plan-premium {
+  background: linear-gradient(135deg, rgba(64, 106, 86, 0.05), rgba(195, 95, 51, 0.05));
+}
+
+.plan-badge {
+  position: absolute;
+  top: -12px;
+  right: 20px;
+  background: #406A56;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.plan-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.plan-price-amount {
+  font-size: 40px;
+  font-weight: 700;
+  color: #333;
+}
+
+.plan-price-period {
+  font-size: 16px;
+  color: #666;
+}
+
+.plan-description {
+  color: #666;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+}
+
+.plan-feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  color: #333;
+  font-size: 14px;
+}
+
+.plan-feature-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plan-feature-icon.included {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.plan-feature-icon.excluded {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.plan-cta {
+  width: 100%;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.plan-cta-primary {
+  background: #406A56;
+  color: white;
+}
+
+.plan-cta-primary:hover {
+  background: #345544;
+}
+
+.plan-cta-secondary {
+  background: transparent;
+  border: 2px solid #406A56;
+  color: #406A56;
+}
+
+.plan-cta-secondary:hover {
+  background: rgba(64, 106, 86, 0.1);
+}
+
+.plan-cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   Seat Management
+   ============================================ */
+
+.seats-section {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 32px;
+  margin-top: 32px;
+}
+
+.seats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.seats-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.seats-subtitle {
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.seats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.seat-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.seat-number {
+  width: 32px;
+  height: 32px;
+  background: #406A56;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.seat-number.seat-free {
+  background: #16a34a;
+}
+
+.seat-number.seat-paid {
+  background: #C35F33;
+}
+
+.seat-info {
+  flex: 1;
+}
+
+.seat-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.seat-email {
+  font-size: 13px;
+  color: #666;
+}
+
+.seat-status {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.seat-status-active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.seat-status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.seat-price {
+  font-size: 14px;
+  color: #666;
+}
+
+.seat-price-free {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.seat-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.seat-action-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.add-seat-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: transparent;
+  border: 2px dashed rgba(64, 106, 86, 0.3);
+  border-radius: 12px;
+  color: #406A56;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-seat-btn:hover {
+  border-color: #406A56;
+  background: rgba(64, 106, 86, 0.05);
+}
+
+/* ============================================
+   Feature Gate (locked state)
+   ============================================ */
+
+.feature-locked {
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-locked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(4px);
+}
+
+.feature-locked-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  text-align: center;
+  padding: 20px;
+}
+
+.feature-locked-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(64, 106, 86, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  color: #406A56;
+}
+
+.feature-locked-title {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.feature-locked-message {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.feature-locked-cta {
+  padding: 10px 20px;
+  background: #406A56;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.feature-locked-cta:hover {
+  background: #345544;
+}
+
+/* ============================================
+   Admin Pricing Controls
+   ============================================ */
+
+.admin-pricing {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.admin-pricing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.admin-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.admin-price-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-price-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+}
+
+.admin-price-input {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.admin-price-input input {
+  border: none;
+  outline: none;
+  width: 80px;
+  font-size: 16px;
+}
+
+.admin-feature-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.admin-feature-info {
+  flex: 1;
+}
+
+.admin-feature-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.admin-feature-desc {
+  font-size: 13px;
+  color: #666;
+}
+
+.admin-feature-toggles {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.admin-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #666;
+}

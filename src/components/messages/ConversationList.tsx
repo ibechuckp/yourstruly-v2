@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Search, MessageSquare, Brain, Users, CircleDot, LucideIcon } from 'lucide-react'
 import ConversationItem from './ConversationItem'
 import { Conversation } from './types'
+import TornEdge from '@/components/ui/TornEdge'
 
 type FilterType = 'all' | 'memory-threads' | 'direct' | 'circles'
 
@@ -74,18 +75,24 @@ export default function ConversationList({
         </div>
       </div>
 
-      {/* Filter Tabs */}
+      {/* Filter Tabs with Torn Edges */}
       <div className="px-4 py-3 border-b border-[#406A56]/10 flex-shrink-0">
-        <div className="flex gap-1.5">
-          {filters.map(({ id, label, icon: Icon }) => (
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          {filters.map(({ id, label, icon: Icon }, index) => (
             <button
               key={id}
               onClick={() => setFilter(id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`relative flex items-center gap-1.5 px-4 py-2 text-xs font-medium transition-all ${
                 filter === id
                   ? 'bg-[#406A56] text-white'
-                  : 'bg-white/60 text-[#666] hover:bg-white hover:text-[#406A56] border border-[#406A56]/10'
+                  : 'bg-white/80 text-[#666] hover:bg-white hover:text-[#406A56]'
               }`}
+              style={{
+                clipPath: filter === id 
+                  ? 'polygon(2% 0%, 98% 3%, 100% 97%, 3% 100%)' 
+                  : 'polygon(0% 2%, 97% 0%, 100% 98%, 2% 100%)',
+                borderRadius: '4px',
+              }}
             >
               <Icon size={12} />
               <span>{label}</span>

@@ -10,6 +10,7 @@ import {
 import Link from 'next/link'
 import '@/styles/home.css'
 import '@/styles/page-styles.css'
+import TornEdge from '@/components/ui/TornEdge'
 import EssenceFingerprintLoader from '@/components/profile/EssenceFingerprintLoader'
 import VoiceCloneButton from '@/components/profile/VoiceCloneButton'
 import { generateEssenceVector, hasProfileData } from '@/lib/essence'
@@ -226,29 +227,43 @@ export default function ProfilePage() {
     </div>
   )
 
-  // Glass card section component
-  const ProfileCard = ({ title, icon: Icon, iconColor = 'text-[#406A56]', bgColor = 'bg-[#406A56]/10', section, children }: {
+  // Glass card section component with optional torn edge
+  const tornVariants: ('a' | 'b' | 'c' | 'd' | 'e')[] = ['a', 'b', 'c', 'd', 'e']
+  const ProfileCard = ({ title, icon: Icon, iconColor = 'text-[#406A56]', bgColor = 'bg-[#406A56]/10', section, children, tornEdge = false }: {
     title: string
     icon: React.ComponentType<{ size?: number; className?: string }>
     iconColor?: string
     bgColor?: string
     section: string
     children: React.ReactNode
+    tornEdge?: boolean
   }) => (
-    <div className="glass-card-page p-5 mb-4 group relative">
-      <button
-        onClick={() => openEdit(section)}
-        className="absolute top-4 right-4 p-2 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all"
-      >
-        <Edit2 size={14} />
-      </button>
-      <div className="flex items-center gap-3 mb-4">
-        <div className={`w-9 h-9 rounded-xl ${bgColor} flex items-center justify-center`}>
-          <Icon size={18} className={iconColor} />
+    <div className="relative mb-4">
+      <div className="glass-card-page p-5 group relative">
+        <button
+          onClick={() => openEdit(section)}
+          className="absolute top-4 right-4 p-2 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all z-10"
+        >
+          <Edit2 size={14} />
+        </button>
+        <div className="flex items-center gap-3 mb-4">
+          <div className={`w-9 h-9 rounded-xl ${bgColor} flex items-center justify-center`}>
+            <Icon size={18} className={iconColor} />
+          </div>
+          <h3 className="font-semibold text-[#2d2d2d]">{title}</h3>
         </div>
-        <h3 className="font-semibold text-[#2d2d2d]">{title}</h3>
+        {children}
       </div>
-      {children}
+      {tornEdge && (
+        <div className="absolute bottom-0 left-2 right-2 translate-y-[6px]">
+          <TornEdge 
+            variant={tornVariants[title.charCodeAt(0) % tornVariants.length]} 
+            position="bottom" 
+            color="rgba(255,255,255,0.8)" 
+            height={6} 
+          />
+        </div>
+      )}
     </div>
   )
 
@@ -295,7 +310,7 @@ export default function ProfilePage() {
           {/* Left Column - Personality & Interests */}
           <div className="lg:col-span-3 space-y-4">
             {/* Personality */}
-            <ProfileCard title="Personality" icon={Brain} section="personality">
+            <ProfileCard title="Personality" icon={Brain} section="personality" tornEdge>
               {profile.personality_type && (
                 <div className="mb-3">
                   <span className="text-sm text-gray-500">Type</span>
@@ -331,7 +346,7 @@ export default function ProfilePage() {
             </ProfileCard>
 
             {/* Life Philosophy */}
-            <ProfileCard title="Life Philosophy" icon={Quote} iconColor="text-[#4A3552]" bgColor="bg-[#4A3552]/10" section="philosophy">
+            <ProfileCard title="Life Philosophy" icon={Quote} iconColor="text-[#4A3552]" bgColor="bg-[#4A3552]/10" section="philosophy" tornEdge>
               {profile.personal_motto ? (
                 <p className="text-[#4A3552] italic">"{profile.personal_motto}"</p>
               ) : (
@@ -471,7 +486,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Favorites Section */}
-            <ProfileCard title="Favorites" icon={Star} iconColor="text-[#C35F33]" bgColor="bg-[#C35F33]/10" section="favorites">
+            <ProfileCard title="Favorites" icon={Star} iconColor="text-[#C35F33]" bgColor="bg-[#C35F33]/10" section="favorites" tornEdge>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">

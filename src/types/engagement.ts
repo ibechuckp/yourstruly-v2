@@ -1,3 +1,87 @@
+// Engagement prompt as returned by the API/hook
+export interface EngagementPrompt {
+  id: string;
+  userId: string;
+  type: string;
+  category?: string;
+  promptText: string;
+  status: string;
+  priority: number;
+  photoUrl?: string;
+  photoId?: string;
+  contactId?: string;
+  contactName?: string;
+  contactPhotoUrl?: string;
+  memoryId?: string;
+  missingField?: string;
+  metadata?: {
+    contact?: {
+      name?: string;
+      relationship_type?: string;
+      phone?: string;
+      email?: string;
+      date_of_birth?: string;
+      address?: string;
+    };
+    suggested_contact_name?: string;
+    options?: string[];
+    face_id?: string;
+    [key: string]: any;
+  };
+  personalizationContext?: {
+    interest?: string;
+    skill?: string;
+    hobby?: string;
+  };
+  steps?: string[];
+  createdAt: string;
+}
+
+// Response types for answering prompts
+export interface PromptResponse {
+  type: 'text' | 'voice' | 'selection';
+  text?: string;
+  audioUrl?: string;
+  data?: {
+    value?: string;
+    contactId?: string;
+    date?: string;
+    field?: string;
+    [key: string]: any;
+  };
+}
+
+// Stats returned by the engagement system
+export interface EngagementStats {
+  totalAnswered: number;
+  totalSkipped: number;
+  currentStreakDays: number;
+  longestStreakDays: number;
+  knowledgeEntries: number;
+  preferredInputType?: string;
+  lastEngagementDate?: string;
+}
+
+// API request/response types
+export interface AnswerPromptRequest {
+  responseType: 'text' | 'voice' | 'selection';
+  responseText?: string;
+  responseAudioUrl?: string;
+  responseData?: Record<string, any>;
+}
+
+export interface AnswerPromptResponse {
+  success: boolean;
+  prompt?: any;
+  knowledgeEntry?: any;
+  knowledgeEntryId?: string;
+  memoryCreated?: boolean;
+  memoryId?: string;
+  contactId?: string;
+  contactUpdated?: boolean;
+  xpAwarded?: number;
+}
+
 export interface PromptTemplate {
   id: string;
   type: string;
@@ -47,6 +131,9 @@ export const PROMPT_TYPES = [
   { value: 'connect_dots', label: 'Connect Dots', description: 'Compare photos, contacts, or memories' },
   { value: 'highlight', label: 'Highlight', description: 'Featured or important prompts' },
   { value: 'quick_question', label: 'Quick Question', description: 'Short, easy questions' },
+  { value: 'photo_metadata', label: 'Photo Metadata', description: 'Add location or date to a photo' },
+  { value: 'photo_location', label: 'Photo Location', description: 'Tag where a photo was taken' },
+  { value: 'photo_date', label: 'Photo Date', description: 'Add when a photo was taken' },
 ];
 
 export const KNOWLEDGE_CATEGORIES = [
@@ -89,3 +176,15 @@ export const MISSING_INFO_FIELDS = [
   { value: 'location', label: 'Location' },
   { value: 'date', label: 'Event Date' },
 ];
+
+// API types for engagement endpoints
+export interface GetPromptsResponse {
+  prompts: EngagementPrompt[];
+  stats?: EngagementStats;
+}
+
+export interface ShufflePromptsRequest {
+  count?: number;
+  types?: string[];
+  excludeIds?: string[];
+}

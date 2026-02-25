@@ -100,7 +100,7 @@ export default async function PreviewPromptPage({ params }: PreviewPromptPagePro
               <div className="mt-6">
                 <h4 className="text-sm font-medium text-[#2a1f1a]/60 mb-3">Alternative Phrasings</h4>
                 <div className="space-y-2">
-                  {template.prompt_variations.map((variation, index) => (
+                  {template.prompt_variations.map((variation: string, index: number) => (
                     <div
                       key={index}
                       className="p-3 rounded-lg bg-white/50 text-sm text-[#2a1f1a]/80"
@@ -236,7 +236,7 @@ export default async function PreviewPromptPage({ params }: PreviewPromptPagePro
                     <div>
                       <p className="text-xs text-[#2a1f1a]/40">Seasonal Months</p>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {template.seasonal_months.map((month) => (
+                        {template.seasonal_months.map((month: number) => (
                           <span
                             key={month}
                             className="px-2 py-0.5 rounded-full bg-[#406A56]/10 text-[#406A56] text-xs"

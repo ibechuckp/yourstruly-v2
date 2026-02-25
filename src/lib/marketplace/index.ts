@@ -188,7 +188,8 @@ export class MarketplaceService {
     }
     
     const product = await Prodigi.getProductDetails(productId);
-    return product?.providerData?.contentLayers || null;
+    const layers = product?.providerData?.contentLayers;
+    return Array.isArray(layers) ? layers : null;
   }
   
   /**
@@ -343,6 +344,7 @@ export async function searchAllProviders(
           result = await service.getProducts(
             options.spocket?.categoryId,
             query,
+            undefined, // tagId
             1,
             20
           );

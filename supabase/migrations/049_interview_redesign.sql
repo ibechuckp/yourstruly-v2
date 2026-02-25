@@ -64,9 +64,9 @@ CREATE TABLE IF NOT EXISTS interview_notifications (
 );
 
 -- Indexes for notification queries
-CREATE INDEX idx_interview_notifications_session ON interview_notifications(session_id);
-CREATE INDEX idx_interview_notifications_status ON interview_notifications(status);
-CREATE INDEX idx_interview_notifications_type ON interview_notifications(notification_type);
+CREATE INDEX IF NOT EXISTS idx_interview_notifications_session ON interview_notifications(session_id);
+CREATE INDEX IF NOT EXISTS idx_interview_notifications_status ON interview_notifications(status);
+CREATE INDEX IF NOT EXISTS idx_interview_notifications_type ON interview_notifications(notification_type);
 
 -- ============================================
 -- SHARED MEMORY STORAGE
@@ -100,10 +100,10 @@ CREATE TABLE IF NOT EXISTS memory_video_links (
 );
 
 -- Index for quick lookups
-CREATE INDEX idx_memory_video_links_memory ON memory_video_links(memory_id);
-CREATE INDEX idx_memory_video_links_video ON memory_video_links(video_response_id);
-CREATE INDEX idx_memory_video_links_interviewer ON memory_video_links(interviewer_id);
-CREATE INDEX idx_memory_video_links_interviewee ON memory_video_links(interviewee_contact_id);
+CREATE INDEX IF NOT EXISTS idx_memory_video_links_memory ON memory_video_links(memory_id);
+CREATE INDEX IF NOT EXISTS idx_memory_video_links_video ON memory_video_links(video_response_id);
+CREATE INDEX IF NOT EXISTS idx_memory_video_links_interviewer ON memory_video_links(interviewer_id);
+CREATE INDEX IF NOT EXISTS idx_memory_video_links_interviewee ON memory_video_links(interviewee_contact_id);
 
 -- ============================================
 -- INTERVIEW SESSION ACTIVITY LOG
@@ -127,9 +127,9 @@ CREATE TABLE IF NOT EXISTS interview_activity_log (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_interview_activity_session ON interview_activity_log(session_id);
-CREATE INDEX idx_interview_activity_type ON interview_activity_log(activity_type);
-CREATE INDEX idx_interview_activity_created ON interview_activity_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_interview_activity_session ON interview_activity_log(session_id);
+CREATE INDEX IF NOT EXISTS idx_interview_activity_type ON interview_activity_log(activity_type);
+CREATE INDEX IF NOT EXISTS idx_interview_activity_created ON interview_activity_log(created_at DESC);
 
 -- ============================================
 -- VOICE ANSWER TRANSCRIPTS
@@ -215,6 +215,7 @@ ALTER TABLE interview_activity_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE interview_templates ENABLE ROW LEVEL SECURITY;
 
 -- Notifications: Users can view their own session notifications
+DROP POLICY IF EXISTS "Users can view own interview notifications" ON interview_notifications;
 CREATE POLICY "Users can view own interview notifications" ON interview_notifications
     FOR SELECT USING (
         EXISTS (
@@ -224,10 +225,12 @@ CREATE POLICY "Users can view own interview notifications" ON interview_notifica
     );
 
 -- Memory video links: Both interviewer and linked contact (via interviewer) can view
+DROP POLICY IF EXISTS "Users can view own memory video links" ON memory_video_links;
 CREATE POLICY "Users can view own memory video links" ON memory_video_links
     FOR ALL USING (interviewer_id = auth.uid());
 
 -- Activity log: Users can view their own session activity
+DROP POLICY IF EXISTS "Users can view own interview activity" ON interview_activity_log;
 CREATE POLICY "Users can view own interview activity" ON interview_activity_log
     FOR SELECT USING (
         EXISTS (
@@ -237,9 +240,11 @@ CREATE POLICY "Users can view own interview activity" ON interview_activity_log
     );
 
 -- Templates: Users can view system templates and their own
+DROP POLICY IF EXISTS "Users can view templates" ON interview_templates;
 CREATE POLICY "Users can view templates" ON interview_templates
     FOR SELECT USING (is_system = true OR user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can manage own templates" ON interview_templates;
 CREATE POLICY "Users can manage own templates" ON interview_templates
     FOR ALL USING (user_id = auth.uid());
 
@@ -392,6 +397,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS interview_templates_updated_at ON interview_templates;
 CREATE TRIGGER interview_templates_updated_at 
     BEFORE UPDATE ON interview_templates
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
@@ -417,6 +423,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS video_response_created_trigger ON video_responses;
 CREATE TRIGGER video_response_created_trigger
     AFTER INSERT ON video_responses
     FOR EACH ROW EXECUTE FUNCTION on_video_response_created();

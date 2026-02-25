@@ -1,4 +1,6 @@
-export { PricingTable } from './PricingTable';
-export { SubscriptionStatus } from './SubscriptionStatus';
-export { UpgradeModal } from './UpgradeModal';
-export { BillingPortalLink } from './BillingPortalLink';
+export { StorageUsageBar } from './StorageUsageBar'
+export { FeatureGate, useFeatureAccess, withFeatureGate } from './FeatureGate'
+export { PricingTable } from './PricingTable'
+export { SubscriptionStatus } from './SubscriptionStatus'
+export { UpgradeModal } from './UpgradeModal'
+export { BillingPortalLink } from './BillingPortalLink'
