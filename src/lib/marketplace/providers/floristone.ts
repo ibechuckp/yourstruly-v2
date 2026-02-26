@@ -28,6 +28,10 @@ export const FLORISTONE_CATEGORIES = {
     newBaby: 'nb',
     thankYou: 'ty',
     sympathy: 'sy',
+    mothersDay: 'md',
+    valentinesDay: 'vd',
+    christmas: 'ch',
+    easter: 'ea',
   },
   productTypes: {
     centerpieces: 'c',
@@ -45,6 +49,24 @@ export const FLORISTONE_CATEGORIES = {
     aboveHundred: 'a100',
   },
 } as const;
+
+// Map YoursTruly occasion slugs to Floristone category codes
+export const OCCASION_TO_CATEGORY: Record<string, string> = {
+  'sympathy': 'sy',
+  'memorial': 'sy',
+  'condolence': 'sy',
+  'anniversary': 'an',
+  'birthday': 'bd',
+  'love': 'lr',
+  'romance': 'lr',
+  'valentines-day': 'vd',
+  'mothers-day': 'md',
+  'get-well': 'gw',
+  'thank-you': 'ty',
+  'new-baby': 'nb',
+  'christmas': 'ch',
+  'easter': 'ea',
+};
 
 interface FloristoneProduct {
   CODE: string;
