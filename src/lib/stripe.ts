@@ -3,7 +3,7 @@ import { loadStripe, Stripe as StripeClient } from '@stripe/stripe-js';
 
 // Server-side Stripe instance
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-01-28.clover', // Use stable API version
+  apiVersion: '2025-01-27.acacia', // Latest stable API version
   typescript: true,
 });
 

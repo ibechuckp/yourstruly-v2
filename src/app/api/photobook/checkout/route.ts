@@ -82,10 +82,35 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ url: session.url })
     
-  } catch (error) {
-    console.error('Photobook checkout error:', error)
+  } catch (error: unknown) {
+    // Better error logging for debugging
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
+    
+    console.error('Photobook checkout error:', {
+      message: errorMessage,
+      stack: errorStack,
+      stripeKeySet: !!process.env.STRIPE_SECRET_KEY,
+      appUrlSet: !!process.env.NEXT_PUBLIC_APP_URL,
+    })
+    
+    // Return more specific error for Stripe issues
+    if (errorMessage.includes('Invalid API Key') || errorMessage.includes('api_key')) {
+      return NextResponse.json(
+        { error: 'Payment configuration error. Please contact support.' },
+        { status: 500 }
+      )
+    }
+    
+    if (errorMessage.includes('url')) {
+      return NextResponse.json(
+        { error: 'Redirect URL configuration error. Please contact support.' },
+        { status: 500 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: errorMessage || 'Internal server error' },
       { status: 500 }
     )
   }
