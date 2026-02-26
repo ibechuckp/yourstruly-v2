@@ -42,6 +42,7 @@ import {
   LayoutTemplate 
 } from '@/lib/photobook/templates'
 import { PRODIGI_PHOTOBOOK_SKUS } from '@/components/photobook/types'
+import { getEnabledProducts, getEnabledTemplates, DbProduct } from '@/lib/photobook/db'
 
 // ============================================================================
 // TYPES
@@ -304,11 +305,34 @@ const PRODUCTS: Product[] = [
 // Step 1: Choose Product
 function ProductStep({ 
   selectedProduct, 
-  onSelect 
+  onSelect,
+  products,
+  isLoading
 }: { 
   selectedProduct: Product | null
-  onSelect: (product: Product) => void 
+  onSelect: (product: Product) => void
+  products: Product[]
+  isLoading: boolean
 }) {
+  if (isLoading) {
+    return (
+      <div className="max-w-6xl mx-auto text-center py-16">
+        <Loader2 className="w-8 h-8 mx-auto animate-spin text-[#406A56]" />
+        <p className="text-[#406A56]/60 mt-4">Loading products...</p>
+      </div>
+    )
+  }
+  
+  if (products.length === 0) {
+    return (
+      <div className="max-w-6xl mx-auto text-center py-16">
+        <Package className="w-16 h-16 mx-auto text-[#406A56]/30" />
+        <h3 className="text-lg font-medium text-[#406A56] mt-4">No Products Available</h3>
+        <p className="text-[#406A56]/60 mt-2">Please check back later or contact support.</p>
+      </div>
+    )
+  }
+  
   return (
     <div className="max-w-6xl mx-auto">
       <div className="text-center mb-8">
@@ -317,7 +341,7 @@ function ProductStep({
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {PRODUCTS.map((product) => {
+        {products.map((product) => {
           const isSelected = selectedProduct?.id === product.id
           const displayPrice = (product.basePrice * 1.3).toFixed(2) // 30% markup
           
@@ -2509,6 +2533,8 @@ export default function CreatePhotobookPage() {
   const [currentStep, setCurrentStep] = useState(0)
   
   // Data state
+  const [products, setProducts] = useState<Product[]>([])
+  const [productsLoading, setProductsLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [memories, setMemories] = useState<Memory[]>([])
   const [selectedMemoryIds, setSelectedMemoryIds] = useState<Set<string>>(new Set())
@@ -2534,7 +2560,7 @@ export default function CreatePhotobookPage() {
   const [projectId, setProjectId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   
-  // Load user and memories
+  // Load user, memories, and products
   useEffect(() => {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -2565,6 +2591,36 @@ export default function CreatePhotobookPage() {
 
       setMemories(memoriesData || [])
       setIsLoading(false)
+      
+      // Load products from database (falls back to hardcoded if table doesn't exist)
+      try {
+        const dbProducts = await getEnabledProducts()
+        if (dbProducts.length > 0) {
+          // Convert DB products to Product interface
+          const convertedProducts: Product[] = dbProducts.map((p: DbProduct) => ({
+            id: p.slug,
+            name: p.name,
+            description: p.description || '',
+            size: p.size,
+            basePrice: Number(p.base_price),
+            pricePerPage: Number(p.price_per_page),
+            minPages: p.min_pages,
+            maxPages: p.max_pages,
+            binding: p.binding,
+            icon: p.binding === 'layflat' ? <Sparkles className="w-8 h-8" /> : <BookOpen className="w-8 h-8" />,
+            features: p.features || [],
+            prodigiSku: p.prodigi_sku || undefined,
+          }))
+          setProducts(convertedProducts)
+        } else {
+          // Fallback to hardcoded PRODUCTS
+          setProducts(PRODUCTS)
+        }
+      } catch (error) {
+        console.warn('Using hardcoded products:', error)
+        setProducts(PRODUCTS)
+      }
+      setProductsLoading(false)
     }
 
     loadData()
@@ -3012,6 +3068,8 @@ export default function CreatePhotobookPage() {
               <ProductStep
                 selectedProduct={selectedProduct}
                 onSelect={setSelectedProduct}
+                products={products}
+                isLoading={productsLoading}
               />
             )}
             

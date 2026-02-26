@@ -18,6 +18,7 @@ import {
   ChevronRight,
   LogOut,
   Crown,
+  BookOpen,
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -38,6 +39,7 @@ const navItems: NavItem[] = [
   { label: 'Analytics', href: '/admin/analytics', icon: BarChart3, permission: 'analytics:read' },
   { label: 'Billing', href: '/admin/billing', icon: CreditCard, permission: 'billing:read' },
   { label: 'Marketplace', href: '/admin/marketplace', icon: ShoppingBag, permission: 'marketplace:read' },
+  { label: 'Photobooks', href: '/admin/photobook', icon: BookOpen, permission: 'marketplace:read' },
   { label: 'AI Config', href: '/admin/ai', icon: Brain, permission: 'ai:read' },
   { label: 'Engagement', href: '/admin/engagement', icon: Puzzle, permission: 'engagement:read' },
   { label: 'Moderation', href: '/admin/moderation', icon: ShieldAlert, permission: 'moderation:read' },
