@@ -550,15 +550,17 @@ Do NOT start with greetings or unrelated topics.`
         }
 
         // Configure session with VAD and system instructions
+        // Higher threshold = less sensitive to background noise
+        // Longer silence = more time for user to pause between sentences
         sendMessage(dc, {
           type: 'session.update',
           session: {
             instructions,
             turn_detection: {
               type: 'server_vad',
-              threshold: 0.7, // Higher = less sensitive to background noise
-              prefix_padding_ms: 400,
-              silence_duration_ms: 800, // Longer pause before AI responds
+              threshold: 0.8, // High threshold - reduces false triggers from background noise
+              prefix_padding_ms: 500, // More padding before speech detection
+              silence_duration_ms: 1000, // Wait 1 second of silence before AI responds
             },
             input_audio_transcription: {
               model: 'whisper-1',

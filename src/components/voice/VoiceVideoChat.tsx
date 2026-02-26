@@ -406,58 +406,58 @@ function getPersonaByName(name: 'journalist' | 'friend' | 'life-story'): Persona
 }
 
 /**
- * Extract people names and places from transcript
- * Simple heuristic-based extraction
+ * Extract people names from transcript
+ * More conservative extraction - only obvious name patterns
  */
 function extractEntities(transcript: Array<{ role: string; text: string }>): { people: string[]; places: string[] } {
   const people = new Set<string>()
   const places = new Set<string>()
   
-  // Common name patterns and context clues
-  const namePatterns = [
-    /my (?:mom|mother|dad|father|grandmother|grandfather|grandma|grandpa|sister|brother|aunt|uncle|cousin|wife|husband|son|daughter|friend|neighbor|boss|colleague|coworker|teacher|professor)(?: named| called)?\s+([A-Z][a-z]+)/gi,
-    /(?:named|called|known as)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/gi,
-    /([A-Z][a-z]+)\s+(?:taught|showed|told|gave|made|helped|said|mentioned|remembered|knew|loved)/gi,
-    /(?:with|and|from)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:when|who|that|and|,)/gi,
-  ]
-  
-  const placePatterns = [
-    /(?:in|at|from|to|near|around)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?(?:,\s*[A-Z][a-z]+)?)/gi,
-    /(?:the|our|my|their)\s+(?:house|home|apartment|school|church|park|beach|lake|mountain|river|city|town|village|neighborhood|kitchen|garden|backyard|basement)\s+(?:in|at|on|near)\s+([A-Z][a-z]+)/gi,
-  ]
-  
-  // Common words to exclude from names
+  // Very strict exclusion list - common words that look like names
   const excludeWords = new Set([
-    'I', 'The', 'This', 'That', 'What', 'When', 'Where', 'Who', 'How', 'Why',
-    'My', 'Your', 'His', 'Her', 'Its', 'Our', 'Their', 'We', 'You', 'He', 'She', 'It', 'They',
-    'And', 'But', 'Or', 'So', 'If', 'Then', 'Now', 'Just', 'Really', 'Very', 'Always',
-    'Mom', 'Dad', 'Mother', 'Father', 'Grandma', 'Grandpa', 'Grandmother', 'Grandfather'
+    // Pronouns and common words
+    'i', 'the', 'this', 'that', 'what', 'when', 'where', 'who', 'how', 'why',
+    'my', 'your', 'his', 'her', 'its', 'our', 'their', 'we', 'you', 'he', 'she', 'it', 'they',
+    'and', 'but', 'or', 'so', 'if', 'then', 'now', 'just', 'really', 'very', 'always',
+    'would', 'could', 'should', 'will', 'can', 'may', 'might', 'must',
+    'was', 'were', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
+    'about', 'after', 'before', 'because', 'while', 'during', 'through',
+    'with', 'from', 'into', 'over', 'under', 'again', 'further', 'once',
+    // Family terms
+    'mom', 'dad', 'mother', 'father', 'grandma', 'grandpa', 'grandmother', 'grandfather',
+    'sister', 'brother', 'aunt', 'uncle', 'cousin', 'wife', 'husband', 'son', 'daughter',
+    // Common nouns that might be capitalized
+    'recipe', 'family', 'kitchen', 'house', 'home', 'food', 'time', 'day', 'year',
+    'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
+    'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august',
+    'september', 'october', 'november', 'december', 'christmas', 'thanksgiving',
   ])
   
-  // Only process user messages
-  const userText = transcript
-    .filter(t => t.role === 'user')
-    .map(t => t.text)
-    .join(' ')
+  // Only very specific patterns for names
+  const namePatterns = [
+    // "named X" or "called X" - most reliable
+    /(?:named|called)\s+([A-Z][a-z]{2,})/gi,
+    // "my friend/neighbor X" with explicit name following
+    /my\s+(?:friend|neighbor|colleague)\s+([A-Z][a-z]{2,})/gi,
+    // "X taught me" or "X showed me" - name as subject
+    /([A-Z][a-z]{2,})\s+(?:taught|showed|told)\s+me/gi,
+  ]
   
-  // Extract names
+  // Combine all text (both user and AI to catch when AI repeats names)
+  const allText = transcript.map(t => t.text).join(' ')
+  
+  // Extract names with strict filtering
   for (const pattern of namePatterns) {
     let match
-    while ((match = pattern.exec(userText)) !== null) {
+    pattern.lastIndex = 0 // Reset regex state
+    while ((match = pattern.exec(allText)) !== null) {
       const name = match[1]?.trim()
-      if (name && name.length > 1 && !excludeWords.has(name)) {
+      // Must be 3+ chars, not in exclude list, and look like a proper name
+      if (name && 
+          name.length >= 3 && 
+          !excludeWords.has(name.toLowerCase()) &&
+          /^[A-Z][a-z]+$/.test(name)) {
         people.add(name)
-      }
-    }
-  }
-  
-  // Extract places
-  for (const pattern of placePatterns) {
-    let match
-    while ((match = pattern.exec(userText)) !== null) {
-      const place = match[1]?.trim()
-      if (place && place.length > 2 && !excludeWords.has(place)) {
-        places.add(place)
       }
     }
   }
