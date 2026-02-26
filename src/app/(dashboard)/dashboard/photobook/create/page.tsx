@@ -59,6 +59,7 @@ interface Product {
   binding: 'hardcover' | 'softcover' | 'layflat'
   icon: React.ReactNode
   features: string[]
+  prodigiSku?: string
 }
 
 interface Memory {
@@ -206,84 +207,93 @@ function getFontSizePx(size: string): number {
 // PRODUCTS
 // ============================================================================
 
+// Prodigi photobook specs: https://www.prodigi.com/blog/photo-books-technical-guide/
+// Hardcover: 24-300 pages, Softcover: 20-300 pages, Layflat: 18-122 pages
+// We limit max pages for MVP to keep it manageable
 const PRODUCTS: Product[] = [
   {
     id: '8x8_hardcover',
     name: '8×8" Hardcover',
     description: 'Classic square format, perfect for family albums',
     size: '8×8"',
-    basePrice: 24.99,
-    pricePerPage: 0.50,
-    minPages: 20,
-    maxPages: 100,
+    basePrice: 29.99,
+    pricePerPage: 0.40, // ~$0.40/page for additional pages
+    minPages: 24,
+    maxPages: 80, // Prodigi allows up to 300, we limit for MVP
     binding: 'hardcover',
     icon: <BookOpen className="w-8 h-8" />,
-    features: ['Lay-flat pages', 'Premium matte paper', 'Dust jacket included']
+    features: ['PUR binding', 'Matte-laminated cover', 'Printable spine'],
+    prodigiSku: 'BOOK-HARD-SQ-9X9' // 9x9" is closest Prodigi size
   },
   {
     id: '10x10_hardcover',
     name: '10×10" Hardcover',
     description: 'Large format for stunning photo displays',
     size: '10×10"',
-    basePrice: 34.99,
-    pricePerPage: 0.75,
-    minPages: 20,
-    maxPages: 100,
+    basePrice: 39.99,
+    pricePerPage: 0.50,
+    minPages: 24,
+    maxPages: 80,
     binding: 'hardcover',
     icon: <BookOpen className="w-8 h-8" />,
-    features: ['Lay-flat pages', 'Premium matte paper', 'Padded cover']
+    features: ['PUR binding', 'Matte-laminated cover', '200gsm gloss paper'],
+    prodigiSku: 'BOOK-HARD-SQ-12X12'
   },
   {
     id: '11x8_landscape',
     name: '11×8" Landscape',
     description: 'Wide format ideal for panoramic shots',
     size: '11×8"',
-    basePrice: 29.99,
-    pricePerPage: 0.60,
-    minPages: 20,
+    basePrice: 34.99,
+    pricePerPage: 0.45,
+    minPages: 24,
     maxPages: 80,
     binding: 'hardcover',
     icon: <BookOpen className="w-8 h-8" />,
-    features: ['Landscape orientation', 'Premium glossy paper', 'Presentation box']
+    features: ['Landscape orientation', '200gsm gloss paper', 'PUR binding'],
+    prodigiSku: 'BOOK-HARD-LS-11X9'
   },
   {
     id: '8x8_softcover',
     name: '8×8" Softcover',
     description: 'Affordable option with professional quality',
     size: '8×8"',
-    basePrice: 14.99,
-    pricePerPage: 0.35,
+    basePrice: 19.99,
+    pricePerPage: 0.30,
     minPages: 20,
     maxPages: 60,
     binding: 'softcover',
     icon: <Package className="w-8 h-8" />,
-    features: ['Flexible cover', 'Standard matte paper', 'Quick production']
+    features: ['Flexible matte cover', '150gsm gloss paper', 'Faster production'],
+    prodigiSku: 'BOOK-SOFT-SQ-9X9'
   },
   {
     id: '12x12_layflat',
     name: '12×12" Layflat Premium',
     description: 'Our finest photobook with seamless spreads',
     size: '12×12"',
-    basePrice: 54.99,
-    pricePerPage: 1.25,
-    minPages: 20,
-    maxPages: 50,
+    basePrice: 59.99,
+    pricePerPage: 1.00,
+    minPages: 18,
+    maxPages: 60, // Prodigi allows up to 122
     binding: 'layflat',
     icon: <Sparkles className="w-8 h-8" />,
-    features: ['180° lay-flat binding', 'Archival quality', 'Gift box packaging']
+    features: ['180° lay-flat binding', '190gsm lustre paper', 'Seamless panoramas'],
+    prodigiSku: 'BOOK-LAYFLAT-SQ-12X12'
   },
   {
     id: 'calendar_wall',
     name: 'Wall Calendar',
     description: '12-month custom photo calendar',
     size: '11×8.5"',
-    basePrice: 19.99,
+    basePrice: 24.99,
     pricePerPage: 0,
     minPages: 13,
     maxPages: 13,
     binding: 'softcover',
     icon: <Layout className="w-8 h-8" />,
-    features: ['Wire-O binding', 'Hanging hook', 'US holidays included']
+    features: ['Wire-O binding', 'Hanging hook', 'US holidays included'],
+    prodigiSku: 'CALENDAR-WALL-A3'
   }
 ]
 
@@ -569,6 +579,7 @@ function ArrangeStep({
 }) {
   const [selectedPageId, setSelectedPageId] = useState<string | null>(pages[0]?.id || null)
   const [showLayoutPicker, setShowLayoutPicker] = useState(false)
+  const [layoutPickerMode, setLayoutPickerMode] = useState<'add' | 'change'>('add')
   const [showQRPicker, setShowQRPicker] = useState(false)
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false)
   const [showPhotoPicker, setShowPhotoPicker] = useState(false)
@@ -1059,7 +1070,10 @@ function ArrangeStep({
 
         {/* Add Page Button */}
         <button
-          onClick={() => setShowLayoutPicker(true)}
+          onClick={() => {
+            setLayoutPickerMode('add')
+            setShowLayoutPicker(true)
+          }}
           className="w-full mt-4 aspect-square rounded-lg border-2 border-dashed border-[#406A56]/30 hover:border-[#406A56]/50 hover:bg-[#406A56]/5 flex flex-col items-center justify-center text-[#406A56]/50 hover:text-[#406A56] transition-all"
         >
           <Plus className="w-6 h-6" />
@@ -1082,7 +1096,10 @@ function ArrangeStep({
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowLayoutPicker(true)}
+              onClick={() => {
+                setLayoutPickerMode('change')
+                setShowLayoutPicker(true)
+              }}
               className="px-3 py-2 bg-[#406A56]/10 hover:bg-[#406A56]/20 rounded-lg text-[#406A56] text-sm font-medium flex items-center gap-2"
             >
               <Layout className="w-4 h-4" />
@@ -1172,9 +1189,12 @@ function ArrangeStep({
           </div>
         </div>
         
-        {/* Text Formatting Toolbar */}
+        {/* Text Formatting Toolbar - onMouseDown prevents blur on text area */}
         {activeTextSlotId && selectedPageId && activeStyle && (
-          <div className="flex items-center gap-2 mb-4 p-3 bg-white rounded-xl shadow-sm border border-[#406A56]/10 flex-wrap">
+          <div 
+            className="flex items-center gap-2 mb-4 p-3 bg-white rounded-xl shadow-sm border border-[#406A56]/10 flex-wrap"
+            onMouseDown={(e) => e.preventDefault()} // Prevent blur when clicking toolbar
+          >
             {/* Font Family */}
             <select
               value={activeStyle.fontFamily}
@@ -1587,7 +1607,7 @@ function ArrangeStep({
                       <button
                         key={template.id}
                         onClick={() => {
-                          if (selectedPage) {
+                          if (layoutPickerMode === 'change' && selectedPage) {
                             updatePageLayout(selectedPage.id, template.id)
                           } else {
                             addPage(template.id)

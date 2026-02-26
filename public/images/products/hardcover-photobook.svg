@@ -1,0 +1,31 @@
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="400" fill="#f5f5f5"/>
+  
+  <!-- Book shadow -->
+  <ellipse cx="210" cy="340" rx="140" ry="20" fill="#00000015"/>
+  
+  <!-- Book base (closed) -->
+  <rect x="80" y="100" width="240" height="220" rx="4" fill="#406A56"/>
+  
+  <!-- Pages (white edge) -->
+  <rect x="82" y="105" width="8" height="210" fill="#f8f8f8"/>
+  
+  <!-- Cover highlight -->
+  <rect x="90" y="100" width="230" height="220" rx="4" fill="#4a7a64"/>
+  
+  <!-- Cover image area -->
+  <rect x="110" y="120" width="190" height="140" fill="#ffffff" rx="2"/>
+  
+  <!-- Sample image content -->
+  <rect x="120" y="130" width="170" height="100" fill="#e8e4dc"/>
+  <circle cx="165" cy="165" r="15" fill="#406A56" opacity="0.5"/>
+  <path d="M135 200L165 170L195 185L240 155L280 180V220H135V200Z" fill="#406A56" opacity="0.3"/>
+  
+  <!-- Title area -->
+  <rect x="140" y="270" width="120" height="8" fill="#ffffff" rx="2"/>
+  <rect x="160" y="285" width="80" height="6" fill="#ffffff" opacity="0.6" rx="2"/>
+  
+  <!-- Spine text area -->
+  <rect x="84" y="180" width="4" height="60" fill="#ffffff" opacity="0.3"/>
+</svg>

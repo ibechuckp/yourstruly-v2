@@ -1,0 +1,28 @@
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="400" fill="#f5f5f5"/>
+  
+  <!-- Book shadow -->
+  <ellipse cx="200" cy="340" rx="130" ry="18" fill="#00000015"/>
+  
+  <!-- Book (slightly curved for softcover effect) -->
+  <path d="M90 100 Q85 210 90 320 L300 320 Q305 210 300 100 Z" fill="#5a8a72"/>
+  
+  <!-- Pages edge -->
+  <rect x="92" y="105" width="6" height="210" fill="#f8f8f8"/>
+  
+  <!-- Cover -->
+  <path d="M98 100 Q93 210 98 320 L295 320 Q300 210 295 100 Z" fill="#406A56"/>
+  
+  <!-- Cover image area -->
+  <rect x="115" y="118" width="165" height="130" fill="#ffffff" rx="2"/>
+  
+  <!-- Sample image -->
+  <rect x="125" y="128" width="145" height="90" fill="#e8e4dc"/>
+  <circle cx="160" cy="158" r="12" fill="#5a8a72" opacity="0.5"/>
+  <path d="M135 190L160 165L185 175L230 150L260 170V208H135V190Z" fill="#5a8a72" opacity="0.3"/>
+  
+  <!-- Title area -->
+  <rect x="145" y="260" width="100" height="7" fill="#ffffff" rx="2"/>
+  <rect x="160" y="273" width="70" height="5" fill="#ffffff" opacity="0.6" rx="2"/>
+</svg>

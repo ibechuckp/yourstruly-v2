@@ -1,0 +1,31 @@
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="400" fill="#f5f5f5"/>
+  
+  <!-- Open book shadow -->
+  <ellipse cx="200" cy="330" rx="170" ry="25" fill="#00000010"/>
+  
+  <!-- Left page (lay flat) -->
+  <rect x="30" y="100" width="165" height="200" fill="#faf9f6"/>
+  <rect x="30" y="100" width="165" height="200" stroke="#406A56" stroke-width="2"/>
+  
+  <!-- Right page (lay flat) -->
+  <rect x="205" y="100" width="165" height="200" fill="#faf9f6"/>
+  <rect x="205" y="100" width="165" height="200" stroke="#406A56" stroke-width="2"/>
+  
+  <!-- Panoramic image spanning both pages -->
+  <rect x="45" y="115" width="310" height="150" fill="#e8e4dc"/>
+  <circle cx="120" cy="165" r="25" fill="#406A56" opacity="0.4"/>
+  <path d="M60 220L120 175L180 200L280 150L340 185V255H60V220Z" fill="#406A56" opacity="0.3"/>
+  
+  <!-- Center binding line (seamless) -->
+  <line x1="200" y1="105" x2="200" y2="295" stroke="#406A56" stroke-width="1" stroke-dasharray="3 3" opacity="0.3"/>
+  
+  <!-- Text: LAYFLAT indicator -->
+  <rect x="135" y="275" width="130" height="15" fill="#406A56" rx="3"/>
+  <text x="200" y="287" font-family="Arial" font-size="10" fill="white" text-anchor="middle">180° LAY-FLAT</text>
+  
+  <!-- Cover edges (closed book representation) -->
+  <rect x="25" y="95" width="175" height="210" fill="none" stroke="#406A56" stroke-width="3" rx="2"/>
+  <rect x="200" y="95" width="175" height="210" fill="none" stroke="#406A56" stroke-width="3" rx="2"/>
+</svg>
