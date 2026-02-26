@@ -8,6 +8,7 @@ import '@/styles/page-styles.css'
 import '@/styles/engagement.css'
 import '@/styles/home.css'
 import { getCategoryIcon } from '@/lib/dashboard/icons'
+import { GoogleContactsImport } from '@/components/contacts'
 
 // ============================================
 // TYPES
@@ -43,6 +44,14 @@ interface Pet {
   is_deceased: boolean
   date_of_passing?: string
 }
+
+interface CircleMembership {
+  circleId: string
+  circleName: string
+}
+
+// Map of lowercase email -> circle memberships
+type ContactCircleMap = Map<string, CircleMembership[]>
 
 // ============================================
 // CONSTANTS
@@ -94,6 +103,7 @@ const SPECIES_OPTIONS = ['Dog', 'Cat', 'Bird', 'Fish', 'Rabbit', 'Hamster', 'Gui
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [pets, setPets] = useState<Pet[]>([])
+  const [contactCircles, setContactCircles] = useState<ContactCircleMap>(new Map())
   const [loading, setLoading] = useState(true)
   const [showContactModal, setShowContactModal] = useState(false)
   const [showPetModal, setShowPetModal] = useState(false)
@@ -122,6 +132,7 @@ export default function ContactsPage() {
       // Reset state when no user to prevent data leakage
       setContacts([])
       setPets([])
+      setContactCircles(new Map())
       setLoading(false)
       return
     }
@@ -133,6 +144,58 @@ export default function ContactsPage() {
 
     setContacts(contactsRes.data || [])
     setPets(petsRes.data || [])
+
+    // Fetch circles the user is a member of
+    const { data: userCircleMemberships } = await supabase
+      .from('circle_members')
+      .select('circle_id, circles(id, name)')
+      .eq('user_id', user.id)
+      .eq('invite_status', 'accepted')
+
+    const circleMap: ContactCircleMap = new Map()
+    
+    if (userCircleMemberships && userCircleMemberships.length > 0) {
+      // Get circle IDs
+      const circleIds = userCircleMemberships
+        .map(m => (m.circles as { id: string } | null)?.id)
+        .filter((id): id is string => !!id)
+      
+      if (circleIds.length > 0) {
+        // Fetch all members of these circles with their profile emails
+        const { data: allMembers } = await supabase
+          .from('circle_members')
+          .select('circle_id, user_id, profiles(email)')
+          .in('circle_id', circleIds)
+          .eq('invite_status', 'accepted')
+        
+        // Build lookup of circle id -> name
+        const circleNames: Record<string, string> = {}
+        for (const m of userCircleMemberships) {
+          const circle = m.circles as { id: string; name: string } | null
+          if (circle) circleNames[circle.id] = circle.name
+        }
+        
+        // Build map of email -> circle memberships
+        if (allMembers) {
+          for (const member of allMembers) {
+            const email = (member.profiles as { email: string } | null)?.email?.toLowerCase()
+            if (!email) continue
+            
+            const circleName = circleNames[member.circle_id]
+            if (!circleName) continue
+            
+            const existing = circleMap.get(email) || []
+            // Avoid duplicates
+            if (!existing.some(c => c.circleId === member.circle_id)) {
+              existing.push({ circleId: member.circle_id, circleName })
+              circleMap.set(email, existing)
+            }
+          }
+        }
+      }
+    }
+    
+    setContactCircles(circleMap)
     setLoading(false)
   }
 
@@ -170,6 +233,12 @@ export default function ContactsPage() {
     if (friendIds.includes(id)) return 'blue'
     if (professionalIds.includes(id)) return 'yellow'
     return 'purple'
+  }
+
+  // Get circles a contact belongs to (matched by email)
+  const getContactCircles = (contact: Contact): CircleMembership[] => {
+    if (!contact.email) return []
+    return contactCircles.get(contact.email.toLowerCase()) || []
   }
 
   if (loading) {
@@ -221,13 +290,16 @@ export default function ContactsPage() {
                 <span className="text-[#406A56]/60 text-sm font-normal ml-2">({filteredContacts.length} of {contacts.length})</span>
               </div>
             </div>
-            <button
-              onClick={() => { setEditingContact(null); setShowContactModal(true) }}
-              className="btn-primary"
-            >
-              <Plus size={16} />
-              Add Contact
-            </button>
+            <div className="flex items-center gap-2">
+              <GoogleContactsImport onImportComplete={loadData} />
+              <button
+                onClick={() => { setEditingContact(null); setShowContactModal(true) }}
+                className="btn-primary"
+              >
+                <Plus size={16} />
+                Add Contact
+              </button>
+            </div>
           </div>
 
           {/* Search and Filters */}
@@ -308,9 +380,21 @@ export default function ContactsPage() {
                         </div>
                         <div>
                           <h3 className="text-[#2d2d2d] font-semibold">{contact.full_name}</h3>
-                          <span className={`bubble-type bubble-type-${getRelationshipColor(contact.relationship_type)} text-[10px] mt-1 inline-block`}>
-                            {getRelationshipLabel(contact.relationship_type)}
-                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                            <span className={`bubble-type bubble-type-${getRelationshipColor(contact.relationship_type)} text-[10px]`}>
+                              {getRelationshipLabel(contact.relationship_type)}
+                            </span>
+                            {getContactCircles(contact).map(circle => (
+                              <span 
+                                key={circle.circleId}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#D9C61A]/20 text-[#8B7B00] text-[10px] font-medium rounded-full"
+                                title={`Member of ${circle.circleName} circle`}
+                              >
+                                <Users size={10} />
+                                {circle.circleName}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>

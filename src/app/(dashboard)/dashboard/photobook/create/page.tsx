@@ -115,6 +115,7 @@ interface PageData {
   pageNumber: number
   layoutId: string
   slots: SlotData[]
+  background?: string // CSS color or gradient
 }
 
 // History state for undo/redo
@@ -160,12 +161,32 @@ const TEXT_COLORS = [
 ]
 
 const BACKGROUND_COLORS = [
+  // Neutrals
   { value: '#ffffff', label: 'White' },
   { value: '#faf9f6', label: 'Cream' },
   { value: '#f5f5f5', label: 'Light Gray' },
   { value: '#1a1a1a', label: 'Black' },
-  { value: '#2c3e50', label: 'Dark Blue' },
+  // Pastels
+  { value: '#fce4ec', label: 'Soft Pink' },
+  { value: '#e3f2fd', label: 'Soft Blue' },
+  { value: '#e8f5e9', label: 'Soft Green' },
+  { value: '#fff3e0', label: 'Soft Orange' },
+  { value: '#f3e5f5', label: 'Soft Purple' },
+  { value: '#fffde7', label: 'Soft Yellow' },
+  // Rich Colors
+  { value: '#2c3e50', label: 'Navy Blue' },
   { value: '#8b4513', label: 'Saddle Brown' },
+  { value: '#2e7d32', label: 'Forest Green' },
+  { value: '#6a1b9a', label: 'Deep Purple' },
+  { value: '#c62828', label: 'Deep Red' },
+  { value: '#00695c', label: 'Teal' },
+  // Gradients (CSS strings)
+  { value: 'linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%)', label: 'Warm Gradient' },
+  { value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', label: 'Purple Gradient' },
+  { value: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', label: 'Cool Gray' },
+  { value: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', label: 'Sunset' },
+  { value: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', label: 'Cotton Candy' },
+  { value: 'linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)', label: 'Fresh Green' },
 ]
 
 const DEFAULT_TEXT_STYLE: TextStyle = {
@@ -549,6 +570,7 @@ function ArrangeStep({
   const [selectedPageId, setSelectedPageId] = useState<string | null>(pages[0]?.id || null)
   const [showLayoutPicker, setShowLayoutPicker] = useState(false)
   const [showQRPicker, setShowQRPicker] = useState(false)
+  const [showBackgroundPicker, setShowBackgroundPicker] = useState(false)
   const [showPhotoPicker, setShowPhotoPicker] = useState(false)
   const [activeSlotId, setActiveSlotId] = useState<string | null>(null)
   const [activeTextSlotId, setActiveTextSlotId] = useState<string | null>(null)
@@ -785,8 +807,64 @@ function ArrangeStep({
   }
   
   const updatePageLayout = (pageId: string, layoutId: string) => {
+    const newTemplate = getTemplateById(layoutId)
+    
+    const newPages = pages.map(p => {
+      if (p.id !== pageId) return p
+      
+      // Get existing photo slots to preserve content
+      const existingPhotoSlots = p.slots.filter(s => s.type === 'photo' && s.fileUrl)
+      const existingTextSlots = p.slots.filter(s => s.type === 'text' && s.text)
+      const existingQrSlots = p.slots.filter(s => s.type === 'qr')
+      
+      // Get new template's slots
+      const newPhotoSlots = newTemplate?.slots.filter(s => s.type === 'photo') || []
+      const newTextSlots = newTemplate?.slots.filter(s => s.type === 'text') || []
+      const newQrSlots = newTemplate?.slots.filter(s => s.type === 'qr') || []
+      
+      // Map existing content to new slots
+      const mappedSlots: SlotData[] = []
+      
+      // Map photos to new slots (preserve as many as possible)
+      newPhotoSlots.forEach((newSlot, i) => {
+        if (existingPhotoSlots[i]) {
+          mappedSlots.push({
+            ...existingPhotoSlots[i],
+            slotId: newSlot.id,
+          })
+        }
+      })
+      
+      // Map text to new slots
+      newTextSlots.forEach((newSlot, i) => {
+        if (existingTextSlots[i]) {
+          mappedSlots.push({
+            ...existingTextSlots[i],
+            slotId: newSlot.id,
+          })
+        }
+      })
+      
+      // Map QR to new slots
+      newQrSlots.forEach((newSlot, i) => {
+        if (existingQrSlots[i]) {
+          mappedSlots.push({
+            ...existingQrSlots[i],
+            slotId: newSlot.id,
+          })
+        }
+      })
+      
+      return { ...p, layoutId, slots: mappedSlots }
+    })
+    
+    setPages(newPages)
+    saveHistory(newPages)
+  }
+
+  const updatePageBackground = (pageId: string, background: string) => {
     const newPages = pages.map(p =>
-      p.id === pageId ? { ...p, layoutId, slots: [] } : p
+      p.id === pageId ? { ...p, background } : p
     )
     setPages(newPages)
     saveHistory(newPages)
@@ -932,7 +1010,10 @@ function ArrangeStep({
                   </div>
                 </div>
 
-                <div className="aspect-square bg-white">
+                <div 
+                  className="aspect-square"
+                  style={{ background: page.background || template?.background || '#ffffff' }}
+                >
                   {firstPhoto?.fileUrl ? (
                     <img
                       src={firstPhoto.fileUrl}
@@ -1014,6 +1095,55 @@ function ArrangeStep({
               <QrCode className="w-4 h-4" />
               Add QR Code
             </button>
+            
+            {/* Page Background Picker */}
+            <div className="relative">
+              <button
+                onClick={() => setShowBackgroundPicker(!showBackgroundPicker)}
+                className="px-3 py-2 bg-[#406A56]/10 hover:bg-[#406A56]/20 rounded-lg text-[#406A56] text-sm font-medium flex items-center gap-2"
+              >
+                <div 
+                  className="w-4 h-4 rounded border border-[#406A56]/30"
+                  style={{ 
+                    background: selectedPage?.background || '#ffffff',
+                  }}
+                />
+                Background
+              </button>
+              
+              {/* Background Color Dropdown */}
+              {showBackgroundPicker && (
+                <div className="absolute top-full left-0 mt-2 p-3 bg-white rounded-xl shadow-xl border border-[#406A56]/10 z-50 w-64">
+                  <h4 className="text-xs font-semibold text-[#406A56] uppercase mb-2">Page Background</h4>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {BACKGROUND_COLORS.map(bg => (
+                      <button
+                        key={bg.value}
+                        onClick={() => {
+                          if (selectedPageId) {
+                            updatePageBackground(selectedPageId, bg.value)
+                          }
+                          setShowBackgroundPicker(false)
+                        }}
+                        className={`w-8 h-8 rounded border-2 transition-all hover:scale-110 ${
+                          selectedPage?.background === bg.value 
+                            ? 'border-[#406A56] ring-2 ring-[#406A56]/30' 
+                            : 'border-transparent hover:border-[#406A56]/30'
+                        }`}
+                        style={{ background: bg.value }}
+                        title={bg.label}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setShowBackgroundPicker(false)}
+                    className="mt-2 w-full text-xs text-[#406A56]/60 hover:text-[#406A56]"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Undo/Redo buttons */}
             <div className="flex items-center gap-1 ml-2 pl-2 border-l border-[#406A56]/20">
@@ -1152,11 +1282,12 @@ function ArrangeStep({
         <div className="flex-1 bg-[#406A56]/5 rounded-2xl p-8 flex items-center justify-center">
           {selectedPage && selectedTemplate ? (
             <div 
-              className="relative bg-white shadow-2xl"
+              className="relative shadow-2xl"
               style={{ 
                 width: '100%',
                 maxWidth: 500,
-                aspectRatio: '1/1'
+                aspectRatio: '1/1',
+                background: selectedPage.background || selectedTemplate.background || '#ffffff',
               }}
             >
               {/* Render slots */}
@@ -1940,7 +2071,7 @@ function PagePreview({ page, printSize }: { page: PageData; printSize?: number }
   }
 
   return (
-    <div className="relative w-full h-full" style={{ background: template.background || '#ffffff' }}>
+    <div className="relative w-full h-full" style={{ background: page.background || template.background || '#ffffff' }}>
       {template.slots.map((slot) => {
         const pageSlot = page.slots.find(s => s.slotId === slot.id)
         const style: React.CSSProperties = {

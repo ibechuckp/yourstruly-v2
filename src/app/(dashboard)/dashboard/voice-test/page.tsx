@@ -100,14 +100,14 @@ Respond naturally as a caring friend would. Keep your responses conversational a
     }
   ]
 
-  const handleComplete = (transcript: { role: 'user' | 'assistant', text: string }[]) => {
-    console.log('Voice chat completed:', transcript)
-    setLastTranscript(transcript)
+  const handleComplete = () => {
+    console.log('Voice chat completed')
     setActiveMode(null)
   }
 
-  const handleTranscript = (userText: string, aiText: string) => {
-    console.log('Exchange:', { user: userText, ai: aiText })
+  const handleTranscript = (transcript: { role: 'user' | 'assistant', text: string, timestamp: number }[]) => {
+    console.log('Transcript:', transcript)
+    setLastTranscript(transcript)
   }
 
   return (
@@ -187,13 +187,20 @@ Respond naturally as a caring friend would. Keep your responses conversational a
                   </div>
 
                   <VoiceChat
-                    systemPrompt={mode.systemPrompt}
-                    questions={mode.questions}
-                    voice="nova"
-                    onTranscript={handleTranscript}
-                    onComplete={handleComplete}
-                    onError={(error) => console.error('Voice chat error:', error)}
+                    sessionType={mode.id === 'onboarding' ? 'onboarding' : 
+                                mode.id === 'interview' ? 'life_interview' : 
+                                mode.id === 'engagement' ? 'engagement' : 'freeform'}
+                    topic={mode.title}
+                    personaName={mode.id === 'interview' ? 'life-story' : 'journalist'}
+                    voice="coral"
+                    maxQuestions={5}
                     maxDurationSeconds={300}
+                    onComplete={(result) => {
+                      handleComplete()
+                      handleTranscript(result.transcript)
+                    }}
+                    onMemorySaved={(memoryId) => console.log('Memory saved:', memoryId)}
+                    onError={(error) => console.error('Voice chat error:', error)}
                     showTranscript={true}
                   />
                 </>

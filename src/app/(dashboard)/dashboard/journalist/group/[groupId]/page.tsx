@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { 
   ChevronLeft, ChevronRight, X, Play, Users, Check, Copy,
-  ExternalLink, Smile
+  ExternalLink, Smile, Mail, MessageSquare
 } from 'lucide-react'
 
 interface Session {
@@ -83,6 +83,24 @@ export default function GroupStoryTimePage({ params }: { params: Promise<{ group
     navigator.clipboard.writeText(`${window.location.origin}/interview/${token}`)
     setCopied(sessionId)
     setTimeout(() => setCopied(null), 2000)
+  }
+
+  const shareViaEmail = (token: string, recipientName: string) => {
+    const url = `${window.location.origin}/interview/${token}`
+    const subject = encodeURIComponent(`I'd love to hear your story`)
+    const body = encodeURIComponent(
+      `Hi ${recipientName},\n\n` +
+      `I'd love to hear your story! Please click the link below to record your responses:\n\n` +
+      `${url}\n\n` +
+      `Thank you!`
+    )
+    window.open(`mailto:?subject=${subject}&body=${body}`)
+  }
+
+  const shareViaSMS = (token: string) => {
+    const url = `${window.location.origin}/interview/${token}`
+    const text = encodeURIComponent(`I'd love to hear your story! Click here to share: ${url}`)
+    window.open(`sms:?body=${text}`)
   }
 
   // Get responses with completed sessions
@@ -204,13 +222,43 @@ export default function GroupStoryTimePage({ params }: { params: Promise<{ group
                   </div>
 
                   {session.status !== 'completed' && (
-                    <button
-                      onClick={() => copyLink(session.access_token, session.id)}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white/80 text-sm rounded-lg transition-all"
-                    >
-                      {copied === session.id ? <Check size={14} /> : <Copy size={14} />}
-                      {copied === session.id ? 'Copied!' : 'Copy Link'}
-                    </button>
+                    <div className="flex flex-col items-end gap-2">
+                      {/* Shareable URL */}
+                      <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                        <span className="text-sm text-white/70 truncate max-w-[180px] sm:max-w-[240px]">
+                          {`${typeof window !== 'undefined' ? window.location.origin : ''}/interview/${session.access_token}`}
+                        </span>
+                        <button
+                          onClick={() => copyLink(session.access_token, session.id)}
+                          className="p-1.5 hover:bg-white/20 rounded-md transition-all text-white/80"
+                          title="Copy link"
+                        >
+                          <Copy size={14} />
+                        </button>
+                      </div>
+                      {/* Share Buttons */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => shareViaEmail(session.access_token, session.contact?.full_name || 'there')}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#406A56]/80 hover:bg-[#406A56] text-white text-sm rounded-lg transition-all"
+                          title="Share via Email"
+                        >
+                          <Mail size={14} />
+                          <span className="hidden sm:inline">Email</span>
+                        </button>
+                        <button
+                          onClick={() => shareViaSMS(session.access_token)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#406A56]/80 hover:bg-[#406A56] text-white text-sm rounded-lg transition-all"
+                          title="Share via SMS"
+                        >
+                          <MessageSquare size={14} />
+                          <span className="hidden sm:inline">SMS</span>
+                        </button>
+                        {copied === session.id && (
+                          <span className="text-xs text-green-400 font-medium">Copied!</span>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               ))}

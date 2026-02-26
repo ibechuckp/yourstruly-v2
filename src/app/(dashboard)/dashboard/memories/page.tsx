@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Image as ImageIcon, Calendar, MapPin, Sparkles, Grid, List, Globe, ChevronLeft, Search, X, Clock, Users, Share2, BookOpen, Album, User } from 'lucide-react'
+import { Plus, Image as ImageIcon, Calendar, MapPin, Sparkles, Grid, List, Globe, ChevronLeft, Search, X, Clock, Users, Share2, BookOpen, Album, User, Mic } from 'lucide-react'
 import Link from 'next/link'
 import CreateMemoryModal from '@/components/memories/CreateMemoryModal'
 import MemoryCard from '@/components/memories/MemoryCard'
@@ -380,6 +380,15 @@ export default function MemoriesPage() {
               >
                 <BookOpen size={18} />
                 <span className="hidden sm:inline">📚 Create Book</span>
+              </Link>
+
+              {/* Voice Memory Button */}
+              <Link
+                href="/dashboard/memories/voice"
+                className="btn-secondary flex items-center gap-2"
+              >
+                <Mic size={18} />
+                <span className="hidden sm:inline">Voice</span>
               </Link>
 
               {/* Create Button */}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Plus, Sparkles, Lightbulb, Heart, Users, Briefcase, Compass, Utensils, GraduationCap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Sparkles, Lightbulb, Heart, Users, Briefcase, Compass, Utensils, GraduationCap, Mic } from 'lucide-react';
 
 export interface WisdomQuestion {
   id: string;
@@ -64,9 +64,10 @@ const WISDOM_CATEGORIES = ['life_lessons', 'relationships', 'family', 'career', 
 
 interface QuestionPromptBarProps {
   onCreateWisdom: (question: WisdomQuestion) => void;
+  onVoiceCapture?: (question: WisdomQuestion) => void;
 }
 
-export function QuestionPromptBar({ onCreateWisdom }: QuestionPromptBarProps) {
+export function QuestionPromptBar({ onCreateWisdom, onVoiceCapture }: QuestionPromptBarProps) {
   const [questions, setQuestions] = useState<WisdomQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -233,18 +234,38 @@ export function QuestionPromptBar({ onCreateWisdom }: QuestionPromptBarProps) {
                     {question.question_text}
                   </p>
 
-                  {/* Answer button */}
-                  <div className="instant-question-footer">
+                  {/* Answer buttons */}
+                  <div className="instant-question-footer" style={{ gap: '8px' }}>
                     <span 
                       className="instant-question-btn"
                       style={{ 
                         backgroundColor: style.accent,
                         color: 'white' 
                       }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCreateWisdom(question);
+                      }}
                     >
                       <Plus size={14} />
-                      Answer
+                      Type
                     </span>
+                    {onVoiceCapture && (
+                      <span 
+                        className="instant-question-btn"
+                        style={{ 
+                          backgroundColor: '#406A56',
+                          color: 'white' 
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onVoiceCapture(question);
+                        }}
+                      >
+                        <Mic size={14} />
+                        Voice
+                      </span>
+                    )}
                   </div>
 
                   {/* Torn edge effect at bottom - uses CSS clip-path */}

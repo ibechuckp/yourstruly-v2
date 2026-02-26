@@ -113,8 +113,8 @@ export async function POST(request: NextRequest) {
         session_question_id: questionId,
         user_id: session.user_id,
         contact_id: contact.id,
-        video_url: videoUrl || 'text-only',  // Required field - use placeholder for text answers
-        video_key: videoKey || 'text-only',  // Required field - use placeholder for text answers
+        video_url: videoUrl || null,  // Nullable - null for text answers
+        video_key: videoKey || null,  // Nullable - null for text answers
         audio_url: audioUrl,
         audio_key: audioKey,
         text_response: textResponse,

@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Video, Plus, Clock, CheckCircle, ChevronLeft, User, Play,
-  Sparkles, ExternalLink, X, Search, Heart, Users, Check
+  Sparkles, ExternalLink, X, Search, Heart, Users, Check,
+  Copy, Mail, MessageSquare
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -269,6 +270,24 @@ export default function JournalistPage() {
     setTimeout(() => setCopied(null), 2000)
   }
 
+  const shareViaEmail = (token: string, recipientName: string) => {
+    const url = `${window.location.origin}/interview/${token}`
+    const subject = encodeURIComponent(`I'd love to hear your story`)
+    const body = encodeURIComponent(
+      `Hi ${recipientName},\n\n` +
+      `I'd love to hear your story! Please click the link below to record your responses:\n\n` +
+      `${url}\n\n` +
+      `Thank you!`
+    )
+    window.open(`mailto:?subject=${subject}&body=${body}`)
+  }
+
+  const shareViaSMS = (token: string) => {
+    const url = `${window.location.origin}/interview/${token}`
+    const text = encodeURIComponent(`I'd love to hear your story! Click here to share: ${url}`)
+    window.open(`sms:?body=${text}`)
+  }
+
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-[#406A56]/10 text-[#406A56]'
@@ -424,13 +443,43 @@ export default function JournalistPage() {
 
                     <div className="flex items-center gap-2">
                       {session.status === 'pending' && (
-                        <button
-                          onClick={() => copyLink(session.access_token, session.id)}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-[#D9C61A]/10 hover:bg-[#D9C61A]/20 text-[#9a8c12] text-sm rounded-lg transition-all"
-                        >
-                          <ExternalLink size={14} />
-                          {copied === session.id ? 'Copied!' : 'Copy Link'}
-                        </button>
+                        <div className="flex flex-col items-end gap-2">
+                          {/* Shareable URL */}
+                          <div className="flex items-center gap-2 bg-[#F2F1E5] rounded-lg px-3 py-2 border border-[#E8E7DC]">
+                            <span className="text-sm text-[#666] truncate max-w-[200px] sm:max-w-[280px]">
+                              {`${typeof window !== 'undefined' ? window.location.origin : ''}/interview/${session.access_token}`}
+                            </span>
+                            <button
+                              onClick={() => copyLink(session.access_token, session.id)}
+                              className="p-1.5 hover:bg-[#406A56]/10 rounded-md transition-all text-[#406A56]"
+                              title="Copy link"
+                            >
+                              <Copy size={14} />
+                            </button>
+                          </div>
+                          {/* Share Buttons */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => shareViaEmail(session.access_token, session.contact?.full_name || 'there')}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#406A56]/10 hover:bg-[#406A56]/20 text-[#406A56] text-sm rounded-lg transition-all"
+                              title="Share via Email"
+                            >
+                              <Mail size={14} />
+                              <span className="hidden sm:inline">Email</span>
+                            </button>
+                            <button
+                              onClick={() => shareViaSMS(session.access_token)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#406A56]/10 hover:bg-[#406A56]/20 text-[#406A56] text-sm rounded-lg transition-all"
+                              title="Share via SMS"
+                            >
+                              <MessageSquare size={14} />
+                              <span className="hidden sm:inline">SMS</span>
+                            </button>
+                            {copied === session.id && (
+                              <span className="text-xs text-[#406A56] font-medium">Copied!</span>
+                            )}
+                          </div>
+                        </div>
                       )}
                       {(session.status === 'sent' || session.status === 'completed') && (
                         <Link

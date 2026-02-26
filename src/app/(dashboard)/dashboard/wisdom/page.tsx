@@ -10,6 +10,7 @@ import '@/styles/page-styles.css';
 import '@/styles/engagement.css';
 import { getCategoryIcon } from '@/lib/dashboard/icons';
 import { QuestionPromptBar, type WisdomQuestion } from '@/components/wisdom/QuestionPromptBar';
+import { VoiceWisdomCapture } from '@/components/wisdom/VoiceWisdomCapture';
 import { ConversationView } from '@/components/conversation';
 import type { EngagementPrompt } from '@/types/engagement';
 
@@ -74,6 +75,9 @@ export default function WisdomPage() {
   
   // Conversation modal state for answering instant questions
   const [conversationPrompt, setConversationPrompt] = useState<EngagementPrompt | null>(null);
+  
+  // Voice capture modal state
+  const [voiceQuestion, setVoiceQuestion] = useState<WisdomQuestion | null>(null);
   
   const supabase = createClient();
 
@@ -342,7 +346,10 @@ export default function WisdomPage() {
                 createdAt: new Date().toISOString(),
               };
               setConversationPrompt(prompt);
-            }} 
+            }}
+            onVoiceCapture={(question: WisdomQuestion) => {
+              setVoiceQuestion(question);
+            }}
           />
         )}
 
@@ -849,6 +856,18 @@ export default function WisdomPage() {
               setConversationPrompt(null);
             }}
             onClose={() => setConversationPrompt(null)}
+          />
+        )}
+
+        {/* Voice Wisdom Capture Modal */}
+        {voiceQuestion && (
+          <VoiceWisdomCapture
+            category={voiceQuestion.category}
+            question={voiceQuestion.question_text}
+            onSaved={() => {
+              loadWisdom();
+            }}
+            onClose={() => setVoiceQuestion(null)}
           />
         )}
       </div>

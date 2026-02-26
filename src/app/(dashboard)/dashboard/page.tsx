@@ -8,6 +8,8 @@ import { RefreshCw, Sparkles, X, Send, Gift, Image, FileText, UserPlus, Search, 
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ConversationView } from '@/components/conversation'
+import { VoiceEngagementModal } from '@/components/engagement/VoiceEngagementModal'
+import { VoiceVideoChat } from '@/components/voice'
 import '@/styles/home.css'
 import '@/styles/engagement.css'
 import '@/styles/conversation.css'
@@ -74,6 +76,9 @@ export default function DashboardPage() {
   // Conversation state - for full ConversationView modal
   const [conversationPrompt, setConversationPrompt] = useState<any | null>(null)
   
+  // Voice engagement state - for voice/video capture
+  const [voicePrompt, setVoicePrompt] = useState<any | null>(null)
+  
   // Inline input state - for quick contact updates
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [textValue, setTextValue] = useState('')
@@ -105,6 +110,7 @@ export default function DashboardPage() {
   const [showPhotoUpload, setShowPhotoUpload] = useState(false)
   const [showPostscriptModal, setShowPostscriptModal] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
+  const [showQuickMemoryModal, setShowQuickMemoryModal] = useState(false)
   const [completedTiles, setCompletedTiles] = useState<Array<{
     id: string;
     type: string;
@@ -543,6 +549,33 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
 
+      {/* Voice Engagement Modal */}
+      <AnimatePresence>
+        {voicePrompt && (
+          <VoiceEngagementModal
+            prompt={voicePrompt}
+            expectedXp={TYPE_CONFIG[voicePrompt.type]?.xp || 15}
+            onComplete={(result) => {
+              // Refresh prompts and close modal
+              if (result.memoryId) {
+                const config = TYPE_CONFIG[voicePrompt.type] || TYPE_CONFIG.memory_prompt
+                setCompletedTiles(prev => {
+                  if (prev.some(t => t.id === voicePrompt.id)) return prev
+                  return [{
+                    id: voicePrompt.id,
+                    xp: result.xpAwarded || config.xp,
+                    prompt: voicePrompt.promptText
+                  }, ...prev.slice(0, 4)]
+                })
+              }
+              setVoicePrompt(null)
+              shuffle()
+            }}
+            onClose={() => setVoicePrompt(null)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Milestone Celebration Modal */}
       <AnimatePresence>
         {milestone && (
@@ -928,14 +961,27 @@ export default function DashboardPage() {
                             </div>
                           )}
 
-                          {/* Skip button for non-expanded tiles */}
+                          {/* Action buttons for non-expanded tiles */}
                           {!isExpanded && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); skipPrompt(prompt.id); }}
-                              className="absolute bottom-3 right-3 text-xs text-gray-400 hover:text-gray-600"
-                            >
-                              Skip
-                            </button>
+                            <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                              {/* Voice button for conversation types */}
+                              {CONVERSATION_TYPES.includes(prompt.type) && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setVoicePrompt(prompt); }}
+                                  className="flex items-center gap-1 text-xs text-[#406A56] hover:text-[#4a7a64] bg-[#406A56]/10 hover:bg-[#406A56]/20 px-2 py-1 rounded-full transition-colors"
+                                  title="Answer with voice"
+                                >
+                                  <Mic size={12} />
+                                  Voice
+                                </button>
+                              )}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); skipPrompt(prompt.id); }}
+                                className="text-xs text-gray-400 hover:text-gray-600"
+                              >
+                                Skip
+                              </button>
+                            </div>
                           )}
                         </div>
                       </motion.div>
@@ -965,6 +1011,10 @@ export default function DashboardPage() {
             <button onClick={() => setShowContactModal(true)} className="quick-action-btn">
               <div className="quick-action-icon"><UserPlus size={18} /></div>
               <span>Add Contact</span>
+            </button>
+            <button onClick={() => setShowQuickMemoryModal(true)} className="quick-action-btn">
+              <div className="quick-action-icon"><Mic size={18} /></div>
+              <span>Quick Memory</span>
             </button>
           </div>
         
@@ -1031,6 +1081,54 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
       
+      {/* Quick Memory Modal */}
+      <AnimatePresence>
+        {showQuickMemoryModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowQuickMemoryModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-auto shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-[#406A56]">Quick Memory</h2>
+                  <p className="text-sm text-[#406A56]/60">Share a story through voice</p>
+                </div>
+                <button
+                  onClick={() => setShowQuickMemoryModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X size={20} className="text-gray-500" />
+                </button>
+              </div>
+              <div className="p-4">
+                <VoiceVideoChat
+                  sessionType="memory_capture"
+                  personaName="journalist"
+                  enableVideo={false}
+                  maxQuestions={5}
+                  onMemorySaved={(memoryId) => {
+                    setShowQuickMemoryModal(false)
+                    // Could show success toast or refresh data
+                  }}
+                  onError={(error) => console.error('Voice error:', error)}
+                  showTranscript={true}
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Add Contact Modal */}
       <AnimatePresence>
         {showContactModal && (

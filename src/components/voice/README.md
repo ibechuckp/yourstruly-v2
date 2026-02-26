@@ -1,143 +1,212 @@
-# OpenAI Realtime Voice Chat
+# Voice Chat Component - OpenAI Realtime API
 
-A reusable voice chat component for YoursTruly V2 using OpenAI's Realtime API.
+A sophisticated voice-based memory capture system using OpenAI's Realtime API with WebSocket connections for ~300ms latency.
 
-## Components
+## Features
 
-### 1. Server Endpoint
-**File:** `src/app/api/voice/session/route.ts`
+- **Journalist/Biographer Persona**: Warm, thoughtful AI that draws out stories naturally
+- **Voice Activity Detection (VAD)**: Automatic turn detection for natural conversation
+- **Memory Capture Flow**: Guided conversation that suggests saving after ~5 exchanges
+- **Multiple Personas**: Choose between journalist, friend, or life-story interviewer
+- **Real-time Transcription**: Live transcript display with conversation history
+- **Supabase Integration**: Automatic memory creation from voice transcripts
 
-Generates ephemeral client tokens for secure browser WebRTC connections.
+## Usage
 
-```typescript
-POST /api/voice/session
-{
-  "voice": "nova",  // optional, defaults to "nova"
-  "instructions": "System prompt...",  // optional
-  "model": "gpt-4o-realtime-preview"  // optional
-}
-```
+### Basic Memory Capture
 
-### 2. useVoiceChat Hook
-**File:** `src/hooks/useVoiceChat.ts`
-
-Encapsulates WebRTC logic and OpenAI Realtime API communication.
-
-```typescript
-const {
-  state,           // 'idle' | 'requesting' | 'connecting' | 'connected' | 'listening' | 'thinking' | 'aiSpeaking' | 'error'
-  transcript,      // Full conversation transcript
-  currentUserText, // Current user speech (live)
-  currentAiText,   // Current AI response (live)
-  error,           // Error object if any
-  isSupported,     // Boolean - WebRTC support check
-  start,           // Start voice session
-  stop,            // Stop and save transcript
-  abort,           // Abort without saving
-} = useVoiceChat({
-  systemPrompt: 'You are...',
-  questions: ['Q1?', 'Q2?'],  // Optional guided questions
-  voice: 'nova',
-  maxDurationSeconds: 300,
-  onTranscript: (user, ai) => {},
-  onComplete: (transcript) => {},
-  onError: (error) => {},
-})
-```
-
-### 3. VoiceChat Component
-**File:** `src/components/voice/VoiceChat.tsx`
-
-Main reusable component combining the hook and UI.
-
-```typescript
-<VoiceChat
-  systemPrompt="You are a helpful interviewer..."
-  questions={[
-    "What's your name?",
-    "Tell me about yourself"
-  ]}
-  voice="nova"
-  onTranscript={(userText, aiText) => console.log(userText, aiText)}
-  onComplete={(transcript) => console.log(transcript)}
-  onError={(error) => console.error(error)}
-  maxDurationSeconds={300}
-  showTranscript={true}
-/>
-```
-
-### 4. VoiceChatUI Component
-**File:** `src/components/voice/VoiceChatUI.tsx`
-
-Styled UI component with:
-- Big microphone button with pulse animation
-- Waveform/pulse animation when speaking
-- "AI is thinking..." state
-- "AI is speaking..." state with audio visualization
-- Collapsible transcript panel
-- End session button
-
-## Voice Options
-
-- `alloy` - Neutral
-- `echo` - Male
-- `fable` - British accent
-- `onyx` - Deep male
-- `nova` - Warm, friendly (default)
-- `shimmer` - Young female
-- `marin` - Professional female
-
-## Usage Examples
-
-### Basic Usage
 ```tsx
 import { VoiceChat } from '@/components/voice'
 
-function MyComponent() {
+export default function MemoryCapturePage() {
   return (
-    <VoiceChat
-      systemPrompt="You are a helpful assistant."
+    <VoiceChat 
+      onMemorySaved={(memoryId) => {
+        console.log('Memory saved:', memoryId)
+        // Redirect to memory or show success
+      }}
     />
   )
 }
 ```
 
-### Guided Interview
+### With Topic
+
 ```tsx
-<VoiceChat
-  systemPrompt="You are conducting a life story interview."
-  questions={[
-    "What is your earliest childhood memory?",
-    "Who was the most influential person in your life?",
-    "What are you most proud of?"
-  ]}
-  voice="nova"
-  onComplete={(transcript) => {
-    // Save to database
-    console.log('Interview complete:', transcript)
+<VoiceChat 
+  topic="my childhood home"
+  onComplete={(result) => {
+    console.log('Session completed:', result)
   }}
 />
 ```
 
-### Custom Styling
+### Life Story Interview
+
 ```tsx
-<VoiceChat
-  systemPrompt="Custom prompt..."
-  className="max-w-2xl mx-auto"
+<VoiceChat 
+  sessionType="life_interview"
+  personaName="life-story"
+  maxQuestions={10}
+  maxDurationSeconds={900}
 />
 ```
 
-## Test Page
+### About a Specific Contact
 
-Visit `/dashboard/voice-test` to test different conversation modes:
-- Onboarding Interview
-- Life Story Interview  
-- Daily Engagement
-- Free Conversation
+```tsx
+<VoiceChat 
+  contactId="contact-uuid-here"
+  topic="how we first met"
+/>
+```
+
+### Friend Mode (Casual)
+
+```tsx
+<VoiceChat 
+  personaName="friend"
+  topic="that trip to Italy"
+/>
+```
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `sessionType` | `'memory_capture' \| 'life_interview' \| 'onboarding' \| 'engagement' \| 'freeform'` | `'memory_capture'` | Type of voice session |
+| `topic` | `string` | - | Optional topic to guide the conversation |
+| `contactId` | `string` | - | Optional contact ID if memory is about someone |
+| `voice` | `'alloy' \| 'echo' \| 'fable' \| 'onyx' \| 'nova' \| 'shimmer' \| 'marin'` | `'nova'` | Voice to use |
+| `persona` | `PersonaConfig` | - | Custom persona configuration |
+| `personaName` | `'journalist' \| 'friend' \| 'life-story'` | `'journalist'` | Pre-configured persona |
+| `maxQuestions` | `number` | `5` | Questions before suggesting save |
+| `maxDurationSeconds` | `number` | `600` | Max session duration (10 min) |
+| `onComplete` | `(result: VoiceSessionResult) => void` | - | Called when session ends |
+| `onMemorySaved` | `(memoryId: string) => void` | - | Called when memory is saved |
+| `onError` | `(error: Error) => void` | - | Called on error |
+| `showTranscript` | `boolean` | `true` | Show transcript panel |
+| `className` | `string` | - | Additional CSS classes |
+
+## Personas
+
+### Journalist (Default)
+- Warm, thoughtful biographer
+- Asks well-phrased, engaging questions
+- Professional but intimate tone
+- System prompt emphasizes storytelling
+
+### Friend
+- Casual, supportive conversation
+- Natural follow-up questions
+- Celebrates joys, acknowledges struggles
+- Like chatting with a close friend
+
+### Life Story Guide
+- Professional life story interviewer
+- Purposeful, legacy-focused questions
+- Helps organize thoughts chronologically
+- Respectful of emotional moments
+
+## Voice Commands
+
+During the conversation, users can say:
+- **"Save it"** or **"Save this"** - Save the memory and end session
+- **"Keep going"** or **"Continue"** - Continue the conversation
+- **"That's enough"** - Save and end
+
+## API Routes
+
+### `POST /api/voice/session`
+Generates an ephemeral token for OpenAI Realtime API connection.
+
+Request body:
+```json
+{
+  "voice": "nova",
+  "instructions": "System prompt...",
+  "model": "gpt-4o-realtime-preview"
+}
+```
+
+### `POST /api/voice/memory`
+Creates a memory from the conversation transcript.
+
+Request body:
+```json
+{
+  "transcript": [{"role": "user", "text": "...", "timestamp": 1234567890}],
+  "topic": "optional topic",
+  "contactId": "optional-contact-id",
+  "durationSeconds": 120,
+  "questionCount": 5,
+  "generateTitle": true
+}
+```
+
+## Hooks
+
+### `useMemoryVoiceChat`
+The core hook for voice memory capture.
+
+```tsx
+const {
+  state,              // Current state: 'idle' | 'listening' | 'aiSpeaking' | etc.
+  isConnected,        // Boolean - is WebRTC connected
+  isListening,        // Boolean - is AI listening
+  isAiSpeaking,       // Boolean - is AI speaking
+  transcript,         // Array of conversation entries
+  questionCount,      // Number of questions asked
+  sessionDuration,    // Duration in seconds
+  canSave,            // Boolean - is memory ready to save
+  start,              // Start the session
+  stop,               // Stop the session
+  saveMemory,         // Save the memory
+  abort,              // Abort without saving
+  reset,              // Reset to initial state
+} = useMemoryVoiceChat(options)
+```
+
+## Technical Details
+
+### WebRTC Connection Flow
+1. Get ephemeral token from `/api/voice/session`
+2. Request microphone access
+3. Create RTCPeerConnection
+4. Add audio track from microphone
+5. Create data channel for events
+6. Send SDP offer to OpenAI
+7. Set remote description from SDP answer
+8. Data channel opens - send session config with VAD
+9. AI sends opening message
+10. Conversation begins
+
+### Voice Activity Detection (VAD)
+- Type: `server_vad`
+- Threshold: 0.5
+- Prefix padding: 300ms
+- Silence duration: 600ms
+
+### Turn Detection
+The AI automatically detects when the user stops speaking using server-side VAD, then processes the audio and responds.
 
 ## Environment Variables
 
-Make sure `OPENAI_API_KEY` is set in your `.env.local` file.
+```bash
+# OpenAI Realtime API
+OPENAI_API_KEY=sk-proj-...
+
+# Gemini (for title generation)
+GEMINI_API_KEY=AIzaSy...
+```
+
+## Styling
+
+The component uses Tailwind CSS with:
+- Primary color: `#406A56` (sage green)
+- Accent color: `#D9C61A` (warm yellow)
+- Glassmorphism effects with `backdrop-blur`
+- Framer Motion animations
 
 ## Browser Support
 
@@ -145,27 +214,13 @@ Requires WebRTC support:
 - Chrome 60+
 - Safari 14+
 - Firefox 60+
+- Edge 79+
 
-Microphone permission is required.
+## Memory Schema
 
-## How It Works
-
-1. **Token Generation:** Client requests ephemeral token from `/api/voice/session`
-2. **WebRTC Setup:** Browser creates peer connection and gets microphone access
-3. **SDP Exchange:** Offer sent to OpenAI, answer received and applied
-4. **Data Channel:** Real-time events (speech detection, transcription, responses)
-5. **Auto VAD:** Server-side voice activity detection handles turn-taking
-6. **Guided Questions:** If provided, AI asks questions in sequence
-
-## Features
-
-- ✅ Real-time voice conversation
-- ✅ Automatic speech detection (VAD)
-- ✅ Interruption handling
-- ✅ Live transcription display
-- ✅ Guided question sequences
-- ✅ Session timeout control
-- ✅ Browser compatibility check
-- ✅ Error handling with user feedback
-- ✅ Collapsible transcript panel
-- ✅ Graceful session termination
+Memories are stored in Supabase with:
+- `title`: Generated from content or topic
+- `content`: User's story (extracted from transcript)
+- `type`: 'voice'
+- `metadata`: Including full transcript, duration, question count
+- `contact_id`: Optional - if memory is about a specific person

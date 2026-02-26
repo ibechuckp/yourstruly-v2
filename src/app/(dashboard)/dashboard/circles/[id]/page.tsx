@@ -61,6 +61,7 @@ interface PendingInvite {
   id: string
   email?: string
   invite_link?: string
+  invitee_name?: string  // Name of contact this invite is for
   created_at: string
   expires_at: string
 }
@@ -372,7 +373,7 @@ export default function CircleDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
-  const handleGenerateLink = async () => {
+  const handleGenerateLink = async (forContact?: { name: string; email?: string }) => {
     try {
       const res = await fetch(`/api/circles/${id}/members`, {
         method: 'POST',
@@ -390,6 +391,8 @@ export default function CircleDetailPage({ params }: { params: Promise<{ id: str
       const newInvite: PendingInvite = {
         id: invite.id,
         invite_link: `${window.location.origin}/circles/invite/${invite.token}`,
+        invitee_name: forContact?.name,
+        email: forContact?.email,
         created_at: invite.created_at,
         expires_at: invite.expires_at
       }

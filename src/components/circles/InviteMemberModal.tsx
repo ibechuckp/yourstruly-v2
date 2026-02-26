@@ -8,6 +8,7 @@ interface PendingInvite {
   id: string
   email?: string
   invite_link?: string
+  invitee_name?: string
   created_at: string
   expires_at: string
 }
@@ -32,7 +33,7 @@ interface InviteMemberModalProps {
   pendingInvites: PendingInvite[]
   onClose: () => void
   onInviteUser: (userId: string) => void
-  onGenerateLink: () => void
+  onGenerateLink: (forContact?: { name: string; email?: string }) => void
   onCancelInvite: (inviteId: string) => void
 }
 
@@ -224,42 +225,55 @@ export default function InviteMemberModal({
           )}
 
           {/* Show contacts when not searching */}
-          {searchQuery.length < 2 && contacts.length > 0 && (
-            <div className="mt-3">
-              <p className="text-xs text-[#888] uppercase tracking-wide mb-2">Your Contacts</p>
-              <div className="border border-[#406A56]/10 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
-                {loadingContacts ? (
-                  <p className="text-sm text-[#666] p-3">Loading contacts...</p>
-                ) : (
-                  contacts.slice(0, 6).map(contact => (
-                    <button
-                      key={contact.id}
-                      onClick={() => {
-                        // Contacts aren't YT users - generate invite link instead
-                        onGenerateLink()
-                      }}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-[#406A56]/5 transition-colors text-left border-b border-[#406A56]/5 last:border-b-0"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#406A56] to-[#8DACAB] flex items-center justify-center text-white font-medium overflow-hidden">
-                        {contact.avatar_url ? (
-                          <img src={contact.avatar_url} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          contact.full_name.charAt(0)
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#2d2d2d]">{contact.full_name}</p>
-                        {contact.email && (
-                          <p className="text-xs text-[#666] truncate">{contact.email}</p>
-                        )}
-                      </div>
-                      <span className="text-xs text-[#888] bg-gray-100 px-2 py-0.5 rounded-full">Send Link</span>
-                    </button>
-                  ))
-                )}
+          {searchQuery.length < 2 && contacts.length > 0 && (() => {
+            // Filter out contacts who already have pending invites
+            const pendingEmails = new Set(pendingInvites.map(i => i.email?.toLowerCase()).filter(Boolean))
+            const pendingNames = new Set(pendingInvites.map(i => i.invitee_name?.toLowerCase()).filter(Boolean))
+            const availableContacts = contacts.filter(c => {
+              const emailMatch = c.email && pendingEmails.has(c.email.toLowerCase())
+              const nameMatch = pendingNames.has(c.full_name.toLowerCase())
+              return !emailMatch && !nameMatch
+            })
+            
+            if (availableContacts.length === 0) return null
+            
+            return (
+              <div className="mt-3">
+                <p className="text-xs text-[#888] uppercase tracking-wide mb-2">Your Contacts</p>
+                <div className="border border-[#406A56]/10 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                  {loadingContacts ? (
+                    <p className="text-sm text-[#666] p-3">Loading contacts...</p>
+                  ) : (
+                    availableContacts.slice(0, 6).map(contact => (
+                      <button
+                        key={contact.id}
+                        onClick={() => {
+                          // Generate invite link for this specific contact
+                          onGenerateLink({ name: contact.full_name, email: contact.email })
+                        }}
+                        className="w-full flex items-center gap-3 p-3 hover:bg-[#406A56]/5 transition-colors text-left border-b border-[#406A56]/5 last:border-b-0"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#406A56] to-[#8DACAB] flex items-center justify-center text-white font-medium overflow-hidden">
+                          {contact.avatar_url ? (
+                            <img src={contact.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            contact.full_name.charAt(0)
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-[#2d2d2d]">{contact.full_name}</p>
+                          {contact.email && (
+                            <p className="text-xs text-[#666] truncate">{contact.email}</p>
+                          )}
+                        </div>
+                        <span className="text-xs text-[#888] bg-gray-100 px-2 py-0.5 rounded-full">Send Link</span>
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
         </div>
 
         {/* Generate Invite Link */}
@@ -296,20 +310,41 @@ export default function InviteMemberModal({
                   className="flex items-center justify-between p-3 bg-white border border-[#406A56]/10 rounded-xl"
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    {/* Icon based on type */}
+                    {/* Avatar/Icon based on type */}
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#406A56]/20 to-[#8DACAB]/20 flex items-center justify-center flex-shrink-0">
-                      {invite.email ? (
+                      {invite.invitee_name ? (
+                        <span className="text-xs font-medium text-[#406A56]">
+                          {invite.invitee_name.charAt(0).toUpperCase()}
+                        </span>
+                      ) : invite.email ? (
                         <User size={14} className="text-[#406A56]" />
                       ) : (
                         <LinkIcon size={14} className="text-[#406A56]" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      {invite.email ? (
+                      {invite.invitee_name ? (
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-[#2d2d2d] truncate">{invite.invitee_name}</p>
+                          {invite.invite_link && (
+                            <button
+                              onClick={() => handleCopyLink(invite.invite_link!)}
+                              className="p-1 hover:bg-[#406A56]/10 rounded transition-colors"
+                              title="Copy invite link"
+                            >
+                              {copiedLink === invite.invite_link ? (
+                                <Check size={14} className="text-green-600" />
+                              ) : (
+                                <Copy size={14} className="text-[#406A56]" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      ) : invite.email ? (
                         <p className="text-sm text-[#2d2d2d] truncate">{invite.email}</p>
                       ) : invite.invite_link ? (
                         <div className="flex items-center gap-2">
-                          <p className="text-sm text-[#2d2d2d]">Invite link</p>
+                          <p className="text-sm text-[#2d2d2d]">Generic invite link</p>
                           <button
                             onClick={() => handleCopyLink(invite.invite_link!)}
                             className="p-1 hover:bg-[#406A56]/10 rounded transition-colors"

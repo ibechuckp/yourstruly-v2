@@ -234,7 +234,7 @@ export default function MemoryContributions({ memoryId }: MemoryContributionsPro
                     {/* Avatar with type indicator */}
                     <div className="relative flex-shrink-0">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#406A56] to-[#5A8A72] flex items-center justify-center text-white text-sm font-medium">
-                        {getInitials(contribution.user.full_name)}
+                        {getInitials(contribution.user?.full_name || 'Anonymous')}
                       </div>
                       <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full ${typeConfig.bg} flex items-center justify-center border-2 border-white`}>
                         <TypeIcon size={10} className={typeConfig.color} />
@@ -246,7 +246,7 @@ export default function MemoryContributions({ memoryId }: MemoryContributionsPro
                       {/* Header */}
                       <div className="flex items-center gap-2 mb-2">
                         <span className="font-medium text-[#2d2d2d] text-sm">
-                          {contribution.user.full_name}
+                          {contribution.user?.full_name || 'Anonymous'}
                         </span>
                         <span className={`text-xs px-2 py-0.5 rounded-full ${typeConfig.bg} ${typeConfig.color}`}>
                           {typeConfig.label}

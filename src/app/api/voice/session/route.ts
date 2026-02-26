@@ -22,13 +22,13 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const {
-      voice = 'nova',
+      voice = 'coral', // Warm, friendly voice for biographer persona
       instructions,
-      model = 'gpt-4o-realtime-preview',
+      model = 'gpt-4o-realtime-preview-2024-12-17',
     } = body
 
-    // Validate voice option
-    const validVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer', 'marin']
+    // Validate voice option - OpenAI Realtime voices
+    const validVoices = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar']
     if (!validVoices.includes(voice)) {
       return NextResponse.json(
         { error: `Invalid voice. Must be one of: ${validVoices.join(', ')}` },
@@ -36,20 +36,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Request ephemeral token from OpenAI
-    const response = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
+    // Request ephemeral token from OpenAI Realtime API
+    const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        session: {
-          type: 'realtime',
-          model,
-          voice: voice,
-          ...(instructions && { instructions }),
-        },
+        model,
+        voice,
+        ...(instructions && { instructions }),
       }),
     })
 
@@ -64,12 +61,13 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json()
 
-    // Return the ephemeral token and client secret
+    // Return the ephemeral token and session info
     return NextResponse.json({
-      clientSecret: data.client_secret,
-      expiresAt: data.expires_at,
-      voice,
-      model,
+      clientSecret: data.client_secret?.value,
+      expiresAt: data.client_secret?.expires_at,
+      sessionId: data.id,
+      voice: data.voice,
+      model: data.model,
     })
 
   } catch (error) {
