@@ -2448,8 +2448,7 @@ function CheckoutStep({
 
 const STEPS = [
   { id: 'product', label: 'Choose Product', icon: BookOpen },
-  { id: 'content', label: 'Select Content', icon: ImageIcon },
-  { id: 'arrange', label: 'Arrange Pages', icon: Layout },
+  { id: 'design', label: 'Design Pages', icon: Layout },
   { id: 'preview', label: 'Preview', icon: Eye },
   { id: 'checkout', label: 'Checkout', icon: CreditCard },
 ]
@@ -2538,8 +2537,8 @@ export default function CreatePhotobookPage() {
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle when on arrange step
-      if (currentStep !== 2) return
+      // Only handle when on design step
+      if (currentStep !== 1) return
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         e.preventDefault()
@@ -2860,15 +2859,11 @@ export default function CreatePhotobookPage() {
     switch (currentStep) {
       case 0: return selectedProduct !== null
       case 1: {
-        // Need at least 1 memory selected
-        return selectedMemoryIds.size >= 1
-      }
-      case 2: {
         // Need at least 1 page created
         return pages.length >= 1
       }
-      case 3: return true
-      case 4: return shippingAddress.name && shippingAddress.line1 && shippingAddress.city && shippingAddress.postalCode && shippingAddress.country
+      case 2: return true // Preview - always can proceed
+      case 3: return shippingAddress.name && shippingAddress.line1 && shippingAddress.city && shippingAddress.postalCode && shippingAddress.country
       default: return false
     }
   }
@@ -2876,12 +2871,12 @@ export default function CreatePhotobookPage() {
   // Navigate steps
   const goToStep = (step: number) => {
     if (step < currentStep || canProceed()) {
-      // Auto-save when leaving arrange step
-      if (currentStep === 2 && step > currentStep) {
+      // Auto-save when leaving design step
+      if (currentStep === 1 && step > currentStep) {
         saveProject()
       }
-      // Auto-arrange when entering arrange step for first time
-      if (step === 2 && pages.length === 0) {
+      // Auto-arrange when entering design step for first time
+      if (step === 1 && pages.length === 0) {
         setTimeout(autoArrange, 100)
       }
       setCurrentStep(step)
@@ -2961,21 +2956,10 @@ export default function CreatePhotobookPage() {
             )}
             
             {currentStep === 1 && (
-              <ContentStep
-                memories={memories}
-                selectedMemoryIds={selectedMemoryIds}
-                onToggle={toggleMemory}
-                minPages={selectedProduct?.minPages || 20}
-                maxPages={selectedProduct?.maxPages || 100}
-                isLoading={isLoading}
-              />
-            )}
-            
-            {currentStep === 2 && (
               <ArrangeStep
                 pages={pages}
                 setPages={setPages}
-                selectedMemories={selectedMemories}
+                selectedMemories={memories}
                 onAutoArrange={autoArrange}
                 canUndo={canUndo}
                 canRedo={canRedo}
@@ -2985,15 +2969,15 @@ export default function CreatePhotobookPage() {
               />
             )}
             
-            {currentStep === 3 && selectedProduct && (
+            {currentStep === 2 && selectedProduct && (
               <PreviewStep
                 pages={pages}
-                selectedMemories={selectedMemories}
+                selectedMemories={memories}
                 product={selectedProduct}
               />
             )}
             
-            {currentStep === 4 && selectedProduct && (
+            {currentStep === 3 && selectedProduct && (
               <CheckoutStep
                 product={selectedProduct}
                 pages={pages}
@@ -3008,7 +2992,7 @@ export default function CreatePhotobookPage() {
       </div>
       
       {/* Bottom Navigation */}
-      {currentStep < 4 && (
+      {currentStep < 3 && (
         <div className="fixed bottom-0 left-0 right-0 bg-[#E8E4D6]/95 backdrop-blur-sm border-t border-[#406A56]/10 p-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <button
@@ -3025,7 +3009,7 @@ export default function CreatePhotobookPage() {
               disabled={!canProceed()}
               className="px-8 py-3 bg-gradient-to-r from-[#406A56] to-[#4a7a64] text-white font-semibold rounded-xl hover:from-[#4a7a64] hover:to-[#5a8a74] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              {currentStep === 3 ? 'Proceed to Checkout' : 'Continue'}
+              {currentStep === 2 ? 'Proceed to Checkout' : 'Continue'}
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
