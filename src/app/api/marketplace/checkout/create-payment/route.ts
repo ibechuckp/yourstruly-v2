@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@/lib/supabase/server';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-12-18.acacia',
-});
+// Support test mode vs live mode
+const getStripeClient = (testMode: boolean) => {
+  const key = testMode 
+    ? process.env.STRIPE_TEST_SECRET_KEY || process.env.STRIPE_SECRET_KEY 
+    : process.env.STRIPE_SECRET_KEY;
+  
+  return new Stripe(key || '', {
+    apiVersion: '2024-12-18.acacia',
+  });
+};
 
 interface CartItem {
   id: string;
@@ -45,12 +52,17 @@ export async function POST(request: NextRequest) {
       shippingAddress,
       isGift,
       giftMessage,
+      testMode = false, // Default to live mode
     }: {
       items: CartItem[];
       shippingAddress: ShippingAddress;
       isGift?: boolean;
       giftMessage?: string;
+      testMode?: boolean;
     } = body;
+    
+    // Get appropriate Stripe client
+    const stripe = getStripeClient(testMode);
 
     // Validate items
     if (!items || items.length === 0) {

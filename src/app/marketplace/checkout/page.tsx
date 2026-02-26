@@ -29,8 +29,14 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 
-// Initialize Stripe
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+// Initialize Stripe - we'll use the live key but test mode is controlled server-side
+// For test mode to work fully, you need NEXT_PUBLIC_STRIPE_TEST_PUBLISHABLE_KEY
+const getStripePromise = (testMode: boolean) => {
+  const key = testMode 
+    ? (process.env.NEXT_PUBLIC_STRIPE_TEST_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+    : process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  return loadStripe(key || '');
+};
 
 interface ShippingAddress {
   firstName: string;
@@ -97,6 +103,7 @@ export default function CheckoutPage() {
   const [isCreatingPayment, setIsCreatingPayment] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [testMode, setTestMode] = useState(true); // Default to test mode for safety
 
   const shipping = cartTotal > 50 ? 0 : 5.99;
   const tax = cartTotal * 0.08;
@@ -135,6 +142,7 @@ export default function CheckoutPage() {
           shippingAddress,
           isGift,
           giftMessage: isGift ? giftMessage : undefined,
+          testMode,
         }),
       });
 
@@ -211,6 +219,13 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-[#F2F1E5]">
+      {/* Test Mode Banner */}
+      {testMode && (
+        <div className="bg-orange-500 text-white text-center py-2 text-sm font-medium">
+          🧪 Test Mode Active — Use card: 4242 4242 4242 4242, any future date, any CVC
+        </div>
+      )}
+      
       {/* Header */}
       <div className="bg-white border-b border-[#406A56]/10">
         <div className="max-w-6xl mx-auto px-4 py-4">
@@ -240,9 +255,28 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1 text-sm text-[#406A56]/60">
-              <Lock size={14} />
-              Secure Checkout
+            <div className="flex items-center gap-4">
+              {/* Test Mode Toggle */}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <span className={`text-xs font-medium ${testMode ? 'text-orange-600' : 'text-[#406A56]/50'}`}>
+                  {testMode ? '🧪 Test Mode' : 'Live'}
+                </span>
+                <button
+                  onClick={() => setTestMode(!testMode)}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${
+                    testMode ? 'bg-orange-500' : 'bg-[#406A56]'
+                  }`}
+                >
+                  <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${
+                    testMode ? 'left-0.5' : 'left-5'
+                  }`} />
+                </button>
+              </label>
+              
+              <div className="flex items-center gap-1 text-sm text-[#406A56]/60">
+                <Lock size={14} />
+                Secure Checkout
+              </div>
             </div>
           </div>
         </div>
@@ -264,7 +298,7 @@ export default function CheckoutPage() {
                 isSubmitting={isCreatingPayment}
               />
             ) : clientSecret ? (
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <Elements stripe={getStripePromise(testMode)} options={{ clientSecret }}>
                 <PaymentForm onSuccess={handlePaymentSuccess} total={total} />
               </Elements>
             ) : (

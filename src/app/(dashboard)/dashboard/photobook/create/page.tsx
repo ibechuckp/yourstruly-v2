@@ -614,9 +614,18 @@ function ArrangeStep({
   // Update text style
   const updateTextStyle = (pageId: string, slotId: string, updates: Partial<TextStyle>) => {
     const key = `${pageId}:${slotId}`
+    const newStyle = { ...getTextStyle(pageId, slotId), ...updates }
     setTextStyles(prev => ({
       ...prev,
-      [key]: { ...getTextStyle(pageId, slotId), ...updates }
+      [key]: newStyle
+    }))
+    // Also sync to page slot data for preview
+    setPages(prevPages => prevPages.map(p => {
+      if (p.id !== pageId) return p
+      return {
+        ...p,
+        slots: p.slots.map(s => s.id === slotId ? { ...s, textStyle: newStyle } : s)
+      }
     }))
   }
   
@@ -627,6 +636,14 @@ function ArrangeStep({
 
   const setTextContent = (pageId: string, slotId: string, content: string) => {
     setTextContents(prev => ({ ...prev, [`${pageId}:${slotId}`]: content }))
+    // Also sync to page slot data for preview
+    setPages(prevPages => prevPages.map(p => {
+      if (p.id !== pageId) return p
+      return {
+        ...p,
+        slots: p.slots.map(s => s.id === slotId ? { ...s, text: content } : s)
+      }
+    }))
   }
 
   // Bulk page selection handlers
