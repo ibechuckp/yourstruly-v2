@@ -1511,7 +1511,7 @@ function ArrangeStep({
                         className="w-full h-full resize-none bg-transparent focus:outline-none cursor-text"
                         style={{
                           fontFamily: textStyle.fontFamily,
-                          fontSize: textStyle.fontSize,
+                          fontSize: `${getFontSizePx(textStyle.fontSize)}px`,
                           fontWeight: textStyle.fontWeight,
                           fontStyle: textStyle.fontStyle,
                           textAlign: textStyle.textAlign,
@@ -2168,7 +2168,7 @@ function PagePreview({ page, printSize }: { page: PageData; printSize?: number }
               <p
                 style={{
                   fontFamily: textStyle.fontFamily,
-                  fontSize: textStyle.fontSize,
+                  fontSize: `${getFontSizePx(textStyle.fontSize)}px`,
                   fontWeight: textStyle.fontWeight,
                   fontStyle: textStyle.fontStyle,
                   textAlign: textStyle.textAlign,
