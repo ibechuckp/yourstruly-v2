@@ -8,7 +8,7 @@ import { RefreshCw, Sparkles, X, Send, Gift, Image, FileText, UserPlus, Search, 
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ConversationView } from '@/components/conversation'
-import { VoiceEngagementModal } from '@/components/engagement/VoiceEngagementModal'
+import { UnifiedEngagementModal } from '@/components/engagement/UnifiedEngagementModal'
 import { VoiceVideoChat } from '@/components/voice'
 import '@/styles/home.css'
 import '@/styles/engagement.css'
@@ -73,11 +73,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ memories: 0, contacts: 0, postscripts: 0 })
   const [userContacts, setUserContacts] = useState<Array<{id: string; full_name: string; avatar_url?: string}>>([])
   
-  // Conversation state - for full ConversationView modal
-  const [conversationPrompt, setConversationPrompt] = useState<any | null>(null)
-  
-  // Voice engagement state - for voice/video capture
-  const [voicePrompt, setVoicePrompt] = useState<any | null>(null)
+  // Unified engagement modal state
+  const [engagementPrompt, setEngagementPrompt] = useState<any | null>(null)
   
   // Inline input state - for quick contact updates
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -315,44 +312,41 @@ export default function DashboardPage() {
     }
   }
 
-  // Handle tile click - either open ConversationView or inline input
+  // Handle tile click - open unified modal or inline input
   const handleTileClick = useCallback((prompt: any) => {
     if (CONVERSATION_TYPES.includes(prompt.type)) {
-      // Open full ConversationView modal
-      setConversationPrompt(prompt)
+      // Open unified engagement modal (text/voice/video)
+      setEngagementPrompt(prompt)
     } else if (INLINE_INPUT_TYPES.includes(prompt.type)) {
       // Use simple inline expansion
       setExpandedId(prompt.id)
     }
   }, [])
 
-  // Handle ConversationView completion
-  const handleConversationComplete = useCallback(async (result: {
-    exchanges: Array<{ question: string; response: string; audioUrl?: string }>;
-    summary: string;
-    knowledgeEntryId?: string;
+  // Handle engagement completion (unified modal)
+  const handleEngagementComplete = useCallback(async (result: {
     memoryId?: string;
+    responseText?: string;
     xpAwarded: number;
   }) => {
-    if (!conversationPrompt) return
+    if (!engagementPrompt) return
     
-    const config = TYPE_CONFIG[conversationPrompt.type] || TYPE_CONFIG.memory_prompt
+    const config = TYPE_CONFIG[engagementPrompt.type] || TYPE_CONFIG.memory_prompt
     const xpGained = result.xpAwarded || config.xp
     
     // Add to completed tiles
     setCompletedTiles(prev => {
-      if (prev.some(t => t.id === conversationPrompt.id)) return prev
+      if (prev.some(t => t.id === engagementPrompt.id)) return prev
       return [{
-        id: conversationPrompt.id,
-        type: conversationPrompt.type,
+        id: engagementPrompt.id,
+        type: engagementPrompt.type,
         icon: config.icon,
-        title: conversationPrompt.promptText?.substring(0, 40) || config.label,
+        title: engagementPrompt.promptText?.substring(0, 40) || config.label,
         xp: xpGained,
-        photoUrl: conversationPrompt.photoUrl,
-        contactName: conversationPrompt.contactName,
-        contactId: conversationPrompt.contactId,
+        photoUrl: engagementPrompt.photoUrl,
+        contactName: engagementPrompt.contactName,
+        contactId: engagementPrompt.contactId,
         memoryId: result.memoryId,
-        knowledgeId: result.knowledgeEntryId,
         resultMemoryId: result.memoryId,
         answeredAt: new Date().toISOString(),
       }, ...prev]
@@ -372,15 +366,18 @@ export default function DashboardPage() {
       setTimeout(() => setXpAnimating(false), 1500)
     }
 
-    // Close conversation modal
-    setConversationPrompt(null)
+    // Close engagement modal
+    setEngagementPrompt(null)
     
     // Mark prompt as answered locally (removes from tile grid)
-    setAnsweredPromptIds(prev => [...prev, conversationPrompt.id])
+    setAnsweredPromptIds(prev => [...prev, engagementPrompt.id])
     
     // Refresh stats
     loadStats()
-  }, [conversationPrompt])
+    
+    // Shuffle to get new prompts
+    shuffle()
+  }, [engagementPrompt, shuffle])
 
   // Handle inline answer (for contact prompts)
   const handleInlineAnswer = useCallback(async (promptId: string) => {
@@ -523,55 +520,14 @@ export default function DashboardPage() {
         <div className="home-blob home-blob-4" />
       </div>
 
-      {/* ConversationView Modal */}
+      {/* Unified Engagement Modal */}
       <AnimatePresence>
-        {conversationPrompt && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-2xl max-h-[90vh] overflow-auto"
-            >
-              <ConversationView
-                prompt={conversationPrompt}
-                expectedXp={TYPE_CONFIG[conversationPrompt.type]?.xp || 15}
-                onComplete={handleConversationComplete}
-                onClose={() => setConversationPrompt(null)}
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Voice Engagement Modal */}
-      <AnimatePresence>
-        {voicePrompt && (
-          <VoiceEngagementModal
-            prompt={voicePrompt}
-            expectedXp={TYPE_CONFIG[voicePrompt.type]?.xp || 15}
-            onComplete={(result) => {
-              // Refresh prompts and close modal
-              if (result.memoryId) {
-                const config = TYPE_CONFIG[voicePrompt.type] || TYPE_CONFIG.memory_prompt
-                setCompletedTiles(prev => {
-                  if (prev.some(t => t.id === voicePrompt.id)) return prev
-                  return [{
-                    id: voicePrompt.id,
-                    xp: result.xpAwarded || config.xp,
-                    prompt: voicePrompt.promptText
-                  }, ...prev.slice(0, 4)]
-                })
-              }
-              setVoicePrompt(null)
-              shuffle()
-            }}
-            onClose={() => setVoicePrompt(null)}
+        {engagementPrompt && (
+          <UnifiedEngagementModal
+            prompt={engagementPrompt}
+            expectedXp={TYPE_CONFIG[engagementPrompt.type]?.xp || 15}
+            onComplete={handleEngagementComplete}
+            onClose={() => setEngagementPrompt(null)}
           />
         )}
       </AnimatePresence>
@@ -961,27 +917,14 @@ export default function DashboardPage() {
                             </div>
                           )}
 
-                          {/* Action buttons for non-expanded tiles */}
+                          {/* Skip button for non-expanded tiles */}
                           {!isExpanded && (
-                            <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                              {/* Voice button for conversation types */}
-                              {CONVERSATION_TYPES.includes(prompt.type) && (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setVoicePrompt(prompt); }}
-                                  className="flex items-center gap-1 text-xs text-[#406A56] hover:text-[#4a7a64] bg-[#406A56]/10 hover:bg-[#406A56]/20 px-2 py-1 rounded-full transition-colors"
-                                  title="Answer with voice"
-                                >
-                                  <Mic size={12} />
-                                  Voice
-                                </button>
-                              )}
-                              <button
-                                onClick={(e) => { e.stopPropagation(); skipPrompt(prompt.id); }}
-                                className="text-xs text-gray-400 hover:text-gray-600"
-                              >
-                                Skip
-                              </button>
-                            </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); skipPrompt(prompt.id); }}
+                              className="absolute bottom-3 right-3 text-xs text-gray-400 hover:text-gray-600"
+                            >
+                              Skip
+                            </button>
                           )}
                         </div>
                       </motion.div>

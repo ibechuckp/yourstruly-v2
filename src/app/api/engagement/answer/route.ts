@@ -1,0 +1,107 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+
+/**
+ * POST /api/engagement/answer
+ * Save a text response to an engagement prompt as a memory
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const {
+      promptId,
+      promptType,
+      responseType,
+      responseText,
+      contactId,
+    } = body
+
+    if (!responseText?.trim()) {
+      return NextResponse.json({ error: 'Response text is required' }, { status: 400 })
+    }
+
+    // Determine memory type based on prompt type
+    const memoryType = promptType === 'knowledge' ? 'wisdom' : 'memory'
+
+    // Generate a title from the response
+    const title = responseText.length > 60 
+      ? responseText.substring(0, 60) + '...'
+      : responseText
+
+    // Create memory from the response
+    const { data: memory, error: memoryError } = await supabase
+      .from('memories')
+      .insert({
+        user_id: user.id,
+        title,
+        description: responseText,
+        memory_type: memoryType,
+        memory_date: new Date().toISOString().split('T')[0],
+        ai_labels: {
+          source: 'engagement_prompt',
+          prompt_id: promptId,
+          prompt_type: promptType,
+          response_type: responseType,
+          contact_id: contactId || null,
+        },
+      })
+      .select('id')
+      .single()
+
+    if (memoryError) {
+      console.error('Failed to create memory:', memoryError)
+      return NextResponse.json(
+        { error: 'Failed to save response', details: memoryError.message },
+        { status: 500 }
+      )
+    }
+
+    // Mark the engagement prompt as answered if it exists
+    if (promptId) {
+      await supabase
+        .from('engagement_prompts')
+        .update({ 
+          status: 'answered',
+          answered_at: new Date().toISOString(),
+        })
+        .eq('id', promptId)
+        .eq('user_id', user.id)
+    }
+
+    // Award XP
+    const xpAmount = promptType === 'knowledge' ? 15 : 10
+    try {
+      await supabase.rpc('award_xp', {
+        p_user_id: user.id,
+        p_action: 'answer_engagement',
+        p_metadata: { 
+          prompt_type: promptType,
+          memory_id: memory.id,
+        },
+      })
+    } catch (xpError) {
+      console.error('XP award error:', xpError)
+      // Non-fatal
+    }
+
+    return NextResponse.json({
+      success: true,
+      memoryId: memory.id,
+      xpAwarded: xpAmount,
+    })
+
+  } catch (error) {
+    console.error('Engagement answer error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
