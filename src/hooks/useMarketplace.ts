@@ -30,6 +30,7 @@ const providerMap: Record<ProviderType | 'all', string> = {
 
 /**
  * Hook to fetch products from the marketplace API
+ * Uses curated catalog for better curation and reliability
  */
 export function useMarketplaceProducts({
   provider = 'all',
@@ -53,13 +54,15 @@ export function useMarketplaceProducts({
     setError(null);
 
     try {
+      // Use curated endpoint for reliable, hand-picked products
       const params = new URLSearchParams();
       
       if (provider !== 'all') {
         params.append('provider', providerMap[provider]);
       }
       if (category) {
-        params.append('category', category);
+        // Map category filters to occasion for curated endpoint
+        params.append('occasion', category);
       }
       if (search) {
         params.append('search', search);
@@ -67,28 +70,49 @@ export function useMarketplaceProducts({
       params.append('page', pageNum.toString());
       params.append('perPage', perPage.toString());
 
-      const response = await fetch(`/api/marketplace/products?${params}`);
+      const response = await fetch(`/api/marketplace/curated?${params}`);
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch products');
+        // Fall back to external API if curated fails
+        const fallbackParams = new URLSearchParams();
+        if (provider !== 'all') {
+          fallbackParams.append('provider', providerMap[provider]);
+        }
+        if (category) {
+          fallbackParams.append('category', category);
+        }
+        if (search) {
+          fallbackParams.append('search', search);
+        }
+        fallbackParams.append('page', pageNum.toString());
+        fallbackParams.append('perPage', perPage.toString());
+
+        const fallbackResponse = await fetch(`/api/marketplace/products?${fallbackParams}`);
+        if (!fallbackResponse.ok) {
+          const errorData = await fallbackResponse.json();
+          throw new Error(errorData.error || 'Failed to fetch products');
+        }
+        
+        const fallbackData = await fallbackResponse.json();
+        if (provider === 'all' && fallbackData.featured) {
+          const allProducts = fallbackData.featured.flatMap((p: { products: Product[] }) => p.products);
+          setProducts(allProducts);
+          setTotal(allProducts.length);
+          setHasMore(false);
+        } else {
+          const newProducts = fallbackData.products || [];
+          setProducts(prev => append ? [...prev, ...newProducts] : newProducts);
+          setTotal(fallbackData.total || 0);
+          setHasMore(fallbackData.hasMore || false);
+        }
+        return;
       }
 
       const data = await response.json();
-      
-      if (provider === 'all' && data.featured) {
-        // Flatten featured products from all providers
-        const allProducts = data.featured.flatMap((p: { products: Product[] }) => p.products);
-        setProducts(allProducts);
-        setTotal(allProducts.length);
-        setHasMore(false);
-      } else {
-        // Regular products response
-        const newProducts = data.products || [];
-        setProducts(prev => append ? [...prev, ...newProducts] : newProducts);
-        setTotal(data.total || 0);
-        setHasMore(data.hasMore || false);
-      }
+      const newProducts = data.products || [];
+      setProducts(prev => append ? [...prev, ...newProducts] : newProducts);
+      setTotal(data.total || 0);
+      setHasMore(data.hasMore || false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Marketplace fetch error:', err);
@@ -211,6 +235,20 @@ interface UseCategoriesReturn {
   error: string | null;
 }
 
+// Curated occasion categories for flowers
+const FLOWER_CATEGORIES = [
+  { id: 'sympathy', name: 'Sympathy' },
+  { id: 'funeral', name: 'Funeral Service' },
+  { id: 'anniversary', name: 'Anniversary' },
+  { id: 'birthday', name: 'Birthday' },
+  { id: 'love', name: 'Love & Romance' },
+  { id: 'mothers-day', name: "Mother's Day" },
+  { id: 'get-well', name: 'Get Well' },
+  { id: 'new-baby', name: 'New Baby' },
+  { id: 'thank-you', name: 'Thank You' },
+  { id: 'congratulations', name: 'Congratulations' },
+];
+
 /**
  * Hook to fetch categories from marketplace providers
  */
@@ -230,6 +268,13 @@ export function useCategories({
       setError(null);
 
       try {
+        // For flowers, use our curated occasion categories
+        if (provider === 'flowers') {
+          setCategories(FLOWER_CATEGORIES);
+          setIsLoading(false);
+          return;
+        }
+
         const params = new URLSearchParams();
         if (provider !== 'all') {
           params.append('provider', providerMap[provider]);
@@ -238,22 +283,35 @@ export function useCategories({
         const response = await fetch(`/api/marketplace/categories?${params}`);
         
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch categories');
+          // Fall back to static categories on error
+          if (provider === 'all') {
+            setCategories([
+              ...FLOWER_CATEGORIES.map(c => ({ ...c, provider: 'flowers' })),
+            ]);
+          }
+          return;
         }
 
         const data = await response.json();
         
         if (provider === 'all' && data.categories) {
-          // Flatten categories from all providers
+          // Flatten categories from all providers and add flower categories
           const allCategories = data.categories.flatMap((c: { provider: string; categories: { id: string; name: string }[] }) =>
             c.categories.map((cat: { id: string; name: string }) => ({ ...cat, provider: c.provider }))
           );
-          setCategories(allCategories);
+          // Add flower categories
+          setCategories([
+            ...FLOWER_CATEGORIES.map(c => ({ ...c, provider: 'flowers' })),
+            ...allCategories,
+          ]);
         } else {
           setCategories(data.categories || []);
         }
       } catch (err) {
+        // On error, use static categories
+        if (provider === 'flowers' || provider === 'all') {
+          setCategories(FLOWER_CATEGORIES);
+        }
         setError(err instanceof Error ? err.message : 'An error occurred');
         console.error('Categories fetch error:', err);
       } finally {
