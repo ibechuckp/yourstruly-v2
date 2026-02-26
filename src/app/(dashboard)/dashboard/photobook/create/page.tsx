@@ -1591,15 +1591,44 @@ function ArrangeStep({
           )}
         </div>
         
-        {/* Available Photos Strip */}
-        <div className="mt-4">
-          <h4 className="text-sm font-medium text-[#406A56] mb-2">Available Photos</h4>
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {availablePhotos.filter(p => !usedMediaIds.has(p.mediaId)).slice(0, 20).map((photo) => (
+      </div>
+      
+      {/* Right Sidebar - Photo Library */}
+      <div className="w-56 flex-shrink-0 bg-[#F2F1E5]/50 rounded-2xl p-4 overflow-y-auto">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-[#406A56] text-sm">Photos</h3>
+          <span className="text-xs text-[#406A56]/60">
+            {availablePhotos.filter(p => !usedMediaIds.has(p.mediaId)).length} available
+          </span>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2">
+          {availablePhotos.map((photo) => {
+            const isUsed = usedMediaIds.has(photo.mediaId)
+            return (
               <div
                 key={photo.mediaId}
-                className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#406A56] transition-all"
-                draggable
+                onClick={() => {
+                  if (!isUsed && selectedPage) {
+                    // Find first empty photo slot
+                    const template = getTemplateById(selectedPage.layoutId)
+                    const photoSlots = template?.slots.filter(s => s.type === 'photo') || []
+                    const emptySlot = photoSlots.find(slot => 
+                      !selectedPage.slots.find(s => s.slotId === slot.id && s.fileUrl)
+                    )
+                    if (emptySlot) {
+                      assignPhotoToSlot(selectedPage.id, emptySlot.id, photo)
+                    } else {
+                      setActiveSlotId(photoSlots[0]?.id || null)
+                      setShowPhotoPicker(true)
+                    }
+                  }
+                }}
+                className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer transition-all ${
+                  isUsed 
+                    ? 'opacity-40 ring-2 ring-[#406A56]/30' 
+                    : 'hover:ring-2 hover:ring-[#406A56]'
+                }`}
                 title={photo.memoryTitle}
               >
                 <img
@@ -1607,15 +1636,22 @@ function ArrangeStep({
                   alt=""
                   className="w-full h-full object-cover"
                 />
+                {isUsed && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <Check className="w-4 h-4 text-white" />
+                  </div>
+                )}
               </div>
-            ))}
-            {availablePhotos.filter(p => !usedMediaIds.has(p.mediaId)).length > 20 && (
-              <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-[#406A56]/10 flex items-center justify-center text-[#406A56] text-xs">
-                +{availablePhotos.filter(p => !usedMediaIds.has(p.mediaId)).length - 20}
-              </div>
-            )}
-          </div>
+            )
+          })}
         </div>
+        
+        {availablePhotos.length === 0 && (
+          <div className="text-center py-8 text-[#406A56]/40">
+            <ImageIcon className="w-8 h-8 mx-auto mb-2" />
+            <p className="text-xs">No photos yet</p>
+          </div>
+        )}
       </div>
       
       {/* Layout Picker Modal */}
