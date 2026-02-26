@@ -1266,13 +1266,18 @@ function ArrangeStep({
         {activeTextSlotId && selectedPageId && activeStyle && (
           <div 
             className="flex items-center gap-2 mb-4 p-3 bg-white rounded-xl shadow-sm border border-[#406A56]/10 flex-wrap"
-            onMouseDown={(e) => e.preventDefault()} // Prevent blur when clicking toolbar
+            onMouseDown={(e) => {
+              // Only prevent default for non-interactive elements (allows selects to work)
+              if (!(e.target instanceof HTMLSelectElement)) {
+                e.preventDefault()
+              }
+            }}
           >
             {/* Font Family */}
             <select
               value={activeStyle.fontFamily}
-              onChange={(e) => updateTextStyle(selectedPageId, activeTextSlotId, { fontFamily: e.target.value })}
-              className="px-2 py-1.5 bg-[#F2F1E5] border border-[#406A56]/20 rounded-lg text-sm text-[#406A56] focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
+              onChange={(e) => updateTextStyle(selectedPageId!, activeTextSlotId!, { fontFamily: e.target.value })}
+              className="px-2 py-1.5 bg-[#F2F1E5] border border-[#406A56]/20 rounded-lg text-sm text-[#406A56] focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 cursor-pointer"
             >
               {FONT_FAMILIES.map(f => (
                 <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>{f.label}</option>
@@ -1282,8 +1287,8 @@ function ArrangeStep({
             {/* Font Size */}
             <select
               value={activeStyle.fontSize}
-              onChange={(e) => updateTextStyle(selectedPageId, activeTextSlotId, { fontSize: e.target.value })}
-              className="px-2 py-1.5 bg-[#F2F1E5] border border-[#406A56]/20 rounded-lg text-sm text-[#406A56] focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
+              onChange={(e) => updateTextStyle(selectedPageId!, activeTextSlotId!, { fontSize: e.target.value })}
+              className="px-2 py-1.5 bg-[#F2F1E5] border border-[#406A56]/20 rounded-lg text-sm text-[#406A56] focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 cursor-pointer"
             >
               {FONT_SIZES.map(s => (
                 <option key={s.value} value={s.value}>{s.label}</option>
