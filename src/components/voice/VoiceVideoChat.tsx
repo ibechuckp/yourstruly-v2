@@ -278,45 +278,42 @@ export function VoiceVideoChat({
 
   return (
     <div className={`relative ${className}`}>
-      {/* Video Preview */}
-      <AnimatePresence>
-        {videoEnabled && videoActive && (
+      {/* Video Preview - always render when videoEnabled so the ref is available for startCamera */}
+      {videoEnabled && (
+        <div className={`mb-4 transition-all duration-300 ${videoActive ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="mb-4"
+            animate={{ opacity: videoActive ? 1 : 0, scale: videoActive ? 1 : 0.95 }}
+            className="relative aspect-video bg-black rounded-2xl overflow-hidden shadow-xl"
           >
-            <div className="relative aspect-video bg-black rounded-2xl overflow-hidden shadow-xl">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover mirror"
-                style={{ transform: 'scaleX(-1)' }} // Mirror for selfie cam
-              />
-              
-              {/* Recording indicator */}
-              {videoRecording && (
-                <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-red-500 text-white text-sm font-medium rounded-full">
-                  <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                  Recording
-                </div>
-              )}
-              
-              {/* Video toggle */}
-              <button
-                onClick={toggleVideo}
-                className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
-                title="Turn off camera"
-              >
-                <VideoOff size={18} />
-              </button>
-            </div>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover"
+              style={{ transform: 'scaleX(-1)' }} // Mirror for selfie cam
+            />
+            
+            {/* Recording indicator */}
+            {videoRecording && (
+              <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-red-500 text-white text-sm font-medium rounded-full">
+                <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                Recording
+              </div>
+            )}
+            
+            {/* Video toggle */}
+            <button
+              onClick={toggleVideo}
+              className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+              title="Turn off camera"
+            >
+              <VideoOff size={18} />
+            </button>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       {/* Enable video button when not active */}
       {!videoEnabled && videoSupported && state === 'idle' && (

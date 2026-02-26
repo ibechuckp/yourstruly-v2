@@ -107,6 +107,14 @@ export function useVideoRecorder(options: UseVideoRecorderOptions = {}): UseVide
     }
   }, [])
 
+  // Attach stream to video element when stream changes or element becomes available
+  useEffect(() => {
+    if (videoStream && videoRef.current && videoRef.current.srcObject !== videoStream) {
+      videoRef.current.srcObject = videoStream
+      videoRef.current.play().catch(console.error)
+    }
+  }, [videoStream, isActive])
+
   // Start camera preview
   const startCamera = useCallback(async () => {
     if (!isSupported) {
