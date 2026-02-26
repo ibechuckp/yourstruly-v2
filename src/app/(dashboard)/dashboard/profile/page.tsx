@@ -15,7 +15,7 @@ import { generateEssenceVector, hasProfileData } from '@/lib/essence'
 import PersonalityQuiz from '@/components/profile/PersonalityQuiz'
 import { 
   OCCUPATION_OPTIONS, INTEREST_OPTIONS, LANGUAGE_OPTIONS, 
-  RELIGION_OPTIONS, POLITICAL_OPTIONS, EDUCATION_LEVEL_OPTIONS,
+  RELIGION_OPTIONS, EDUCATION_LEVEL_OPTIONS,
   HOBBY_OPTIONS, SKILL_OPTIONS, LIFE_GOAL_OPTIONS, PERSONALITY_TRAIT_OPTIONS,
   BOOK_SUGGESTIONS, MOVIE_SUGGESTIONS, MUSIC_SUGGESTIONS, FOOD_SUGGESTIONS,
   QuizResult
@@ -52,7 +52,6 @@ interface Profile {
   life_goals: string[]
   religions: string[]
   languages: string[]
-  political_leaning: string
   occupation: string
   company: string
   education_level: string
@@ -92,7 +91,7 @@ const emptyProfile: Profile = {
   address: '', city: '', state: '', country: '', zipcode: '',
   biography: '', personal_motto: '', personality_type: '',
   personality_traits: [], interests: [], skills: [], hobbies: [], life_goals: [],
-  religions: [], languages: [], political_leaning: '', occupation: '', company: '',
+  religions: [], languages: [], occupation: '', company: '',
   education_level: '', school_name: '', degree: '',
   favorite_quote: '', favorite_books: [], favorite_movies: [], favorite_music: [], favorite_foods: [],
   emergency_contact_ids: [],
@@ -196,7 +195,6 @@ export default function ProfilePage() {
       life_goals: editProfile.life_goals || [],
       religions: editProfile.religions || [],
       languages: editProfile.languages || [],
-      political_leaning: editProfile.political_leaning,
       occupation: editProfile.occupation,
       company: editProfile.company,
       education_level: editProfile.education_level,
