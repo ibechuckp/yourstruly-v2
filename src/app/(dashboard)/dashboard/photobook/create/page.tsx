@@ -829,6 +829,18 @@ function ArrangeStep({
     return used
   }, [pages])
   
+  // Get memory IDs used on pages (for saving project)
+  const usedMemoryIds = useMemo(() => {
+    const used = new Set<string>()
+    pages.forEach(page => {
+      page.slots.forEach(slot => {
+        if (slot.memoryId) used.add(slot.memoryId)
+        if (slot.qrMemoryId) used.add(slot.qrMemoryId)
+      })
+    })
+    return used
+  }, [pages])
+  
   const addPage = (layoutId: string = 'full-photo') => {
     const newPage: PageData = {
       id: `page-${Date.now()}`,
