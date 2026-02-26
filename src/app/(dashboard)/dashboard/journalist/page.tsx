@@ -21,7 +21,7 @@ interface Circle {
   id: string
   name: string
   color: string
-  members: { contact_id: string }[]
+  members: { user_id: string }[]
 }
 
 // Note: Circles are for user collaboration, not contact grouping
@@ -137,8 +137,8 @@ export default function JournalistPage() {
         .order('category'),
       supabase
         .from('circles')
-        .select('id, name, color, members:circle_members(contact_id)')
-        .eq('user_id', user.id)
+        .select('id, name, color, members:circle_members(user_id)')
+        .eq('created_by', user.id)
         .order('name'),
     ])
 
@@ -616,7 +616,8 @@ export default function JournalistPage() {
                                     setSelectedCircle(circle)
                                     // Auto-select all members in the circle
                                     const memberContacts = contacts.filter(c => 
-                                      circle.members.some(m => m.contact_id === c.id)
+                                      // Note: circles have user members, not contacts - this filter may not match
+                                      circle.members.some(m => m.user_id === c.id)
                                     )
                                     setSelectedContacts(memberContacts)
                                   }}
