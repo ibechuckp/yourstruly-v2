@@ -13,7 +13,7 @@ import {
  * 
  * Request body:
  * {
- *   provider: 'floristone' | 'spocket' | 'prodigi',
+ *   provider: 'floristone' | 'prodigi',
  *   items: [
  *     {
  *       productId: string,
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     
     if (!isValidProvider(providerParam)) {
       return NextResponse.json(
-        { error: `Invalid provider: ${providerParam}. Must be floristone, spocket, or prodigi.` },
+        { error: `Invalid provider: ${providerParam}. Must be floristone or prodigi.` },
         { status: 400 }
       );
     }

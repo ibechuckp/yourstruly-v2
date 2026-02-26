@@ -11,10 +11,9 @@ import {
  * Get products from a marketplace provider
  * 
  * Query parameters:
- * - provider: 'floristone' | 'spocket' | 'prodigi'
+ * - provider: 'floristone' | 'prodigi'
  * - category: Category ID (provider-specific)
- * - search: Search term (Floristone & Spocket)
- * - tag: Tag for Spocket (optional)
+ * - search: Search term (Floristone only)
  * - page: Page number (default: 1)
  * - perPage: Items per page (default: 50, max: 100)
  * - featured: If true, returns featured products from all providers
@@ -42,7 +41,7 @@ export async function GET(request: NextRequest) {
     
     if (!isValidProvider(providerParam)) {
       return NextResponse.json(
-        { error: `Invalid provider: ${providerParam}. Must be floristone, spocket, or prodigi.` },
+        { error: `Invalid provider: ${providerParam}. Must be floristone or prodigi.` },
         { status: 400 }
       );
     }
@@ -65,7 +64,6 @@ export async function GET(request: NextRequest) {
     // Parse filters
     const category = searchParams.get('category') || undefined;
     const search = searchParams.get('search') || undefined;
-    const tag = searchParams.get('tag') || undefined;
     
     // Initialize service
     const service = new MarketplaceService(provider);
@@ -74,7 +72,7 @@ export async function GET(request: NextRequest) {
     const result = await service.getProducts(
       category,
       search,
-      tag,
+      undefined,
       page,
       perPage
     );

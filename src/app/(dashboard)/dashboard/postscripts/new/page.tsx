@@ -955,8 +955,8 @@ export default function NewPostScriptPage() {
   const giftOptions = [
     { id: 'flowers-1', name: 'Spring Bouquet', price: 49.99, image_url: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=200', provider: 'Floristone' },
     { id: 'flowers-2', name: 'Rose Arrangement', price: 79.99, image_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200', provider: 'Floristone' },
-    { id: 'gift-1', name: 'Cozy Blanket Set', price: 59.99, image_url: 'https://images.unsplash.com/photo-1580301762395-21ce84d00bc6?w=200', provider: 'Spocket' },
-    { id: 'gift-2', name: 'Artisan Candle Trio', price: 34.99, image_url: 'https://images.unsplash.com/photo-1602607206385-e3048cf3e7a0?w=200', provider: 'Spocket' },
+    { id: 'gift-1', name: 'Cozy Blanket Set', price: 59.99, image_url: 'https://images.unsplash.com/photo-1580301762395-21ce84d00bc6?w=200', provider: 'Prodigi' },
+    { id: 'gift-2', name: 'Artisan Candle Trio', price: 34.99, image_url: 'https://images.unsplash.com/photo-1602607206385-e3048cf3e7a0?w=200', provider: 'Prodigi' },
     { id: 'print-1', name: 'Custom Photo Book', price: 44.99, image_url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=200', provider: 'Prodigi' },
     { id: 'print-2', name: 'Framed Memory Print', price: 29.99, image_url: 'https://images.unsplash.com/photo-1513519245088-0e12902e35ca?w=200', provider: 'Prodigi' },
   ]

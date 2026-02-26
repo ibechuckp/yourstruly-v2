@@ -4,7 +4,7 @@
  */
 
 // Product provider types
-export type ProductProvider = 'floristone' | 'spocket' | 'prodigi';
+export type ProductProvider = 'floristone' | 'prodigi';
 
 // Unified Product type that normalizes across all providers
 export interface Product {
@@ -139,13 +139,11 @@ export interface ProviderConfig {
 // Cache configuration
 export interface CacheConfig {
   floristone: number; // TTL in seconds
-  spocket: number;
   prodigi: number;
 }
 
 // Default cache durations
 export const DEFAULT_CACHE_DURATIONS: CacheConfig = {
   floristone: 60 * 60, // 1 hour
-  spocket: 24 * 60 * 60, // 1 day
   prodigi: 4 * 60 * 60, // 4 hours
 };

@@ -11,7 +11,7 @@ import {
  * Get categories from marketplace providers
  * 
  * Query parameters:
- * - provider: 'floristone' | 'spocket' | 'prodigi' (optional, if not provided returns all)
+ * - provider: 'floristone' | 'prodigi' (optional, if not provided returns all)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     // Validate provider
     if (!isValidProvider(providerParam)) {
       return NextResponse.json(
-        { error: `Invalid provider: ${providerParam}. Must be floristone, spocket, or prodigi.` },
+        { error: `Invalid provider: ${providerParam}. Must be floristone or prodigi.` },
         { status: 400 }
       );
     }

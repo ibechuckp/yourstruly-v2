@@ -15,12 +15,11 @@ import type {
 } from './types';
 import * as Floristone from './providers/floristone';
 import * as Prodigi from './providers/prodigi';
-import * as Spocket from './providers/spocket';
 import { getMarketplaceCache, setMarketplaceCache } from './cache';
 
 // Re-export types
 export * from './types';
-export { Floristone, Prodigi, Spocket };
+export { Floristone, Prodigi };
 
 // Provider configurations
 const PROVIDER_CONFIGS: Record<ProductProvider, ProviderConfig> = {
@@ -33,11 +32,6 @@ const PROVIDER_CONFIGS: Record<ProductProvider, ProviderConfig> = {
     name: 'prodigi',
     enabled: Prodigi.isConfigured(),
     markupPercent: 0, // Prodigi pricing is already wholesale
-  },
-  spocket: {
-    name: 'spocket',
-    enabled: Spocket.isConfigured(),
-    markupPercent: 30, // 30% markup for Spocket
   },
 };
 
@@ -87,10 +81,6 @@ export class MarketplaceService {
         // Prodigi supports category filtering
         return Prodigi.getProducts(category, page, perPage);
       
-      case 'spocket':
-        // Spocket supports both category and search
-        return Spocket.getProducts(category, search, page, perPage);
-      
       default:
         throw new Error(`Unknown provider: ${this.provider}`);
     }
@@ -106,9 +96,6 @@ export class MarketplaceService {
       
       case 'prodigi':
         return Prodigi.getProductDetails(productId);
-      
-      case 'spocket':
-        return Spocket.getProductDetails(productId);
       
       default:
         throw new Error(`Unknown provider: ${this.provider}`);
@@ -136,9 +123,6 @@ export class MarketplaceService {
       case 'prodigi':
         return Prodigi.getCategories();
       
-      case 'spocket':
-        return Spocket.getCategories();
-      
       default:
         throw new Error(`Unknown provider: ${this.provider}`);
     }
@@ -159,9 +143,6 @@ export class MarketplaceService {
         // Prodigi estimateOrder includes shipping rates
         const prodigiEstimate = await Prodigi.estimateOrder(items, address);
         return prodigiEstimate.rates;
-      
-      case 'spocket':
-        return Spocket.calculateShipping(items, address);
       
       default:
         throw new Error(`Unknown provider: ${this.provider}`);
@@ -225,25 +206,6 @@ export class MarketplaceService {
       case 'prodigi':
         return Prodigi.estimateOrder(items, address);
       
-      case 'spocket':
-        // Calculate manually for Spocket
-        const spocketRates = await Spocket.calculateShipping(items, address);
-        const spocketShipping = spocketRates.length > 0 ? spocketRates[0].price : 0;
-        
-        // Calculate subtotal from items
-        // Note: In production, you'd fetch product prices
-        const spocketSubtotal = 0;
-        const spocketTax = spocketSubtotal * 0.08;
-        
-        return {
-          subtotal: spocketSubtotal,
-          shipping: spocketShipping,
-          tax: spocketTax,
-          total: spocketSubtotal + spocketShipping + spocketTax,
-          currency: 'USD',
-          rates: spocketRates,
-        };
-      
       case 'floristone':
         // Floristone handles pricing differently
         const floristoneRates = await Floristone.calculateShipping(items, address);
@@ -291,8 +253,6 @@ export function isProviderConfigured(provider: ProductProvider): boolean {
       return Floristone.isConfigured();
     case 'prodigi':
       return Prodigi.isConfigured();
-    case 'spocket':
-      return Spocket.isConfigured();
     default:
       return false;
   }
@@ -306,7 +266,6 @@ export async function searchAllProviders(
   options: {
     floristone?: { category?: string };
     prodigi?: { categoryId?: string };
-    spocket?: { categoryId?: string };
   } = {}
 ): Promise<{ provider: ProductProvider; products: Product[] }[]> {
   const enabledProviders = getEnabledProviders();
@@ -335,16 +294,6 @@ export async function searchAllProviders(
             options.prodigi?.categoryId,
             undefined,
             undefined,
-            1,
-            20
-          );
-          break;
-        
-        case 'spocket':
-          result = await service.getProducts(
-            options.spocket?.categoryId,
-            query,
-            undefined, // tagId
             1,
             20
           );
@@ -388,11 +337,6 @@ export async function getFeaturedProducts(
           const prodigiResult = await Prodigi.getProducts('photobooks', 1, perProvider);
           products = prodigiResult.products;
           break;
-        
-        case 'spocket':
-          // Get trending products
-          products = await Spocket.getTrendingProducts(perProvider);
-          break;
       }
       
       return { provider, products };
@@ -410,7 +354,7 @@ export async function getFeaturedProducts(
  * Helper function to validate provider string
  */
 export function isValidProvider(provider: string): provider is ProductProvider {
-  return ['floristone', 'prodigi', 'spocket'].includes(provider);
+  return ['floristone', 'prodigi'].includes(provider);
 }
 
 /**

@@ -65,19 +65,44 @@ interface Memory {
   }[]
 }
 
+interface TextStyle {
+  fontFamily: string
+  fontSize: string
+  fontWeight: 'normal' | 'bold'
+  fontStyle: 'normal' | 'italic'
+  textAlign: 'left' | 'center' | 'right'
+  color: string
+}
+
+interface CropData {
+  scale: number
+  x: number
+  y: number
+}
+
+interface SlotData {
+  slotId: string
+  type: 'photo' | 'text' | 'qr'
+  memoryId?: string
+  mediaId?: string
+  fileUrl?: string
+  text?: string
+  qrMemoryId?: string
+  textStyle?: TextStyle
+  crop?: CropData
+}
+
 interface PageData {
   id: string
   pageNumber: number
   layoutId: string
-  slots: {
-    slotId: string
-    type: 'photo' | 'text' | 'qr'
-    memoryId?: string
-    mediaId?: string
-    fileUrl?: string
-    text?: string
-    qrMemoryId?: string
-  }[]
+  slots: SlotData[]
+}
+
+// History state for undo/redo
+interface HistoryState {
+  pages: PageData[]
+  timestamp: number
 }
 
 interface ShippingAddress {
@@ -88,6 +113,54 @@ interface ShippingAddress {
   state: string
   postalCode: string
   country: string
+}
+
+// ============================================================================
+// EDITOR CONSTANTS
+// ============================================================================
+
+const FONT_FAMILIES = [
+  { value: 'Georgia, serif', label: 'Georgia' },
+  { value: 'Helvetica, Arial, sans-serif', label: 'Helvetica' },
+  { value: '"Playfair Display", Georgia, serif', label: 'Playfair Display' },
+  { value: '"Dancing Script", cursive', label: 'Dancing Script' },
+  { value: '"Crimson Text", Georgia, serif', label: 'Crimson Text' },
+]
+
+const FONT_SIZES = [
+  { value: 'sm', label: '12pt', px: 12 },
+  { value: 'md', label: '16pt', px: 16 },
+  { value: 'lg', label: '20pt', px: 20 },
+  { value: 'xl', label: '28pt', px: 28 },
+  { value: '2xl', label: '36pt', px: 36 },
+]
+
+const TEXT_COLORS = [
+  '#333333', '#000000', '#ffffff', '#666666',
+  '#8b4513', '#2c3e50', '#c0392b', '#27ae60',
+  '#8e44ad', '#d35400', '#2980b9', '#16a085'
+]
+
+const BACKGROUND_COLORS = [
+  { value: '#ffffff', label: 'White' },
+  { value: '#faf9f6', label: 'Cream' },
+  { value: '#f5f5f5', label: 'Light Gray' },
+  { value: '#1a1a1a', label: 'Black' },
+  { value: '#2c3e50', label: 'Dark Blue' },
+  { value: '#8b4513', label: 'Saddle Brown' },
+]
+
+const DEFAULT_TEXT_STYLE: TextStyle = {
+  fontFamily: 'Georgia, serif',
+  fontSize: 'md',
+  fontWeight: 'normal',
+  fontStyle: 'normal',
+  textAlign: 'center',
+  color: '#333333',
+}
+
+function getFontSizePx(size: string): number {
+  return FONT_SIZES.find(f => f.value === size)?.px || 16
 }
 
 // ============================================================================
@@ -433,6 +506,47 @@ function ContentStep({
   )
 }
 
+// Text formatting options
+const FONT_FAMILIES = [
+  { value: 'Georgia, serif', label: 'Georgia' },
+  { value: '"Playfair Display", Georgia, serif', label: 'Playfair Display' },
+  { value: '"Dancing Script", cursive', label: 'Dancing Script' },
+  { value: '"Crimson Text", Georgia, serif', label: 'Crimson Text' },
+  { value: 'Helvetica, Arial, sans-serif', label: 'Helvetica' },
+]
+
+const FONT_SIZES = [
+  { value: '0.875rem', label: '14px' },
+  { value: '1rem', label: '16px' },
+  { value: '1.25rem', label: '20px' },
+  { value: '1.5rem', label: '24px' },
+  { value: '2rem', label: '32px' },
+  { value: '2.5rem', label: '40px' },
+]
+
+const TEXT_COLORS = [
+  '#333333', '#000000', '#ffffff', '#666666', 
+  '#8b4513', '#2c3e50', '#c0392b', '#27ae60'
+]
+
+interface TextStyle {
+  fontFamily: string
+  fontSize: string
+  fontWeight: 'normal' | 'bold'
+  fontStyle: 'normal' | 'italic'
+  textAlign: 'left' | 'center' | 'right'
+  color: string
+}
+
+const DEFAULT_TEXT_STYLE: TextStyle = {
+  fontFamily: 'Georgia, serif',
+  fontSize: '1.5rem',
+  fontWeight: 'normal',
+  fontStyle: 'normal',
+  textAlign: 'center',
+  color: '#333333',
+}
+
 // Step 3: Arrange Pages
 function ArrangeStep({
   pages,
@@ -450,6 +564,40 @@ function ArrangeStep({
   const [showQRPicker, setShowQRPicker] = useState(false)
   const [showPhotoPicker, setShowPhotoPicker] = useState(false)
   const [activeSlotId, setActiveSlotId] = useState<string | null>(null)
+  const [activeTextSlotId, setActiveTextSlotId] = useState<string | null>(null)
+  
+  // Text content and styles per slot (keyed by pageId:slotId)
+  const [textContents, setTextContents] = useState<Record<string, string>>({})
+  const [textStyles, setTextStyles] = useState<Record<string, TextStyle>>({})
+  
+  // Get current text style for active slot
+  const getTextStyle = (pageId: string, slotId: string): TextStyle => {
+    const key = `${pageId}:${slotId}`
+    return textStyles[key] || DEFAULT_TEXT_STYLE
+  }
+  
+  // Update text style
+  const updateTextStyle = (pageId: string, slotId: string, updates: Partial<TextStyle>) => {
+    const key = `${pageId}:${slotId}`
+    setTextStyles(prev => ({
+      ...prev,
+      [key]: { ...getTextStyle(pageId, slotId), ...updates }
+    }))
+  }
+  
+  // Get/set text content
+  const getTextContent = (pageId: string, slotId: string): string => {
+    return textContents[`${pageId}:${slotId}`] || ''
+  }
+  
+  const setTextContent = (pageId: string, slotId: string, content: string) => {
+    setTextContents(prev => ({ ...prev, [`${pageId}:${slotId}`]: content }))
+  }
+  
+  // Current style for active text slot
+  const activeStyle = selectedPageId && activeTextSlotId 
+    ? getTextStyle(selectedPageId, activeTextSlotId) 
+    : null
   
   const selectedPage = pages.find(p => p.id === selectedPageId)
   const selectedTemplate = selectedPage ? getTemplateById(selectedPage.layoutId) : null
@@ -653,7 +801,7 @@ function ArrangeStep({
       {/* Main Editor */}
       <div className="flex-1 flex flex-col">
         {/* Toolbar */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowLayoutPicker(true)}
@@ -674,6 +822,112 @@ function ArrangeStep({
             {availablePhotos.length - usedMediaIds.size} photos available
           </div>
         </div>
+        
+        {/* Text Formatting Toolbar */}
+        {activeTextSlotId && selectedPageId && activeStyle && (
+          <div className="flex items-center gap-2 mb-4 p-3 bg-white rounded-xl shadow-sm border border-[#406A56]/10 flex-wrap">
+            {/* Font Family */}
+            <select
+              value={activeStyle.fontFamily}
+              onChange={(e) => updateTextStyle(selectedPageId, activeTextSlotId, { fontFamily: e.target.value })}
+              className="px-2 py-1.5 bg-[#F2F1E5] border border-[#406A56]/20 rounded-lg text-sm text-[#406A56] focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
+            >
+              {FONT_FAMILIES.map(f => (
+                <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>{f.label}</option>
+              ))}
+            </select>
+            
+            {/* Font Size */}
+            <select
+              value={activeStyle.fontSize}
+              onChange={(e) => updateTextStyle(selectedPageId, activeTextSlotId, { fontSize: e.target.value })}
+              className="px-2 py-1.5 bg-[#F2F1E5] border border-[#406A56]/20 rounded-lg text-sm text-[#406A56] focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
+            >
+              {FONT_SIZES.map(s => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+            
+            {/* Divider */}
+            <div className="w-px h-6 bg-[#406A56]/20" />
+            
+            {/* Bold */}
+            <button
+              onClick={() => updateTextStyle(selectedPageId, activeTextSlotId, { 
+                fontWeight: activeStyle.fontWeight === 'bold' ? 'normal' : 'bold' 
+              })}
+              className={`p-1.5 rounded-lg transition-colors ${
+                activeStyle.fontWeight === 'bold' 
+                  ? 'bg-[#406A56] text-white' 
+                  : 'bg-[#F2F1E5] text-[#406A56] hover:bg-[#406A56]/10'
+              }`}
+              title="Bold"
+            >
+              <span className="font-bold text-sm w-5 h-5 flex items-center justify-center">B</span>
+            </button>
+            
+            {/* Italic */}
+            <button
+              onClick={() => updateTextStyle(selectedPageId, activeTextSlotId, { 
+                fontStyle: activeStyle.fontStyle === 'italic' ? 'normal' : 'italic' 
+              })}
+              className={`p-1.5 rounded-lg transition-colors ${
+                activeStyle.fontStyle === 'italic' 
+                  ? 'bg-[#406A56] text-white' 
+                  : 'bg-[#F2F1E5] text-[#406A56] hover:bg-[#406A56]/10'
+              }`}
+              title="Italic"
+            >
+              <span className="italic text-sm w-5 h-5 flex items-center justify-center">I</span>
+            </button>
+            
+            {/* Divider */}
+            <div className="w-px h-6 bg-[#406A56]/20" />
+            
+            {/* Alignment */}
+            <div className="flex bg-[#F2F1E5] rounded-lg p-0.5">
+              {(['left', 'center', 'right'] as const).map((align) => (
+                <button
+                  key={align}
+                  onClick={() => updateTextStyle(selectedPageId, activeTextSlotId, { textAlign: align })}
+                  className={`p-1.5 rounded transition-colors ${
+                    activeStyle.textAlign === align 
+                      ? 'bg-[#406A56] text-white' 
+                      : 'text-[#406A56] hover:bg-[#406A56]/10'
+                  }`}
+                  title={`Align ${align}`}
+                >
+                  <span className="text-xs w-5 h-5 flex items-center justify-center">
+                    {align === 'left' ? '⫷' : align === 'center' ? '☰' : '⫸'}
+                  </span>
+                </button>
+              ))}
+            </div>
+            
+            {/* Divider */}
+            <div className="w-px h-6 bg-[#406A56]/20" />
+            
+            {/* Text Color */}
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-[#406A56]/60">Color:</span>
+              <div className="flex gap-1">
+                {TEXT_COLORS.map(color => (
+                  <button
+                    key={color}
+                    onClick={() => updateTextStyle(selectedPageId, activeTextSlotId, { color })}
+                    className={`w-5 h-5 rounded border-2 transition-all ${
+                      activeStyle.color === color 
+                        ? 'border-[#406A56] scale-110' 
+                        : 'border-transparent hover:border-[#406A56]/30'
+                    }`}
+                    style={{ backgroundColor: color }}
+                    title={color}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Page Canvas */}
         <div className="flex-1 bg-[#406A56]/5 rounded-2xl p-8 flex items-center justify-center">
@@ -743,19 +997,37 @@ function ArrangeStep({
                 }
                 
                 if (slot.type === 'text') {
+                  const textStyle = getTextStyle(selectedPage.id, slot.id)
+                  const isActive = activeTextSlotId === slot.id
+                  
                   return (
                     <div
                       key={slot.id}
                       style={style}
-                      className="flex items-center justify-center p-2"
+                      className={`flex items-center justify-center p-2 transition-all ${
+                        isActive ? 'ring-2 ring-[#406A56] ring-offset-2 bg-white/50' : ''
+                      }`}
                     >
                       <textarea
-                        placeholder={slot.placeholder || 'Add text...'}
-                        className="w-full h-full resize-none bg-transparent text-center text-[#406A56] focus:outline-none"
+                        value={getTextContent(selectedPage.id, slot.id)}
+                        onChange={(e) => setTextContent(selectedPage.id, slot.id, e.target.value)}
+                        onFocus={() => setActiveTextSlotId(slot.id)}
+                        onBlur={() => {
+                          // Keep toolbar visible for a moment to allow clicking
+                          setTimeout(() => {
+                            setActiveTextSlotId(prev => prev === slot.id ? null : prev)
+                          }, 200)
+                        }}
+                        placeholder={slot.placeholder || 'Click to add text...'}
+                        className="w-full h-full resize-none bg-transparent focus:outline-none cursor-text"
                         style={{
-                          fontSize: slot.style?.fontSize === 'xl' ? '1.5rem' : 
-                                   slot.style?.fontSize === 'lg' ? '1.25rem' : 
-                                   slot.style?.fontSize === '2xl' ? '2rem' : '1rem'
+                          fontFamily: textStyle.fontFamily,
+                          fontSize: textStyle.fontSize,
+                          fontWeight: textStyle.fontWeight,
+                          fontStyle: textStyle.fontStyle,
+                          textAlign: textStyle.textAlign,
+                          color: textStyle.color,
+                          lineHeight: 1.4,
                         }}
                       />
                     </div>

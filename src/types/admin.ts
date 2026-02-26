@@ -153,7 +153,7 @@ export interface SubscriptionAdmin {
 // MARKETPLACE ADMIN
 // ============================================================================
 
-export type MarketplaceProviderId = 'prodigi' | 'spocket' | 'floristone';
+export type MarketplaceProviderId = 'prodigi' | 'floristone';
 
 export interface MarketplaceProvider {
   id: MarketplaceProviderId;

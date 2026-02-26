@@ -92,20 +92,20 @@ function scoreProductsForContext(
 
   // Provider preferences based on event type
   const providerPreferences: Record<string, ProductProvider[]> = {
-    'birthday': ['spocket', 'floristone', 'prodigi'],
-    'anniversary': ['floristone', 'prodigi', 'spocket'],
+    'birthday': ['floristone', 'prodigi'],
+    'anniversary': ['floristone', 'prodigi'],
     'sympathy': ['floristone', 'prodigi'],
-    'get-well': ['floristone', 'spocket'],
-    'congratulations': ['floristone', 'spocket', 'prodigi'],
-    'love': ['floristone', 'prodigi', 'spocket'],
-    'thank-you': ['floristone', 'spocket'],
-    'new-baby': ['spocket', 'prodigi'],
-    'wedding': ['floristone', 'prodigi', 'spocket'],
-    'graduation': ['spocket', 'prodigi'],
-    'housewarming': ['spocket', 'prodigi'],
+    'get-well': ['floristone', 'prodigi'],
+    'congratulations': ['floristone', 'prodigi'],
+    'love': ['floristone', 'prodigi'],
+    'thank-you': ['floristone', 'prodigi'],
+    'new-baby': ['floristone', 'prodigi'],
+    'wedding': ['floristone', 'prodigi'],
+    'graduation': ['prodigi', 'floristone'],
+    'housewarming': ['prodigi', 'floristone'],
   };
 
-  const preferredProviders = providerPreferences[eventType] || ['floristone', 'spocket', 'prodigi'];
+  const preferredProviders = providerPreferences[eventType] || ['floristone', 'prodigi'];
 
   // Keywords for different occasions
   const occasionKeywords: Record<string, string[]> = {
@@ -128,11 +128,11 @@ function scoreProductsForContext(
     'partner': { providers: ['floristone', 'prodigi'], keywords: ['romance', 'love'] },
     'parent': { providers: ['floristone', 'prodigi'], keywords: ['classic', 'elegant'] },
     'mother': { providers: ['floristone'], keywords: ['mom', 'mother', 'love'] },
-    'father': { providers: ['spocket', 'prodigi'], keywords: ['dad', 'father'] },
-    'child': { providers: ['spocket', 'prodigi'], keywords: ['fun', 'colorful'] },
-    'friend': { providers: ['spocket', 'floristone'], keywords: ['fun', 'thoughtful'] },
-    'colleague': { providers: ['spocket', 'floristone'], keywords: ['professional', 'classic'] },
-    'sibling': { providers: ['spocket', 'floristone'], keywords: ['fun', 'personal'] },
+    'father': { providers: ['prodigi'], keywords: ['dad', 'father'] },
+    'child': { providers: ['prodigi'], keywords: ['fun', 'colorful'] },
+    'friend': { providers: ['floristone', 'prodigi'], keywords: ['fun', 'thoughtful'] },
+    'colleague': { providers: ['floristone', 'prodigi'], keywords: ['professional', 'classic'] },
+    'sibling': { providers: ['floristone', 'prodigi'], keywords: ['fun', 'personal'] },
   };
 
   const keywords = occasionKeywords[eventType] || [];
@@ -206,11 +206,6 @@ function scoreProductsForContext(
       if (eventType === 'sympathy' && provider === 'floristone') {
         score += 0.15;
         reasons.push('Traditional choice for sympathy');
-      }
-      
-      if (eventType === 'new-baby' && provider === 'spocket') {
-        score += 0.1;
-        reasons.push('Curated baby gifts');
       }
 
       // Select the best reason

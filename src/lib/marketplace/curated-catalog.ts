@@ -179,87 +179,6 @@ export const PRODIGI_PRODUCTS: CuratedProduct[] = [
 ];
 
 // =============================================================================
-// SPOCKET PRODUCTS (Dropship keepsakes)
-// =============================================================================
-
-export const SPOCKET_PRODUCTS: CuratedProduct[] = [
-  {
-    id: 'wooden-memory-box',
-    name: 'Engraved Wooden Memory Box',
-    description: 'Handcrafted solid wood box with custom engraving. Perfect for storing letters, photos, and small treasures.',
-    price: 48.00,
-    originalPrice: 36.92,
-    currency: 'USD',
-    images: ['/images/products/memory-box.jpg'],
-    thumbnail: '/images/products/memory-box-thumb.jpg',
-    provider: 'spocket',
-    category: 'keepsake-gifts',
-    inStock: true,
-    curatedScore: 94,
-    collections: ['staff-picks', 'heirloom-quality'],
-    whyWeLoveIt: 'The modern shoebox under the bed - but beautiful enough to display.',
-    occasions: ['wedding', 'anniversary', 'birthday', 'mothers-day', 'valentines-day'],
-    emotionalImpact: 'high',
-    pairingSuggestions: ['Fill with printed photos before gifting', 'Include a handwritten letter'],
-  },
-  {
-    id: 'memory-jar-led',
-    name: 'Memory Jar with LED Lights',
-    description: 'Glass jar filled with fairy lights - store written memories, tickets, and small keepsakes that glow softly.',
-    price: 28.00,
-    originalPrice: 21.54,
-    currency: 'USD',
-    images: ['/images/products/memory-jar.jpg'],
-    thumbnail: '/images/products/memory-jar-thumb.jpg',
-    provider: 'spocket',
-    category: 'keepsake-gifts',
-    inStock: true,
-    curatedScore: 88,
-    collections: ['thoughtful-gestures'],
-    whyWeLoveIt: 'A beautiful ritual: write memories on slips and watch the jar fill with glowing moments.',
-    occasions: ['anniversary', 'valentines-day', 'birthday'],
-    emotionalImpact: 'high',
-    pairingSuggestions: ['Pre-fill with memories you\'ve shared together'],
-  },
-  {
-    id: 'leather-photo-album',
-    name: 'Genuine Leather Photo Album',
-    description: 'Handcrafted leather album with refillable pages. Develops a beautiful patina over time.',
-    price: 68.00,
-    originalPrice: 52.31,
-    currency: 'USD',
-    images: ['/images/products/leather-album.jpg'],
-    thumbnail: '/images/products/leather-album-thumb.jpg',
-    provider: 'spocket',
-    category: 'photobooks-memory-books',
-    inStock: true,
-    curatedScore: 93,
-    collections: ['staff-picks', 'heirloom-quality'],
-    whyWeLoveIt: 'Real leather tells its own story as it ages. Gets better with time.',
-    occasions: ['wedding', 'anniversary', 'milestone-birthday'],
-    emotionalImpact: 'high',
-  },
-  {
-    id: 'heart-hand-sculpture',
-    name: 'Hand Holding Heart Sculpture',
-    description: 'Elegant ceramic sculpture of hands cradling a heart. Meaningful gift for loved ones.',
-    price: 42.00,
-    originalPrice: 32.31,
-    currency: 'USD',
-    images: ['/images/products/heart-sculpture.jpg'],
-    thumbnail: '/images/products/heart-sculpture-thumb.jpg',
-    provider: 'spocket',
-    category: 'keepsake-gifts',
-    inStock: true,
-    curatedScore: 86,
-    collections: ['thoughtful-gestures'],
-    whyWeLoveIt: 'A beautiful reminder that love is meant to be held gently.',
-    occasions: ['mothers-day', 'anniversary', 'sympathy', 'thank-you'],
-    emotionalImpact: 'high',
-  },
-];
-
-// =============================================================================
 // FLORISTONE PRODUCTS (Flowers)
 // 48 curated arrangements imported from curated-flowers.ts
 // =============================================================================
@@ -272,7 +191,6 @@ export const FLORISTONE_PRODUCTS: CuratedProduct[] = FLORISTONE_FLOWERS;
 
 export const CURATED_CATALOG: CuratedProduct[] = [
   ...PRODIGI_PRODUCTS,
-  ...SPOCKET_PRODUCTS,
   ...FLORISTONE_PRODUCTS,
 ];
 

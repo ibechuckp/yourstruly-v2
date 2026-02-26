@@ -148,6 +148,24 @@ export default function InterviewPage({ params }: { params: Promise<{ token: str
           <div className="interview-completed-heart">
             <Heart size={24} className="text-red-400" fill="currentColor" />
           </div>
+          
+          {/* CTA Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="interview-completed-cta"
+          >
+            <p className="interview-cta-text">
+              Want to capture your own family stories?
+            </p>
+            <a href="/signup" className="interview-signup-btn">
+              Create Your Free Account
+            </a>
+            <a href="/" className="interview-learn-more">
+              Learn more about YoursTruly
+            </a>
+          </motion.div>
         </div>
       </div>
     )

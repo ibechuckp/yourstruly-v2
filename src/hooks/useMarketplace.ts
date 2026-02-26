@@ -23,7 +23,6 @@ interface UseMarketplaceProductsReturn {
 // Map our ProviderType to API provider names
 const providerMap: Record<ProviderType | 'all', string> = {
   flowers: 'floristone',
-  gifts: 'spocket',
   prints: 'prodigi',
   all: 'all',
 };

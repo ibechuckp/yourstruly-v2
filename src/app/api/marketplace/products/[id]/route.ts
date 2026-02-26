@@ -10,7 +10,7 @@ import {
  * Get details for a specific product
  * 
  * Query parameters:
- * - provider: 'floristone' | 'spocket' | 'prodigi' (required)
+ * - provider: 'floristone' | 'prodigi' (required)
  */
 export async function GET(
   request: NextRequest,
@@ -31,7 +31,7 @@ export async function GET(
     
     if (!isValidProvider(providerParam)) {
       return NextResponse.json(
-        { error: `Invalid provider: ${providerParam}. Must be floristone, spocket, or prodigi.` },
+        { error: `Invalid provider: ${providerParam}. Must be floristone or prodigi.` },
         { status: 400 }
       );
     }

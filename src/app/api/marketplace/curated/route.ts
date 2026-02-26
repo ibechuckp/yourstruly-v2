@@ -6,7 +6,7 @@ import { CURATED_CATALOG, CURATED_CATEGORIES, getProductsByCollection, getProduc
  * Get curated products from our hand-picked catalog
  * 
  * Query parameters:
- * - provider: 'floristone' | 'prodigi' | 'spocket' | 'all' (default: all)
+ * - provider: 'floristone' | 'prodigi' | 'all' (default: all)
  * - category: Category slug (e.g., 'flowers-occasions')
  * - collection: 'staff-picks' | 'perfect-for-memories' | 'heirloom-quality' | 'thoughtful-gestures'
  * - occasion: Occasion tag (e.g., 'sympathy', 'birthday', 'anniversary')
