@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Send, Mic, Video, VideoOff, Camera, Loader2, Sparkles, StopCircle } from 'lucide-react'
+import { X, Send, Mic, Video, VideoOff, Camera, Loader2, Sparkles, UserPlus, Check } from 'lucide-react'
 import { VoiceVideoChat } from '@/components/voice'
 import type { PersonaConfig } from '@/types/voice'
 
@@ -31,7 +31,7 @@ type InputMode = 'text' | 'voice' | 'video'
  * UnifiedEngagementModal - Single modal for all engagement response types
  * 
  * Starts with text input by default, with voice and video options available.
- * When voice/video is selected, switches to the VoiceVideoChat component.
+ * When voice/video is selected, auto-starts the AI conversation.
  */
 export function UnifiedEngagementModal({
   prompt,
@@ -43,6 +43,10 @@ export function UnifiedEngagementModal({
   const [textValue, setTextValue] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [completed, setCompleted] = useState(false)
+  const [savedMemoryId, setSavedMemoryId] = useState<string | null>(null)
+  const [extractedPeople, setExtractedPeople] = useState<string[]>([])
+  const [addingContact, setAddingContact] = useState<string | null>(null)
+  const [addedContacts, setAddedContacts] = useState<Set<string>>(new Set())
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Focus textarea on mount
@@ -62,22 +66,20 @@ export function UnifiedEngagementModal({
       description: 'A warm interviewer gathering your story',
       voice: 'coral',
       style: 'warm',
-      systemPrompt: `You are a warm, thoughtful interviewer helping someone share a meaningful story or memory. 
+      systemPrompt: `You're a warm interviewer helping capture a meaningful memory.
 
-The user is responding to this specific question: "${questionText}"${contactContext}
+Topic: "${questionText}"${contactContext}
 
-Your job:
-1. Start by acknowledging their response and asking a natural follow-up about the SPECIFIC topic
-2. Ask one question at a time
-3. Dig for details: who, what, when, where, how it felt
-4. After about 5 exchanges, offer to save: "This is wonderful - we have a great memory here. Would you like to save this, or keep exploring?"
+RULES:
+1. Keep responses SHORT - one sentence acknowledgment + one question. No long replies.
+2. Ask about: who was there, when, where, how it felt, what happened
+3. After EXACTLY 4-5 questions, say: "This is wonderful! Ready to save this memory?"
+4. Stay on topic. No tangents.
+5. Listen for names of people - remember them for later.
 
-IMPORTANT: Stay focused on the topic "${questionText}". Don't change subjects.
+BAD (too long): "That's so interesting! I love hearing about family traditions. They really are the fabric of our lives and connect us to our past in such meaningful ways. Can you tell me more about who taught you this recipe?"
 
-Never:
-- Ask about unrelated topics
-- Sound robotic or scripted
-- Rush the conversation`
+GOOD (concise): "I love that! Who taught you this recipe?"`
     }
   }, [prompt])
 
@@ -119,14 +121,51 @@ Never:
 
   // Handle voice/video memory saved
   const handleMemorySaved = useCallback((memoryId: string) => {
+    setSavedMemoryId(memoryId)
     setCompleted(true)
-    setTimeout(() => {
-      onComplete({
-        memoryId,
-        xpAwarded: expectedXp,
+    // Don't close immediately if we have people to add
+    // The close will happen when user clicks "Done" or after adding contacts
+  }, [])
+
+  // Handle extracted entities from voice chat
+  const handleEntitiesExtracted = useCallback((entities: { people: string[]; places: string[] }) => {
+    if (entities.people.length > 0) {
+      setExtractedPeople(entities.people)
+    }
+  }, [])
+
+  // Add a person as a contact
+  const handleAddContact = async (name: string) => {
+    setAddingContact(name)
+    try {
+      const response = await fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: name,
+          relationship: 'other',
+          source: 'memory_mention',
+          memory_id: savedMemoryId,
+        }),
       })
-    }, 1000)
-  }, [onComplete, expectedXp])
+      
+      if (response.ok) {
+        setAddedContacts(prev => new Set([...prev, name]))
+      }
+    } catch (error) {
+      console.error('Failed to add contact:', error)
+    } finally {
+      setAddingContact(null)
+    }
+  }
+
+  // Finish and close
+  const handleFinish = () => {
+    onComplete({
+      memoryId: savedMemoryId || undefined,
+      xpAwarded: expectedXp,
+    })
+  }
 
   // Switch to voice mode
   const startVoice = () => {
@@ -266,7 +305,7 @@ Never:
                 ← Back to text input
               </button>
               
-              {/* Voice/Video Chat */}
+              {/* Voice/Video Chat - auto-starts immediately */}
               <VoiceVideoChat
                 sessionType={prompt.type === 'knowledge' ? 'memory_capture' : 'engagement'}
                 topic={prompt.metadata?.question_text || prompt.promptText}
@@ -275,7 +314,9 @@ Never:
                 enableVideo={inputMode === 'video'}
                 videoQuality="medium"
                 maxQuestions={5}
+                autoStart={true}
                 onMemorySaved={handleMemorySaved}
+                onEntitiesExtracted={handleEntitiesExtracted}
                 onError={(error) => console.error('Voice error:', error)}
                 showTranscript={true}
               />
@@ -283,26 +324,74 @@ Never:
           )}
         </div>
 
-        {/* Success overlay */}
+        {/* Success overlay with optional "add contact" prompt */}
         <AnimatePresence>
           {completed && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-3xl"
+              className="absolute inset-0 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-3xl p-6"
             >
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: 'spring', damping: 15 }}
-                className="text-center"
+                className="text-center max-w-sm"
               >
-                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30">
-                  <Sparkles size={36} className="text-white" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30">
+                  <Check size={32} className="text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-[#406A56]">Saved!</h3>
-                <p className="text-[#406A56]/70 mt-2">+{expectedXp} XP earned</p>
+                <h3 className="text-xl font-bold text-[#406A56]">Memory Saved!</h3>
+                <p className="text-[#406A56]/70 mt-1">+{expectedXp} XP earned</p>
+                
+                {/* Add contacts section - only shows if people were mentioned */}
+                {extractedPeople.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="mt-6 p-4 bg-[#406A56]/5 rounded-xl text-left"
+                  >
+                    <p className="text-sm font-medium text-[#406A56] mb-3 flex items-center gap-2">
+                      <UserPlus size={16} />
+                      People mentioned:
+                    </p>
+                    <div className="space-y-2">
+                      {extractedPeople.map((name) => (
+                        <div key={name} className="flex items-center justify-between gap-2">
+                          <span className="text-sm text-[#406A56]">{name}</span>
+                          {addedContacts.has(name) ? (
+                            <span className="text-xs text-green-600 flex items-center gap-1">
+                              <Check size={12} /> Added
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleAddContact(name)}
+                              disabled={addingContact === name}
+                              className="text-xs px-2 py-1 bg-[#406A56] text-white rounded-md hover:bg-[#4a7a64] disabled:opacity-50 flex items-center gap-1"
+                            >
+                              {addingContact === name ? (
+                                <Loader2 size={10} className="animate-spin" />
+                              ) : (
+                                <UserPlus size={10} />
+                              )}
+                              Add
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+                
+                {/* Done button */}
+                <button
+                  onClick={handleFinish}
+                  className="mt-6 px-8 py-2.5 bg-[#406A56] text-white font-medium rounded-xl hover:bg-[#4a7a64] transition-colors"
+                >
+                  Done
+                </button>
               </motion.div>
             </motion.div>
           )}

@@ -36,10 +36,14 @@ export interface VoiceVideoChatProps {
   enableVideo?: boolean
   /** Video quality */
   videoQuality?: 'low' | 'medium' | 'high'
+  /** Auto-start the conversation immediately */
+  autoStart?: boolean
   /** Called when session completes */
   onComplete?: (result: VoiceSessionResult & { videoUrl?: string }) => void
   /** Called when memory is saved */
   onMemorySaved?: (memoryId: string, videoUrl?: string) => void
+  /** Called with extracted entities (people, places) after save */
+  onEntitiesExtracted?: (entities: { people: string[]; places: string[] }) => void
   /** Called on error */
   onError?: (error: Error) => void
   /** Show transcript */
@@ -65,8 +69,10 @@ export function VoiceVideoChat({
   maxDurationSeconds = 600,
   enableVideo = false,
   videoQuality = 'medium',
+  autoStart = false,
   onComplete,
   onMemorySaved,
+  onEntitiesExtracted,
   onError,
   showTranscript = true,
   className = '',
@@ -75,6 +81,7 @@ export function VoiceVideoChat({
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
   const [videoEnabled, setVideoEnabled] = useState(enableVideo)
   const [showVideoPreview, setShowVideoPreview] = useState(false)
+  const [hasAutoStarted, setHasAutoStarted] = useState(false)
   const savedMemoryIdRef = useRef<string | null>(null)
 
   // Get persona
@@ -140,6 +147,12 @@ export function VoiceVideoChat({
         stopVideoRecording()
       }
 
+      // Extract people and places from transcript
+      const extractedEntities = extractEntities(transcript)
+      if (extractedEntities.people.length > 0 || extractedEntities.places.length > 0) {
+        onEntitiesExtracted?.(extractedEntities)
+      }
+
       // Upload video if we have one
       if (recordedBlob) {
         const videoUrl = await uploadVideo(memoryId, recordedBlob)
@@ -150,6 +163,18 @@ export function VoiceVideoChat({
     },
     onError,
   })
+
+  // Auto-start when component mounts if autoStart is true
+  useEffect(() => {
+    if (autoStart && !hasAutoStarted && isSupported) {
+      setHasAutoStarted(true)
+      // Small delay to ensure component is fully mounted
+      const timer = setTimeout(() => {
+        handleStart()
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [autoStart, hasAutoStarted, isSupported])
 
   // Upload video to Supabase
   const uploadVideo = async (memoryId: string, blob: Blob): Promise<string | undefined> => {
@@ -377,5 +402,68 @@ function getPersonaByName(name: 'journalist' | 'friend' | 'life-story'): Persona
       return LIFE_STORY_PERSONA
     default:
       return JOURNALIST_PERSONA
+  }
+}
+
+/**
+ * Extract people names and places from transcript
+ * Simple heuristic-based extraction
+ */
+function extractEntities(transcript: Array<{ role: string; text: string }>): { people: string[]; places: string[] } {
+  const people = new Set<string>()
+  const places = new Set<string>()
+  
+  // Common name patterns and context clues
+  const namePatterns = [
+    /my (?:mom|mother|dad|father|grandmother|grandfather|grandma|grandpa|sister|brother|aunt|uncle|cousin|wife|husband|son|daughter|friend|neighbor|boss|colleague|coworker|teacher|professor)(?: named| called)?\s+([A-Z][a-z]+)/gi,
+    /(?:named|called|known as)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/gi,
+    /([A-Z][a-z]+)\s+(?:taught|showed|told|gave|made|helped|said|mentioned|remembered|knew|loved)/gi,
+    /(?:with|and|from)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:when|who|that|and|,)/gi,
+  ]
+  
+  const placePatterns = [
+    /(?:in|at|from|to|near|around)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?(?:,\s*[A-Z][a-z]+)?)/gi,
+    /(?:the|our|my|their)\s+(?:house|home|apartment|school|church|park|beach|lake|mountain|river|city|town|village|neighborhood|kitchen|garden|backyard|basement)\s+(?:in|at|on|near)\s+([A-Z][a-z]+)/gi,
+  ]
+  
+  // Common words to exclude from names
+  const excludeWords = new Set([
+    'I', 'The', 'This', 'That', 'What', 'When', 'Where', 'Who', 'How', 'Why',
+    'My', 'Your', 'His', 'Her', 'Its', 'Our', 'Their', 'We', 'You', 'He', 'She', 'It', 'They',
+    'And', 'But', 'Or', 'So', 'If', 'Then', 'Now', 'Just', 'Really', 'Very', 'Always',
+    'Mom', 'Dad', 'Mother', 'Father', 'Grandma', 'Grandpa', 'Grandmother', 'Grandfather'
+  ])
+  
+  // Only process user messages
+  const userText = transcript
+    .filter(t => t.role === 'user')
+    .map(t => t.text)
+    .join(' ')
+  
+  // Extract names
+  for (const pattern of namePatterns) {
+    let match
+    while ((match = pattern.exec(userText)) !== null) {
+      const name = match[1]?.trim()
+      if (name && name.length > 1 && !excludeWords.has(name)) {
+        people.add(name)
+      }
+    }
+  }
+  
+  // Extract places
+  for (const pattern of placePatterns) {
+    let match
+    while ((match = pattern.exec(userText)) !== null) {
+      const place = match[1]?.trim()
+      if (place && place.length > 2 && !excludeWords.has(place)) {
+        places.add(place)
+      }
+    }
+  }
+  
+  return {
+    people: Array.from(people),
+    places: Array.from(places)
   }
 }
