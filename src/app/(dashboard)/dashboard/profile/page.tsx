@@ -11,7 +11,6 @@ import Link from 'next/link'
 import '@/styles/home.css'
 import '@/styles/page-styles.css'
 import EssenceFingerprintLoader from '@/components/profile/EssenceFingerprintLoader'
-import VoiceCloneButton from '@/components/profile/VoiceCloneButton'
 import { generateEssenceVector, hasProfileData } from '@/lib/essence'
 import PersonalityQuiz from '@/components/profile/PersonalityQuiz'
 import { 
@@ -530,7 +529,6 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <div className="mt-2">
-                    <VoiceCloneButton />
                   </div>
                 </div>
 
