@@ -2782,13 +2782,13 @@ export default function CreatePhotobookPage() {
           await supabase.from('photobook_pages').insert(pageInserts)
         }
         
-        // Save memory selections
+        // Save memory selections (based on what's actually used)
         await supabase
           .from('photobook_memory_selections')
           .delete()
           .eq('project_id', project.id)
         
-        const selectionInserts = Array.from(selectedMemoryIds).map((memoryId, i) => ({
+        const selectionInserts = Array.from(usedMemoryIds).map((memoryId, i) => ({
           project_id: project.id,
           memory_id: memoryId,
           sort_order: i
@@ -2804,7 +2804,7 @@ export default function CreatePhotobookPage() {
       console.error('Error saving project:', error)
       return null
     }
-  }, [userId, selectedProduct, pages, shippingAddress, projectId, selectedMemoryIds])
+  }, [userId, selectedProduct, pages, shippingAddress, projectId, usedMemoryIds])
   
   // Calculate total price
   const calculateTotal = () => {
@@ -2854,15 +2854,15 @@ export default function CreatePhotobookPage() {
     setIsSubmitting(false)
   }
   
-  // Step validation
+  // Step validation (updated for 4 steps)
   const canProceed = () => {
     switch (currentStep) {
       case 0: return selectedProduct !== null
       case 1: {
-        // Need at least 1 page created
+        // Design Pages: Need at least 1 page created
         return pages.length >= 1
       }
-      case 2: return true // Preview - always can proceed
+      case 2: return true // Preview
       case 3: return shippingAddress.name && shippingAddress.line1 && shippingAddress.city && shippingAddress.postalCode && shippingAddress.country
       default: return false
     }
@@ -2875,8 +2875,8 @@ export default function CreatePhotobookPage() {
       if (currentStep === 1 && step > currentStep) {
         saveProject()
       }
-      // Auto-arrange when entering design step for first time
-      if (step === 1 && pages.length === 0) {
+      // Auto-arrange when entering design step for first time with no pages
+      if (step === 1 && pages.length === 0 && memoriesWithPhotos.length > 0) {
         setTimeout(autoArrange, 100)
       }
       setCurrentStep(step)
@@ -2900,7 +2900,7 @@ export default function CreatePhotobookPage() {
             <div className="w-32" /> {/* Spacer */}
           </div>
           
-          {/* Step Progress */}
+          {/* Step Progress (4 steps now) */}
           <div className="flex items-center justify-between">
             {STEPS.map((step, index) => {
               const Icon = step.icon
@@ -2956,23 +2956,24 @@ export default function CreatePhotobookPage() {
             )}
             
             {currentStep === 1 && (
-              <ArrangeStep
+              <DesignPagesStep
                 pages={pages}
                 setPages={setPages}
-                selectedMemories={memories}
+                memories={memories}
                 onAutoArrange={autoArrange}
                 canUndo={canUndo}
                 canRedo={canRedo}
                 onUndo={handleUndo}
                 onRedo={handleRedo}
                 saveHistory={saveHistory}
+                isLoadingMemories={isLoading}
               />
             )}
             
             {currentStep === 2 && selectedProduct && (
               <PreviewStep
                 pages={pages}
-                selectedMemories={memories}
+                memories={memories}
                 product={selectedProduct}
               />
             )}
