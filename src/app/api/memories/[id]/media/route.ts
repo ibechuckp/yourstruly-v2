@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import exifr from 'exifr'
+import { generateSmartTags } from '@/lib/ai/smartTags'
 
 // Force dynamic to avoid build-time evaluation of canvas/face-api
 export const dynamic = 'force-dynamic'
@@ -258,6 +259,65 @@ export async function POST(
     if (Object.keys(updates).length > 0) {
       await supabase.from('memories').update(updates).eq('id', memoryId)
     }
+  }
+
+  // Generate smart tags async (don't block response)
+  // This runs in the background after response is sent
+  if (fileType === 'image') {
+    generateSmartTags(buffer, file.type || 'image/jpeg')
+      .then(async (tags) => {
+        if (tags.allTags.length > 0) {
+          const adminSupabase = await createClient()
+          await adminSupabase
+            .from('memory_media')
+            .update({
+              ai_labels: {
+                scene: tags.scene,
+                setting: tags.setting,
+                activities: tags.activities,
+                objects: tags.objects,
+                people: tags.people,
+                mood: tags.mood,
+                weather: tags.weather,
+                allTags: tags.allTags,
+                caption: tags.caption,
+                category: tags.category,
+                analyzedAt: new Date().toISOString(),
+              },
+              ai_processed: true,
+            })
+            .eq('id', media.id)
+
+          // Update parent memory with AI data if not set
+          const memoryUpdates: Record<string, string> = {}
+          
+          const { data: currentMemory } = await adminSupabase
+            .from('memories')
+            .select('ai_category, ai_mood, ai_summary')
+            .eq('id', memoryId)
+            .single()
+
+          if (!currentMemory?.ai_category && tags.category) {
+            memoryUpdates.ai_category = tags.category
+          }
+          if (!currentMemory?.ai_mood && tags.mood.length > 0) {
+            memoryUpdates.ai_mood = tags.mood[0]
+          }
+          if (!currentMemory?.ai_summary && tags.caption) {
+            memoryUpdates.ai_summary = tags.caption
+          }
+
+          if (Object.keys(memoryUpdates).length > 0) {
+            await adminSupabase
+              .from('memories')
+              .update(memoryUpdates)
+              .eq('id', memoryId)
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('Background smart tag generation failed:', err)
+      })
   }
 
   return NextResponse.json({ 
