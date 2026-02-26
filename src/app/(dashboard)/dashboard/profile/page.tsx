@@ -22,6 +22,16 @@ import {
   QuizResult
 } from '@/lib/personalityQuiz'
 
+interface Education {
+  id: string
+  school_name: string
+  degree: string
+  field_of_study: string
+  start_year: number | null
+  graduation_year: number | null
+  is_current: boolean
+}
+
 interface Profile {
   full_name: string
   avatar_url: string
@@ -55,6 +65,7 @@ interface Profile {
   favorite_music: string[]
   favorite_foods: string[]
   emergency_contact_ids: string[]
+  education_history: Education[]
 }
 
 interface Contact {
@@ -63,6 +74,8 @@ interface Contact {
   avatar_url?: string
   relationship?: string
   relationship_type?: string
+  phone?: string
+  email?: string
 }
 
 const PERSONALITY_TYPES = [
@@ -80,10 +93,11 @@ const emptyProfile: Profile = {
   address: '', city: '', state: '', country: '', zipcode: '',
   biography: '', personal_motto: '', personality_type: '',
   personality_traits: [], interests: [], skills: [], hobbies: [], life_goals: [],
-  religions: [], languages: [], political_leaning: '', occupation: '', company: '', 
+  religions: [], languages: [], political_leaning: '', occupation: '', company: '',
   education_level: '', school_name: '', degree: '',
   favorite_quote: '', favorite_books: [], favorite_movies: [], favorite_music: [], favorite_foods: [],
   emergency_contact_ids: [],
+  education_history: [],
 }
 
 export default function ProfilePage() {
@@ -105,13 +119,13 @@ export default function ProfilePage() {
   const loadContacts = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    
+
     const { data, error } = await supabase
       .from('contacts')
-      .select('id, full_name, avatar_url, relationship_type')
+      .select('id, full_name, avatar_url, relationship_type, phone, email')
       .eq('user_id', user.id)
       .order('full_name')
-    
+
     console.log('Loaded contacts:', data, error)
     // Map relationship_type to relationship for UI compatibility
     if (data) {
@@ -126,23 +140,29 @@ export default function ProfilePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-    if (data) {
+    // Load profile and education history in parallel
+    const [{ data: profileData }, { data: educationData }] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', user.id).single(),
+      supabase.from('education_history').select('*').eq('user_id', user.id).order('graduation_year', { ascending: false })
+    ])
+
+    if (profileData) {
       const loaded = {
         ...emptyProfile,
-        ...data,
-        personality_traits: data.personality_traits || [],
-        interests: data.interests || [],
-        skills: data.skills || [],
-        emergency_contact_ids: data.emergency_contact_ids || [],
-        hobbies: data.hobbies || [],
-        life_goals: data.life_goals || [],
-        religions: data.religions || [],
-        languages: data.languages || [],
-        favorite_books: data.favorite_books || [],
-        favorite_movies: data.favorite_movies || [],
-        favorite_music: data.favorite_music || [],
-        favorite_foods: data.favorite_foods || [],
+        ...profileData,
+        personality_traits: profileData.personality_traits || [],
+        interests: profileData.interests || [],
+        skills: profileData.skills || [],
+        emergency_contact_ids: profileData.emergency_contact_ids || [],
+        hobbies: profileData.hobbies || [],
+        life_goals: profileData.life_goals || [],
+        religions: profileData.religions || [],
+        languages: profileData.languages || [],
+        favorite_books: profileData.favorite_books || [],
+        favorite_movies: profileData.favorite_movies || [],
+        favorite_music: profileData.favorite_music || [],
+        favorite_foods: profileData.favorite_foods || [],
+        education_history: educationData || [],
       }
       setProfile(loaded)
       setEditProfile(loaded)
@@ -193,6 +213,12 @@ export default function ProfilePage() {
 
     console.log('Saving profile:', updates)
     const { error } = await supabase.from('profiles').update(updates).eq('id', user.id)
+
+    // Also save education history to separate table
+    if (!error && editProfile.education_history) {
+      await saveEducationHistory(editProfile.education_history)
+    }
+
     if (error) {
       console.error('Profile save error:', error)
     } else {
@@ -201,6 +227,51 @@ export default function ProfilePage() {
     setSaving(false)
     setShowEditModal(false)
     setEditSection(null)
+  }
+
+  // Save education history to separate table
+  const saveEducationHistory = async (educationHistory: Education[]) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Get existing education entries
+    const { data: existingData } = await supabase
+      .from('education_history')
+      .select('id')
+      .eq('user_id', user.id)
+
+    const existingIds = new Set(existingData?.map(e => e.id) || [])
+    const newIds = new Set(educationHistory.map(e => e.id).filter(Boolean))
+
+    // Delete entries that are no longer present
+    const idsToDelete = [...existingIds].filter(id => !newIds.has(id))
+    if (idsToDelete.length > 0) {
+      await supabase.from('education_history').delete().in('id', idsToDelete)
+    }
+
+    // Upsert entries
+    for (const edu of educationHistory) {
+      const eduData = {
+        user_id: user.id,
+        school_name: edu.school_name,
+        degree: edu.degree,
+        field_of_study: edu.field_of_study,
+        start_year: edu.start_year,
+        graduation_year: edu.graduation_year,
+        is_current: edu.is_current,
+      }
+
+      if (edu.id && existingIds.has(edu.id)) {
+        // Update existing
+        await supabase.from('education_history').update(eduData).eq('id', edu.id)
+      } else {
+        // Insert new
+        await supabase.from('education_history').insert(eduData)
+      }
+    }
+
+    // Reload to get new IDs
+    await loadProfile()
   }
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -613,7 +684,27 @@ export default function ProfilePage() {
 
             {/* Education */}
             <ProfileCard title="Education" icon={GraduationCap} iconColor="text-[#8DACAB]" bgColor="bg-[#8DACAB]/10" section="education">
-              {profile.school_name ? (
+              {profile.education_history && profile.education_history.length > 0 ? (
+                <div className="space-y-3">
+                  {profile.education_history.map((edu, index) => (
+                    <div key={edu.id || index} className={index > 0 ? "pt-2 border-t border-[#8DACAB]/10" : ""}>
+                      <p className="font-medium text-[#2d2d2d]">{edu.school_name}</p>
+                      {edu.degree && (
+                        <p className="text-gray-500 text-sm mt-0.5">{edu.degree}</p>
+                      )}
+                      {edu.field_of_study && (
+                        <p className="text-gray-500 text-xs mt-0.5">{edu.field_of_study}</p>
+                      )}
+                      {(edu.start_year || edu.graduation_year) && (
+                        <p className="text-gray-400 text-xs mt-1">
+                          {edu.start_year || '???'} - {edu.is_current ? 'Present' : (edu.graduation_year || '???')}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : profile.school_name ? (
+                // Fallback to legacy single education fields
                 <>
                   <p className="font-medium text-[#2d2d2d]">{profile.school_name}</p>
                   {profile.degree && (
@@ -632,20 +723,38 @@ export default function ProfilePage() {
 
             {/* Emergency Contact */}
             <ProfileCard title="Emergency Contact" icon={User} section="emergency">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {profile.emergency_contact_ids.length > 0 ? (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {profile.emergency_contact_ids.map(contactId => {
                       const contact = contacts.find(c => c.id === contactId)
                       return contact ? (
-                        <div key={contactId} className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-[#406A56]/10 flex items-center justify-center text-sm font-medium text-[#406A56]">
+                        <div key={contactId} className="flex items-start gap-2">
+                          <div className="w-8 h-8 rounded-full bg-[#406A56]/10 flex items-center justify-center text-sm font-medium text-[#406A56] flex-shrink-0">
                             {contact.full_name?.charAt(0) || '?'}
                           </div>
-                          <div>
+                          <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-700">{contact.full_name}</p>
                             {contact.relationship && (
                               <p className="text-xs text-gray-500">{contact.relationship}</p>
+                            )}
+                            {contact.phone && (
+                              <a
+                                href={`tel:${contact.phone}`}
+                                className="text-xs text-[#406A56] hover:underline block mt-1"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {contact.phone}
+                              </a>
+                            )}
+                            {contact.email && (
+                              <a
+                                href={`mailto:${contact.email}`}
+                                className="text-xs text-[#406A56] hover:underline block truncate"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {contact.email}
+                              </a>
                             )}
                           </div>
                         </div>
@@ -1253,7 +1362,8 @@ function EditModal({
 
           {section === 'education' && (
             <>
-              <div>
+              {/* Legacy fields (for backwards compatibility) */}
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
                 <label className="block text-sm text-[#666] mb-1.5">Education Level</label>
                 <select
                   value={profile.education_level}
@@ -1266,23 +1376,116 @@ function EditModal({
                   ))}
                 </select>
               </div>
+
+              {/* Multiple Education Entries */}
               <div>
-                <label className="block text-sm text-[#666] mb-1.5">School / University</label>
-                <input
-                  value={profile.school_name}
-                  onChange={e => setProfile(p => ({ ...p, school_name: e.target.value }))}
-                  className="form-input"
-                  placeholder="School name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-[#666] mb-1.5">Degree</label>
-                <input
-                  value={profile.degree}
-                  onChange={e => setProfile(p => ({ ...p, degree: e.target.value }))}
-                  className="form-input"
-                  placeholder="Degree or certification"
-                />
+                <label className="block text-sm text-[#666] mb-2">Schools & Degrees</label>
+                <div className="space-y-3">
+                  {(profile.education_history || []).map((edu, index) => (
+                    <div key={edu.id || index} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-start justify-between mb-2">
+                        <span className="text-xs font-medium text-gray-500">School #{index + 1}</span>
+                        <button
+                          onClick={() => {
+                            const newHistory = profile.education_history.filter((_, i) => i !== index)
+                            setProfile(p => ({ ...p, education_history: newHistory }))
+                          }}
+                          className="text-red-500 hover:text-red-700 p-1"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        <input
+                          value={edu.school_name}
+                          onChange={e => {
+                            const newHistory = [...profile.education_history]
+                            newHistory[index] = { ...edu, school_name: e.target.value }
+                            setProfile(p => ({ ...p, education_history: newHistory }))
+                          }}
+                          className="form-input text-sm"
+                          placeholder="School / University name"
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            value={edu.degree}
+                            onChange={e => {
+                              const newHistory = [...profile.education_history]
+                              newHistory[index] = { ...edu, degree: e.target.value }
+                              setProfile(p => ({ ...p, education_history: newHistory }))
+                            }}
+                            className="form-input text-sm"
+                            placeholder="Degree"
+                          />
+                          <input
+                            value={edu.field_of_study}
+                            onChange={e => {
+                              const newHistory = [...profile.education_history]
+                              newHistory[index] = { ...edu, field_of_study: e.target.value }
+                              setProfile(p => ({ ...p, education_history: newHistory }))
+                            }}
+                            className="form-input text-sm"
+                            placeholder="Field of Study"
+                          />
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 items-center">
+                          <input
+                            type="number"
+                            value={edu.start_year || ''}
+                            onChange={e => {
+                              const newHistory = [...profile.education_history]
+                              newHistory[index] = { ...edu, start_year: parseInt(e.target.value) || null }
+                              setProfile(p => ({ ...p, education_history: newHistory }))
+                            }}
+                            className="form-input text-sm"
+                            placeholder="Start Year"
+                          />
+                          <input
+                            type="number"
+                            value={edu.graduation_year || ''}
+                            onChange={e => {
+                              const newHistory = [...profile.education_history]
+                              newHistory[index] = { ...edu, graduation_year: parseInt(e.target.value) || null }
+                              setProfile(p => ({ ...p, education_history: newHistory }))
+                            }}
+                            className="form-input text-sm"
+                            placeholder="Grad Year"
+                          />
+                          <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={edu.is_current}
+                              onChange={e => {
+                                const newHistory = [...profile.education_history]
+                                newHistory[index] = { ...edu, is_current: e.target.checked }
+                                setProfile(p => ({ ...p, education_history: newHistory }))
+                              }}
+                              className="rounded border-gray-300"
+                            />
+                            Current
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={() => {
+                    const newHistory = [...(profile.education_history || []), {
+                      id: '',
+                      school_name: '',
+                      degree: '',
+                      field_of_study: '',
+                      start_year: null,
+                      graduation_year: null,
+                      is_current: false
+                    }]
+                    setProfile(p => ({ ...p, education_history: newHistory }))
+                  }}
+                  className="w-full mt-3 py-2 px-4 bg-[#406A56]/10 text-[#406A56] hover:bg-[#406A56]/20 rounded-lg text-sm font-medium transition-colors"
+                >
+                  + Add School
+                </button>
               </div>
             </>
           )}
@@ -1290,11 +1493,11 @@ function EditModal({
           {section === 'emergency' && (
             <div>
               <p className="text-sm text-gray-600 mb-4 p-3 bg-[#406A56]/5 rounded-lg">
-                Your emergency contact can verify your passing by providing a death certificate or obituary. 
+                Your emergency contact can verify your passing by providing a death certificate or obituary.
                 This person will be notified and given access to manage your legacy.
               </p>
               <label className="block text-sm text-[#666] mb-2">Select Emergency Contacts</label>
-              <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
+              <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
                 {contacts.map(contact => {
                   const isSelected = (profile.emergency_contact_ids || []).includes(contact.id)
                   return (
@@ -1314,25 +1517,31 @@ function EditModal({
                           }))
                         }
                       }}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                      className={`w-full flex items-start gap-3 p-3 rounded-xl border transition-all text-left ${
                         isSelected
                           ? 'border-[#406A56] bg-[#406A56]/10'
                           : 'border-gray-200 hover:border-[#406A56]/30'
                       }`}
                     >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0 ${
                         isSelected ? 'bg-[#406A56] text-white' : 'bg-gray-100 text-gray-600'
                       }`}>
                         {contact.full_name?.charAt(0) || '?'}
                       </div>
-                      <div className="text-left flex-1">
+                      <div className="flex-1 min-w-0">
                         <p className="font-medium text-[#2d2d2d]">{contact.full_name}</p>
                         {contact.relationship && (
                           <p className="text-xs text-gray-500">{contact.relationship}</p>
                         )}
+                        {contact.phone && (
+                          <p className="text-xs text-[#406A56] mt-1">{contact.phone}</p>
+                        )}
+                        {contact.email && (
+                          <p className="text-xs text-[#406A56] truncate">{contact.email}</p>
+                        )}
                       </div>
                       {isSelected && (
-                        <Check className="w-5 h-5 text-[#406A56]" />
+                        <Check className="w-5 h-5 text-[#406A56] flex-shrink-0 mt-1" />
                       )}
                     </button>
                   )

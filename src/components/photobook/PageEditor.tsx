@@ -47,13 +47,13 @@ interface PageEditorProps {
   onUpdate: (pageId: string, updates: Partial<PhotobookPage>) => Promise<void>
 }
 
-// Font options
+// Font options - uses CSS variables from next/font
 const FONT_FAMILIES = [
   { value: 'Georgia, serif', label: 'Georgia (Serif)' },
   { value: 'Helvetica, Arial, sans-serif', label: 'Helvetica (Sans)' },
-  { value: '"Playfair Display", Georgia, serif', label: 'Playfair Display' },
-  { value: '"Dancing Script", cursive', label: 'Dancing Script' },
-  { value: '"Crimson Text", Georgia, serif', label: 'Crimson Text' },
+  { value: 'var(--font-playfair), Georgia, serif', label: 'Playfair Display' },
+  { value: 'var(--font-dancing-script), cursive', label: 'Dancing Script' },
+  { value: 'var(--font-crimson-text), Georgia, serif', label: 'Crimson Text' },
 ]
 
 const FONT_SIZES = [

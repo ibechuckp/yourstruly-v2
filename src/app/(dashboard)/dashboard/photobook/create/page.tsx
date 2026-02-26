@@ -23,7 +23,17 @@ import {
   ArrowLeft,
   Loader2,
   Package,
-  Sparkles
+  Sparkles,
+  Undo2,
+  Redo2,
+  ZoomIn,
+  ZoomOut,
+  Move,
+  Printer,
+  AlertTriangle,
+  Copy,
+  Square,
+  CheckSquare
 } from 'lucide-react'
 import { 
   LAYOUT_TEMPLATES, 
@@ -90,6 +100,14 @@ interface SlotData {
   qrMemoryId?: string
   textStyle?: TextStyle
   crop?: CropData
+  cropZoom?: CropZoomData
+}
+
+// Extended crop data for slot storage
+interface CropZoomData {
+  scale: number
+  offsetX: number
+  offsetY: number
 }
 
 interface PageData {
@@ -122,9 +140,9 @@ interface ShippingAddress {
 const FONT_FAMILIES = [
   { value: 'Georgia, serif', label: 'Georgia' },
   { value: 'Helvetica, Arial, sans-serif', label: 'Helvetica' },
-  { value: '"Playfair Display", Georgia, serif', label: 'Playfair Display' },
-  { value: '"Dancing Script", cursive', label: 'Dancing Script' },
-  { value: '"Crimson Text", Georgia, serif', label: 'Crimson Text' },
+  { value: 'var(--font-playfair), Georgia, serif', label: 'Playfair Display' },
+  { value: 'var(--font-dancing-script), cursive', label: 'Dancing Script' },
+  { value: 'var(--font-crimson-text), Georgia, serif', label: 'Crimson Text' },
 ]
 
 const FONT_SIZES = [
@@ -506,58 +524,27 @@ function ContentStep({
   )
 }
 
-// Text formatting options
-const FONT_FAMILIES = [
-  { value: 'Georgia, serif', label: 'Georgia' },
-  { value: '"Playfair Display", Georgia, serif', label: 'Playfair Display' },
-  { value: '"Dancing Script", cursive', label: 'Dancing Script' },
-  { value: '"Crimson Text", Georgia, serif', label: 'Crimson Text' },
-  { value: 'Helvetica, Arial, sans-serif', label: 'Helvetica' },
-]
-
-const FONT_SIZES = [
-  { value: '0.875rem', label: '14px' },
-  { value: '1rem', label: '16px' },
-  { value: '1.25rem', label: '20px' },
-  { value: '1.5rem', label: '24px' },
-  { value: '2rem', label: '32px' },
-  { value: '2.5rem', label: '40px' },
-]
-
-const TEXT_COLORS = [
-  '#333333', '#000000', '#ffffff', '#666666', 
-  '#8b4513', '#2c3e50', '#c0392b', '#27ae60'
-]
-
-interface TextStyle {
-  fontFamily: string
-  fontSize: string
-  fontWeight: 'normal' | 'bold'
-  fontStyle: 'normal' | 'italic'
-  textAlign: 'left' | 'center' | 'right'
-  color: string
-}
-
-const DEFAULT_TEXT_STYLE: TextStyle = {
-  fontFamily: 'Georgia, serif',
-  fontSize: '1.5rem',
-  fontWeight: 'normal',
-  fontStyle: 'normal',
-  textAlign: 'center',
-  color: '#333333',
-}
-
 // Step 3: Arrange Pages
 function ArrangeStep({
   pages,
   setPages,
   selectedMemories,
-  onAutoArrange
+  onAutoArrange,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+  saveHistory
 }: {
   pages: PageData[]
   setPages: (pages: PageData[]) => void
   selectedMemories: Memory[]
   onAutoArrange: () => void
+  canUndo: boolean
+  canRedo: boolean
+  onUndo: () => void
+  onRedo: () => void
+  saveHistory: (pages: PageData[]) => void
 }) {
   const [selectedPageId, setSelectedPageId] = useState<string | null>(pages[0]?.id || null)
   const [showLayoutPicker, setShowLayoutPicker] = useState(false)
@@ -565,6 +552,21 @@ function ArrangeStep({
   const [showPhotoPicker, setShowPhotoPicker] = useState(false)
   const [activeSlotId, setActiveSlotId] = useState<string | null>(null)
   const [activeTextSlotId, setActiveTextSlotId] = useState<string | null>(null)
+
+  // Bulk page selection state
+  const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(new Set())
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null)
+
+  // Crop/Zoom UI state
+  const [cropZoomSlotId, setCropZoomSlotId] = useState<string | null>(null)
+  const [cropZoomValues, setCropZoomValues] = useState<{ scale: number; offsetX: number; offsetY: number }>({
+    scale: 1,
+    offsetX: 0,
+    offsetY: 0
+  })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [cropZoomSlotStart, setCropZoomSlotStart] = useState({ offsetX: 0, offsetY: 0 })
   
   // Text content and styles per slot (keyed by pageId:slotId)
   const [textContents, setTextContents] = useState<Record<string, string>>({})
@@ -589,9 +591,135 @@ function ArrangeStep({
   const getTextContent = (pageId: string, slotId: string): string => {
     return textContents[`${pageId}:${slotId}`] || ''
   }
-  
+
   const setTextContent = (pageId: string, slotId: string, content: string) => {
     setTextContents(prev => ({ ...prev, [`${pageId}:${slotId}`]: content }))
+  }
+
+  // Bulk page selection handlers
+  const handlePageSelect = (pageId: string, index: number, isCtrlClick: boolean, isShiftClick: boolean) => {
+    if (isShiftClick && lastSelectedIndex !== null) {
+      // Range select
+      const start = Math.min(lastSelectedIndex, index)
+      const end = Math.max(lastSelectedIndex, index)
+      const newSelection = new Set(selectedPageIds)
+      for (let i = start; i <= end; i++) {
+        newSelection.add(pages[i].id)
+      }
+      setSelectedPageIds(newSelection)
+    } else if (isCtrlClick) {
+      // Toggle selection
+      const newSelection = new Set(selectedPageIds)
+      if (newSelection.has(pageId)) {
+        newSelection.delete(pageId)
+      } else {
+        newSelection.add(pageId)
+      }
+      setSelectedPageIds(newSelection)
+      setLastSelectedIndex(index)
+    } else {
+      // Single select
+      setSelectedPageIds(new Set([pageId]))
+      setLastSelectedIndex(index)
+      setSelectedPageId(pageId)
+    }
+  }
+
+  const selectAllPages = () => {
+    setSelectedPageIds(new Set(pages.map(p => p.id)))
+  }
+
+  const deselectAllPages = () => {
+    setSelectedPageIds(new Set())
+  }
+
+  const deleteSelectedPages = () => {
+    if (selectedPageIds.size === 0) return
+    const newPages = pages.filter(p => !selectedPageIds.has(p.id))
+    // Renumber pages
+    newPages.forEach((p, i) => p.pageNumber = i + 1)
+    setPages(newPages)
+    saveHistory(newPages)
+    setSelectedPageIds(new Set())
+    if (selectedPageId && selectedPageIds.has(selectedPageId)) {
+      setSelectedPageId(newPages[0]?.id || null)
+    }
+  }
+
+  const duplicateSelectedPages = () => {
+    if (selectedPageIds.size === 0) return
+    const pagesToDuplicate = pages.filter(p => selectedPageIds.has(p.id))
+    const duplicatedPages = pagesToDuplicate.map(p => ({
+      ...p,
+      id: `page-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      pageNumber: 0 // Will be set below
+    }))
+    const newPages = [...pages, ...duplicatedPages]
+    newPages.forEach((p, i) => p.pageNumber = i + 1)
+    setPages(newPages)
+    saveHistory(newPages)
+    setSelectedPageIds(new Set())
+  }
+
+  // Crop/Zoom handlers
+  const getCropZoom = (pageId: string, slotId: string): CropZoomData => {
+    const page = pages.find(p => p.id === pageId)
+    const slot = page?.slots.find(s => s.slotId === slotId)
+    return slot?.cropZoom || { scale: 1, offsetX: 0, offsetY: 0 }
+  }
+
+  const updateCropZoom = (pageId: string, slotId: string, updates: Partial<CropZoomData>) => {
+    const currentZoom = getCropZoom(pageId, slotId)
+    const newZoom = { ...currentZoom, ...updates }
+
+    setPages(pages.map(p => {
+      if (p.id !== pageId) return p
+      return {
+        ...p,
+        slots: p.slots.map(s =>
+          s.slotId === slotId ? { ...s, cropZoom: newZoom } : s
+        )
+      }
+    }))
+    setCropZoomValues(newZoom)
+  }
+
+  const startCropZoom = (pageId: string, slotId: string) => {
+    const currentZoom = getCropZoom(pageId, slotId)
+    setCropZoomSlotId(slotId)
+    setCropZoomValues(currentZoom)
+  }
+
+  const closeCropZoom = () => {
+    if (cropZoomSlotId) {
+      saveHistory(pages)
+    }
+    setCropZoomSlotId(null)
+    setIsDragging(false)
+  }
+
+  const handleDragStart = (e: React.MouseEvent) => {
+    if (!cropZoomSlotId) return
+    e.preventDefault()
+    setIsDragging(true)
+    setDragStart({ x: e.clientX, y: e.clientY })
+    setCropZoomSlotStart({ offsetX: cropZoomValues.offsetX, offsetY: cropZoomValues.offsetY })
+  }
+
+  const handleDragMove = (e: React.MouseEvent) => {
+    if (!isDragging || !selectedPageId || !cropZoomSlotId) return
+
+    const deltaX = ((e.clientX - dragStart.x) / 300) * 100 // Convert to percentage
+    const deltaY = ((e.clientY - dragStart.y) / 300) * 100
+
+    updateCropZoom(selectedPageId, cropZoomSlotId, {
+      offsetX: Math.max(-50, Math.min(50, cropZoomSlotStart.offsetX + deltaX)),
+      offsetY: Math.max(-50, Math.min(50, cropZoomSlotStart.offsetY + deltaY))
+    })
+  }
+
+  const handleDragEnd = () => {
+    setIsDragging(false)
   }
   
   // Current style for active text slot
@@ -638,7 +766,9 @@ function ArrangeStep({
       layoutId,
       slots: []
     }
-    setPages([...pages, newPage])
+    const newPages = [...pages, newPage]
+    setPages(newPages)
+    saveHistory(newPages)
     setSelectedPageId(newPage.id)
     setShowLayoutPicker(false)
   }
@@ -648,30 +778,34 @@ function ArrangeStep({
     // Renumber pages
     newPages.forEach((p, i) => p.pageNumber = i + 1)
     setPages(newPages)
+    saveHistory(newPages)
     if (selectedPageId === pageId) {
       setSelectedPageId(newPages[0]?.id || null)
     }
   }
   
   const updatePageLayout = (pageId: string, layoutId: string) => {
-    setPages(pages.map(p => 
+    const newPages = pages.map(p =>
       p.id === pageId ? { ...p, layoutId, slots: [] } : p
-    ))
+    )
+    setPages(newPages)
+    saveHistory(newPages)
   }
   
   const assignPhotoToSlot = (pageId: string, slotId: string, photo: typeof availablePhotos[0] | null) => {
-    setPages(pages.map(p => {
+    const newPages = pages.map(p => {
       if (p.id !== pageId) return p
-      
+
       const existingSlotIndex = p.slots.findIndex(s => s.slotId === slotId)
       const newSlot = photo ? {
         slotId,
         type: 'photo' as const,
         memoryId: photo.memoryId,
         mediaId: photo.mediaId,
-        fileUrl: photo.fileUrl
+        fileUrl: photo.fileUrl,
+        cropZoom: { scale: 1, offsetX: 0, offsetY: 0 }
       } : null
-      
+
       if (existingSlotIndex >= 0) {
         if (newSlot) {
           const newSlots = [...p.slots]
@@ -684,7 +818,9 @@ function ArrangeStep({
         return { ...p, slots: [...p.slots, newSlot] }
       }
       return p
-    }))
+    })
+    setPages(newPages)
+    saveHistory(newPages)
   }
   
   const addQRToPage = (pageId: string, memoryId: string) => {
@@ -706,35 +842,96 @@ function ArrangeStep({
     <div className="flex gap-6 h-[calc(100vh-280px)] min-h-[600px]">
       {/* Left Sidebar - Page Thumbnails */}
       <div className="w-48 flex-shrink-0 bg-[#F2F1E5]/50 rounded-2xl p-4 overflow-y-auto">
-        <div className="flex items-center justify-between mb-4">
+        {/* Header with select all/none */}
+        <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-[#406A56] text-sm">Pages</h3>
-          <span className="text-xs text-[#406A56]/50">{pages.length}</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={selectAllPages}
+              className="text-xs text-[#406A56]/60 hover:text-[#406A56]"
+              title="Select All"
+            >
+              All
+            </button>
+            <span className="text-[#406A56]/30">|</span>
+            <button
+              onClick={deselectAllPages}
+              className="text-xs text-[#406A56]/60 hover:text-[#406A56]"
+              title="Deselect All"
+            >
+              None
+            </button>
+            <span className="text-xs text-[#406A56]/50 ml-1">{pages.length}</span>
+          </div>
         </div>
-        
+
+        {/* Bulk action buttons */}
+        {selectedPageIds.size > 0 && (
+          <div className="flex gap-1 mb-3">
+            <button
+              onClick={duplicateSelectedPages}
+              className="flex-1 py-1.5 px-2 bg-[#406A56]/10 hover:bg-[#406A56]/20 rounded-lg text-[#406A56] text-xs font-medium flex items-center justify-center gap-1 transition-colors"
+              title="Duplicate Selected"
+            >
+              <Copy className="w-3 h-3" />
+              Dup
+            </button>
+            <button
+              onClick={deleteSelectedPages}
+              className="flex-1 py-1.5 px-2 bg-red-100 hover:bg-red-200 rounded-lg text-red-700 text-xs font-medium flex items-center justify-center gap-1 transition-colors"
+              title="Delete Selected"
+            >
+              <Trash2 className="w-3 h-3" />
+              Del
+            </button>
+          </div>
+        )}
+
         <Reorder.Group
           axis="y"
           values={pages}
           onReorder={(newPages) => {
             newPages.forEach((p, i) => p.pageNumber = i + 1)
             setPages(newPages)
+            saveHistory(newPages)
           }}
           className="space-y-3"
         >
-          {pages.map((page) => {
+          {pages.map((page, index) => {
             const template = getTemplateById(page.layoutId)
             const firstPhoto = page.slots.find(s => s.type === 'photo')
-            
+            const isSelected = selectedPageIds.has(page.id)
+
             return (
               <Reorder.Item
                 key={page.id}
                 value={page}
                 className={`group relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
-                  selectedPageId === page.id
-                    ? 'border-[#406A56] ring-2 ring-[#406A56]/20'
+                  selectedPageId === page.id && !isSelected
+                    ? 'border-[#406A56] ring-1 ring-[#406A56]/20'
+                    : isSelected
+                    ? 'border-[#406A56] ring-2 ring-[#406A56]/30'
                     : 'border-[#406A56]/10 hover:border-[#406A56]/30'
                 }`}
-                onClick={() => setSelectedPageId(page.id)}
+                onClick={(e) => {
+                  const isCtrlClick = e.ctrlKey || e.metaKey
+                  const isShiftClick = e.shiftKey
+                  handlePageSelect(page.id, index, isCtrlClick, isShiftClick)
+                }}
               >
+                {/* Checkbox overlay */}
+                <div className="absolute top-1 left-1 z-10">
+                  <div
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                      isSelected
+                        ? 'bg-[#406A56] border-[#406A56]'
+                        : 'bg-white/90 border-[#406A56]/30 opacity-0 group-hover:opacity-100'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                </div>
+
                 <div className="aspect-square bg-white">
                   {firstPhoto?.fileUrl ? (
                     <img
@@ -749,17 +946,17 @@ function ArrangeStep({
                     </div>
                   )}
                 </div>
-                
+
                 {/* Drag handle */}
-                <div className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-1 left-8 opacity-0 group-hover:opacity-100 transition-opacity">
                   <GripVertical className="w-4 h-4 text-white drop-shadow-lg" />
                 </div>
-                
+
                 {/* Page number */}
                 <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-black/50 rounded text-white text-xs">
                   {page.pageNumber}
                 </div>
-                
+
                 {/* Delete button */}
                 <button
                   onClick={(e) => { e.stopPropagation(); removePage(page.id) }}
@@ -767,7 +964,7 @@ function ArrangeStep({
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
-                
+
                 {/* QR indicator */}
                 {page.slots.some(s => s.type === 'qr') && (
                   <div className="absolute bottom-1 left-1 p-1 bg-[#406A56] rounded">
@@ -778,7 +975,7 @@ function ArrangeStep({
             )
           })}
         </Reorder.Group>
-        
+
         {/* Add Page Button */}
         <button
           onClick={() => setShowLayoutPicker(true)}
@@ -787,7 +984,7 @@ function ArrangeStep({
           <Plus className="w-6 h-6" />
           <span className="text-xs mt-1">Add Page</span>
         </button>
-        
+
         {/* Auto-Arrange Button */}
         <button
           onClick={onAutoArrange}
@@ -817,6 +1014,28 @@ function ArrangeStep({
               <QrCode className="w-4 h-4" />
               Add QR Code
             </button>
+
+            {/* Undo/Redo buttons */}
+            <div className="flex items-center gap-1 ml-2 pl-2 border-l border-[#406A56]/20">
+              <button
+                onClick={onUndo}
+                disabled={!canUndo}
+                className="px-2 py-2 rounded-lg text-[#406A56] hover:bg-[#406A56]/10 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+                title="Undo (Ctrl+Z)"
+              >
+                <Undo2 className="w-4 h-4" />
+                <span className="text-xs">Undo</span>
+              </button>
+              <button
+                onClick={onRedo}
+                disabled={!canRedo}
+                className="px-2 py-2 rounded-lg text-[#406A56] hover:bg-[#406A56]/10 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+                title="Redo (Ctrl+Shift+Z)"
+              >
+                <Redo2 className="w-4 h-4" />
+                <span className="text-xs">Redo</span>
+              </button>
+            </div>
           </div>
           <div className="text-sm text-[#406A56]/60">
             {availablePhotos.length - usedMediaIds.size} photos available
@@ -952,39 +1171,141 @@ function ArrangeStep({
                 }
                 
                 if (slot.type === 'photo') {
+                  const cropZoom = pageSlot?.cropZoom || { scale: 1, offsetX: 0, offsetY: 0 }
+                  const isCropZoomActive = cropZoomSlotId === slot.id
+
                   return (
                     <div
                       key={slot.id}
                       style={style}
-                      className="bg-[#f0f0f0] cursor-pointer hover:ring-2 hover:ring-[#406A56] transition-all overflow-hidden group"
+                      className={`bg-[#f0f0f0] cursor-pointer hover:ring-2 hover:ring-[#406A56] transition-all overflow-hidden group relative ${
+                        isCropZoomActive ? 'ring-2 ring-[#406A56]' : ''
+                      }`}
                       onClick={() => {
-                        // Open photo picker for this slot
-                        setActiveSlotId(slot.id)
-                        setShowPhotoPicker(true)
+                        if (!pageSlot?.fileUrl) {
+                          // Open photo picker for this slot
+                          setActiveSlotId(slot.id)
+                          setShowPhotoPicker(true)
+                        }
                       }}
                     >
                       {pageSlot?.fileUrl ? (
                         <>
-                          <img
-                            src={pageSlot.fileUrl}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
+                          {/* Photo with crop/zoom transforms */}
+                          <div
+                            className="w-full h-full relative"
+                            onMouseDown={(e) => {
+                              if (cropZoomSlotId === slot.id) {
+                                handleDragStart(e)
+                              }
+                            }}
+                            onMouseMove={handleDragMove}
+                            onMouseUp={handleDragEnd}
+                            onMouseLeave={handleDragEnd}
+                          >
+                            <img
+                              src={pageSlot.fileUrl}
+                              alt=""
+                              className="w-full h-full object-cover transition-transform duration-100"
+                              style={{
+                                transform: `scale(${cropZoom.scale}) translate(${cropZoom.offsetX}%, ${cropZoom.offsetY}%)`,
+                                transformOrigin: 'center center',
+                                cursor: cropZoomSlotId === slot.id ? (isDragging ? 'grabbing' : 'grab') : 'pointer'
+                              }}
+                              draggable={false}
+                            />
+                          </div>
+
                           {/* Auto QR Code - bottom right corner */}
                           {pageSlot.memoryId && (
                             <div className="absolute bottom-2 right-2 bg-white p-1 rounded shadow-lg">
                               <QrCode className="w-8 h-8 text-[#406A56]" />
                             </div>
                           )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              assignPhotoToSlot(selectedPage.id, slot.id, null)
-                            }}
-                            className="absolute top-2 right-2 p-1 bg-red-500 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-4 h-4 text-white" />
-                          </button>
+
+                          {/* Photo controls overlay */}
+                          <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {/* Crop/Zoom button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (cropZoomSlotId === slot.id) {
+                                  closeCropZoom()
+                                } else {
+                                  startCropZoom(selectedPage.id, slot.id)
+                                }
+                              }}
+                              className={`p-1.5 rounded transition-colors ${
+                                cropZoomSlotId === slot.id
+                                  ? 'bg-[#406A56] text-white'
+                                  : 'bg-white/90 text-[#406A56] hover:bg-white'
+                              }`}
+                              title="Crop & Zoom"
+                            >
+                              <ZoomIn className="w-4 h-4" />
+                            </button>
+
+                            {/* Remove photo button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                assignPhotoToSlot(selectedPage.id, slot.id, null)
+                                if (cropZoomSlotId === slot.id) {
+                                  setCropZoomSlotId(null)
+                                }
+                              }}
+                              className="p-1.5 bg-white/90 rounded text-red-500 hover:bg-white hover:text-red-600 transition-colors"
+                              title="Remove Photo"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          {/* Crop/Zoom Controls Panel */}
+                          {isCropZoomActive && (
+                            <div className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm p-3 border-t border-[#406A56]/20">
+                              <div className="space-y-2">
+                                {/* Zoom slider */}
+                                <div className="flex items-center gap-2">
+                                  <ZoomOut className="w-3 h-3 text-[#406A56]" />
+                                  <input
+                                    type="range"
+                                    min="0.5"
+                                    max="2"
+                                    step="0.05"
+                                    value={cropZoomValues.scale}
+                                    onChange={(e) => {
+                                      const newScale = parseFloat(e.target.value)
+                                      updateCropZoom(selectedPage.id, slot.id, { scale: newScale })
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="flex-1 h-1.5 bg-[#406A56]/20 rounded-lg appearance-none cursor-pointer accent-[#406A56]"
+                                  />
+                                  <ZoomIn className="w-3 h-3 text-[#406A56]" />
+                                  <span className="text-xs text-[#406A56] w-10 text-right">
+                                    {cropZoomValues.scale.toFixed(1)}x
+                                  </span>
+                                </div>
+
+                                {/* Position info */}
+                                <div className="flex items-center justify-between text-xs text-[#406A56]/60">
+                                  <span className="flex items-center gap-1">
+                                    <Move className="w-3 h-3" />
+                                    Drag to reposition
+                                  </span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      updateCropZoom(selectedPage.id, slot.id, { scale: 1, offsetX: 0, offsetY: 0 })
+                                    }}
+                                    className="text-[#406A56] hover:underline"
+                                  >
+                                    Reset
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </>
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-[#406A56]/40">
@@ -1327,13 +1648,62 @@ function ArrangeStep({
 // Step 4: Preview
 function PreviewStep({
   pages,
-  selectedMemories
+  selectedMemories,
+  product
 }: {
   pages: PageData[]
   selectedMemories: Memory[]
+  product: Product
 }) {
   const [currentSpread, setCurrentSpread] = useState(0)
+  const [showPrintPreview, setShowPrintPreview] = useState(false)
+  const [lowResWarnings, setLowResWarnings] = useState<{ pageNum: number; slotId: string; recommended: number; actual?: number }[]>([])
   const totalSpreads = Math.ceil(pages.length / 2)
+
+  // Calculate print dimensions at 300 DPI
+  const getPrintDimensions = () => {
+    // Parse size like "8x8" or "11x8"
+    const sizeMatch = product.size.match(/(\d+)\s*×\s*(\d+)/)
+    if (!sizeMatch) return { width: 8, height: 8, pixelWidth: 2400, pixelHeight: 2400 }
+
+    const widthIn = parseInt(sizeMatch[1])
+    const heightIn = parseInt(sizeMatch[2])
+    return {
+      width: widthIn,
+      height: heightIn,
+      pixelWidth: widthIn * 300,
+      pixelHeight: heightIn * 300
+    }
+  }
+
+  // Check for low resolution images
+  useEffect(() => {
+    const warnings: typeof lowResWarnings = []
+    const dims = getPrintDimensions()
+
+    pages.forEach(page => {
+      page.slots.forEach(slot => {
+        if (slot.type === 'photo' && slot.fileUrl) {
+          // Estimate minimum recommended size (at 300 DPI)
+          const template = getTemplateById(page.layoutId)
+          const slotTemplate = template?.slots.find(s => s.id === slot.slotId)
+          if (slotTemplate) {
+            const slotWidthPx = Math.round((slotTemplate.position.width / 100) * dims.pixelWidth)
+            const slotHeightPx = Math.round((slotTemplate.position.height / 100) * dims.pixelHeight)
+            const recommendedPx = Math.max(slotWidthPx, slotHeightPx)
+
+            warnings.push({
+              pageNum: page.pageNumber,
+              slotId: slot.slotId,
+              recommended: recommendedPx
+            })
+          }
+        }
+      })
+    })
+
+    setLowResWarnings(warnings)
+  }, [pages])
   
   const leftPage = pages[currentSpread * 2]
   const rightPage = pages[currentSpread * 2 + 1]
@@ -1424,6 +1794,111 @@ function PreviewStep({
         </div>
       </div>
       
+      {/* Print Preview Button */}
+      <div className="flex justify-center mt-6">
+        <button
+          onClick={() => setShowPrintPreview(true)}
+          className="px-6 py-3 bg-[#406A56] text-white rounded-xl hover:bg-[#4a7a64] flex items-center gap-2 shadow-lg"
+        >
+          <Printer className="w-5 h-5" />
+          Print Preview (300 DPI)
+        </button>
+      </div>
+
+      {/* Low Resolution Warning */}
+      {lowResWarnings.length > 0 && (
+        <GlassCard variant="warm" padding="md" className="mt-4 border-amber-200">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-amber-800">Image Quality Warning</h4>
+              <p className="text-sm text-amber-700 mt-1">
+                {lowResWarnings.length} photo(s) may appear blurry when printed at 300 DPI.
+                For best results, use high-resolution images (at least {Math.round(getPrintDimensions().pixelWidth / 2)} pixels wide).
+              </p>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Print Preview Modal */}
+      <AnimatePresence>
+        {showPrintPreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowPrintPreview(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#F2F1E5] rounded-2xl p-6 max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-[#406A56]">Print Preview</h3>
+                  <p className="text-sm text-[#406A56]/60">
+                    Actual print size: {getPrintDimensions().width}×{getPrintDimensions().height}" at 300 DPI
+                    ({getPrintDimensions().pixelWidth}×{getPrintDimensions().pixelHeight}px)
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => window.print()}
+                    className="px-4 py-2 bg-[#406A56] text-white rounded-lg hover:bg-[#4a7a64] flex items-center gap-2"
+                  >
+                    <Printer className="w-4 h-4" />
+                    Print
+                  </button>
+                  <button
+                    onClick={() => setShowPrintPreview(false)}
+                    className="p-2 hover:bg-[#406A56]/10 rounded-lg"
+                  >
+                    <X className="w-5 h-5 text-[#406A56]" />
+                  </button>
+                </div>
+              </div>
+
+              {/* All Pages Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {pages.map((page) => (
+                  <div
+                    key={page.id}
+                    className="bg-white rounded-lg overflow-hidden shadow-md"
+                  >
+                    <div className="aspect-square relative">
+                      <PagePreview page={page} printSize={getPrintDimensions().pixelWidth} />
+                    </div>
+                    <div className="p-2 bg-[#406A56]/5 text-center">
+                      <span className="text-xs font-medium text-[#406A56]">Page {page.pageNumber}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {lowResWarnings.length > 0 && (
+                <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-amber-800">Quality Notice</h4>
+                      <p className="text-sm text-amber-700 mt-1">
+                        Some images may not meet 300 DPI print quality standards.
+                        For professional printing, ensure all images are high-resolution.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Page summary */}
       <GlassCard variant="warm" padding="md" className="mt-8">
         <div className="flex items-center justify-between">
@@ -1453,9 +1928,9 @@ const getQRCodeUrl = (memoryId: string) => {
 }
 
 // Page Preview Component
-function PagePreview({ page }: { page: PageData }) {
+function PagePreview({ page, printSize }: { page: PageData; printSize?: number }) {
   const template = getTemplateById(page.layoutId)
-  
+
   if (!template) {
     return (
       <div className="w-full h-full flex items-center justify-center text-[#406A56]/30">
@@ -1463,7 +1938,7 @@ function PagePreview({ page }: { page: PageData }) {
       </div>
     )
   }
-  
+
   return (
     <div className="relative w-full h-full" style={{ background: template.background || '#ffffff' }}>
       {template.slots.map((slot) => {
@@ -1475,8 +1950,9 @@ function PagePreview({ page }: { page: PageData }) {
           width: `${slot.position.width}%`,
           height: `${slot.position.height}%`,
         }
-        
+
         if (slot.type === 'photo') {
+          const cropZoom = pageSlot?.cropZoom || { scale: 1, offsetX: 0, offsetY: 0 }
           return (
             <div key={slot.id} style={style} className="overflow-hidden relative">
               {pageSlot?.fileUrl ? (
@@ -1485,6 +1961,10 @@ function PagePreview({ page }: { page: PageData }) {
                     src={pageSlot.fileUrl}
                     alt=""
                     className="w-full h-full object-cover"
+                    style={{
+                      transform: `scale(${cropZoom.scale}) translate(${cropZoom.offsetX}%, ${cropZoom.offsetY}%)`,
+                      transformOrigin: 'center center'
+                    }}
                   />
                   {/* Auto QR Code - bottom right corner of each photo */}
                   {pageSlot.memoryId && (
@@ -1503,7 +1983,40 @@ function PagePreview({ page }: { page: PageData }) {
             </div>
           )
         }
-        
+
+        if (slot.type === 'text') {
+          const textContent = pageSlot?.text || ''
+          const textStyle = pageSlot?.textStyle || DEFAULT_TEXT_STYLE
+          return (
+            <div
+              key={slot.id}
+              style={{
+                ...style,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: textStyle.textAlign === 'center' ? 'center' : textStyle.textAlign === 'right' ? 'flex-end' : 'flex-start',
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: textStyle.fontFamily,
+                  fontSize: textStyle.fontSize,
+                  fontWeight: textStyle.fontWeight,
+                  fontStyle: textStyle.fontStyle,
+                  textAlign: textStyle.textAlign,
+                  color: textStyle.color,
+                  margin: 0,
+                  padding: '8px',
+                  wordBreak: 'break-word',
+                  overflow: 'hidden'
+                }}
+              >
+                {textContent}
+              </p>
+            </div>
+          )
+        }
+
         if (slot.type === 'qr') {
           const qrSlot = page.slots.find(s => s.type === 'qr')
           return (
@@ -1520,7 +2033,7 @@ function PagePreview({ page }: { page: PageData }) {
             </div>
           )
         }
-        
+
         return null
       })}
     </div>
@@ -1774,6 +2287,11 @@ export default function CreatePhotobookPage() {
     postalCode: '',
     country: 'US'
   })
+
+  // History state for undo/redo
+  const [history, setHistory] = useState<HistoryState[]>([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
+  const MAX_HISTORY = 50
   
   // UI state
   const [isLoading, setIsLoading] = useState(true)
@@ -1790,7 +2308,7 @@ export default function CreatePhotobookPage() {
         return
       }
       setUserId(user.id)
-      
+
       // Load memories with media
       const { data: memoriesData } = await supabase
         .from('memories')
@@ -1809,13 +2327,90 @@ export default function CreatePhotobookPage() {
         `)
         .eq('user_id', user.id)
         .order('memory_date', { ascending: false })
-      
+
       setMemories(memoriesData || [])
       setIsLoading(false)
     }
-    
+
     loadData()
   }, [])
+
+  // Initialize history when pages are first set
+  useEffect(() => {
+    if (pages.length > 0 && history.length === 0) {
+      const initialHistory: HistoryState = {
+        pages: JSON.parse(JSON.stringify(pages)),
+        timestamp: Date.now()
+      }
+      setHistory([initialHistory])
+      setHistoryIndex(0)
+    }
+  }, [pages, history.length])
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle when on arrange step
+      if (currentStep !== 2) return
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) {
+          handleRedo()
+        } else {
+          handleUndo()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentStep, historyIndex, history])
+
+  // History management functions
+  const saveHistory = useCallback((newPages: PageData[]) => {
+    setHistory(prev => {
+      // Remove any future history after current index
+      const newHistory = prev.slice(0, historyIndex + 1)
+
+      // Add new state
+      const newState: HistoryState = {
+        pages: JSON.parse(JSON.stringify(newPages)),
+        timestamp: Date.now()
+      }
+
+      newHistory.push(newState)
+
+      // Limit to MAX_HISTORY states
+      if (newHistory.length > MAX_HISTORY) {
+        newHistory.shift()
+      }
+
+      // Update index to point to new state
+      setHistoryIndex(newHistory.length - 1)
+
+      return newHistory
+    })
+  }, [historyIndex])
+
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1
+      setHistoryIndex(newIndex)
+      setPages(JSON.parse(JSON.stringify(history[newIndex].pages)))
+    }
+  }, [historyIndex, history])
+
+  const handleRedo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1
+      setHistoryIndex(newIndex)
+      setPages(JSON.parse(JSON.stringify(history[newIndex].pages)))
+    }
+  }, [historyIndex, history])
+
+  const canUndo = historyIndex > 0
+  const canRedo = historyIndex < history.length - 1
   
   // Get selected memories
   const selectedMemories = useMemo(() => 
@@ -1926,7 +2521,8 @@ export default function CreatePhotobookPage() {
     }
     
     setPages(newPages)
-  }, [selectedProduct, selectedMemories])
+    saveHistory(newPages)
+  }, [selectedProduct, selectedMemories, saveHistory])
   
   // Save project to database
   const saveProject = useCallback(async () => {
@@ -2193,13 +2789,19 @@ export default function CreatePhotobookPage() {
                 setPages={setPages}
                 selectedMemories={selectedMemories}
                 onAutoArrange={autoArrange}
+                canUndo={canUndo}
+                canRedo={canRedo}
+                onUndo={handleUndo}
+                onRedo={handleRedo}
+                saveHistory={saveHistory}
               />
             )}
             
-            {currentStep === 3 && (
+            {currentStep === 3 && selectedProduct && (
               <PreviewStep
                 pages={pages}
                 selectedMemories={selectedMemories}
+                product={selectedProduct}
               />
             )}
             
