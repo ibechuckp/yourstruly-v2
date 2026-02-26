@@ -6,6 +6,7 @@ import { CURATED_CATALOG, CURATED_CATEGORIES, getProductsByCollection, getProduc
  * Get curated products from our hand-picked catalog
  * 
  * Query parameters:
+ * - productId: Specific product ID to fetch
  * - provider: 'floristone' | 'prodigi' | 'all' (default: all)
  * - category: Category slug (e.g., 'flowers-occasions')
  * - collection: 'staff-picks' | 'perfect-for-memories' | 'heirloom-quality' | 'thoughtful-gestures'
@@ -17,6 +18,22 @@ import { CURATED_CATALOG, CURATED_CATEGORIES, getProductsByCollection, getProduc
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
+    
+    // Check for single product lookup
+    const productId = searchParams.get('productId');
+    if (productId) {
+      const product = CURATED_CATALOG.find(p => p.id === productId);
+      if (product) {
+        return NextResponse.json({
+          products: [product],
+          total: 1,
+          page: 1,
+          perPage: 1,
+          categories: CURATED_CATEGORIES,
+        });
+      }
+      return NextResponse.json({ products: [], total: 0, page: 1, perPage: 1 });
+    }
     
     // Parse filters
     const provider = searchParams.get('provider') || 'all';
