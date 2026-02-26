@@ -967,7 +967,7 @@ export default function NewPostScriptPage() {
   }
 
   return (
-    <div className="min-h-screen relative pb-32">
+    <div className="pb-8 relative pb-32">
       {/* Gift Selection Modal */}
       {showGiftModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">

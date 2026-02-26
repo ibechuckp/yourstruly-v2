@@ -236,7 +236,7 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
 
   if (loading) {
     return (
-      <div className="min-h-screen home-background flex items-center justify-center">
+      <div className="pb-8 home-background flex items-center justify-center">
         <div className="animate-pulse text-[#406A56]">Loading...</div>
       </div>
     )
@@ -244,7 +244,7 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
 
   if (!pet) {
     return (
-      <div className="min-h-screen relative">
+      <div className="pb-8 relative">
         <div className="home-background">
           <div className="home-blob home-blob-1" />
           <div className="home-blob home-blob-2" />
@@ -267,7 +267,7 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
   const caretakerContacts = contacts.filter(c => caretakerIds.includes(c.id))
 
   return (
-    <div className="min-h-screen relative pb-24">
+    <div className="pb-8 relative pb-24">
       {/* Warm background */}
       <div className="home-background">
         <div className="home-blob home-blob-1" />

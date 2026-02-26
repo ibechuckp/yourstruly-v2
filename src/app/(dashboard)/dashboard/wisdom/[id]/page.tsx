@@ -374,7 +374,7 @@ export default function WisdomDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen relative">
+      <div className="pb-8 relative">
         <div className="home-background">
           <div className="home-blob home-blob-1" />
           <div className="home-blob home-blob-2" />
@@ -396,7 +396,7 @@ export default function WisdomDetailPage() {
   const displayTags = (entry.tags || []).filter(t => !['conversation', 'wisdom', 'knowledge'].includes(t));
 
   return (
-    <div className="min-h-screen relative pb-24">
+    <div className="pb-8 relative pb-24">
       {/* Warm background with blobs */}
       <div className="home-background">
         <div className="home-blob home-blob-1" />

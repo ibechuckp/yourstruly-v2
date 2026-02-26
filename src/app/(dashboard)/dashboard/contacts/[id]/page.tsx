@@ -195,7 +195,7 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
 
   if (loading) {
     return (
-      <div className="min-h-screen relative">
+      <div className="pb-8 relative">
         <div className="home-background">
           <div className="home-blob home-blob-1" />
           <div className="home-blob home-blob-2" />
@@ -209,7 +209,7 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
 
   if (!contact) {
     return (
-      <div className="min-h-screen relative">
+      <div className="pb-8 relative">
         <div className="home-background">
           <div className="home-blob home-blob-1" />
           <div className="home-blob home-blob-2" />
@@ -229,7 +229,7 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
   const age = getAge(contact.date_of_birth)
 
   return (
-    <div className="min-h-screen relative pb-24">
+    <div className="pb-8 relative pb-24">
       {/* Warm background */}
       <div className="home-background">
         <div className="home-blob home-blob-1" />

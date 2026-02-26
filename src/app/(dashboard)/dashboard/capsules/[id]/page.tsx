@@ -246,7 +246,7 @@ export default function AlbumDetailPage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen pb-24">
+      <div className="pb-8 pb-24">
         <div className="h-8 w-32 bg-white/50 rounded-lg animate-pulse mb-8" />
         <div className="h-64 bg-white/50 rounded-2xl animate-pulse mb-8" />
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -274,7 +274,7 @@ export default function AlbumDetailPage({ params }: PageProps) {
   )
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="pb-8 pb-24">
       {/* Back Button */}
       <Link 
         href="/dashboard/albums"

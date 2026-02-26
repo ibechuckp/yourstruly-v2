@@ -36,7 +36,7 @@ export default function ExplorePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F2F1E5] p-6">
+    <div className="pb-8 bg-[#F2F1E5] p-6">
       {/* Header with greeting */}
       <div className="mb-8">
         <p className="text-[#406A56]/60 text-sm">Welcome back,</p>

@@ -259,7 +259,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F2F1E5] flex items-center justify-center">
+      <div className="pb-8 bg-[#F2F1E5] flex items-center justify-center">
         <div className="text-[#666]">Loading...</div>
       </div>
     )
@@ -267,7 +267,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-[#F2F1E5] flex items-center justify-center">
+      <div className="pb-8 bg-[#F2F1E5] flex items-center justify-center">
         <div className="text-center">
           <p className="text-[#666] mb-4">Session not found</p>
           <Link href="/dashboard/journalist" className="text-[#C35F33] hover:underline">
@@ -282,7 +282,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
   const totalDuration = responses.reduce((sum, r) => sum + (r.duration || 0), 0)
 
   return (
-    <div className="min-h-screen bg-[#F2F1E5]">
+    <div className="pb-8 bg-[#F2F1E5]">
       {/* Header */}
       <header className="px-6 py-6">
         <div className="max-w-4xl mx-auto">

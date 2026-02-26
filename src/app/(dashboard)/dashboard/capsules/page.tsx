@@ -86,7 +86,7 @@ export default function AlbumsPage() {
   }
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="pb-8 pb-24">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">

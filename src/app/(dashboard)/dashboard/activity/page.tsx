@@ -182,7 +182,7 @@ export default function ActivityPage() {
   }))
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="pb-8 pb-24">
       {/* Background */}
       <div className="fixed inset-0 bg-gradient-to-br from-[#F2F1E5] via-[#FAF7E8] to-[#F5EFE0] -z-10" />
 

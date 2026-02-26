@@ -451,7 +451,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
 
   if (loading) {
     return (
-      <div className="min-h-screen relative">
+      <div className="pb-8 relative">
         <div className="home-background">
           <div className="home-blob home-blob-1" />
           <div className="home-blob home-blob-2" />
@@ -465,7 +465,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
 
   if (!memory) {
     return (
-      <div className="min-h-screen relative">
+      <div className="pb-8 relative">
         <div className="home-background">
           <div className="home-blob home-blob-1" />
           <div className="home-blob home-blob-2" />
@@ -483,7 +483,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div className="min-h-screen relative pb-24">
+    <div className="pb-8 relative pb-24">
       {/* Warm background */}
       <div className="home-background">
         <div className="home-blob home-blob-1" />

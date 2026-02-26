@@ -224,7 +224,7 @@ export default function WisdomPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="pb-8 flex items-center justify-center">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>
           <Brain size={32} className="text-[#4A3552]" />
         </motion.div>

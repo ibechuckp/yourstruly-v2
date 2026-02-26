@@ -111,7 +111,7 @@ Respond naturally as a caring friend would. Keep your responses conversational a
   }
 
   return (
-    <div className="min-h-screen bg-[#F2F1E5] p-6">
+    <div className="pb-8 bg-[#F2F1E5] p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <motion.div
