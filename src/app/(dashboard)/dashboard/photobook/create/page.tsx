@@ -2900,7 +2900,7 @@ export default function CreatePhotobookPage() {
         saveProject()
       }
       // Auto-arrange when entering design step for first time with no pages
-      if (step === 1 && pages.length === 0 && memoriesWithPhotos.length > 0) {
+      if (step === 1 && pages.length === 0 && memories.length > 0) {
         setTimeout(autoArrange, 100)
       }
       setCurrentStep(step)
