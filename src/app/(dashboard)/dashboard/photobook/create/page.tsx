@@ -2908,7 +2908,7 @@ export default function CreatePhotobookPage() {
   }
   
   return (
-    <div className="min-h-screen pb-8">
+    <div className="min-h-screen pb-24">
       {/* Header */}
       <div className="sticky top-14 z-40 bg-[#E8E4D6]/95 backdrop-blur-sm border-b border-[#406A56]/10">
         <div className="max-w-7xl mx-auto px-4 py-4">
