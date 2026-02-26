@@ -528,14 +528,15 @@ export default function SlideshowPlayer({
       )}
 
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-20 p-4 bg-gradient-to-b from-black/60 to-transparent">
+      <div className="absolute top-0 left-0 right-0 z-20 pt-6 px-4 pb-4 bg-gradient-to-b from-black/80 via-black/60 to-transparent">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              className="p-3 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors shadow-lg"
+              aria-label="Close slideshow"
             >
-              <X size={20} />
+              <X size={24} />
             </button>
             {title && <h2 className="text-white font-semibold">{title}</h2>}
           </div>

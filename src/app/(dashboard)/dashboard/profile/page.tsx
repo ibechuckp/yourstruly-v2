@@ -211,16 +211,21 @@ export default function ProfilePage() {
     }
 
     console.log('Saving profile:', updates)
-    const { error } = await supabase.from('profiles').update(updates).eq('id', user.id)
+    const { error, data } = await supabase.from('profiles').update(updates).eq('id', user.id).select()
+
+    // Check if there's an actual error (not just empty object)
+    const hasError = error && (error.message || error.code || Object.keys(error).length > 0)
 
     // Also save education history to separate table
-    if (!error && editProfile.education_history) {
+    if (!hasError && editProfile.education_history) {
       await saveEducationHistory(editProfile.education_history)
     }
 
-    if (error) {
+    if (hasError) {
       console.error('Profile save error:', error)
+      alert(`Failed to save: ${error.message || 'Unknown error'}`)
     } else {
+      console.log('Profile saved successfully:', data)
       setProfile(editProfile)
     }
     setSaving(false)

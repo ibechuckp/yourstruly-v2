@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { Search, MessageSquare, Brain, Users, CircleDot, LucideIcon } from 'lucide-react'
 import ConversationItem from './ConversationItem'
 import { Conversation } from './types'
-import { TornPaperEdge } from '@/components/brand'
 
 type FilterType = 'all' | 'memory-threads' | 'direct' | 'circles'
 
@@ -75,32 +74,22 @@ export default function ConversationList({
         </div>
       </div>
 
-      {/* Filter Tabs with Torn Edges */}
+      {/* Filter Tabs */}
       <div className="px-4 py-3 border-b border-[#406A56]/10 flex-shrink-0">
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-          {filters.map(({ id, label, icon: Icon }, index) => (
-            <div key={id} className="relative">
-              <button
-                onClick={() => setFilter(id)}
-                className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium transition-all rounded-t-lg ${
-                  filter === id
-                    ? 'bg-[#406A56] text-white'
-                    : 'bg-[#F8F6EE] text-[#666] hover:bg-white hover:text-[#406A56] border border-b-0 border-[#406A56]/10'
-                }`}
-              >
-                <Icon size={13} />
-                <span>{label}</span>
-              </button>
-              {/* Torn bottom edge */}
-              <div className="absolute -bottom-[6px] left-0 right-0">
-                <TornPaperEdge 
-                  variant={4}
-                  position="bottom" 
-                  color={filter === id ? '#406A56' : '#F8F6EE'} 
-                  height={8} 
-                />
-              </div>
-            </div>
+          {filters.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setFilter(id)}
+              className={`flex items-center gap-1.5 px-4 py-2 text-xs font-medium transition-all rounded-full ${
+                filter === id
+                  ? 'bg-[#406A56] text-white'
+                  : 'bg-[#F8F6EE] text-[#666] hover:bg-white hover:text-[#406A56] border border-[#406A56]/10'
+              }`}
+            >
+              <Icon size={13} />
+              <span>{label}</span>
+            </button>
           ))}
         </div>
       </div>
