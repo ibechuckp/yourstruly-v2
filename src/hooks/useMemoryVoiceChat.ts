@@ -531,11 +531,26 @@ export function useMemoryVoiceChat(
       dc.onopen = () => {
         console.log('Data channel opened')
         
+        // Build instructions with the topic embedded prominently
+        let instructions = persona.systemPrompt
+        if (topic) {
+          instructions = `${persona.systemPrompt}
+
+CRITICAL INSTRUCTION: Your FIRST question must be about: "${topic}"
+
+Examples of good opening questions:
+- "I'd love to hear about ${topic}. What comes to mind?"
+- "Tell me about ${topic}. What's the story there?"
+- "Let's talk about ${topic}. What do you remember?"
+
+DO NOT start with generic greetings or ask about unrelated topics. Go directly to the topic.`
+        }
+
         // Configure session with VAD and system instructions
         sendMessage(dc, {
           type: 'session.update',
           session: {
-            instructions: persona.systemPrompt,
+            instructions,
             turn_detection: {
               type: 'server_vad',
               threshold: 0.7, // Higher = less sensitive to background noise
