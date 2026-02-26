@@ -51,6 +51,26 @@ export interface PromptResponse {
   };
 }
 
+// Knowledge entry (wisdom/life lessons captured from prompts)
+export interface KnowledgeEntry {
+  id: string;
+  userId: string;
+  category: string;
+  subcategory?: string;
+  promptText: string;
+  responseText: string;
+  audioUrl?: string;
+  wordCount: number;
+  durationSeconds?: number;
+  isFeatured: boolean;
+  relatedContacts?: string[];
+  relatedInterest?: string;
+  relatedReligion?: string;
+  tags?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Stats returned by the engagement system
 export interface EngagementStats {
   totalAnswered: number;
@@ -60,6 +80,14 @@ export interface EngagementStats {
   knowledgeEntries: number;
   preferredInputType?: string;
   lastEngagementDate?: string;
+  byType?: {
+    photoBackstory?: number;
+    tagPerson?: number;
+    missingInfo?: number;
+    memoryPrompt?: number;
+    knowledge?: number;
+    [key: string]: number | undefined;
+  };
 }
 
 // API request/response types

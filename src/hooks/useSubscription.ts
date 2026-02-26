@@ -13,6 +13,12 @@ import {
   calculateTotalMonthlyCost
 } from '@/types/subscription'
 
+interface SeatsData {
+  seats: SubscriptionSeat[]
+  pricing: SeatPricing[]
+  maxSeats: number
+}
+
 interface UseSubscriptionReturn {
   subscription: SubscriptionWithDetails | null
   isLoading: boolean
@@ -22,6 +28,13 @@ interface UseSubscriptionReturn {
   getStoragePercentage: () => number
   isStorageFull: () => boolean
   refetch: () => Promise<void>
+  // Seat management
+  seats: SeatsData | null
+  seatsLoading: boolean
+  fetchSeats: () => Promise<void>
+  inviteSeat: (email: string) => Promise<void>
+  removeSeat: (seatId: string) => Promise<void>
+  resendInvite: (seatId: string) => Promise<void>
 }
 
 export function useSubscription(): UseSubscriptionReturn {
@@ -29,6 +42,10 @@ export function useSubscription(): UseSubscriptionReturn {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [seatPricing, setSeatPricing] = useState<SeatPricing[]>([])
+  
+  // Seat management state
+  const [seats, setSeats] = useState<SeatsData | null>(null)
+  const [seatsLoading, setSeatsLoading] = useState(false)
   
   const supabase = createClient()
 
@@ -183,6 +200,75 @@ export function useSubscription(): UseSubscriptionReturn {
     return getStoragePercentage() >= 100
   }, [getStoragePercentage])
 
+  // Seat management functions
+  const fetchSeats = useCallback(async () => {
+    try {
+      setSeatsLoading(true)
+      const response = await fetch('/api/subscription/seats')
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch seats')
+      }
+
+      setSeats({
+        seats: data.seats || [],
+        pricing: data.pricing || [],
+        maxSeats: data.maxSeats || 10
+      })
+    } catch (err) {
+      console.error('Error fetching seats:', err)
+    } finally {
+      setSeatsLoading(false)
+    }
+  }, [])
+
+  const inviteSeat = useCallback(async (email: string) => {
+    const response = await fetch('/api/subscription/seats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to send invite')
+    }
+
+    // Refresh seats list
+    await fetchSeats()
+  }, [fetchSeats])
+
+  const removeSeat = useCallback(async (seatId: string) => {
+    const response = await fetch(`/api/subscription/seats?seatId=${seatId}`, {
+      method: 'DELETE'
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to remove seat')
+    }
+
+    // Refresh seats list
+    await fetchSeats()
+  }, [fetchSeats])
+
+  const resendInvite = useCallback(async (seatId: string) => {
+    const response = await fetch('/api/subscription/seats', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seatId })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to resend invite')
+    }
+  }, [])
+
   return {
     subscription,
     isLoading,
@@ -191,6 +277,13 @@ export function useSubscription(): UseSubscriptionReturn {
     hasFeature,
     getStoragePercentage,
     isStorageFull,
-    refetch: fetchSubscription
+    refetch: fetchSubscription,
+    // Seat management
+    seats,
+    seatsLoading,
+    fetchSeats,
+    inviteSeat,
+    removeSeat,
+    resendInvite
   }
 }

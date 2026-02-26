@@ -298,17 +298,17 @@ export default function PhotoPreviewPanel({ media, allMedia, onClose, onNavigate
           </button>
         )}
 
-        {/* Close Button */}
+        {/* Close button on photo side (mobile + backup) */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+          className="absolute top-20 right-4 md:right-[340px] p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors z-10"
         >
           <X size={24} className="text-white" />
         </button>
 
         {/* Tagging Mode Banner */}
         {taggingMode && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-[#406A56] text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 bg-[#406A56] text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
             Click on a face to tag • Press ESC to cancel
           </div>
         )}
@@ -414,23 +414,33 @@ export default function PhotoPreviewPanel({ media, allMedia, onClose, onNavigate
             )}
           </div>
 
-          {/* Info Panel */}
+          {/* Info Panel - starts below nav */}
           <motion.div
             initial={{ x: 100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            className="w-80 bg-white h-full overflow-y-auto hidden md:block"
+            className="w-80 bg-white mt-16 rounded-tl-2xl overflow-y-auto hidden md:block"
+            style={{ maxHeight: 'calc(100vh - 64px)' }}
           >
             <div className="p-5">
-              {/* Header */}
+              {/* Header with close button */}
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold text-[#1a1a1a]">Photo Details</h3>
-                <button
-                  onClick={() => onEdit(media)}
-                  className="p-2 rounded-lg bg-[#406A56]/10 hover:bg-[#406A56]/20 transition-colors"
-                  title="Edit date & location"
-                >
-                  <Edit2 size={16} className="text-[#406A56]" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => onEdit(media)}
+                    className="p-2 rounded-lg bg-[#406A56]/10 hover:bg-[#406A56]/20 transition-colors"
+                    title="Edit date & location"
+                  >
+                    <Edit2 size={16} className="text-[#406A56]" />
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                    title="Close"
+                  >
+                    <X size={16} className="text-gray-600" />
+                  </button>
+                </div>
               </div>
 
               {/* Timestamp */}

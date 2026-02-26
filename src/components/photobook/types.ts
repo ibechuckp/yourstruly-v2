@@ -73,6 +73,27 @@ export interface PageContent {
   text?: PageText
   qr_code?: QRCodeConfig
   background?: PageBackground
+  /** Slot-based content for rich templates */
+  slots?: Record<string, SlotContentData>
+  /** Per-slot text styling */
+  textStyles?: Record<string, TextSlotStyle>
+}
+
+export interface SlotContentData {
+  type: 'photo' | 'text' | 'qr'
+  value: string
+  style?: TextSlotStyle
+}
+
+export interface TextSlotStyle {
+  fontFamily: string
+  fontSize: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | string
+  fontWeight: 'normal' | 'bold'
+  fontStyle: 'normal' | 'italic'
+  textAlign: 'left' | 'center' | 'right'
+  color: string
+  /** Alias for textAlign for backwards compatibility */
+  alignment?: 'left' | 'center' | 'right'
 }
 
 export interface PagePhoto {
@@ -99,9 +120,14 @@ export interface PageText {
   body?: string
   position?: 'top' | 'bottom' | 'left' | 'right' | 'center'
   font?: 'serif' | 'sans' | 'handwriting'
-  fontSize?: 'small' | 'medium' | 'large'
+  fontSize?: 'small' | 'medium' | 'large' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'
   color?: string
   alignment?: 'left' | 'center' | 'right'
+  /** Extended styling properties */
+  fontFamily?: string
+  fontWeight?: 'normal' | 'bold'
+  fontStyle?: 'normal' | 'italic'
+  textAlign?: 'left' | 'center' | 'right'
 }
 
 export interface QRCodeConfig {
@@ -114,7 +140,10 @@ export interface QRCodeConfig {
 export interface PageBackground {
   color?: string
   image_url?: string
+  /** CSS gradient string (e.g., 'linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%)') */
   gradient?: string
+  /** Opacity for background image (0-1) */
+  opacity?: number
 }
 
 export interface QRAccessToken {

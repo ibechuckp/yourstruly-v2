@@ -111,13 +111,14 @@
 .home-content {
   position: relative;
   z-index: 10;
-  height: calc(100vh - 56px); /* Full height minus nav */
+  height: calc(100vh - 56px); /* Full height minus nav - NO SCROLL */
+  max-height: calc(100vh - 56px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 48px 24px 24px;
-  overflow: hidden;
+  padding: 48px 24px 16px;
+  overflow: hidden; /* No scrolling */
 }
 
 /* Adjust content for left sidebar on large screens */
@@ -138,7 +139,8 @@
   align-items: center;
   position: relative;
   flex: 1;
-  overflow: hidden;
+  min-height: 0; /* Allow flex shrink */
+  gap: 20px; /* Consistent gap between all children */
 }
 
 @media (min-width: 1024px) {
@@ -152,18 +154,19 @@
   width: 100%;
   max-width: 776px;
   padding: 0 12px;
+  flex-shrink: 0;
 }
 
 .quick-action-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px 24px;
+  gap: 6px;
+  padding: 12px 20px;
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(64, 106, 86, 0.1);
-  border-radius: 16px;
+  border-radius: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -171,14 +174,14 @@
 .quick-action-btn:hover {
   background: rgba(255, 255, 255, 0.9);
   border-color: rgba(64, 106, 86, 0.2);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .quick-action-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   background: linear-gradient(135deg, rgba(64, 106, 86, 0.1), rgba(64, 106, 86, 0.05));
   display: flex;
   align-items: center;
@@ -187,18 +190,23 @@
 }
 
 .quick-action-btn span {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: #406A56;
 }
 
 /* Profile section - left aligned, below nav bar with 48px gap */
 /* Nav bar is h-14 (56px), so top = 56 + 48 = 104px */
+/* Max height: viewport - nav - top gap - bottom padding */
 .home-profile {
   position: fixed;
   top: 104px;
   left: 48px;
   z-index: 20;
+  max-height: calc(100vh - 104px - 24px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* Activity Feed section - now inline in main content */
@@ -356,13 +364,14 @@
   flex-shrink: 0;
 }
 
-/* Engagement bubbles area - centered vertically */
+/* Engagement bubbles area - aligned with profile card top */
 .home-bubbles {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   padding: 0 20px;
+  flex-shrink: 0; /* Don't shrink - tiles have fixed height */
 }
 
 @media (max-width: 1024px) {

@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logAdminAction } from '@/lib/admin/audit';
 import { AuditActions } from '@/lib/admin/audit-actions';
+import { checkAdminAuth } from '@/lib/auth/admin';
 
 // GET /api/admin/engagement/prompts/:id - Get single prompt
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await checkAdminAuth();
+  if (!auth.isAdmin) {
+    return NextResponse.json({ error: auth.error }, { status: 403 });
+  }
+
   try {
     const { id } = await params;
     const supabase = await createClient();
@@ -40,15 +46,14 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await checkAdminAuth();
+  if (!auth.isAdmin) {
+    return NextResponse.json({ error: auth.error }, { status: 403 });
+  }
+
   try {
     const { id } = await params;
     const supabase = await createClient();
-    
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     
     // Get existing prompt for audit log
     const { data: existing } = await supabase
@@ -115,15 +120,14 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await checkAdminAuth();
+  if (!auth.isAdmin) {
+    return NextResponse.json({ error: auth.error }, { status: 403 });
+  }
+
   try {
     const { id } = await params;
     const supabase = await createClient();
-    
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     
     // Get existing prompt for audit log
     const { data: existing } = await supabase

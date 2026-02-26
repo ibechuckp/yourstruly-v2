@@ -12,6 +12,7 @@ export {
   default as GiftSelectionModal, 
   InlineGiftSelector 
 } from './GiftSelectionModal';
+export { default as CartDrawer, CartButton } from './CartDrawer';
 
 // Mock data (for development)
 export {

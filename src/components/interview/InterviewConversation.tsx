@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Keyboard, Check, Loader2, Video } from 'lucide-react';
+import { X, Sparkles, Keyboard, Check, Loader2, Video, ImagePlus, Upload, Trash2 } from 'lucide-react';
 import { MediaRecorder } from '../conversation/MediaRecorder';
 import { TranscriptionPreview } from '../conversation/TranscriptionPreview';
 
@@ -66,6 +66,10 @@ export function InterviewConversation({
   // Text input
   const [textInput, setTextInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Media attachments (photos/videos to include with interview)
+  const [attachedMedia, setAttachedMedia] = useState<{ file: File; preview: string }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Focus textarea in text mode
   useEffect(() => {
@@ -245,12 +249,56 @@ export function InterviewConversation({
     }
   }, [exchanges, generateFollowUp]);
 
+  // Handle media file selection
+  const handleMediaSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    
+    const newMedia = Array.from(files).map(file => ({
+      file,
+      preview: URL.createObjectURL(file)
+    }));
+    
+    setAttachedMedia(prev => [...prev, ...newMedia]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, []);
+
+  // Remove attached media
+  const handleRemoveMedia = useCallback((index: number) => {
+    setAttachedMedia(prev => {
+      const updated = [...prev];
+      URL.revokeObjectURL(updated[index].preview);
+      updated.splice(index, 1);
+      return updated;
+    });
+  }, []);
+
   // Save all responses
   const handleSave = useCallback(async () => {
     setViewState('saving');
     setError(null);
 
     try {
+      // First, upload any attached media
+      const uploadedMediaUrls: string[] = [];
+      
+      for (const media of attachedMedia) {
+        const formData = new FormData();
+        formData.append('file', media.file);
+        formData.append('sessionId', sessionId);
+        formData.append('accessToken', accessToken);
+        
+        const uploadRes = await fetch('/api/interviews/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (uploadRes.ok) {
+          const data = await uploadRes.json();
+          if (data.url) uploadedMediaUrls.push(data.url);
+        }
+      }
+
       // Save the complete conversation as one interview response
       const saveResponse = await fetch('/api/interviews/save-conversation', {
         method: 'POST',
@@ -261,6 +309,7 @@ export function InterviewConversation({
           accessToken,
           exchanges,
           originalQuestion: question.question_text,
+          attachedMediaUrls: uploadedMediaUrls,
         }),
       });
 
@@ -280,7 +329,7 @@ export function InterviewConversation({
       setError(err.message || 'Failed to save. Please try again.');
       setViewState('review');
     }
-  }, [sessionId, question.id, question.question_text, accessToken, exchanges, onComplete]);
+  }, [sessionId, question.id, question.question_text, accessToken, exchanges, attachedMedia, onComplete]);
 
   return (
     <div className="interview-conversation">
@@ -422,12 +471,62 @@ export function InterviewConversation({
               </div>
             ))}
           </div>
+          
+          {/* Media Attachments Section */}
+          <div className="interview-media-attachments">
+            <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <ImagePlus size={16} />
+              Attach Photos or Videos (optional)
+            </h4>
+            <p className="text-xs text-gray-500 mb-3">
+              Add photos or videos related to this conversation
+            </p>
+            
+            {/* Attached Media Preview */}
+            {attachedMedia.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {attachedMedia.map((media, index) => (
+                  <div key={index} className="relative w-20 h-20 rounded-lg overflow-hidden group">
+                    {media.file.type.startsWith('video/') ? (
+                      <video src={media.preview} className="w-full h-full object-cover" />
+                    ) : (
+                      <img src={media.preview} alt="" className="w-full h-full object-cover" />
+                    )}
+                    <button
+                      onClick={() => handleRemoveMedia(index)}
+                      className="absolute top-1 right-1 p-1 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 size={12} className="text-white" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Upload Button */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              onChange={handleMediaSelect}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg text-sm text-gray-600 hover:border-[#406A56] hover:text-[#406A56] transition-colors"
+            >
+              <Upload size={16} />
+              Choose Files
+            </button>
+          </div>
+          
           <div className="interview-review-actions">
             <button onClick={handleContinue} className="interview-btn-secondary" disabled={isGeneratingFollowup}>
               {isGeneratingFollowup ? 'Generating...' : 'Add More'}
             </button>
             <button onClick={handleSave} className="interview-btn-primary">
-              Save Responses
+              Save Responses {attachedMedia.length > 0 && `(+${attachedMedia.length} files)`}
             </button>
           </div>
         </div>

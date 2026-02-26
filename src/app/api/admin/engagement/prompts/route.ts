@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logAdminAction } from '@/lib/admin/audit';
 import { AuditActions } from '@/lib/admin/audit-actions';
+import { checkAdminAuth } from '@/lib/auth/admin';
 
 // GET /api/admin/engagement/prompts - List all prompts
 export async function GET(request: NextRequest) {
+  // Verify admin access
+  const auth = await checkAdminAuth();
+  if (!auth.isAdmin) {
+    return NextResponse.json({ error: auth.error }, { status: 403 });
+  }
+
   try {
     const supabase = await createClient();
     
@@ -57,14 +64,14 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/engagement/prompts - Create new prompt
 export async function POST(request: NextRequest) {
+  // Verify admin access
+  const auth = await checkAdminAuth();
+  if (!auth.isAdmin) {
+    return NextResponse.json({ error: auth.error }, { status: 403 });
+  }
+
   try {
     const supabase = await createClient();
-    
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     
     const body = await request.json();
     

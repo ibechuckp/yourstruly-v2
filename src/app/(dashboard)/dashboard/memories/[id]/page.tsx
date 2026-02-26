@@ -4,15 +4,17 @@ import React, { useState, useEffect, use, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { 
   ChevronLeft, Heart, MapPin, Calendar, Sparkles, 
-  Trash2, Edit2, X, Plus, Image as ImageIcon, Upload, Zap, Play, Square, Share2, Users
+  Trash2, Edit2, X, Plus, Image as ImageIcon, Upload, Zap, Play, Square, Share2, Users, FolderPlus
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/home.css'
 import Modal from '@/components/ui/Modal'
 import FaceTagger from '@/components/media/FaceTagger'
-import CaptionEditor from '@/components/media/CaptionEditor'
 import ShareMemoryModal from '@/components/memories/ShareMemoryModal'
 import MemoryContributions from '@/components/memories/MemoryContributions'
+import AddToCapsuleModal from '@/components/capsules/AddToCapsuleModal'
+import MoodSelector from '@/components/memories/MoodSelector'
+import { MoodType } from '@/lib/ai/moodAnalysis'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface Memory {
@@ -28,6 +30,8 @@ interface Memory {
   ai_labels: string[]
   is_favorite: boolean
   created_at: string
+  mood: MoodType | null
+  mood_override: boolean
 }
 
 interface Media {
@@ -132,7 +136,6 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
   const [uploading, setUploading] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deletingMediaId, setDeletingMediaId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'faces' | 'caption'>('faces')
   const [xpToasts, setXpToasts] = useState<Array<{ id: number; amount?: number; message?: string }>>([])
   const [isPlayingConversation, setIsPlayingConversation] = useState(false)
   const [currentPlayingIndex, setCurrentPlayingIndex] = useState(-1)
@@ -141,6 +144,7 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
   const [showSharedList, setShowSharedList] = useState(false)
   const [removingShareId, setRemovingShareId] = useState<string | null>(null)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState<{ shareId: string; name: string } | null>(null)
+  const [showCapsuleModal, setShowCapsuleModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const toastIdRef = useRef(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -518,6 +522,15 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
               <span>Shared with {shares.length}</span>
             </button>
           )}
+          {/* Add to Album button */}
+          <button
+            onClick={() => setShowCapsuleModal(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-all shadow-sm"
+            title="Add to Album"
+          >
+            <FolderPlus size={16} />
+            <span className="text-sm font-medium hidden sm:inline">Album</span>
+          </button>
           {/* Share button */}
           <button
             onClick={() => setShowShareModal(true)}
@@ -618,50 +631,25 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
           <div className="lg:col-span-2 space-y-4">
             {selectedMedia ? (
               <>
-                {/* Tab buttons */}
+                {/* Action buttons */}
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => setActiveTab('faces')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      activeTab === 'faces' 
-                        ? 'bg-[#406A56] text-white' 
-                        : 'bg-white/80 text-gray-500 hover:text-gray-700 border border-gray-200'
-                    }`}
-                  >
+                  <div className="px-4 py-2 rounded-lg text-sm font-medium bg-[#406A56] text-white">
                     👤 Tag People
-                  </button>
+                  </div>
                   <button
-                    onClick={() => setActiveTab('caption')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      activeTab === 'caption' 
-                        ? 'bg-[#406A56] text-white' 
-                        : 'bg-white/80 text-gray-500 hover:text-gray-700 border border-gray-200'
-                    }`}
+                    onClick={() => setIsEditing(true)}
+                    className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-white/80 text-gray-500 hover:text-gray-700 border border-gray-200 hover:border-[#406A56] hover:bg-[#406A56]/5"
                   >
                     ✏️ Add Story
                   </button>
                 </div>
 
-                {/* Content based on tab */}
-                {activeTab === 'faces' ? (
-                  <FaceTagger
-                    mediaId={selectedMedia.id}
-                    imageUrl={selectedMedia.file_url}
-                    onXPEarned={showXP}
-                  />
-                ) : (
-                  <div className="space-y-4">
-                    <div className="rounded-xl overflow-hidden bg-gray-100">
-                      <img src={selectedMedia.file_url} alt="" className="w-full" />
-                    </div>
-                    <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-gray-200 shadow-sm">
-                      <CaptionEditor
-                        mediaId={selectedMedia.id}
-                        onXPEarned={showXP}
-                      />
-                    </div>
-                  </div>
-                )}
+                {/* Face tagging content */}
+                <FaceTagger
+                  mediaId={selectedMedia.id}
+                  imageUrl={selectedMedia.file_url}
+                  onXPEarned={showXP}
+                />
               </>
             ) : (
               <div className="aspect-video flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200 shadow-sm">
@@ -768,20 +756,38 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
                     </p>
                   )}
                   
-                  {/* Q&A exchanges */}
+                  {/* Q&A exchanges - Conversation Style */}
                   {parsedContent.exchanges && parsedContent.exchanges.length > 0 && (
-                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                    <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 py-2">
                       {parsedContent.exchanges.map((ex: { question: string; answer: string; audioUrl?: string }, idx: number) => (
-                        <div key={idx} className="text-sm">
-                          <p className="text-[#406A56] font-medium mb-1">{ex.question}</p>
-                          <p className="text-gray-600 bg-[#F2F1E5] rounded-lg p-3">{ex.answer}</p>
-                          {ex.audioUrl && (
-                            <button 
-                              onClick={() => new Audio(ex.audioUrl).play()}
-                              className="mt-1 text-xs text-[#4A3552] hover:text-[#6a4572] flex items-center gap-1"
-                            >
-                              <Play size={12} fill="currentColor" /> Play this response
-                            </button>
+                        <div key={idx} className="space-y-3">
+                          {/* Question - interviewer side */}
+                          <div className="flex justify-end">
+                            <div className="max-w-[85%] bg-[#406A56] text-white rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm">
+                              <p className="text-sm leading-relaxed">{ex.question}</p>
+                            </div>
+                          </div>
+                          
+                          {/* Answer - interviewee side */}
+                          <div className="flex justify-start">
+                            <div className="max-w-[85%] bg-gradient-to-br from-white to-[#F2F1E5] border border-[#D9C61A]/30 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                              <p className="text-sm text-gray-700 leading-relaxed">{ex.answer}</p>
+                              {ex.audioUrl && (
+                                <button 
+                                  onClick={() => new Audio(ex.audioUrl).play()}
+                                  className="mt-2 text-xs text-[#4A3552] hover:text-[#6a4572] flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity"
+                                >
+                                  <Play size={12} fill="currentColor" /> Listen to response
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Subtle separator between exchanges */}
+                          {idx < parsedContent.exchanges.length - 1 && (
+                            <div className="flex justify-center py-1">
+                              <div className="w-8 h-px bg-[#D9C61A]/30" />
+                            </div>
                           )}
                         </div>
                       ))}
@@ -808,12 +814,24 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
               </div>
             </div>
 
-            {/* AI Insights */}
-            {(memory.ai_summary || memory.ai_mood || memory.ai_category) && (
+            {/* Mood Tag */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-sm border border-gray-100">
+              <MoodSelector
+                memoryId={memory.id}
+                currentMood={memory.mood}
+                isOverride={memory.mood_override || false}
+                onMoodChange={(newMood) => {
+                  setMemory(prev => prev ? { ...prev, mood: newMood } : prev)
+                }}
+              />
+            </div>
+
+            {/* Smart Tags */}
+            {(memory.ai_summary || memory.ai_mood || memory.ai_category || memory.ai_labels?.length) && (
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-sm border border-gray-100">
-                <h3 className="text-sm font-medium text-[#D9C61A] flex items-center gap-2 mb-3">
+                <h3 className="text-sm font-medium text-[#406A56] flex items-center gap-2 mb-3">
                   <Sparkles size={14} />
-                  AI Insights
+                  Smart Tags
                 </h3>
                 
                 {memory.ai_summary && (
@@ -863,9 +881,9 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
                   setDeletingMediaId(selectedMedia.id)
                   setShowDeleteConfirm(true)
                 }}
-                className="w-full py-2 text-red-400 hover:text-red-300 text-sm flex items-center justify-center gap-2"
+                className="w-full mt-4 py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border border-red-200 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
               >
-                <Trash2 size={14} />
+                <Trash2 size={16} />
                 Delete this photo
               </button>
             )}
@@ -1006,6 +1024,14 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
         }}
         memoryId={id}
         memoryTitle={memory?.title}
+      />
+
+      {/* Add to Capsule Modal */}
+      <AddToCapsuleModal
+        isOpen={showCapsuleModal}
+        onClose={() => setShowCapsuleModal(false)}
+        memoryId={id}
+        onAdded={() => showXP(undefined, 'Added to album!')}
       />
     </div>
   )

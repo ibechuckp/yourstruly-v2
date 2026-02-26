@@ -499,6 +499,118 @@ export const FLORISTONE_FLOWERS: CuratedProduct[] = [
     'The perfect "congratulations" or "thank you" for achievements.',
     ['thank-you', 'congratulations', 'graduation', 'promotion']
   ),
+
+  // =============================================================================
+  // FUNERAL SERVICE FLOWERS (12 products) - Casket Sprays, Standing Sprays, etc.
+  // =============================================================================
+  flower(
+    'T235-2A', 'Lavender Tribute Casket Spray', 304.95,
+    'A stunning lavender casket spray featuring roses, stock, and delicate blooms. A beautiful tribute in soft purple tones for the service.',
+    'https://cdn.floristone.com/small/T235-2A_t1.jpg',
+    'https://cdn.floristone.com/large/T235-2A_d1.jpg',
+    97, ['heirloom-quality'],
+    'Lavender represents grace and elegance. A dignified final tribute.',
+    ['funeral', 'casket-spray', 'memorial', 'service']
+  ),
+  flower(
+    'T242-3A', 'Strength and Wisdom Casket Spray', 239.95,
+    'Bold red and white casket arrangement symbolizing strength and purity. Roses, carnations, and lilies create a powerful tribute.',
+    'https://cdn.floristone.com/small/T242-3A_t1.jpg',
+    'https://cdn.floristone.com/large/T242-3A_d1.jpg',
+    96, ['heirloom-quality'],
+    'Red represents strength, white represents peace. A meaningful combination.',
+    ['funeral', 'casket-spray', 'memorial', 'service']
+  ),
+  flower(
+    'T240-3A', 'Distinguished Service Casket Spray', 284.95,
+    'An elegant full casket spray in traditional white and soft pink. Roses, lilies, and carnations create a distinguished display of respect.',
+    'https://cdn.floristone.com/small/T240-3A_t1.jpg',
+    'https://cdn.floristone.com/large/T240-3A_d1.jpg',
+    95, ['heirloom-quality'],
+    'A distinguished tribute for someone who lived with grace.',
+    ['funeral', 'casket-spray', 'memorial', 'service']
+  ),
+  flower(
+    'S5264s', 'Life & Remembrance Cremation Tribute', 369.95,
+    'Elegant cremation adornment crafted with carnations, spray roses, stock and daisy pompons. Place on table with urn or photograph for a loving tribute.',
+    'https://cdn.floristone.com/small/S5264s_t1.jpg',
+    'https://cdn.floristone.com/large/S5264s_d1.jpg',
+    94, ['heirloom-quality'],
+    'Surrounds the urn with love. A beautiful way to honor their memory.',
+    ['funeral', 'cremation', 'urn', 'memorial', 'service']
+  ),
+  flower(
+    'S6-4447', 'Exquisite Tribute Standing Spray', 194.95,
+    'A tall standing spray featuring white lilies, roses, and greenery on an easel. Makes a beautiful statement at any memorial service.',
+    'https://cdn.floristone.com/small/S6-4447_t1.jpg',
+    'https://cdn.floristone.com/large/S6-4447_d1.jpg',
+    93, ['heirloom-quality'],
+    'Standing tall in tribute. A grand gesture of love and respect.',
+    ['funeral', 'standing-spray', 'memorial', 'service']
+  ),
+  flower(
+    'T249-2A', 'Pink Tribute Spray', 149.95,
+    'A beautiful standing spray in soft pink tones. Roses, carnations, and lilies create a gentle, feminine tribute.',
+    'https://cdn.floristone.com/small/T249-2A_t1.jpg',
+    'https://cdn.floristone.com/large/T249-2A_d1.jpg',
+    92, ['thoughtful-gestures'],
+    'Soft pink honors a gentle spirit. A tender farewell.',
+    ['funeral', 'standing-spray', 'memorial', 'service']
+  ),
+  flower(
+    'F1-315', 'Mixed Standing Spray', 149.95,
+    'A colorful standing spray featuring a mix of seasonal flowers on an easel display. Celebrates a life lived in full color.',
+    'https://cdn.floristone.com/small/F1-315_t1.jpg',
+    'https://cdn.floristone.com/large/F1-315_d1.jpg',
+    91, ['thoughtful-gestures'],
+    'For those who lived life vibrantly. A celebration of who they were.',
+    ['funeral', 'standing-spray', 'memorial', 'celebration-of-life']
+  ),
+  flower(
+    'T239-3A', 'Serenity Wreath', 264.95,
+    'A classic circular wreath in pristine white flowers. Roses, carnations, and chrysanthemums symbolize eternal peace and continuity.',
+    'https://cdn.floristone.com/small/T239-3A_t1.jpg',
+    'https://cdn.floristone.com/large/T239-3A_d1.jpg',
+    95, ['heirloom-quality'],
+    'The circle represents eternity. A timeless symbol of everlasting love.',
+    ['funeral', 'wreath', 'memorial', 'service']
+  ),
+  flower(
+    'T236-1A', 'Peace Eternal Wreath', 264.95,
+    'A stunning wreath combining white and soft pastel blooms. Roses, hydrangea, and stock create a peaceful, elegant tribute.',
+    'https://cdn.floristone.com/small/T236-1A_t1.jpg',
+    'https://cdn.floristone.com/large/T236-1A_d1.jpg',
+    94, ['heirloom-quality'],
+    'Peace eternal - a comforting message in floral form.',
+    ['funeral', 'wreath', 'memorial', 'service']
+  ),
+  flower(
+    'T238-2A', 'Rose Garden Heart', 264.95,
+    'A stunning heart-shaped arrangement of premium roses in red, pink, and white. An expression of deep, abiding love.',
+    'https://cdn.floristone.com/small/T238-2A_t1.jpg',
+    'https://cdn.floristone.com/large/T238-2A_d1.jpg',
+    96, ['staff-picks', 'heirloom-quality'],
+    'The heart speaks of love that transcends. For the love of your life.',
+    ['funeral', 'heart', 'memorial', 'service', 'spouse']
+  ),
+  flower(
+    'T225-2A', 'Blessed Heart', 314.95,
+    'A large standing heart in pure white flowers. Roses, carnations, and orchids create a blessed, peaceful tribute.',
+    'https://cdn.floristone.com/small/T225-2A_t1.jpg',
+    'https://cdn.floristone.com/large/T225-2A_d1.jpg',
+    95, ['heirloom-quality'],
+    'A blessed heart for a blessed soul. The ultimate expression of love.',
+    ['funeral', 'heart', 'memorial', 'service']
+  ),
+  flower(
+    'S5274s', 'Treasured Love Standing Heart', 314.95,
+    'A magnificent standing heart featuring red roses and white lilies. A grand tribute to a treasured loved one.',
+    'https://cdn.floristone.com/small/S5274s_t1.jpg',
+    'https://cdn.floristone.com/large/S5274s_d1.jpg',
+    94, ['heirloom-quality'],
+    'Treasured love deserves a treasured tribute.',
+    ['funeral', 'heart', 'memorial', 'service', 'spouse']
+  ),
 ];
 
 export default FLORISTONE_FLOWERS;

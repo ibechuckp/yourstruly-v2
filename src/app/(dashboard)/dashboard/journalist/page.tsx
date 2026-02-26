@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Video, Plus, Clock, CheckCircle, ChevronLeft, User, Play,
-  Sparkles, ExternalLink, X, Search, Heart
+  Sparkles, ExternalLink, X, Search, Heart, Users, Check
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -15,6 +15,9 @@ interface Contact {
   phone: string
   email: string
 }
+
+// Note: Circles are for user collaboration, not contact grouping
+// Contact groups feature could be added later for interview targeting
 
 interface Question {
   id: string
@@ -30,6 +33,8 @@ interface Session {
   status: string
   access_token: string
   created_at: string
+  interview_group_id?: string
+  group_question?: string
   contact: {
     id: string
     full_name: string
@@ -46,8 +51,15 @@ interface Session {
   }[]
 }
 
+interface GroupedSession {
+  group_id: string
+  question: string
+  sessions: Session[]
+  created_at: string
+}
+
 const CATEGORIES = [
-  { id: 'childhood', label: 'Childhood', emoji: '💒' },
+  { id: 'childhood', label: 'Childhood', emoji: '👒' },
   { id: 'relationships', label: 'Relationships', emoji: '❤️' },
   { id: 'career', label: 'Career', emoji: '💼' },
   { id: 'wisdom', label: 'Wisdom', emoji: '🦉' },
@@ -58,6 +70,8 @@ const CATEGORIES = [
   { id: 'custom', label: 'My Questions', emoji: '✨' },
 ]
 
+type RecipientMode = 'single' | 'multiple'
+
 export default function JournalistPage() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -66,12 +80,17 @@ export default function JournalistPage() {
   
   // Modal state
   const [showNewSession, setShowNewSession] = useState(false)
-  const [step, setStep] = useState<'contact' | 'question'>('contact')
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
-  const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null) // Single question
+  const [step, setStep] = useState<'recipients' | 'question'>('recipients')
+  
+  // Recipient selection
+  const [recipientMode, setRecipientMode] = useState<RecipientMode>('single')
+  const [selectedContacts, setSelectedContacts] = useState<Contact[]>([])
+  
+  // Question selection
+  const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [sessionTitle, setSessionTitle] = useState('')
   const [customQuestion, setCustomQuestion] = useState('')
+  
   const [creating, setCreating] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
   
@@ -114,23 +133,56 @@ export default function JournalistPage() {
     setLoading(false)
   }
 
+  // Group sessions by interview_group_id for display
+  const groupedSessions = sessions.reduce((acc, session) => {
+    if (session.interview_group_id) {
+      const existing = acc.find(g => g.group_id === session.interview_group_id)
+      if (existing) {
+        existing.sessions.push(session)
+      } else {
+        acc.push({
+          group_id: session.interview_group_id,
+          question: session.group_question || session.session_questions?.[0]?.question_text || 'Group Interview',
+          sessions: [session],
+          created_at: session.created_at,
+        })
+      }
+    }
+    return acc
+  }, [] as GroupedSession[])
+
+  // Individual sessions (not part of a group)
+  const individualSessions = sessions.filter(s => !s.interview_group_id)
+
   const filteredQuestions = selectedCategory 
     ? questions.filter(q => 
         selectedCategory === 'custom' ? !q.is_system : q.category === selectedCategory
       )
     : []
 
-  const handleSelectContact = (contact: Contact) => {
-    setSelectedContact(contact)
-    setStep('question')
+  const toggleContactSelection = (contact: Contact) => {
+    if (recipientMode === 'single') {
+      setSelectedContacts([contact])
+      setStep('question')
+    } else {
+      setSelectedContacts(prev => {
+        const exists = prev.find(c => c.id === contact.id)
+        if (exists) {
+          return prev.filter(c => c.id !== contact.id)
+        } else {
+          return [...prev, contact]
+        }
+      })
+    }
   }
 
-  const handleSelectQuestion = (questionId: string) => {
-    setSelectedQuestion(questionId === selectedQuestion ? null : questionId)
+  const getSelectedRecipients = (): Contact[] => {
+    return selectedContacts
   }
 
   const handleCreateSession = async () => {
-    if (!selectedContact || (!selectedQuestion && !customQuestion.trim())) return
+    const recipients = getSelectedRecipients()
+    if (recipients.length === 0 || (!selectedQuestion && !customQuestion.trim())) return
 
     setCreating(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -142,7 +194,6 @@ export default function JournalistPage() {
       let questionId = selectedQuestion
       
       if (customQuestion.trim()) {
-        // Save custom question to question bank first
         const { data: savedQuestion } = await supabase
           .from('interview_questions')
           .insert({
@@ -160,34 +211,43 @@ export default function JournalistPage() {
         const question = questions.find(q => q.id === selectedQuestion)
         questionText = question?.question_text || ''
       }
-      
-      const { data: session, error: sessionError } = await supabase
-        .from('interview_sessions')
-        .insert({
-          user_id: user.id,
-          contact_id: selectedContact.id,
-          title: sessionTitle || `Interview with ${selectedContact.full_name}`,
-          status: 'pending',
+
+      // Generate group ID if multiple recipients
+      const groupId = recipients.length > 1 ? crypto.randomUUID() : null
+
+      // Create interview session for each recipient
+      for (const recipient of recipients) {
+        const { data: session, error: sessionError } = await supabase
+          .from('interview_sessions')
+          .insert({
+            user_id: user.id,
+            contact_id: recipient.id,
+            title: recipients.length > 1 
+              ? `${questionText.slice(0, 50)}...` 
+              : `Interview with ${recipient.full_name}`,
+            status: 'pending',
+            interview_group_id: groupId,
+            group_question: groupId ? questionText : null,
+          })
+          .select()
+          .single()
+
+        if (sessionError) throw sessionError
+
+        // Add question to session
+        await supabase.from('session_questions').insert({
+          session_id: session.id,
+          question_id: questionId,
+          question_text: questionText,
+          sort_order: 0,
         })
-        .select()
-        .single()
+      }
 
-      if (sessionError) throw sessionError
-
-      // Add single question to session
-      await supabase.from('session_questions').insert({
-        session_id: session.id,
-        question_id: questionId,
-        question_text: questionText,
-        sort_order: 0,
-      })
-
-      // Reset and close
       closeModal()
       loadData()
     } catch (error) {
       console.error('Error creating session:', error)
-      alert('Failed to create interview session')
+      alert('Failed to create interview')
     } finally {
       setCreating(false)
     }
@@ -195,11 +255,11 @@ export default function JournalistPage() {
 
   const closeModal = () => {
     setShowNewSession(false)
-    setStep('contact')
-    setSelectedContact(null)
+    setStep('recipients')
+    setRecipientMode('single')
+    setSelectedContacts([])
     setSelectedQuestion(null)
     setSelectedCategory(null)
-    setSessionTitle('')
     setCustomQuestion('')
   }
 
@@ -218,6 +278,13 @@ export default function JournalistPage() {
     }
   }
 
+  const proceedToQuestion = () => {
+    const recipients = getSelectedRecipients()
+    if (recipients.length > 0) {
+      setStep('question')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#F2F1E5]">
       {/* Header */}
@@ -231,7 +298,7 @@ export default function JournalistPage() {
               <ChevronLeft size={20} />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-[#2d2d2d]">Video Journalist</h1>
+              <h1 className="text-2xl font-bold text-[#2d2d2d]">Interviews</h1>
               <p className="text-[#666] text-sm">Capture family stories remotely</p>
             </div>
           </div>
@@ -272,7 +339,61 @@ export default function JournalistPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {sessions.map((session) => (
+              {/* Grouped Interviews */}
+              {groupedSessions.map((group) => (
+                <motion.div
+                  key={group.group_id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-sm hover:shadow-md transition-all"
+                >
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#406A56] to-[#5a8a70] flex items-center justify-center text-white">
+                        <Users size={24} />
+                      </div>
+                      <div>
+                        <h3 className="text-[#2d2d2d] font-semibold">Group Interview</h3>
+                        <p className="text-[#888] text-sm">{group.sessions.length} people</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-[#406A56]">
+                            {group.sessions.filter(s => s.status === 'completed').length} of {group.sessions.length} completed
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <Link
+                      href={`/dashboard/journalist/group/${group.group_id}`}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-[#406A56] hover:bg-[#2d5442] text-white text-sm rounded-lg transition-all"
+                    >
+                      <Play size={14} />
+                      Story Time
+                    </Link>
+                  </div>
+                  
+                  <div className="pt-3 border-t border-gray-100">
+                    <p className="text-sm text-[#666] italic mb-3">"{group.question}"</p>
+                    <div className="flex flex-wrap gap-2">
+                      {group.sessions.map(session => (
+                        <div 
+                          key={session.id}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs ${
+                            session.status === 'completed' 
+                              ? 'bg-[#406A56]/10 text-[#406A56]' 
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {session.status === 'completed' && <Check size={12} />}
+                          {session.contact?.full_name}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+
+              {/* Individual Interviews */}
+              {individualSessions.map((session) => (
                 <motion.div
                   key={session.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -329,7 +450,6 @@ export default function JournalistPage() {
                     </div>
                   </div>
 
-                  {/* Show question */}
                   {session.session_questions?.[0] && (
                     <div className="mt-4 pt-4 border-t border-gray-100">
                       <p className="text-sm text-[#666] italic">
@@ -366,7 +486,7 @@ export default function JournalistPage() {
                 <div>
                   <h2 className="text-lg font-semibold text-[#2d2d2d]">New Interview</h2>
                   <p className="text-sm text-[#888]">
-                    {step === 'contact' ? 'Choose who to interview' : 'Pick a question to ask'}
+                    {step === 'recipients' ? 'Choose who to interview' : 'Pick a question to ask'}
                   </p>
                 </div>
                 <button onClick={closeModal} className="p-2 hover:bg-white/50 rounded-lg transition-all">
@@ -374,58 +494,117 @@ export default function JournalistPage() {
                 </button>
               </div>
 
-              {/* Step 1: Select Contact */}
-              {step === 'contact' && (
-                <div className="p-6">
-                  {contacts.length === 0 ? (
-                    <div className="text-center py-8">
-                      <User size={40} className="text-[#888] mx-auto mb-3" />
-                      <p className="text-[#666] mb-4">No contacts yet</p>
-                      <Link href="/dashboard/contacts" className="text-[#C35F33] hover:underline">
-                        Add contacts first →
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-80 overflow-y-auto">
-                      {contacts.map((contact) => (
-                        <button
-                          key={contact.id}
-                          onClick={() => handleSelectContact(contact)}
-                          className="w-full flex items-center gap-4 p-4 bg-white/70 hover:bg-white rounded-xl transition-all text-left"
-                        >
-                          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#4A3552] to-[#6b4a7a] flex items-center justify-center text-white font-medium">
-                            {contact.full_name.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="text-[#2d2d2d] font-medium">{contact.full_name}</p>
-                            <p className="text-[#888] text-sm">{contact.phone || contact.email || 'No contact info'}</p>
-                          </div>
-                        </button>
-                      ))}
+              {/* Step 1: Select Recipients */}
+              {step === 'recipients' && (
+                <div className="flex flex-col h-[calc(85vh-80px)]">
+                  {/* Mode Selector */}
+                  <div className="flex gap-2 p-4 border-b border-[#E8E7DC]">
+                    <button
+                      onClick={() => { setRecipientMode('single'); setSelectedContacts([]) }}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                        recipientMode === 'single' ? 'bg-[#406A56] text-white' : 'bg-white/70 text-[#666]'
+                      }`}
+                    >
+                      <User size={16} />
+                      One Person
+                    </button>
+                    <button
+                      onClick={() => { setRecipientMode('multiple'); setSelectedContacts([]) }}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                        recipientMode === 'multiple' ? 'bg-[#406A56] text-white' : 'bg-white/70 text-[#666]'
+                      }`}
+                    >
+                      <Users size={16} />
+                      Multiple People
+                    </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-4">
+                    {/* Contact Selection (single or multiple) */}
+                    {contacts.length === 0 ? (
+                        <div className="text-center py-8">
+                          <User size={40} className="text-[#888] mx-auto mb-3" />
+                          <p className="text-[#666] mb-4">No contacts yet</p>
+                          <Link href="/dashboard/contacts" className="text-[#C35F33] hover:underline">
+                            Add contacts first →
+                          </Link>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {contacts.map((contact) => {
+                            const isSelected = selectedContacts.some(c => c.id === contact.id)
+                            return (
+                              <button
+                                key={contact.id}
+                                onClick={() => toggleContactSelection(contact)}
+                                className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left ${
+                                  isSelected ? 'bg-[#406A56]/10 ring-2 ring-[#406A56]' : 'bg-white/70 hover:bg-white'
+                                }`}
+                              >
+                                {recipientMode === 'multiple' && (
+                                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                                    isSelected ? 'border-[#406A56] bg-[#406A56]' : 'border-gray-300'
+                                  }`}>
+                                    {isSelected && <Check size={14} className="text-white" />}
+                                  </div>
+                                )}
+                                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#4A3552] to-[#6b4a7a] flex items-center justify-center text-white font-medium">
+                                  {contact.full_name.charAt(0)}
+                                </div>
+                                <div>
+                                  <p className="text-[#2d2d2d] font-medium">{contact.full_name}</p>
+                                  <p className="text-[#888] text-sm">{contact.phone || contact.email || 'No contact info'}</p>
+                                </div>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                  </div>
+
+                  {/* Continue button for multiple mode */}
+                  {recipientMode === 'multiple' && (
+                    <div className="p-4 border-t border-[#E8E7DC]">
+                      <button
+                        onClick={proceedToQuestion}
+                        disabled={getSelectedRecipients().length === 0}
+                        className="w-full py-3 bg-[#406A56] hover:bg-[#2d5442] text-white rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Continue with {getSelectedRecipients().length} {getSelectedRecipients().length === 1 ? 'person' : 'people'}
+                      </button>
                     </div>
                   )}
                 </div>
               )}
 
               {/* Step 2: Select Question */}
-              {step === 'question' && selectedContact && (
+              {step === 'question' && (
                 <div className="flex flex-col h-[calc(85vh-80px)]">
-                  {/* Contact pill + back */}
+                  {/* Recipients summary + back */}
                   <div className="flex items-center justify-between px-6 py-3 bg-white/50">
                     <button
-                      onClick={() => { setStep('contact'); setSelectedCategory(null); setSelectedQuestion(null); setCustomQuestion('') }}
+                      onClick={() => { setStep('recipients'); setSelectedCategory(null); setSelectedQuestion(null); setCustomQuestion('') }}
                       className="text-[#C35F33] text-sm hover:underline"
                     >
-                      ← Change person
+                      ← Change recipients
                     </button>
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-[#4A3552]/10 rounded-full">
-                      <User size={14} className="text-[#4A3552]" />
-                      <span className="text-[#4A3552] text-sm font-medium">{selectedContact.full_name}</span>
+                      {getSelectedRecipients().length === 1 ? (
+                        <>
+                          <User size={14} className="text-[#4A3552]" />
+                          <span className="text-[#4A3552] text-sm font-medium">{getSelectedRecipients()[0].full_name}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Users size={14} className="text-[#4A3552]" />
+                          <span className="text-[#4A3552] text-sm font-medium">{getSelectedRecipients().length} people</span>
+                        </>
+                      )}
                     </div>
                   </div>
 
                   <div className="flex-1 overflow-y-auto">
-                    {/* 1. Custom Question at TOP */}
+                    {/* Custom Question */}
                     <div className="px-6 pt-4 pb-3">
                       <label className="block text-sm font-medium text-[#2d2d2d] mb-2">
                         Write your own question:
@@ -446,90 +625,69 @@ export default function JournalistPage() {
                       <div className="flex-1 h-px bg-[#E8E7DC]" />
                     </div>
 
-                    {/* 2. Horizontal Scrollable Categories */}
+                    {/* Categories */}
                     <div className="px-6 py-3">
                       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                        {CATEGORIES.map((cat) => (
+                        {CATEGORIES.map(cat => (
                           <button
                             key={cat.id}
                             onClick={() => { setSelectedCategory(cat.id); setCustomQuestion('') }}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-all ${
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-sm transition-all ${
                               selectedCategory === cat.id
-                                ? 'bg-[#4A3552] text-white'
-                                : 'bg-white/70 text-[#2d2d2d] hover:bg-white'
+                                ? 'bg-[#406A56] text-white'
+                                : 'bg-white/70 text-[#666] hover:bg-white'
                             }`}
                           >
                             <span>{cat.emoji}</span>
-                            <span className="text-sm font-medium">{cat.label}</span>
+                            {cat.label}
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    {/* 3. Questions List (when category selected) */}
+                    {/* Questions List */}
                     {selectedCategory && (
-                      <div className="px-6 pb-4">
-                        {filteredQuestions.length === 0 ? (
-                          <div className="text-center py-6 text-[#888] text-sm">
-                            No questions in this category yet
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {filteredQuestions.map((q) => (
-                              <button
-                                key={q.id}
-                                onClick={() => { handleSelectQuestion(q.id); setCustomQuestion('') }}
-                                className={`w-full flex items-start gap-3 p-4 rounded-xl transition-all text-left ${
-                                  selectedQuestion === q.id
-                                    ? 'bg-[#406A56]/10 ring-2 ring-[#406A56]'
-                                    : 'bg-white/70 hover:bg-white'
-                                }`}
-                              >
-                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                                  selectedQuestion === q.id
-                                    ? 'border-[#406A56] bg-[#406A56]'
-                                    : 'border-[#ccc]'
-                                }`}>
-                                  {selectedQuestion === q.id && (
-                                    <CheckCircle size={12} className="text-white" />
-                                  )}
-                                </div>
-                                <p className="text-[#2d2d2d] text-sm leading-relaxed">{q.question_text}</p>
-                              </button>
-                            ))}
-                          </div>
+                      <div className="px-6 pb-4 space-y-2">
+                        {filteredQuestions.map(q => (
+                          <button
+                            key={q.id}
+                            onClick={() => { setSelectedQuestion(q.id); setCustomQuestion('') }}
+                            className={`w-full p-4 rounded-xl text-left transition-all ${
+                              selectedQuestion === q.id
+                                ? 'bg-[#406A56]/10 ring-2 ring-[#406A56]'
+                                : 'bg-white/70 hover:bg-white'
+                            }`}
+                          >
+                            <p className="text-[#2d2d2d]">{q.question_text}</p>
+                          </button>
+                        ))}
+                        {filteredQuestions.length === 0 && (
+                          <p className="text-center text-[#888] py-4">No questions in this category</p>
                         )}
                       </div>
                     )}
                   </div>
 
-                  {/* Create Button - show when custom question OR selected question */}
-                  {(customQuestion.trim() || selectedQuestion) && (
-                    <div className="px-6 py-4 border-t border-[#E8E7DC] bg-white/50">
-                      <div className="mb-3">
-                        <input
-                          type="text"
-                          value={sessionTitle}
-                          onChange={(e) => setSessionTitle(e.target.value)}
-                          placeholder={`Interview with ${selectedContact.full_name}`}
-                          className="w-full px-4 py-2.5 bg-white border border-[#E8E7DC] rounded-xl text-[#2d2d2d] placeholder-[#aaa] focus:outline-none focus:ring-2 focus:ring-[#406A56]"
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-[#888] text-sm">
-                          <Clock size={14} />
-                          <span>~2-3 min to answer</span>
-                        </div>
-                        <button
-                          onClick={handleCreateSession}
-                          disabled={creating}
-                          className="flex items-center gap-2 px-5 py-2.5 bg-[#406A56] hover:bg-[#4a7a64] disabled:opacity-50 text-white rounded-xl transition-all"
-                        >
-                          {creating ? 'Creating...' : 'Create Interview'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  {/* Create Button */}
+                  <div className="p-4 border-t border-[#E8E7DC]">
+                    <button
+                      onClick={handleCreateSession}
+                      disabled={creating || (!selectedQuestion && !customQuestion.trim())}
+                      className="w-full py-3 bg-[#C35F33] hover:bg-[#a54d28] text-white rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {creating ? (
+                        'Creating...'
+                      ) : (
+                        <>
+                          <Sparkles size={18} />
+                          {getSelectedRecipients().length > 1 
+                            ? `Send to ${getSelectedRecipients().length} people`
+                            : 'Create Interview'
+                          }
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               )}
             </motion.div>

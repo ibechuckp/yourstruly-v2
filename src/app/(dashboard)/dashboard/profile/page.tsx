@@ -10,7 +10,6 @@ import {
 import Link from 'next/link'
 import '@/styles/home.css'
 import '@/styles/page-styles.css'
-import { TornPaperEdge, YellowFlower, BlueHeart, OrangeStar } from '@/components/brand'
 import EssenceFingerprintLoader from '@/components/profile/EssenceFingerprintLoader'
 import VoiceCloneButton from '@/components/profile/VoiceCloneButton'
 import { generateEssenceVector, hasProfileData } from '@/lib/essence'
@@ -55,6 +54,15 @@ interface Profile {
   favorite_movies: string[]
   favorite_music: string[]
   favorite_foods: string[]
+  emergency_contact_ids: string[]
+}
+
+interface Contact {
+  id: string
+  full_name: string
+  avatar_url?: string
+  relationship?: string
+  relationship_type?: string
 }
 
 const PERSONALITY_TYPES = [
@@ -75,11 +83,13 @@ const emptyProfile: Profile = {
   religions: [], languages: [], political_leaning: '', occupation: '', company: '', 
   education_level: '', school_name: '', degree: '',
   favorite_quote: '', favorite_books: [], favorite_movies: [], favorite_music: [], favorite_foods: [],
+  emergency_contact_ids: [],
 }
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile>(emptyProfile)
   const [editProfile, setEditProfile] = useState<Profile>(emptyProfile)
+  const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -90,7 +100,27 @@ export default function ProfilePage() {
   const [showQuiz, setShowQuiz] = useState(false)
   const supabase = createClient()
 
-  useEffect(() => { loadProfile() }, [])
+  useEffect(() => { loadProfile(); loadContacts() }, [])
+
+  const loadContacts = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    
+    const { data, error } = await supabase
+      .from('contacts')
+      .select('id, full_name, avatar_url, relationship_type')
+      .eq('user_id', user.id)
+      .order('full_name')
+    
+    console.log('Loaded contacts:', data, error)
+    // Map relationship_type to relationship for UI compatibility
+    if (data) {
+      setContacts(data.map(c => ({
+        ...c,
+        relationship: c.relationship_type
+      })))
+    }
+  }
 
   const loadProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -104,6 +134,7 @@ export default function ProfilePage() {
         personality_traits: data.personality_traits || [],
         interests: data.interests || [],
         skills: data.skills || [],
+        emergency_contact_ids: data.emergency_contact_ids || [],
         hobbies: data.hobbies || [],
         life_goals: data.life_goals || [],
         religions: data.religions || [],
@@ -122,10 +153,51 @@ export default function ProfilePage() {
   const saveProfile = async () => {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) { setSaving(false); return }
 
-    await supabase.from('profiles').update(editProfile).eq('id', user.id)
-    setProfile(editProfile)
+    // Explicitly list fields to save (avoid sending unknown fields)
+    const updates = {
+      full_name: editProfile.full_name,
+      avatar_url: editProfile.avatar_url,
+      date_of_birth: editProfile.date_of_birth,
+      gender: editProfile.gender,
+      phone: editProfile.phone,
+      address: editProfile.address,
+      city: editProfile.city,
+      state: editProfile.state,
+      country: editProfile.country,
+      zipcode: editProfile.zipcode,
+      biography: editProfile.biography,
+      personal_motto: editProfile.personal_motto,
+      personality_type: editProfile.personality_type,
+      personality_traits: editProfile.personality_traits || [],
+      interests: editProfile.interests || [],
+      skills: editProfile.skills || [],
+      hobbies: editProfile.hobbies || [],
+      life_goals: editProfile.life_goals || [],
+      religions: editProfile.religions || [],
+      languages: editProfile.languages || [],
+      political_leaning: editProfile.political_leaning,
+      occupation: editProfile.occupation,
+      company: editProfile.company,
+      education_level: editProfile.education_level,
+      school_name: editProfile.school_name,
+      degree: editProfile.degree,
+      favorite_quote: editProfile.favorite_quote,
+      favorite_books: editProfile.favorite_books || [],
+      favorite_movies: editProfile.favorite_movies || [],
+      favorite_music: editProfile.favorite_music || [],
+      favorite_foods: editProfile.favorite_foods || [],
+      emergency_contact_ids: editProfile.emergency_contact_ids || [],
+    }
+
+    console.log('Saving profile:', updates)
+    const { error } = await supabase.from('profiles').update(updates).eq('id', user.id)
+    if (error) {
+      console.error('Profile save error:', error)
+    } else {
+      setProfile(editProfile)
+    }
     setSaving(false)
     setShowEditModal(false)
     setEditSection(null)
@@ -214,56 +286,45 @@ export default function ProfilePage() {
     return age
   }
 
-  // Tag display component
+  // Tag display component - Compact
   const TagList = ({ items, colorClass = 'bg-[#406A56]/10 text-[#406A56]' }: { items: string[], colorClass?: string }) => (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-1.5">
       {items.length > 0 ? items.map(item => (
-        <span key={item} className={`px-3 py-1 rounded-full text-sm ${colorClass}`}>
+        <span key={item} className={`px-2.5 py-0.5 rounded-full text-xs ${colorClass}`}>
           {item}
         </span>
       )) : (
-        <span className="text-gray-400 text-sm italic">None added yet</span>
+        <span className="text-gray-400 text-xs italic">None added yet</span>
       )}
     </div>
   )
 
-  // Glass card section component with optional torn edge
-  const tornVariants: ('a' | 'b' | 'c' | 'd' | 'e')[] = ['a', 'b', 'c', 'd', 'e']
-  const ProfileCard = ({ title, icon: Icon, iconColor = 'text-[#406A56]', bgColor = 'bg-[#406A56]/10', section, children, tornEdge = false }: {
+  // Glass card section component - Compact
+  const ProfileCard = ({ title, icon: Icon, iconColor = 'text-[#406A56]', bgColor = 'bg-[#406A56]/10', section, children }: {
     title: string
     icon: React.ComponentType<{ size?: number; className?: string }>
     iconColor?: string
     bgColor?: string
     section: string
     children: React.ReactNode
-    tornEdge?: boolean
   }) => (
-    <div className="relative mb-4">
-      <div className={`glass-card-page p-5 group relative ${tornEdge ? 'pb-0 rounded-b-none' : ''}`}>
+    <div className="relative mb-3">
+      <div className="glass-card-page p-4 group relative">
         <button
           onClick={() => openEdit(section)}
-          className="absolute top-4 right-4 p-2 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all z-10"
+          className="absolute top-3 right-3 p-1.5 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all z-10"
         >
-          <Edit2 size={14} />
+          <Edit2 size={12} />
         </button>
-        <div className="flex items-center gap-3 mb-4">
-          <div className={`w-9 h-9 rounded-xl ${bgColor} flex items-center justify-center`}>
-            <Icon size={18} className={iconColor} />
+        <div className="flex items-center gap-2 mb-3">
+          <div className={`w-7 h-7 rounded-lg ${bgColor} flex items-center justify-center`}>
+            <Icon size={14} className={iconColor} />
           </div>
-          <h3 className="font-semibold text-[#2d2d2d]">{title}</h3>
+          <h3 className="font-semibold text-[#2d2d2d] text-sm">{title}</h3>
         </div>
-        <div className={tornEdge ? 'pb-4' : ''}>
+        <div>
           {children}
         </div>
-        {tornEdge && (
-          <div className="-mx-5 mt-3">
-            <TornPaperEdge 
-              variant={4}
-              color="#E8DFD0"
-              height={18}
-            />
-          </div>
-        )}
       </div>
     </div>
   )
@@ -311,7 +372,7 @@ export default function ProfilePage() {
           {/* Left Column - Personality & Interests */}
           <div className="lg:col-span-3 space-y-4">
             {/* Personality */}
-            <ProfileCard title="Personality" icon={Brain} section="personality" tornEdge>
+            <ProfileCard title="Personality" icon={Brain} section="personality">
               {profile.personality_type && (
                 <div className="mb-3">
                   <span className="text-sm text-gray-500">Type</span>
@@ -345,58 +406,65 @@ export default function ProfilePage() {
             <ProfileCard title="Skills" icon={Star} iconColor="text-[#8DACAB]" bgColor="bg-[#8DACAB]/10" section="skills">
               <TagList items={profile.skills} colorClass="bg-[#8DACAB]/20 text-[#5d8585]" />
             </ProfileCard>
-
-            {/* Life Philosophy */}
-            <ProfileCard title="Life Philosophy" icon={Quote} iconColor="text-[#4A3552]" bgColor="bg-[#4A3552]/10" section="philosophy" tornEdge>
-              {profile.personal_motto ? (
-                <p className="text-[#4A3552] italic">"{profile.personal_motto}"</p>
-              ) : (
-                <p className="text-gray-400 text-sm italic">No motto set</p>
-              )}
-              {profile.favorite_quote && (
-                <div className="mt-3 pt-3 border-t border-[#4A3552]/10">
-                  <span className="text-sm text-gray-500 block mb-1">Favorite Quote</span>
-                  <p className="text-sm text-[#4A3552]/80 italic">"{profile.favorite_quote}"</p>
-                </div>
-              )}
-            </ProfileCard>
-
-            {/* Life Goals */}
-            <ProfileCard title="Life Goals" icon={Target} iconColor="text-[#4A3552]" bgColor="bg-[#4A3552]/10" section="goals">
-              <TagList items={profile.life_goals} colorClass="bg-[#4A3552]/10 text-[#4A3552]" />
-            </ProfileCard>
           </div>
 
           {/* Center Column - Hero Section */}
           <div className="lg:col-span-6">
-            {/* Main Profile Card - Combined with Biography */}
-            <div className="glass-card-page glass-card-page-strong p-8 mb-6 group relative">
+            {/* Main Profile Card - Compact */}
+            <div className="glass-card-page glass-card-page-strong p-5 mb-4 group relative">
               <button
                 onClick={() => openEdit('basics')}
-                className="absolute top-4 right-4 p-2 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all"
+                className="absolute top-3 right-3 p-1.5 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all"
               >
                 <Edit2 size={14} />
               </button>
 
-              {/* Avatar & Essence - Side by Side, Same Size */}
-              <div className="flex items-center justify-center gap-8 mb-6">
-                {/* Avatar - 140px */}
+              {/* Avatar & Essence + Name - Horizontal Layout */}
+              <div className="flex items-center gap-5 mb-4">
+                {/* Avatar - 100px */}
                 <div className="flex-shrink-0">
                   {profile.avatar_url ? (
                     <img 
                       src={profile.avatar_url} 
                       alt={profile.full_name} 
-                      className="w-[140px] h-[140px] rounded-full object-cover border-4 border-white shadow-lg"
+                      className="w-[100px] h-[100px] rounded-full object-cover border-3 border-white shadow-lg"
                     />
                   ) : (
-                    <div className="w-[140px] h-[140px] rounded-full bg-gradient-to-br from-[#406A56] to-[#5A8A72] flex items-center justify-center text-white text-5xl font-semibold shadow-lg border-4 border-white">
+                    <div className="w-[100px] h-[100px] rounded-full bg-gradient-to-br from-[#406A56] to-[#5A8A72] flex items-center justify-center text-white text-4xl font-semibold shadow-lg border-3 border-white">
                       {profile.full_name?.charAt(0) || '?'}
                     </div>
                   )}
                 </div>
 
-                {/* Essence Fingerprint - 140px */}
-                <div className="flex flex-col items-center">
+                {/* Name & Info */}
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-2xl font-bold text-[#2d2d2d] truncate">
+                    {profile.full_name || 'Your Name'}
+                  </h2>
+                  {profile.occupation && (
+                    <p className="text-[#406A56] font-medium truncate">{profile.occupation}</p>
+                  )}
+                  <div className="flex items-center gap-3 text-gray-500 text-sm mt-1 flex-wrap">
+                    {profile.date_of_birth && (
+                      <div className="flex items-center gap-1">
+                        <Calendar size={12} />
+                        <span>{calculateAge(profile.date_of_birth)} years old</span>
+                      </div>
+                    )}
+                    {(profile.city || profile.country) && (
+                      <div className="flex items-center gap-1">
+                        <MapPin size={12} />
+                        <span>{formatLocation()}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2">
+                    <VoiceCloneButton />
+                  </div>
+                </div>
+
+                {/* Essence Fingerprint - 80px */}
+                <div className="flex-shrink-0 flex flex-col items-center">
                   {hasProfileData({
                     personality_type: profile.personality_type,
                     personality_traits: profile.personality_traits,
@@ -409,116 +477,96 @@ export default function ProfilePage() {
                     <>
                       <EssenceFingerprintLoader 
                         essenceVector={essenceVector} 
-                        size={140}
+                        size={80}
                       />
-                      <p className="text-xs text-[#406A56]/60 mt-1 italic">Essence Fingerprint</p>
+                      <p className="text-[10px] text-[#406A56]/60 mt-0.5">Essence</p>
                     </>
                   ) : (
-                    <div className="w-[140px] h-[140px] rounded-full border-2 border-dashed border-[#406A56]/20 
-                                    flex flex-col items-center justify-center text-center p-4">
-                      <Sparkles className="w-6 h-6 text-[#406A56]/30 mb-2" />
-                      <p className="text-[10px] text-[#406A56]/50">
-                        Add interests or traits for Essence
-                      </p>
+                    <div className="w-[80px] h-[80px] rounded-full border-2 border-dashed border-[#406A56]/20 
+                                    flex flex-col items-center justify-center text-center p-2">
+                      <Sparkles className="w-5 h-5 text-[#406A56]/30 mb-1" />
+                      <p className="text-[8px] text-[#406A56]/50 leading-tight">Add profile data</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Name & Basic Info - Centered */}
-              <div className="text-center mb-6">
-                <h2 className="text-3xl font-bold text-[#2d2d2d] mb-2">
-                  {profile.full_name || 'Your Name'}
-                </h2>
-                
-                {/* Voice Clone Button */}
-                <div className="mb-3">
-                  <VoiceCloneButton />
-                </div>
-                
-                {profile.occupation && (
-                  <p className="text-lg text-[#406A56] mb-2">{profile.occupation}</p>
-                )}
-                
-                <div className="flex items-center justify-center gap-4 text-gray-500 text-sm flex-wrap">
-                  {profile.date_of_birth && (
-                    <div className="flex items-center gap-1">
-                      <Calendar size={14} />
-                      <span>
-                        {new Date(profile.date_of_birth).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        {calculateAge(profile.date_of_birth) && ` (${calculateAge(profile.date_of_birth)})`}
-                      </span>
-                    </div>
-                  )}
-
-                  {(profile.city || profile.country) && (
-                    <div className="flex items-center gap-1">
-                      <MapPin size={14} />
-                      <span>{formatLocation()}</span>
-                    </div>
-                  )}
-
-                  {profile.gender && (
-                    <span className="px-2 py-0.5 bg-[#406A56]/10 text-[#406A56] rounded-full text-xs">
-                      {profile.gender}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Biography - Merged into main card */}
-              <div className="border-t border-[#406A56]/10 pt-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <User size={16} className="text-[#406A56]" />
+              {/* Biography - Compact */}
+              <div className="border-t border-[#406A56]/10 pt-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <User size={14} className="text-[#406A56]" />
                   <h3 className="font-semibold text-[#2d2d2d] text-sm">About Me</h3>
                   <button
                     onClick={(e) => { e.stopPropagation(); openEdit('bio'); }}
-                    className="ml-auto p-1.5 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all"
+                    className="ml-auto p-1 opacity-0 group-hover:opacity-100 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-all"
                   >
                     <Edit2 size={12} />
                   </button>
                 </div>
                 {profile.biography ? (
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm">{profile.biography}</p>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm line-clamp-4">{profile.biography}</p>
                 ) : (
                   <p className="text-gray-400 italic text-sm">Tell your story... What makes you, you?</p>
                 )}
               </div>
             </div>
 
-            {/* Favorites Section */}
-            <ProfileCard title="Favorites" icon={Star} iconColor="text-[#C35F33]" bgColor="bg-[#C35F33]/10" section="favorites" tornEdge>
-              <div className="grid grid-cols-2 gap-4">
+            {/* Favorites Section - Compact */}
+            <ProfileCard title="Favorites" icon={Star} iconColor="text-[#C35F33]" bgColor="bg-[#C35F33]/10" section="favorites">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <BookOpen size={14} className="text-[#406A56]" />
-                    <span className="text-sm font-medium text-gray-600">Books</span>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <BookOpen size={12} className="text-[#406A56]" />
+                    <span className="text-xs font-medium text-gray-600">Books</span>
                   </div>
                   <TagList items={profile.favorite_books} colorClass="bg-[#406A56]/10 text-[#406A56]" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Film size={14} className="text-[#4A3552]" />
-                    <span className="text-sm font-medium text-gray-600">Movies</span>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Film size={12} className="text-[#4A3552]" />
+                    <span className="text-xs font-medium text-gray-600">Movies</span>
                   </div>
                   <TagList items={profile.favorite_movies} colorClass="bg-[#4A3552]/10 text-[#4A3552]" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Music size={14} className="text-[#8DACAB]" />
-                    <span className="text-sm font-medium text-gray-600">Music</span>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Music size={12} className="text-[#8DACAB]" />
+                    <span className="text-xs font-medium text-gray-600">Music</span>
                   </div>
                   <TagList items={profile.favorite_music} colorClass="bg-[#8DACAB]/20 text-[#5d8585]" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Utensils size={14} className="text-[#C35F33]" />
-                    <span className="text-sm font-medium text-gray-600">Foods</span>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Utensils size={12} className="text-[#C35F33]" />
+                    <span className="text-xs font-medium text-gray-600">Foods</span>
                   </div>
                   <TagList items={profile.favorite_foods} colorClass="bg-[#C35F33]/10 text-[#C35F33]" />
                 </div>
               </div>
             </ProfileCard>
+
+            {/* Life Philosophy & Life Goals - Split Row */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Life Philosophy */}
+              <ProfileCard title="Life Philosophy" icon={Quote} iconColor="text-[#4A3552]" bgColor="bg-[#4A3552]/10" section="philosophy">
+                {profile.personal_motto ? (
+                  <p className="text-[#4A3552] italic text-sm">"{profile.personal_motto}"</p>
+                ) : (
+                  <p className="text-gray-400 text-sm italic">No motto set</p>
+                )}
+                {profile.favorite_quote && (
+                  <div className="mt-3 pt-3 border-t border-[#4A3552]/10">
+                    <span className="text-xs text-gray-500 block mb-1">Favorite Quote</span>
+                    <p className="text-xs text-[#4A3552]/80 italic">"{profile.favorite_quote}"</p>
+                  </div>
+                )}
+              </ProfileCard>
+
+              {/* Life Goals */}
+              <ProfileCard title="Life Goals" icon={Target} iconColor="text-[#4A3552]" bgColor="bg-[#4A3552]/10" section="goals">
+                <TagList items={profile.life_goals} colorClass="bg-[#4A3552]/10 text-[#4A3552]" />
+              </ProfileCard>
+            </div>
           </div>
 
           {/* Right Column - Location & Professional */}
@@ -582,14 +630,34 @@ export default function ProfilePage() {
               )}
             </ProfileCard>
 
-            {/* Contact Info */}
-            <ProfileCard title="Contact" icon={User} section="contact">
+            {/* Emergency Contact */}
+            <ProfileCard title="Emergency Contact" icon={User} section="emergency">
               <div className="space-y-2">
-                {profile.phone ? (
-                  <p className="text-gray-700">{profile.phone}</p>
+                {profile.emergency_contact_ids.length > 0 ? (
+                  <div className="space-y-2">
+                    {profile.emergency_contact_ids.map(contactId => {
+                      const contact = contacts.find(c => c.id === contactId)
+                      return contact ? (
+                        <div key={contactId} className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-[#406A56]/10 flex items-center justify-center text-sm font-medium text-[#406A56]">
+                            {contact.full_name?.charAt(0) || '?'}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">{contact.full_name}</p>
+                            {contact.relationship && (
+                              <p className="text-xs text-gray-500">{contact.relationship}</p>
+                            )}
+                          </div>
+                        </div>
+                      ) : null
+                    })}
+                  </div>
                 ) : (
-                  <p className="text-gray-400 text-sm italic">No phone added</p>
+                  <p className="text-gray-400 text-sm italic">No emergency contact</p>
                 )}
+                <p className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-100">
+                  This person can verify your passing with a death certificate or obituary.
+                </p>
               </div>
             </ProfileCard>
           </div>
@@ -602,6 +670,7 @@ export default function ProfilePage() {
           section={editSection}
           profile={editProfile}
           setProfile={setEditProfile}
+          contacts={contacts}
           onClose={() => { setShowEditModal(false); setEditSection(null) }}
           onSave={saveProfile}
           saving={saving}
@@ -628,12 +697,13 @@ export default function ProfilePage() {
 
 // Edit Modal Component
 function EditModal({
-  section, profile, setProfile, onClose, onSave, saving, uploading,
+  section, profile, setProfile, contacts, onClose, onSave, saving, uploading,
   handlePhotoUpload, tagInput, setTagInput, currentTagField, setCurrentTagField, addTag, removeTag
 }: {
   section: string | null
   profile: Profile
   setProfile: React.Dispatch<React.SetStateAction<Profile>>
+  contacts: Contact[]
   onClose: () => void
   onSave: () => void
   saving: boolean
@@ -661,7 +731,7 @@ function EditModal({
       case 'religion': return 'Edit Faith & Beliefs'
       case 'work': return 'Edit Work'
       case 'education': return 'Edit Education'
-      case 'contact': return 'Edit Contact'
+      case 'emergency': return 'Emergency Contact'
       case 'favorites': return 'Edit Favorites'
       default: return 'Edit Profile'
     }
@@ -1217,15 +1287,62 @@ function EditModal({
             </>
           )}
 
-          {section === 'contact' && (
+          {section === 'emergency' && (
             <div>
-              <label className="block text-sm text-[#666] mb-1.5">Phone Number</label>
-              <input
-                value={profile.phone}
-                onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
-                className="form-input"
-                placeholder="(555) 123-4567"
-              />
+              <p className="text-sm text-gray-600 mb-4 p-3 bg-[#406A56]/5 rounded-lg">
+                Your emergency contact can verify your passing by providing a death certificate or obituary. 
+                This person will be notified and given access to manage your legacy.
+              </p>
+              <label className="block text-sm text-[#666] mb-2">Select Emergency Contacts</label>
+              <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
+                {contacts.map(contact => {
+                  const isSelected = (profile.emergency_contact_ids || []).includes(contact.id)
+                  return (
+                    <button
+                      key={contact.id}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          setProfile(p => ({
+                            ...p,
+                            emergency_contact_ids: (p.emergency_contact_ids || []).filter(id => id !== contact.id)
+                          }))
+                        } else {
+                          setProfile(p => ({
+                            ...p,
+                            emergency_contact_ids: [...(p.emergency_contact_ids || []), contact.id]
+                          }))
+                        }
+                      }}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                        isSelected
+                          ? 'border-[#406A56] bg-[#406A56]/10'
+                          : 'border-gray-200 hover:border-[#406A56]/30'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
+                        isSelected ? 'bg-[#406A56] text-white' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {contact.full_name?.charAt(0) || '?'}
+                      </div>
+                      <div className="text-left flex-1">
+                        <p className="font-medium text-[#2d2d2d]">{contact.full_name}</p>
+                        {contact.relationship && (
+                          <p className="text-xs text-gray-500">{contact.relationship}</p>
+                        )}
+                      </div>
+                      {isSelected && (
+                        <Check className="w-5 h-5 text-[#406A56]" />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              {contacts.length === 0 && (
+                <p className="text-sm text-gray-500 italic">
+                  No contacts found. Add contacts from the People section first.
+                </p>
+              )}
             </div>
           )}
 

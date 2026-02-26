@@ -271,9 +271,9 @@ export default function ActivityFeed({ xpCompletions = [] }: ActivityFeedProps) 
   }, [])
 
   return (
-    <div className="bg-[#FDF8F3] rounded-[20px] shadow-sm overflow-hidden border border-white/50">
+    <div className="bg-[#FDF8F3] rounded-[20px] shadow-sm overflow-hidden border border-white/50 h-full flex flex-col max-h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#406A56]/10">
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-[#406A56]/10">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-[#406A56]/10 flex items-center justify-center">
             <Bell size={12} className="text-[#406A56]" />
@@ -293,8 +293,8 @@ export default function ActivityFeed({ xpCompletions = [] }: ActivityFeedProps) 
         </button>
       </div>
 
-      {/* Content */}
-      <div className="divide-y divide-[#406A56]/5">
+      {/* Content - Scrollable */}
+      <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-[#406A56]/5">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-8 gap-3">
             <motion.div

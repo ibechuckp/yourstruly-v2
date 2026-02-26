@@ -13,7 +13,6 @@ import {
   Poll,
   ScheduleProposal
 } from '@/components/messages'
-import { TornPaperEdge } from '@/components/brand'
 
 // ============================================
 // MOCK DATA
@@ -522,12 +521,12 @@ export default function MessagesPage() {
     : []
 
   return (
-    <div className="min-h-screen bg-[#F2F1E5]">
-      {/* Main Content - Full Height */}
-      <main className="px-4 lg:px-6 py-4 lg:py-6">
-        <div className="max-w-6xl mx-auto">
+    <div className="h-[calc(100vh-56px)] bg-[#F2F1E5] overflow-hidden">
+      {/* Main Content - Full Height - 80% Width - NO SCROLL */}
+      <main className="h-full px-4 lg:px-6 py-4 lg:py-6">
+        <div className="h-full w-full max-w-[80%] mx-auto">
           {/* Messages Panel - Glass Card */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-[20px] shadow-lg border border-white/50 overflow-hidden h-[calc(100vh-140px)] lg:h-[calc(100vh-160px)]">
+          <div className="bg-white/80 backdrop-blur-xl rounded-[20px] shadow-lg border border-white/50 overflow-hidden h-full">
             <div className="flex h-full">
               {/* Conversation List - Left Panel */}
               <div 
@@ -584,27 +583,19 @@ export default function MessagesPage() {
                     </div>
                   </>
                 ) : (
-                  /* Empty State with torn edge card */
+                  /* Empty State */
                   <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-white/60 to-[#F2F1E5]/40">
-                    <div className="relative">
-                      <div className="absolute -top-2 left-4 right-4">
-                        <TornPaperEdge variant={4} position="top" color="white" height={8} />
+                    <div className="text-center px-8 py-8 bg-white rounded-xl shadow-sm mx-4">
+                      <div className="w-20 h-20 rounded-full bg-[#4A3552]/10 flex items-center justify-center mx-auto mb-4">
+                        <MessageSquare size={32} className="text-[#4A3552]" />
                       </div>
-                      <div className="text-center px-8 py-8 bg-white rounded-lg shadow-sm mx-4">
-                        <div className="w-20 h-20 rounded-full bg-[#4A3552]/10 flex items-center justify-center mx-auto mb-4">
-                          <MessageSquare size={32} className="text-[#4A3552]" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-[#2d2d2d] mb-2">
-                          Select a conversation
-                        </h3>
-                        <p className="text-sm text-[#666] max-w-sm">
-                          Choose a conversation from the list to start messaging, 
-                          or browse memory threads to collaborate with family.
-                        </p>
-                      </div>
-                      <div className="absolute -bottom-2 left-4 right-4">
-                        <TornPaperEdge variant={4} position="bottom" color="white" height={8} />
-                      </div>
+                      <h3 className="text-lg font-semibold text-[#2d2d2d] mb-2">
+                        Select a conversation
+                      </h3>
+                      <p className="text-sm text-[#666] max-w-sm">
+                        Choose a conversation from the list to start messaging, 
+                        or browse memory threads to collaborate with family.
+                      </p>
                     </div>
                   </div>
                 )}

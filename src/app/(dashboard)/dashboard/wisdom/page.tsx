@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Lightbulb, Heart, Star, BookOpen, Quote, Play, ChevronRight, Sparkles, Search, X, ChevronLeft, GraduationCap, Briefcase, Users, Utensils, Compass, Share2 } from 'lucide-react';
+import { Brain, Lightbulb, Heart, Star, BookOpen, Quote, Play, ChevronRight, Sparkles, Search, X, ChevronLeft, GraduationCap, Briefcase, Users, Utensils, Compass, Share2, Baby, Activity, Palette, Moon, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import '@/styles/home.css';
 import '@/styles/page-styles.css';
@@ -38,16 +38,26 @@ interface WisdomStats {
 
 type TabMode = 'mine' | 'shared';
 
-// Better wisdom categories with icons and colors
+// Enhanced wisdom categories with icons, colors, and descriptions
 const WISDOM_CATEGORIES = [
-  { key: 'life_lessons', label: 'Life Lessons', icon: Lightbulb, color: '#D9C61A', description: 'Hard-earned wisdom and insights' },
-  { key: 'relationships', label: 'Relationships', icon: Heart, color: '#C35F33', description: 'Love, friendship, and connection' },
-  { key: 'family', label: 'Family', icon: Users, color: '#406A56', description: 'Family traditions and values' },
-  { key: 'career', label: 'Career & Work', icon: Briefcase, color: '#4A3552', description: 'Professional wisdom and advice' },
-  { key: 'values', label: 'Values & Beliefs', icon: Compass, color: '#8DACAB', description: 'What matters most to you' },
-  { key: 'recipes', label: 'Recipes & Traditions', icon: Utensils, color: '#C35F33', description: 'Family recipes and culinary wisdom' },
-  { key: 'advice', label: 'Advice for Others', icon: GraduationCap, color: '#D9C61A', description: 'Guidance for loved ones' },
+  { key: 'life_lessons', label: 'Life Lessons', icon: Lightbulb, color: '#D9C61A', bgColor: '#FDF9E3', description: 'Hard-earned wisdom and insights' },
+  { key: 'relationships', label: 'Relationships', icon: Heart, color: '#C35F33', bgColor: '#FCEEE8', description: 'Love, friendship, and connection' },
+  { key: 'family', label: 'Family', icon: Users, color: '#406A56', bgColor: '#E8F2ED', description: 'Family traditions and values' },
+  { key: 'career', label: 'Career', icon: Briefcase, color: '#4A3552', bgColor: '#EDE8F0', description: 'Professional wisdom and advice' },
+  { key: 'parenting', label: 'Parenting', icon: Baby, color: '#8DACAB', bgColor: '#EBF2F1', description: 'Raising children with love' },
+  { key: 'health', label: 'Health', icon: Activity, color: '#5B8A72', bgColor: '#E6F0EB', description: 'Physical and mental wellbeing' },
+  { key: 'spirituality', label: 'Spirituality', icon: Moon, color: '#6B5B95', bgColor: '#EFEAF5', description: 'Faith, purpose, and meaning' },
+  { key: 'creativity', label: 'Creativity', icon: Palette, color: '#E07C52', bgColor: '#FCF0EA', description: 'Art, expression, imagination' },
+  { key: 'values', label: 'Values', icon: Compass, color: '#3D7068', bgColor: '#E4EDEC', description: 'What matters most to you' },
+  { key: 'recipes', label: 'Recipes', icon: Utensils, color: '#C35F33', bgColor: '#FCEEE8', description: 'Family recipes and traditions' },
+  { key: 'advice', label: 'Advice', icon: GraduationCap, color: '#D9C61A', bgColor: '#FDF9E3', description: 'Guidance for loved ones' },
+  { key: 'other', label: 'Other', icon: HelpCircle, color: '#888888', bgColor: '#F5F5F5', description: 'Everything else' },
 ];
+
+// Get category config by key
+const getCategoryConfig = (key: string) => {
+  return WISDOM_CATEGORIES.find(c => c.key === key) || WISDOM_CATEGORIES[WISDOM_CATEGORIES.length - 1];
+};
 
 export default function WisdomPage() {
   const [entries, setEntries] = useState<WisdomEntry[]>([]);
@@ -60,6 +70,7 @@ export default function WisdomPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [tabMode, setTabMode] = useState<TabMode>('mine');
+  const [showExploreSection, setShowExploreSection] = useState(true);
   
   // Conversation modal state for answering instant questions
   const [conversationPrompt, setConversationPrompt] = useState<EngagementPrompt | null>(null);
@@ -71,6 +82,18 @@ export default function WisdomPage() {
     loadSharedWisdom();
   }, []);
 
+  // Calculate category counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    entries.forEach(entry => {
+      const cat = entry.category || entry.ai_category || 'other';
+      // Normalize category key
+      const normalizedCat = cat.toLowerCase().replace(/\s+/g, '_');
+      counts[normalizedCat] = (counts[normalizedCat] || 0) + 1;
+    });
+    return counts;
+  }, [entries]);
+
   // Filter entries based on search and category
   const filteredEntries = useMemo(() => {
     return entries.filter(entry => {
@@ -79,10 +102,10 @@ export default function WisdomPage() {
         entry.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         entry.tags?.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
       
+      const entryCategory = (entry.category || entry.ai_category || '').toLowerCase().replace(/\s+/g, '_');
       const matchesCategory = !selectedCategory ||
         entry.tags?.includes(selectedCategory) ||
-        entry.ai_category === selectedCategory ||
-        entry.category === selectedCategory;
+        entryCategory === selectedCategory;
       
       return matchesSearch && matchesCategory;
     });
@@ -108,20 +131,12 @@ export default function WisdomPage() {
     if (memories) {
       setEntries(memories);
       
-      // Calculate stats by analyzing tags and categories
+      // Calculate stats by category
       const categoryCount: Record<string, number> = {};
       memories.forEach(m => {
-        // Count by tags
-        (m.tags || []).forEach((tag: string) => {
-          if (tag !== 'wisdom') {
-            const normalizedTag = tag.toLowerCase().replace(/_/g, ' ');
-            categoryCount[normalizedTag] = (categoryCount[normalizedTag] || 0) + 1;
-          }
-        });
-        // Also count by ai_category if present
-        if (m.ai_category) {
-          categoryCount[m.ai_category] = (categoryCount[m.ai_category] || 0) + 1;
-        }
+        const cat = m.category || m.ai_category || 'other';
+        const normalizedCat = cat.toLowerCase().replace(/\s+/g, '_');
+        categoryCount[normalizedCat] = (categoryCount[normalizedCat] || 0) + 1;
       });
 
       setStats({
@@ -139,7 +154,6 @@ export default function WisdomPage() {
     if (!user) return;
 
     // Get wisdom shared with current user
-    // knowledge_shares links to contacts, and contacts have shared_with_user_id linking to users
     const { data: shares, error } = await supabase
       .from('knowledge_shares')
       .select(`
@@ -193,6 +207,16 @@ export default function WisdomPage() {
       setPlayingAudio(url);
     }
   };
+
+  // Get bubble size based on count (relative to max count)
+  const getBubbleSize = (count: number, maxCount: number) => {
+    if (maxCount === 0) return 1;
+    const ratio = count / maxCount;
+    // Scale between 0.7 and 1.3
+    return 0.7 + (ratio * 0.6);
+  };
+
+  const maxCategoryCount = Math.max(...Object.values(categoryCounts), 1);
 
   if (isLoading) {
     return (
@@ -303,11 +327,9 @@ export default function WisdomPage() {
         {tabMode === 'mine' && (
           <QuestionPromptBar 
             onCreateWisdom={(question: WisdomQuestion) => {
-              // Convert the wisdom question to an EngagementPrompt format
-              // to open the ConversationView modal
               const prompt: EngagementPrompt = {
                 id: question.id,
-                userId: '', // Will be set by the conversation
+                userId: '',
                 type: 'knowledge',
                 category: question.category,
                 promptText: question.question_text,
@@ -324,42 +346,149 @@ export default function WisdomPage() {
           />
         )}
 
-        {/* Category Filter Pills - only show for My Wisdom tab */}
-        {tabMode === 'mine' && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          <button
-            onClick={() => setSelectedCategory(null)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all
-              ${!selectedCategory 
-                ? 'bg-[#4A3552] text-white' 
-                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'}`}
+        {/* ✨ Explore by Topic Section - Visual Category Clusters */}
+        {tabMode === 'mine' && entries.length > 0 && showExploreSection && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
           >
-            All ({entries.length})
-          </button>
-          {WISDOM_CATEGORIES.map(cat => {
-            const count = entries.filter(e => 
-              e.tags?.includes(cat.key) || 
-              e.ai_category === cat.key ||
-              e.category === cat.key
-            ).length;
-            if (count === 0) return null;
-            const Icon = cat.icon;
-            return (
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-[#4A3552] flex items-center gap-2">
+                <Sparkles size={20} className="text-[#D9C61A]" />
+                Explore by Topic
+              </h2>
               <button
-                key={cat.key}
-                onClick={() => setSelectedCategory(selectedCategory === cat.key ? null : cat.key)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2
-                  ${selectedCategory === cat.key
-                    ? 'text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'}`}
-                style={selectedCategory === cat.key ? { backgroundColor: cat.color } : {}}
+                onClick={() => setShowExploreSection(false)}
+                className="text-sm text-gray-400 hover:text-gray-600"
               >
-                <Icon size={14} />
-                {cat.label} ({count})
+                Hide
               </button>
-            );
-          })}
-        </div>
+            </div>
+            
+            {/* Category Bubbles Grid */}
+            <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
+              {WISDOM_CATEGORIES.map(cat => {
+                const count = categoryCounts[cat.key] || 0;
+                if (count === 0) return null;
+                
+                const Icon = cat.icon;
+                const scale = getBubbleSize(count, maxCategoryCount);
+                const isSelected = selectedCategory === cat.key;
+                
+                return (
+                  <motion.button
+                    key={cat.key}
+                    onClick={() => setSelectedCategory(isSelected ? null : cat.key)}
+                    whileHover={{ scale: scale * 1.05 }}
+                    whileTap={{ scale: scale * 0.95 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                    className={`relative flex flex-col items-center justify-center p-4 rounded-2xl transition-all cursor-pointer ${
+                      isSelected 
+                        ? 'ring-2 ring-offset-2 shadow-lg' 
+                        : 'hover:shadow-md'
+                    }`}
+                    style={{ 
+                      backgroundColor: cat.bgColor,
+                      minWidth: `${80 + (count * 5)}px`,
+                      minHeight: `${80 + (count * 5)}px`,
+                      maxWidth: '140px',
+                      maxHeight: '140px',
+                      ringColor: isSelected ? cat.color : undefined,
+                    }}
+                  >
+                    {/* Count Badge */}
+                    <div 
+                      className="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm"
+                      style={{ backgroundColor: cat.color }}
+                    >
+                      {count}
+                    </div>
+                    
+                    {/* Icon */}
+                    <Icon 
+                      size={24 + (count * 2)} 
+                      style={{ color: cat.color }}
+                      className="mb-1"
+                    />
+                    
+                    {/* Label */}
+                    <span 
+                      className="text-xs font-medium text-center leading-tight"
+                      style={{ color: cat.color }}
+                    >
+                      {cat.label}
+                    </span>
+                  </motion.button>
+                );
+              })}
+              
+              {/* "All" bubble */}
+              <motion.button
+                onClick={() => setSelectedCategory(null)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`flex flex-col items-center justify-center p-4 rounded-2xl transition-all cursor-pointer ${
+                  !selectedCategory 
+                    ? 'bg-[#4A3552] text-white ring-2 ring-offset-2 ring-[#4A3552] shadow-lg' 
+                    : 'bg-white/80 text-[#4A3552] hover:bg-white hover:shadow-md border border-gray-200'
+                }`}
+                style={{ 
+                  minWidth: '80px',
+                  minHeight: '80px',
+                }}
+              >
+                <BookOpen size={24} className="mb-1" />
+                <span className="text-xs font-medium">All</span>
+                <span className="text-[10px] opacity-70">{entries.length}</span>
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Category Filter Pills (compact) - only show when explore section hidden */}
+        {tabMode === 'mine' && !showExploreSection && (
+          <div className="mb-6">
+            <button
+              onClick={() => setShowExploreSection(true)}
+              className="text-sm text-[#4A3552] hover:underline mb-3 flex items-center gap-1"
+            >
+              <Sparkles size={14} />
+              Show topic explorer
+            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all
+                  ${!selectedCategory 
+                    ? 'bg-[#4A3552] text-white' 
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'}`}
+              >
+                All ({entries.length})
+              </button>
+              {WISDOM_CATEGORIES.map(cat => {
+                const count = categoryCounts[cat.key] || 0;
+                if (count === 0) return null;
+                const Icon = cat.icon;
+                return (
+                  <button
+                    key={cat.key}
+                    onClick={() => setSelectedCategory(selectedCategory === cat.key ? null : cat.key)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2
+                      ${selectedCategory === cat.key
+                        ? 'text-white'
+                        : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'}`}
+                    style={selectedCategory === cat.key ? { backgroundColor: cat.color } : {}}
+                  >
+                    <Icon size={14} />
+                    {cat.label} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         )}
 
         {/* Clear Filters */}
@@ -367,8 +496,9 @@ export default function WisdomPage() {
           <div className="mb-4">
             <button 
               onClick={clearFilters}
-              className="text-[#C35F33] hover:text-[#a84d28] text-sm font-medium"
+              className="text-[#C35F33] hover:text-[#a84d28] text-sm font-medium flex items-center gap-1"
             >
+              <X size={14} />
               Clear filters
             </button>
           </div>
@@ -420,11 +550,11 @@ export default function WisdomPage() {
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#406A56]/10 flex items-center justify-center">
-                <Users size={20} className="text-[#406A56]" />
+                <Compass size={20} className="text-[#406A56]" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#406A56]">
-                  {Object.keys(stats?.categories || {}).length}
+                  {Object.keys(categoryCounts).length}
                 </div>
                 <div className="text-xs text-gray-500">Topics Covered</div>
               </div>
@@ -458,7 +588,12 @@ export default function WisdomPage() {
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
             <Quote size={20} className="text-[#D9C61A]" />
-            {tabMode === 'mine' ? 'Your Wisdom Collection' : 'Shared with You'}
+            {tabMode === 'mine' 
+              ? selectedCategory 
+                ? `${getCategoryConfig(selectedCategory).label} Wisdom`
+                : 'Your Wisdom Collection'
+              : 'Shared with You'
+            }
           </h3>
 
           {/* Shared with Me Tab Content */}
@@ -558,54 +693,78 @@ export default function WisdomPage() {
             </div>
           ) : (
             <AnimatePresence mode="popLayout">
-              {filteredEntries.map((entry, index) => (
-                <motion.div
-                  key={entry.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="glass-card p-5 hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => window.location.assign(`/dashboard/wisdom/${entry.id}`)}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-[#4A3552]/10 flex items-center justify-center flex-shrink-0">
-                      <Brain size={20} className="text-[#4A3552]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-gray-800 mb-1 line-clamp-1">{entry.title}</h4>
-                      <p className="text-sm text-gray-500 line-clamp-2">{entry.description}</p>
-                      
-                      {/* Audio indicator */}
-                      {entry.audio_url && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            playAudio(entry.audio_url!);
-                          }}
-                          className="mt-2 flex items-center gap-2 text-xs text-[#406A56] hover:text-[#4a7a64]"
-                        >
-                          <Play size={14} className={playingAudio === entry.audio_url ? 'text-[#C35F33]' : ''} />
-                          {playingAudio === entry.audio_url ? 'Playing...' : 'Listen'}
-                        </button>
-                      )}
-                      
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {entry.tags?.filter(t => t !== 'wisdom').slice(0, 3).map(tag => (
-                          <span 
-                            key={tag} 
-                            className="text-xs px-2 py-0.5 bg-[#4A3552]/10 text-[#4A3552] rounded-full"
-                          >
-                            {tag}
-                          </span>
-                        ))}
+              {filteredEntries.map((entry, index) => {
+                const catKey = (entry.category || entry.ai_category || 'other').toLowerCase().replace(/\s+/g, '_');
+                const catConfig = getCategoryConfig(catKey);
+                const CatIcon = catConfig.icon;
+                
+                return (
+                  <motion.div
+                    key={entry.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="glass-card p-5 hover:shadow-md transition-shadow cursor-pointer group"
+                    onClick={() => window.location.assign(`/dashboard/wisdom/${entry.id}`)}
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Category Icon */}
+                      <div 
+                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
+                        style={{ backgroundColor: catConfig.bgColor }}
+                      >
+                        <CatIcon size={20} style={{ color: catConfig.color }} />
                       </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        {/* Category Badge */}
+                        <div className="flex items-center gap-2 mb-1">
+                          <span 
+                            className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                            style={{ 
+                              backgroundColor: catConfig.bgColor, 
+                              color: catConfig.color 
+                            }}
+                          >
+                            {catConfig.label}
+                          </span>
+                        </div>
+                        
+                        <h4 className="font-medium text-gray-800 mb-1 line-clamp-1">{entry.title}</h4>
+                        <p className="text-sm text-gray-500 line-clamp-2">{entry.description}</p>
+                        
+                        {/* Audio indicator */}
+                        {entry.audio_url && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              playAudio(entry.audio_url!);
+                            }}
+                            className="mt-2 flex items-center gap-2 text-xs text-[#406A56] hover:text-[#4a7a64]"
+                          >
+                            <Play size={14} className={playingAudio === entry.audio_url ? 'text-[#C35F33]' : ''} />
+                            {playingAudio === entry.audio_url ? 'Playing...' : 'Listen'}
+                          </button>
+                        )}
+                        
+                        {/* Tags */}
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {entry.tags?.filter(t => !['wisdom', 'conversation', 'knowledge', entry.category, entry.ai_category].includes(t)).slice(0, 3).map(tag => (
+                            <span 
+                              key={tag} 
+                              className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <ChevronRight size={20} className="text-gray-300 flex-shrink-0 group-hover:text-gray-400 transition-colors" />
                     </div>
-                    <ChevronRight size={20} className="text-gray-300 flex-shrink-0" />
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           )}
         </div>
@@ -686,9 +845,7 @@ export default function WisdomPage() {
             prompt={conversationPrompt}
             expectedXp={100}
             onComplete={(result) => {
-              // Reload the wisdom entries to show the new one
               loadWisdom();
-              // Close the conversation modal
               setConversationPrompt(null);
             }}
             onClose={() => setConversationPrompt(null)}

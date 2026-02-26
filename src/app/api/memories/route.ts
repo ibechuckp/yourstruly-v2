@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { analyzeMood } from '@/lib/ai/moodAnalysis'
 
 // GET /api/memories - List memories
 export async function GET(request: NextRequest) {
@@ -93,5 +94,38 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message, details: error }, { status: 500 })
   }
 
+  // Auto-analyze mood with AI (non-blocking)
+  analyzeMoodInBackground(supabase, data.id, title, description, memory_type)
+
   return NextResponse.json({ memory: data })
+}
+
+// Analyze mood in background (non-blocking)
+async function analyzeMoodInBackground(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  memoryId: string,
+  title: string | null,
+  description: string | null,
+  memoryType: string | null
+) {
+  try {
+    const analysis = await analyzeMood(
+      title || '',
+      description,
+      memoryType,
+      []
+    )
+
+    await supabase
+      .from('memories')
+      .update({
+        mood: analysis.mood,
+        mood_confidence: analysis.confidence,
+        mood_override: false
+      })
+      .eq('id', memoryId)
+  } catch (error) {
+    console.error('Mood analysis failed for memory:', memoryId, error)
+    // Non-critical, don't throw
+  }
 }

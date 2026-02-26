@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkAdminAuth, unauthorizedResponse } from '@/lib/auth/admin'
 
 // GET - Fetch all subscription settings and stats
 export async function GET(request: NextRequest) {
+  // Verify admin access
+  const auth = await checkAdminAuth()
+  if (!auth.isAdmin) {
+    return unauthorizedResponse(auth.error)
+  }
+
   try {
     const supabase = createAdminClient()
 
@@ -28,6 +35,12 @@ export async function GET(request: NextRequest) {
 
 // PUT - Update subscription settings
 export async function PUT(request: NextRequest) {
+  // Verify admin access
+  const auth = await checkAdminAuth()
+  if (!auth.isAdmin) {
+    return unauthorizedResponse(auth.error)
+  }
+
   try {
     const supabase = createAdminClient()
     const { plans, seatPricing, features } = await request.json()

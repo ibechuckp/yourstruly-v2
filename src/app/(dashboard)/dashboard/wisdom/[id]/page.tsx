@@ -4,11 +4,32 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Play, Pause, Square, Quote, Calendar, Tag, Lightbulb, Volume2, SkipForward, Sparkles, Share2, Users, X } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Square, Quote, Calendar, Tag, Lightbulb, Volume2, SkipForward, Sparkles, Share2, Users, X, Image as ImageIcon, ChevronDown, Check, Heart, Briefcase, Baby, Activity, Moon, Palette, Compass, Utensils, GraduationCap, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import '@/styles/home.css';
 import ShareWisdomModal from '@/components/wisdom/ShareWisdomModal';
+import WisdomCardModal from '@/components/wisdom/WisdomCardModal';
 import WisdomComments from '@/components/wisdom/WisdomComments';
+
+// Wisdom categories with icons and colors
+const WISDOM_CATEGORIES = [
+  { key: 'life_lessons', label: 'Life Lessons', icon: Lightbulb, color: '#D9C61A', bgColor: '#FDF9E3' },
+  { key: 'relationships', label: 'Relationships', icon: Heart, color: '#C35F33', bgColor: '#FCEEE8' },
+  { key: 'family', label: 'Family', icon: Users, color: '#406A56', bgColor: '#E8F2ED' },
+  { key: 'career', label: 'Career', icon: Briefcase, color: '#4A3552', bgColor: '#EDE8F0' },
+  { key: 'parenting', label: 'Parenting', icon: Baby, color: '#8DACAB', bgColor: '#EBF2F1' },
+  { key: 'health', label: 'Health', icon: Activity, color: '#5B8A72', bgColor: '#E6F0EB' },
+  { key: 'spirituality', label: 'Spirituality', icon: Moon, color: '#6B5B95', bgColor: '#EFEAF5' },
+  { key: 'creativity', label: 'Creativity', icon: Palette, color: '#E07C52', bgColor: '#FCF0EA' },
+  { key: 'values', label: 'Values', icon: Compass, color: '#3D7068', bgColor: '#E4EDEC' },
+  { key: 'recipes', label: 'Recipes', icon: Utensils, color: '#C35F33', bgColor: '#FCEEE8' },
+  { key: 'advice', label: 'Advice', icon: GraduationCap, color: '#D9C61A', bgColor: '#FDF9E3' },
+  { key: 'other', label: 'Other', icon: HelpCircle, color: '#888888', bgColor: '#F5F5F5' },
+];
+
+const getCategoryConfig = (key: string) => {
+  return WISDOM_CATEGORIES.find(c => c.key === key) || WISDOM_CATEGORIES[WISDOM_CATEGORIES.length - 1];
+};
 
 interface WisdomEntry {
   id: string;
@@ -22,6 +43,8 @@ interface WisdomEntry {
   created_at: string;
   shared_with_count?: number;
   comment_count?: number;
+  category?: string;
+  ai_category?: string;
 }
 
 interface WisdomShare {
@@ -51,8 +74,15 @@ export default function WisdomDetailPage() {
   
   // Sharing state
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showCardModal, setShowCardModal] = useState(false);
   const [shares, setShares] = useState<WisdomShare[]>([]);
   const [showSharedList, setShowSharedList] = useState(false);
+  const [userName, setUserName] = useState('Anonymous');
+  const [userPhoto, setUserPhoto] = useState<string | null>(null);
+  
+  // Category editing state
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [isUpdatingCategory, setIsUpdatingCategory] = useState(false);
   
   // Audio playback state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -74,12 +104,36 @@ export default function WisdomDetailPage() {
     };
   }, [params.id]);
 
+  // Close category picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (showCategoryPicker && !target.closest('[data-category-picker]')) {
+        setShowCategoryPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showCategoryPicker]);
+
   const loadWisdomEntry = async () => {
     setIsLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       router.push('/login');
       return;
+    }
+
+    // Load user profile for card sharing
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, avatar_url')
+      .eq('id', user.id)
+      .single();
+
+    if (profile) {
+      setUserName(profile.full_name || user.email?.split('@')[0] || 'Anonymous');
+      setUserPhoto(profile.avatar_url);
     }
 
     const { data, error } = await supabase
@@ -108,6 +162,31 @@ export default function WisdomDetailPage() {
       }
     } catch (err) {
       console.error('Failed to load shares:', err);
+    }
+  };
+
+  const updateCategory = async (newCategory: string) => {
+    if (!entry || isUpdatingCategory) return;
+    
+    setIsUpdatingCategory(true);
+    try {
+      const res = await fetch(`/api/wisdom/${entry.id}/category`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: newCategory }),
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setEntry(prev => prev ? { ...prev, category: newCategory } : null);
+        setShowCategoryPicker(false);
+      } else {
+        console.error('Failed to update category');
+      }
+    } catch (err) {
+      console.error('Error updating category:', err);
+    } finally {
+      setIsUpdatingCategory(false);
     }
   };
 
@@ -351,6 +430,15 @@ export default function WisdomDetailPage() {
                 </button>
               )}
               
+              {/* Share as Card button */}
+              <button
+                onClick={() => setShowCardModal(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#D9C61A] to-[#C35F33] text-white rounded-xl hover:opacity-90 transition-all shadow-sm"
+              >
+                <ImageIcon size={16} />
+                <span className="text-sm font-medium">Share as Card</span>
+              </button>
+              
               {/* Share button */}
               <button
                 onClick={() => setShowShareModal(true)}
@@ -429,14 +517,25 @@ export default function WisdomDetailPage() {
             {/* Header */}
             <div className="p-8 border-b border-gray-100">
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4A3552]/20 to-[#D9C61A]/20 flex items-center justify-center flex-shrink-0">
-                  <Lightbulb size={28} className="text-[#4A3552]" />
-                </div>
+                {/* Category Icon */}
+                {(() => {
+                  const catKey = (entry.category || entry.ai_category || 'life_lessons').toLowerCase().replace(/\s+/g, '_');
+                  const catConfig = getCategoryConfig(catKey);
+                  const CatIcon = catConfig.icon;
+                  return (
+                    <div 
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: catConfig.bgColor }}
+                    >
+                      <CatIcon size={28} style={{ color: catConfig.color }} />
+                    </div>
+                  );
+                })()}
                 <div className="flex-1">
                   <h1 className="text-2xl font-semibold text-[#2d2d2d] mb-2">
                     {entry.title}
                   </h1>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
                     <span className="flex items-center gap-1.5">
                       <Calendar size={14} />
                       {new Date(entry.created_at).toLocaleDateString('en-US', {
@@ -445,12 +544,73 @@ export default function WisdomDetailPage() {
                         year: 'numeric',
                       })}
                     </span>
+                    
+                    {/* Category Selector */}
+                    <div className="relative" data-category-picker>
+                      <button
+                        onClick={() => setShowCategoryPicker(!showCategoryPicker)}
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all hover:scale-105"
+                        style={{
+                          backgroundColor: getCategoryConfig((entry.category || entry.ai_category || 'life_lessons').toLowerCase().replace(/\s+/g, '_')).bgColor,
+                          color: getCategoryConfig((entry.category || entry.ai_category || 'life_lessons').toLowerCase().replace(/\s+/g, '_')).color,
+                        }}
+                      >
+                        <Tag size={12} />
+                        {getCategoryConfig((entry.category || entry.ai_category || 'life_lessons').toLowerCase().replace(/\s+/g, '_')).label}
+                        <ChevronDown size={12} className={`transition-transform ${showCategoryPicker ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      {/* Category Dropdown */}
+                      <AnimatePresence>
+                        {showCategoryPicker && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 max-h-80 overflow-y-auto"
+                          >
+                            <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                              Change Category
+                            </div>
+                            {WISDOM_CATEGORIES.map(cat => {
+                              const Icon = cat.icon;
+                              const isSelected = (entry.category || entry.ai_category || 'life_lessons').toLowerCase().replace(/\s+/g, '_') === cat.key;
+                              return (
+                                <button
+                                  key={cat.key}
+                                  onClick={() => updateCategory(cat.key)}
+                                  disabled={isUpdatingCategory}
+                                  className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors ${
+                                    isSelected ? 'bg-gray-50' : ''
+                                  } ${isUpdatingCategory ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                  <div 
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                                    style={{ backgroundColor: cat.bgColor }}
+                                  >
+                                    <Icon size={16} style={{ color: cat.color }} />
+                                  </div>
+                                  <span className="flex-1 text-left text-sm text-gray-700">
+                                    {cat.label}
+                                  </span>
+                                  {isSelected && (
+                                    <Check size={16} className="text-green-500" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                    
                     {displayTags.length > 0 && (
                       <div className="flex items-center gap-2">
                         {displayTags.map(tag => (
                           <span 
                             key={tag}
-                            className="px-2.5 py-0.5 bg-[#4A3552]/10 text-[#4A3552] rounded-full text-xs font-medium"
+                            className="px-2.5 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium"
                           >
                             {tag}
                           </span>
@@ -651,6 +811,16 @@ export default function WisdomDetailPage() {
         }}
         wisdomId={entry.id}
         wisdomTitle={entry.title}
+      />
+
+      {/* Share as Card Modal */}
+      <WisdomCardModal
+        isOpen={showCardModal}
+        onClose={() => setShowCardModal(false)}
+        wisdomText={summary || entry.description || ''}
+        wisdomTitle={entry.title}
+        userName={userName}
+        userPhoto={userPhoto}
       />
     </div>
   );

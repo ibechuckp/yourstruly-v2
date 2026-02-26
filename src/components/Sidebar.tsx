@@ -17,7 +17,8 @@ import {
   Plane,
   Bot,
   Image,
-  BookOpen
+  BookOpen,
+  FolderHeart
 } from 'lucide-react'
 
 interface Profile {
@@ -37,6 +38,7 @@ const navItems = [
   { href: '/dashboard/circles', label: 'Circles', icon: Users },
   // Phase 2
   { href: '/dashboard/memories', label: 'Memories', icon: Camera },
+  { href: '/dashboard/capsules', label: 'Albums', icon: FolderHeart },
   { href: '/dashboard/wisdom', label: 'Wisdom', icon: BookOpen },
   { href: '/dashboard/gallery', label: 'Gallery', icon: Image },
   // Phase 3

@@ -65,7 +65,7 @@ const peopleItems = [
 
 // Tools dropdown - utilities
 const toolsItems = [
-  { href: '/dashboard/journalist', label: 'Video Journalist', icon: MessageSquare },
+  { href: '/dashboard/journalist', label: 'Interviews', icon: MessageSquare },
   { href: '/dashboard/avatar', label: 'AI Avatar', icon: Bot, disabled: true },
   { href: '/dashboard/trips', label: 'Trip Planning', icon: Plane, disabled: true },
 ]

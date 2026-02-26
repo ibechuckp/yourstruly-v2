@@ -40,6 +40,7 @@ import PageEditor from './PageEditor'
 import LayoutTemplates from './LayoutTemplates'
 import QRCodeGenerator from './QRCodeGenerator'
 import MemorySelector from './MemorySelector'
+import PhotobookPreview from './PhotobookPreview'
 
 interface PhotobookBuilderProps {
   project?: PhotobookProject
@@ -480,6 +481,15 @@ export default function PhotobookBuilder({ project, userId, preSelectFromMemorie
           />
         </DialogContent>
       </Dialog>
+      
+      {/* Preview Modal */}
+      {showPreview && pages.length > 0 && (
+        <PhotobookPreview
+          pages={pages}
+          projectTitle={projectTitle}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
     </div>
   )
 }

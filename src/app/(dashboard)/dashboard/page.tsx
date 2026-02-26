@@ -14,6 +14,7 @@ import '@/styles/conversation.css'
 import CommandBar from '@/components/dashboard/CommandBar'
 import { AddContactModal } from '@/components/contacts/AddContactModal'
 import ActivityFeed, { XPCompletion } from '@/components/dashboard/ActivityFeed'
+import OnThisDay from '@/components/dashboard/OnThisDay'
 import { StorageUsageBar } from '@/components/subscription/StorageUsageBar'
 import { useSubscription } from '@/hooks/useSubscription'
 // import { PersonalityDashboard } from '@/components/personality/PersonalityDashboard' // TODO: Re-enable when analyzing real data
@@ -451,7 +452,12 @@ export default function DashboardPage() {
     // Always prefer the actual prompt text from the database if it exists
     // This contains the personalized, interesting questions from prompt_templates
     if (prompt.promptText && prompt.promptText.trim()) {
-      return prompt.promptText
+      let text = prompt.promptText
+      // Replace template variables
+      const contactName = prompt.contactName || prompt.contact_name || prompt.metadata?.contact?.name || 'this person'
+      text = text.replace(/\{\{contact_name\}\}/gi, contactName)
+      text = text.replace(/\{\{occupation\}\}/gi, prompt.personalizationContext?.occupation || 'your work')
+      return text
     }
     
     if (isContactPrompt(prompt.type)) {
@@ -665,8 +671,13 @@ export default function DashboardPage() {
         
         {/* Personality/Essence Graph - TODO: Add back when properly analyzing data */}
         
-        {/* Activity Feed - In left column, below profile card, same width */}
-        <div className="mt-6" style={{ width: 280 }}>
+        {/* On This Day - Memory flashbacks from same date in previous years */}
+        <div className="mt-4" style={{ width: 280 }}>
+          <OnThisDay />
+        </div>
+        
+        {/* Activity Feed - In left column, below profile card, flex to fill remaining height */}
+        <div className="mt-4 flex-1 min-h-0 overflow-hidden" style={{ width: 280 }}>
           <ActivityFeed 
             xpCompletions={completedTiles.slice(0, 10).map(tile => ({
               id: tile.id,
@@ -738,13 +749,13 @@ export default function DashboardPage() {
               )}
 
               {/* Tile grid: CSS Grid - 3 columns, photo tile spans 2 rows */}
-              {/* Width: 3×240px + 2×28px = 776px - larger tiles to fill space */}
+              {/* Width: 3×220px + 2×20px = 700px - compact to fit viewport */}
               <div 
                 className="grid mx-auto"
                 style={{ 
-                  gridTemplateColumns: '240px 240px 240px',
+                  gridTemplateColumns: '220px 220px 220px',
                   gridTemplateRows: 'auto auto',
-                  gap: '28px',
+                  gap: '20px',
                   width: 'fit-content',
                 }}
               >
@@ -937,42 +948,22 @@ export default function DashboardPage() {
           )}
           </div>
           
-          {/* Quick Action Links */}
-          <div className="quick-actions mt-8 flex items-center justify-center gap-6">
-            <button
-              onClick={() => shuffle()}
-              className="quick-action-btn"
-            >
-              <div className="quick-action-icon">
-                <RefreshCw size={20} />
-              </div>
+          {/* Quick Action Links - Compact */}
+          <div className="quick-actions flex items-center justify-center gap-4">
+            <button onClick={() => shuffle()} className="quick-action-btn">
+              <div className="quick-action-icon"><RefreshCw size={18} /></div>
               <span>Shuffle</span>
             </button>
-            <button
-              onClick={() => setShowPhotoUpload(true)}
-              className="quick-action-btn"
-            >
-              <div className="quick-action-icon">
-                <Image size={20} />
-              </div>
+            <button onClick={() => setShowPhotoUpload(true)} className="quick-action-btn">
+              <div className="quick-action-icon"><Image size={18} /></div>
               <span>Add Photos</span>
             </button>
-            <button
-              onClick={() => setShowPostscriptModal(true)}
-              className="quick-action-btn"
-            >
-              <div className="quick-action-icon">
-                <FileText size={20} />
-              </div>
+            <button onClick={() => setShowPostscriptModal(true)} className="quick-action-btn">
+              <div className="quick-action-icon"><FileText size={18} /></div>
               <span>PostScript</span>
             </button>
-            <button
-              onClick={() => setShowContactModal(true)}
-              className="quick-action-btn"
-            >
-              <div className="quick-action-icon">
-                <UserPlus size={20} />
-              </div>
+            <button onClick={() => setShowContactModal(true)} className="quick-action-btn">
+              <div className="quick-action-icon"><UserPlus size={18} /></div>
               <span>Add Contact</span>
             </button>
           </div>

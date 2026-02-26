@@ -1,32 +1,24 @@
 # Slideshow Background Music
 
-Place royalty-free background music files here for the slideshow feature.
+These royalty-free music tracks are for use in slideshow exports.
 
-## Required Files
+## Tracks
 
-| File | Description |
-|------|-------------|
-| `gentle-piano.mp3` | Soft piano melody |
-| `soft-acoustic.mp3` | Acoustic guitar |
-| `warm-strings.mp3` | String orchestration |
-| `precious-memories.mp3` | Emotional/nostalgic |
-| `family-moments.mp3` | Uplifting family theme |
+| File | Description | Source | License |
+|------|-------------|--------|---------|
+| `gentle-piano.mp3` | Cinematic solo piano | [Royalty Free Music (FREE DOWNLOAD) on SoundCloud](https://soundcloud.com/royaltyfreebackgroundmusic) | CC BY 4.0 |
+| `soft-acoustic.mp3` | Atmospheric peaceful piano | [Royalty Free Music (FREE DOWNLOAD) on SoundCloud](https://soundcloud.com/royaltyfreebackgroundmusic) | CC BY 4.0 |
+| `warm-strings.mp3` | Cinematic orchestral sunrise | [Royalty Free Music (FREE DOWNLOAD) on SoundCloud](https://soundcloud.com/royaltyfreebackgroundmusic) | CC BY 4.0 |
+| `precious-memories.mp3` | Atmospheric peaceful piano | [Royalty Free Music (FREE DOWNLOAD) on SoundCloud](https://soundcloud.com/royaltyfreebackgroundmusic) | CC BY 4.0 |
+| `family-moments.mp3` | Happy uplifting instrumental | [LesFreeMusic on SoundCloud](https://soundcloud.com/lesfreemusic) | Royalty Free |
 
-## Specifications
+## Attribution
 
-- Format: MP3 (128-192 kbps)
-- Duration: 2-4 minutes (will loop)
-- Style: Ambient, instrumental, no vocals
-- License: Royalty-free for commercial use
+When using these tracks commercially, attribution may be required. Check each source for specific requirements.
 
-## Recommended Sources
+## Adding New Tracks
 
-- [Pixabay Music](https://pixabay.com/music/) (Free)
-- [Bensound](https://www.bensound.com/) (Free with attribution)
-- [Artlist](https://artlist.io/) (Paid, unlimited license)
-- [Epidemic Sound](https://www.epidemicsound.com/) (Paid subscription)
-
-## Note
-
-If music files are not present, the slideshow will play without audio.
-Users can still select "No Music" option in the music picker.
+1. Find a track with appropriate licensing (CC0, CC BY, or royalty-free)
+2. Download as MP3 (128-320 kbps is fine)
+3. Keep file size under 5MB for reasonable load times
+4. Update this README with track details

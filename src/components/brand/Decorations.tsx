@@ -189,3 +189,81 @@ export function ScrapbookCorner({
     </div>
   )
 }
+
+/**
+ * Colored Paper Background - Used behind category labels and section headers
+ */
+interface ColoredPaperProps {
+  color: 'green' | 'grey' | 'lightblue' | 'lightgreen' | 'lightpurple'
+  className?: string
+  children?: React.ReactNode
+}
+
+const PAPER_MAP = {
+  green: '/assets/brand/greenpaper.png',
+  grey: '/assets/brand/greypaper1.png',
+  lightblue: '/assets/brand/lightbluepaper.png',
+  lightgreen: '/assets/brand/lightgreenpaper.png',
+  lightpurple: '/assets/brand/lightpurplepaper.png',
+}
+
+export function ColoredPaper({ color, className = '', children }: ColoredPaperProps) {
+  return (
+    <div 
+      className={`relative inline-block ${className}`}
+      style={{
+        backgroundImage: `url(${PAPER_MAP[color]})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+/**
+ * Category Badge with colored paper background
+ * For use in messages, memory lists, profile sections
+ */
+interface CategoryBadgeProps {
+  category: string
+  icon?: React.ReactNode
+  size?: 'sm' | 'md' | 'lg'
+}
+
+const CATEGORY_COLORS: Record<string, 'green' | 'grey' | 'lightblue' | 'lightgreen' | 'lightpurple'> = {
+  family: 'lightgreen',
+  travel: 'lightblue',
+  celebration: 'lightpurple',
+  food: 'green',
+  nature: 'lightgreen',
+  wisdom: 'lightpurple',
+  everyday: 'grey',
+  work: 'grey',
+  health: 'lightblue',
+  creative: 'lightpurple',
+}
+
+export function CategoryBadge({ category, icon, size = 'md' }: CategoryBadgeProps) {
+  const color = CATEGORY_COLORS[category.toLowerCase()] || 'grey'
+  const sizeClasses = {
+    sm: 'px-2 py-0.5 text-[10px]',
+    md: 'px-3 py-1 text-xs',
+    lg: 'px-4 py-1.5 text-sm',
+  }
+
+  return (
+    <div 
+      className={`inline-flex items-center gap-1.5 rounded-full font-medium text-gray-700 ${sizeClasses[size]}`}
+      style={{
+        backgroundImage: `url(${PAPER_MAP[color]})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      {icon}
+      <span className="capitalize">{category}</span>
+    </div>
+  )
+}

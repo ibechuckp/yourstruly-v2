@@ -5,6 +5,7 @@ import { Heart, MapPin, Users, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { ScopeIndicator } from '@/components/circles'
 import { getCategoryIcon } from '@/lib/dashboard/icons'
+import { MoodType, MOOD_DEFINITIONS } from '@/lib/ai/moodAnalysis'
 
 interface Memory {
   id: string
@@ -22,6 +23,7 @@ interface Memory {
   comment_count?: number
   is_private?: boolean
   circle_ids?: string[]
+  mood?: MoodType | null
   memory_media?: {
     id: string
     file_url: string
@@ -125,6 +127,17 @@ export default function MemoryCard({ memory }: MemoryCardProps) {
               {categoryIcon && <img src={categoryIcon} alt="" className="w-3.5 h-3.5 opacity-70" />}
               <span className="text-[10px] font-bold uppercase tracking-wider">{memory.ai_category}</span>
             </span>
+          </div>
+        )}
+        
+        {/* Mood Indicator */}
+        {memory.mood && MOOD_DEFINITIONS[memory.mood] && (
+          <div 
+            className="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-sm shadow-sm"
+            style={{ backgroundColor: `${MOOD_DEFINITIONS[memory.mood].color}30` }}
+            title={MOOD_DEFINITIONS[memory.mood].label}
+          >
+            <span className="text-sm">{MOOD_DEFINITIONS[memory.mood].emoji}</span>
           </div>
         )}
 

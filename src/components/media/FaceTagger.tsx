@@ -367,11 +367,94 @@ export default function FaceTagger({ mediaId, imageUrl, onXPEarned }: FaceTagger
         </div>
       )}
 
-      {/* No faces detected */}
+      {/* No faces detected - allow manual tagging */}
       {faces.length === 0 && (
-        <div className="text-center py-8 text-white/50">
-          <User size={32} className="mx-auto mb-2 opacity-50" />
-          <p>No faces detected in this photo</p>
+        <div className="text-center py-6">
+          <User size={32} className="mx-auto mb-2 text-gray-400" />
+          <p className="text-gray-500 mb-4">No faces detected in this photo</p>
+          
+          {/* Manual tag button */}
+          {!showAllContacts ? (
+            <button
+              onClick={() => setShowAllContacts(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#406A56] hover:bg-[#4a7a64] text-white rounded-xl text-sm font-medium transition-colors"
+            >
+              <Plus size={16} />
+              Tag someone anyway
+            </button>
+          ) : (
+            <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm max-w-sm mx-auto">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-gray-700">Tag a person</span>
+                <button
+                  onClick={() => {
+                    setShowAllContacts(false)
+                    setSearchQuery('')
+                  }}
+                  className="p-1 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search contacts..."
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56] mb-2"
+                autoFocus
+              />
+              <div className="max-h-48 overflow-y-auto space-y-1">
+                {filteredContacts.map(contact => (
+                  <button
+                    key={contact.id}
+                    onClick={async () => {
+                      // Create a manual tag (without face detection)
+                      const res = await fetch(`/api/media/${mediaId}/tag`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contactId: contact.id, manual: true }),
+                      })
+                      if (res.ok) {
+                        const data = await res.json()
+                        if (data.xpAwarded && onXPEarned) {
+                          onXPEarned(data.xpAwarded, 'Tagged a person')
+                        }
+                        // Add to tagged list
+                        setFaces(prev => [...prev, {
+                          id: `manual-${contact.id}`,
+                          boundingBox: { x: 0, y: 0, width: 0, height: 0 },
+                          confidence: 1,
+                          tagged: true,
+                          contact: { id: contact.id, full_name: contact.full_name, photo_url: contact.photo_url },
+                          suggestions: []
+                        }])
+                        setShowAllContacts(false)
+                        setSearchQuery('')
+                      }
+                    }}
+                    className="w-full flex items-center gap-3 p-2 bg-gray-50 hover:bg-[#406A56]/10 rounded-lg transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#406A56]/20 flex items-center justify-center overflow-hidden">
+                      {contact.photo_url ? (
+                        <img src={contact.photo_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[#406A56] text-sm font-medium">
+                          {contact.full_name.charAt(0)}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-gray-800 text-sm">{contact.full_name}</span>
+                  </button>
+                ))}
+                {filteredContacts.length === 0 && (
+                  <p className="text-center text-gray-400 text-sm py-4">
+                    No contacts found
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

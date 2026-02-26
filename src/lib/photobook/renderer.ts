@@ -89,20 +89,39 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
 
 /**
  * Get font size in pixels based on slot height and size hint
+ * For print (300 DPI), these map to approximately:
+ * - sm: 12pt → 50px at 300dpi
+ * - md: 16pt → 67px at 300dpi
+ * - lg: 20pt → 83px at 300dpi
+ * - xl: 28pt → 117px at 300dpi
+ * - 2xl: 36pt → 150px at 300dpi
  */
 function getFontSize(
   slotHeight: number,
-  sizeHint?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
+  sizeHint?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | string
 ): number {
-  const ratios: Record<string, number> = {
-    'sm': 0.12,
-    'md': 0.18,
-    'lg': 0.25,
-    'xl': 0.32,
-    '2xl': 0.4,
+  // For print output, use fixed sizes that correspond to point sizes at 300 DPI
+  // 1 point = 1/72 inch, at 300 DPI that's 300/72 ≈ 4.17 pixels per point
+  const pxPerPoint = 300 / 72
+  
+  const pointSizes: Record<string, number> = {
+    'sm': 12,
+    'md': 16,
+    'lg': 20,
+    'xl': 28,
+    '2xl': 36,
   }
-  const ratio = ratios[sizeHint || 'md'] || 0.18
-  return Math.max(12, Math.round(slotHeight * ratio))
+  
+  // Get point size, default to 16pt (md)
+  const pointSize = pointSizes[sizeHint || 'md'] || 16
+  
+  // For preview (smaller canvas), scale down proportionally
+  // Assuming a typical preview height of ~600px vs print height of ~3000px
+  const scaleFactor = slotHeight / 150 // Rough scaling based on typical slot heights
+  
+  // Minimum of 12px for readability, max based on slot height
+  const fontSize = Math.round(pointSize * Math.max(0.75, Math.min(scaleFactor, 4)))
+  return Math.max(12, Math.min(fontSize, slotHeight * 0.8))
 }
 
 /**
@@ -274,23 +293,51 @@ function renderTextSlot(
     return
   }
 
-  // Set up text styling
-  const fontSize = getFontSize(innerHeight, slot.style?.fontSize)
-  const fontWeight = slot.style?.fontWeight === 'bold' 
+  // Get styling from content (PageEditor stores styling in content.style)
+  const contentStyle = content?.style as {
+    fontFamily?: string
+    fontSize?: string
+    fontWeight?: 'normal' | 'bold'
+    fontStyle?: 'normal' | 'italic'
+    textAlign?: 'left' | 'center' | 'right'
+    color?: string
+  } | undefined
+  
+  // Font size - support both old size hints and new px-based values
+  const sizeHint = contentStyle?.fontSize || slot.style?.fontSize
+  const fontSize = getFontSize(innerHeight, sizeHint as 'sm' | 'md' | 'lg' | 'xl' | '2xl')
+  
+  // Font weight - from content style first, then slot style
+  const fontWeight = contentStyle?.fontWeight === 'bold' 
+    ? 'bold' 
+    : slot.style?.fontWeight === 'bold' 
     ? 'bold' 
     : slot.style?.fontWeight === 'medium' 
     ? '500' 
     : 'normal'
-  const fontFamily = content?.style?.fontFamily || 'system-ui, -apple-system, sans-serif'
   
-  ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`
-  ctx.fillStyle = content?.style?.color || '#333333'
-  ctx.textAlign = slot.style?.textAlign || 'left'
+  // Font style (italic)
+  const fontStyle = contentStyle?.fontStyle === 'italic' ? 'italic' : 'normal'
+  
+  // Font family - from content style first, then slot style, then default
+  const fontFamily = contentStyle?.fontFamily || 
+                     content?.style?.fontFamily || 
+                     'system-ui, -apple-system, sans-serif'
+  
+  // Build the complete font string
+  ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`
+  
+  // Text color
+  ctx.fillStyle = contentStyle?.color || content?.style?.color || '#333333'
+  
+  // Text alignment - from content style first, then slot style
+  const textAlign = contentStyle?.textAlign || slot.style?.textAlign || 'left'
+  ctx.textAlign = textAlign
   ctx.textBaseline = 'top'
 
   // Wrap text
   const lines = wrapText(ctx, text, innerWidth)
-  const lineHeight = fontSize * 1.4
+  const lineHeight = fontSize * 1.5 // Slightly increased for better readability
   const totalTextHeight = lines.length * lineHeight
 
   // Vertical centering
@@ -493,24 +540,102 @@ export async function renderThumbnail(
 }
 
 /**
- * Render a high-quality export page
+ * Render a high-quality export page for print
+ * 
+ * Prodigi Requirements:
+ * - 300 DPI minimum
+ * - 3mm bleed on all edges
+ * - 6mm safe zone (keep important content inside)
+ * - CMYK-safe colors (avoid bright RGB)
+ * - Text as vector (canvas text is vector by default)
  */
 export async function renderExport(
   template: LayoutTemplate,
   content: PageContent,
-  dpi: number = 300
+  options: {
+    dpi?: number
+    widthInches?: number
+    heightInches?: number
+    bleedMm?: number
+    safeZoneMm?: number
+  } = {}
 ): Promise<RenderedPage> {
-  // Standard photobook page size: 8x10 inches
-  const widthInches = 8
-  const heightInches = 10
+  const {
+    dpi = 300,
+    widthInches = 8,
+    heightInches = 10,
+    bleedMm = 3, // Prodigi standard bleed
+    safeZoneMm = 6, // Safe zone for text/important content
+  } = options
+  
+  // Convert mm to inches (1 inch = 25.4mm)
+  const bleedInches = bleedMm / 25.4
+  const safeZoneInches = safeZoneMm / 25.4
+  
+  // Total page size including bleed
+  const totalWidth = (widthInches + bleedInches * 2) * dpi
+  const totalHeight = (heightInches + bleedInches * 2) * dpi
   
   return renderPage(template, content, {
-    width: widthInches * dpi,
-    height: heightInches * dpi,
+    width: totalWidth,
+    height: totalHeight,
     devicePixelRatio: 1,
     showSlotBorders: false,
     showPlaceholders: false,
   })
+}
+
+/**
+ * Render a print-ready PDF page (returns data suitable for PDF generation)
+ * 
+ * For actual PDF generation, use a server-side library like pdf-lib or puppeteer
+ * This function prepares the data in a format suitable for PDF generation.
+ */
+export interface PrintReadyData {
+  imageDataUrl: string
+  width: number
+  height: number
+  dpi: number
+  bleedMm: number
+  safeZoneMm: number
+  /** Metadata for PDF generation */
+  metadata: {
+    colorSpace: 'RGB' // Canvas is RGB; convert to CMYK server-side if needed
+    hasTransparency: boolean
+  }
+}
+
+export async function renderForPrint(
+  template: LayoutTemplate,
+  content: PageContent,
+  options: {
+    dpi?: number
+    widthInches?: number
+    heightInches?: number
+  } = {}
+): Promise<PrintReadyData> {
+  const dpi = options.dpi || 300
+  const bleedMm = 3
+  const safeZoneMm = 6
+  
+  const rendered = await renderExport(template, content, {
+    ...options,
+    bleedMm,
+    safeZoneMm,
+  })
+  
+  return {
+    imageDataUrl: rendered.dataUrl,
+    width: rendered.width,
+    height: rendered.height,
+    dpi,
+    bleedMm,
+    safeZoneMm,
+    metadata: {
+      colorSpace: 'RGB',
+      hasTransparency: false,
+    }
+  }
 }
 
 // =============================================================================

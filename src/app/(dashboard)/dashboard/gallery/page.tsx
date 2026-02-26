@@ -2,15 +2,17 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { ChevronLeft, Image as ImageIcon, MapPin, Plus, Users, PawPrint, Upload, Scan, X, Play } from 'lucide-react'
+import { ChevronLeft, Image as ImageIcon, MapPin, Plus, Users, PawPrint, Upload, Scan, X, Play, Globe, Clock } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import TimelineRuler from '@/components/gallery/TimelineRuler'
+// TimelineRuler removed - using vertical timeline instead
 import DigitizeModal from '@/components/gallery/DigitizeModal'
 import PhotoMetadataModal from '@/components/gallery/PhotoMetadataModal'
 import PhotoPreviewPanel from '@/components/gallery/PhotoPreviewPanel'
 import OrbitalCarousel from '@/components/gallery/OrbitalCarousel'
+import ImmersiveTimeline from '@/components/gallery/ImmersiveTimeline'
+import VerticalTimeline from '@/components/gallery/VerticalTimeline'
 import { SlideshowPlayer, PlayButtonOverlay } from '@/components/slideshow'
 import '@/styles/page-styles.css'
 import '@/styles/gallery.css'
@@ -29,54 +31,43 @@ import { GalleryMediaItem as MediaItem } from '@/types/gallery'
 export default function GalleryPage() {
   const [media, setMedia] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedYearRange, setSelectedYearRange] = useState<[number, number] | null>(null)
+  const [selectedYearRange] = useState<[number, number] | null>(null)
   const [previewMedia, setPreviewMedia] = useState<MediaItem | null>(null)
   const [uploading, setUploading] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [showDigitizeModal, setShowDigitizeModal] = useState(false)
   const [editingMedia, setEditingMedia] = useState<MediaItem | null>(null)
   const [slideshowAlbum, setSlideshowAlbum] = useState<{ name: string; photos: MediaItem[] } | null>(null)
+  const [userAlbums, setUserAlbums] = useState<Array<{ id: string; name: string; memory_ids: string[]; cover_image_url?: string; theme?: string }>>([])
+  const [viewMode, setViewMode] = useState<'globe' | 'timeline'>('globe')
+  const [timelineIndex, setTimelineIndex] = useState(0)
+  const [selectedYear, setSelectedYear] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Filter and sort media by date - NEWEST FIRST
+  // This filtered array is used by ALL components to ensure index consistency
+  const sortedMedia = useMemo(() => {
+    const filtered = [...media]
+      .filter(m => {
+        // Only include images and videos (same filter as ImmersiveTimeline)
+        if (!m.file_url) return false
+        const fileType = m.file_type?.toLowerCase() || ''
+        const url = m.file_url.toLowerCase()
+        if (fileType.startsWith('audio/')) return false
+        if (url.endsWith('.mp3') || url.endsWith('.wav') || url.endsWith('.m4a')) return false
+        const isImage = fileType.startsWith('image/') || url.match(/\.(jpg|jpeg|png|gif|webp|heic)$/i)
+        const isVideo = fileType.startsWith('video/') || url.match(/\.(mp4|mov|avi|webm)$/i)
+        return isImage || isVideo
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.taken_at || a.created_at || 0).getTime()
+        const dateB = new Date(b.taken_at || b.created_at || 0).getTime()
+        return dateB - dateA // Newest first
+      })
+    
+    return filtered
+  }, [media])
   const supabase = createClient()
-
-  // Generate year range from earliest photo to current year (ascending for ruler)
-  const yearRange = useMemo(() => {
-    const currentYear = new Date().getFullYear()
-    let minYear = currentYear
-    let maxYear = currentYear
-    
-    media.forEach(m => {
-      if (m.taken_at) {
-        const year = new Date(m.taken_at).getFullYear()
-        if (year < minYear) minYear = year
-        if (year > maxYear) maxYear = year
-      }
-    })
-    
-    // If no photos have dates, show last 5 years
-    if (minYear === currentYear && media.length > 0) {
-      minYear = currentYear - 5
-    }
-    
-    // Create array from minYear to maxYear (ascending)
-    const years: number[] = []
-    for (let y = Math.max(minYear, currentYear - 15); y <= maxYear; y++) {
-      years.push(y)
-    }
-    return years
-  }, [media])
-
-  // Count photos per year
-  const yearCounts = useMemo(() => {
-    const counts: Record<number, number> = {}
-    media.forEach(m => {
-      if (m.taken_at) {
-        const year = new Date(m.taken_at).getFullYear()
-        counts[year] = (counts[year] || 0) + 1
-      }
-    })
-    return counts
-  }, [media])
 
   // Auto-albums based on locations, dates, etc.
   const autoAlbums = useMemo(() => {
@@ -172,23 +163,54 @@ export default function GalleryPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setLoading(false); return }
 
+    // Get media with memory info
     const { data } = await supabase
       .from('memory_media')
       .select(`
-        id, file_url, file_type, exif_lat, exif_lng, taken_at, memory_id,
-        memory:memories(id, title, location_name, location_lat, location_lng)
+        id, file_url, file_type, exif_lat, exif_lng, taken_at, created_at, memory_id,
+        memory:memories(id, title, location_name, location_lat, location_lng, memory_type, memory_date)
       `)
       .eq('user_id', user.id)
       .order('taken_at', { ascending: false, nullsFirst: false })
 
-    const transformed: MediaItem[] = (data || []).map(item => ({
-      ...item,
-      memory: item.memory ? (Array.isArray(item.memory) ? item.memory[0] : item.memory) : undefined,
-      location_lat: item.exif_lat || (item.memory as any)?.location_lat || null,
-      location_lng: item.exif_lng || (item.memory as any)?.location_lng || null,
-    }))
+    // Transform and filter out interview media
+    const transformed: MediaItem[] = (data || [])
+      .map(item => {
+        const memory = item.memory ? (Array.isArray(item.memory) ? item.memory[0] : item.memory) : undefined
+        
+        // Compute effective date: memory_date > taken_at > created_at
+        // memory_date is DATE (no time), taken_at/created_at are TIMESTAMPTZ
+        const memoryDate = memory?.memory_date ? new Date(memory.memory_date + 'T12:00:00Z').toISOString() : null
+        const effectiveDate = memoryDate || item.taken_at || item.created_at
+        
+        return {
+          ...item,
+          memory,
+          // Use effective date for sorting/display
+          taken_at: effectiveDate,
+          // User-set location takes priority over EXIF metadata
+          location_lat: memory?.location_lat || item.exif_lat || null,
+          location_lng: memory?.location_lng || item.exif_lng || null,
+        }
+      })
+      .filter(item => {
+        // Exclude media from interview memories
+        if (item.memory && (item.memory as any).memory_type === 'interview') {
+          return false
+        }
+        return true
+      })
 
     setMedia(transformed)
+    
+    // Also load user-created albums
+    const { data: albumsData } = await supabase
+      .from('memory_capsules')
+      .select('id, name, memory_ids, cover_image_url, theme')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
+    
+    setUserAlbums(albumsData || [])
     setLoading(false)
   }, [supabase])
 
@@ -275,27 +297,19 @@ export default function GalleryPage() {
           </div>
         </header>
 
-        {/* Year Timeline Ruler + Upload */}
-        <div className="grid grid-cols-[1fr_auto] gap-4 mb-5">
-          {/* Timeline Ruler */}
-          <TimelineRuler
-            years={yearRange}
-            yearCounts={yearCounts}
-            selectedRange={selectedYearRange}
-            onRangeChange={setSelectedYearRange}
-          />
-
-          {/* Upload Button - Square */}
+        {/* Upload Button */}
+        <div className="flex justify-end mb-5">
           <button
             onClick={() => setShowUploadModal(true)}
             disabled={uploading}
-            className="glass-card w-14 h-14 flex items-center justify-center cursor-pointer hover:bg-white/90 transition-all self-start"
+            className="glass-card px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-white/90 transition-all"
           >
             {uploading ? (
-              <div className="w-6 h-6 border-2 border-[#8a7c08] border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-[#8a7c08] border-t-transparent rounded-full animate-spin" />
             ) : (
-              <Plus size={26} className="text-[#8a7c08]" />
+              <Plus size={20} className="text-[#8a7c08]" />
             )}
+            <span className="text-sm font-medium text-[#8a7c08]">Add Photos</span>
           </button>
           
           {/* Hidden file input */}
@@ -325,24 +339,101 @@ export default function GalleryPage() {
           </div>
         ) : (
           <>
-            {/* Globe - Full Width */}
-            <div className="glass-card p-0 overflow-hidden mb-5">
-              <GalleryGlobe
-                media={media}
-                selectedTimeframe={selectedYearRange ? { yearRange: selectedYearRange } : null}
-                onSelectMedia={handleGlobeSelect}
-              />
+            {/* Unified Viewer - Globe or Time Machine */}
+            <div className="overflow-hidden mb-5 relative flex rounded-2xl" style={{ background: 'linear-gradient(to bottom, #1a1a2e, #050508)' }}>
+              {/* LEFT: Vertical Timeline (shared between both views) */}
+              {sortedMedia.some(m => m.taken_at) && (
+                <div className="w-16 relative flex-shrink-0 border-r border-white/10">
+                  <div className="absolute inset-4">
+                    <VerticalTimeline 
+                      media={sortedMedia}
+                      currentIndex={timelineIndex}
+                      onYearClick={(year, idx) => {
+                        setTimelineIndex(idx)
+                        setSelectedYear(year)
+                        // If in globe view, this could filter the globe to that year
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* RIGHT: Main View Area */}
+              <div className="flex-1 relative">
+                {/* View Selector */}
+                <div className="absolute top-4 right-4 z-40 flex rounded-xl overflow-hidden bg-black/30 backdrop-blur-sm border border-white/10">
+                  <button
+                    onClick={() => setViewMode('globe')}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all ${
+                      viewMode === 'globe'
+                        ? 'bg-[#406A56] text-white'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <Globe size={16} />
+                    Globe
+                  </button>
+                  <button
+                    onClick={() => setViewMode('timeline')}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all ${
+                      viewMode === 'timeline'
+                        ? 'bg-[#406A56] text-white'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <Clock size={16} />
+                    Time Machine
+                  </button>
+                </div>
+
+                {/* Globe View */}
+                {viewMode === 'globe' && (
+                  <GalleryGlobe
+                    media={sortedMedia}
+                    selectedTimeframe={selectedYear ? { yearRange: [selectedYear, selectedYear] } : null}
+                    onSelectMedia={(item) => {
+                      handleGlobeSelect(item)
+                      // Update timeline index to match selected photo
+                      const idx = sortedMedia.findIndex(m => m.id === item.id)
+                      if (idx >= 0) setTimelineIndex(idx)
+                    }}
+                  />
+                )}
+
+                {/* Time Machine View */}
+                {viewMode === 'timeline' && sortedMedia.some(m => m.taken_at) && (
+                  <div style={{ height: '500px' }}>
+                    <ImmersiveTimeline 
+                      media={sortedMedia}
+                      initialIndex={timelineIndex}
+                      onPhotoClick={(item) => setPreviewMedia(item)}
+                      onIndexChange={setTimelineIndex}
+                    />
+                  </div>
+                )}
+
+                {/* No dated photos message for timeline */}
+                {viewMode === 'timeline' && !sortedMedia.some(m => m.taken_at) && (
+                  <div className="h-[500px] flex items-center justify-center">
+                    <div className="text-center text-white/50">
+                      <Clock size={48} className="mx-auto mb-4 opacity-30" />
+                      <p>No dated photos for Time Machine</p>
+                      <p className="text-sm mt-1">Add dates to your photos to use this view</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* All Photos Grid */}
             <div className="glass-card p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-[#2d2d2d]">All Photos</h3>
-                <p className="text-xs text-[#666]">{media.length} photos</p>
+                <p className="text-xs text-[#666]">{sortedMedia.length} photos</p>
               </div>
 
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                {media.map((item) => (
+                {sortedMedia.map((item) => (
                   <div
                     key={item.id}
                     onClick={() => handleGlobeSelect(item)}
@@ -382,41 +473,59 @@ export default function GalleryPage() {
               </div>
             </div>
 
-            {/* Orbital Album Carousel - Show with 2+ albums */}
-            {autoAlbums.length >= 2 && (
-              <div className="glass-card p-5 mt-5 overflow-hidden">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-[#2d2d2d]">Your Albums</h3>
-                  <p className="text-xs text-[#666]">Drag or click to explore</p>
-                </div>
-
-                <OrbitalCarousel
-                  albums={autoAlbums.map((album, i) => ({
-                    id: `album-${i}`,
-                    name: album.name,
-                    cover: album.cover,
-                    count: album.count,
-                    type: album.type,
-                    images: getAlbumPhotos(album.name, album.type).map(m => m.file_url)
-                  }))}
-                  onAlbumClick={(album) => openAlbumSlideshow(album.name, album.type as 'location' | 'time' | 'recent')}
-                />
-              </div>
-            )}
-
-            {/* Smart Albums Grid (fallback for fewer albums) */}
-            {autoAlbums.length > 0 && autoAlbums.length < 3 && (
+            {/* Unified Albums Section - User + Smart Albums */}
+            {(userAlbums.length > 0 || autoAlbums.length > 0) && (
               <div className="glass-card p-5 mt-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-[#2d2d2d]">Smart Albums</h3>
-                  <p className="text-xs text-[#666]">Auto-generated from your photos</p>
+                  <h3 className="font-semibold text-[#2d2d2d]">Albums</h3>
+                  <Link href="/dashboard/capsules" className="text-xs text-[#406A56] hover:underline">
+                    Manage Albums
+                  </Link>
                 </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {/* User-created albums first */}
+                  {userAlbums.map((album) => {
+                    const coverMedia = album.cover_image_url || 
+                      (album.memory_ids?.length > 0 ? 
+                        media.find(m => m.memory_id === album.memory_ids[0])?.file_url : null)
+                    
+                    return (
+                      <Link
+                        key={album.id}
+                        href={`/dashboard/capsules/${album.id}`}
+                        className="group cursor-pointer"
+                      >
+                        <div className="aspect-square rounded-xl overflow-hidden mb-2 relative bg-gray-100">
+                          {coverMedia ? (
+                            <img
+                              src={coverMedia}
+                              alt={album.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#406A56]/20 to-[#D9C61A]/20">
+                              <ImageIcon size={24} className="text-[#406A56]/40" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                          <div className="absolute bottom-2 left-2 right-2">
+                            <p className="text-white text-sm font-medium truncate">{album.name}</p>
+                            <p className="text-white/60 text-xs">{album.memory_ids?.length || 0} memories</p>
+                          </div>
+                          {/* User album badge */}
+                          <div className="absolute top-2 right-2 px-2 py-0.5 bg-[#406A56]/80 backdrop-blur rounded-full">
+                            <span className="text-white text-[10px] font-medium">My Album</span>
+                          </div>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                  
+                  {/* Smart/auto albums */}
                   {autoAlbums.map((album, i) => (
                     <div
-                      key={i}
-                      className="bubble-tile glass-card group cursor-pointer overflow-hidden"
+                      key={`smart-${i}`}
+                      className="group cursor-pointer"
                       onClick={() => openAlbumSlideshow(album.name, album.type)}
                     >
                       <div className="aspect-square rounded-xl overflow-hidden mb-2 relative">
@@ -430,63 +539,32 @@ export default function GalleryPage() {
                           <p className="text-white text-sm font-medium truncate">{album.name}</p>
                           <p className="text-white/60 text-xs">{album.count} photos</p>
                         </div>
-                        <div className="absolute top-2 right-2 w-6 h-6 bg-white/20 backdrop-blur rounded-full flex items-center justify-center">
-                          <MapPin size={12} className="text-white" />
+                        {/* Smart album badge */}
+                        <div className="absolute top-2 right-2 px-2 py-0.5 bg-[#D9C61A]/80 backdrop-blur rounded-full">
+                          <span className="text-[#2d2d2d] text-[10px] font-medium">✨ Smart</span>
                         </div>
-                        {/* Play button overlay */}
+                        {/* Play overlay */}
                         <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                            <Play size={20} className="text-[#406A56] ml-0.5" />
+                          <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
+                            <Play size={16} className="text-[#406A56] ml-0.5" />
                           </div>
                         </div>
                       </div>
                     </div>
                   ))}
-
-                  {/* People Album Placeholder */}
-                  <div className="bubble-tile glass-card group cursor-pointer opacity-50 overflow-hidden">
-                    <div className="aspect-square rounded-xl bg-[#4A3552]/10 flex flex-col items-center justify-center mb-2">
-                      <Users size={28} className="text-[#4A3552]/40 mb-2" />
-                      <p className="text-[#4A3552]/60 text-xs">People</p>
-                      <p className="text-[#4A3552]/40 text-[10px]">Coming soon</p>
-                    </div>
-                  </div>
-
-                  {/* Pets Album Placeholder */}
-                  <div className="bubble-tile glass-card group cursor-pointer opacity-50 overflow-hidden">
-                    <div className="aspect-square rounded-xl bg-[#C35F33]/10 flex flex-col items-center justify-center mb-2">
-                      <PawPrint size={28} className="text-[#C35F33]/40 mb-2" />
-                      <p className="text-[#C35F33]/60 text-xs">Pets</p>
-                      <p className="text-[#C35F33]/40 text-[10px]">Coming soon</p>
-                    </div>
-                  </div>
+                  
+                  {/* Create new album button */}
+                  <Link
+                    href="/dashboard/capsules"
+                    className="aspect-square rounded-xl border-2 border-dashed border-gray-300 hover:border-[#406A56] flex flex-col items-center justify-center gap-2 transition-colors group"
+                  >
+                    <Plus size={24} className="text-gray-400 group-hover:text-[#406A56]" />
+                    <span className="text-xs text-gray-500 group-hover:text-[#406A56]">New Album</span>
+                  </Link>
                 </div>
               </div>
             )}
-            
-            {/* Empty state for no albums */}
-            {autoAlbums.length === 0 && (
-              <div className="glass-card p-5 mt-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-[#2d2d2d]">Smart Albums</h3>
-                  <p className="text-xs text-[#666]">Add location data to photos to create albums</p>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="bubble-tile glass-card aspect-square flex flex-col items-center justify-center">
-                    <MapPin size={24} className="text-[#406A56]/30 mb-1" />
-                    <p className="text-[#666] text-xs">Locations</p>
-                  </div>
-                  <div className="bubble-tile glass-card aspect-square flex flex-col items-center justify-center">
-                    <Users size={24} className="text-[#4A3552]/30 mb-1" />
-                    <p className="text-[#666] text-xs">People</p>
-                  </div>
-                  <div className="bubble-tile glass-card aspect-square flex flex-col items-center justify-center">
-                    <PawPrint size={24} className="text-[#C35F33]/30 mb-1" />
-                    <p className="text-[#666] text-xs">Pets</p>
-                  </div>
-                </div>
-              </div>
-            )}
+
           </>
         )}
       </div>

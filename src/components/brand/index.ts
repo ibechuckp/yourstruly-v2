@@ -6,5 +6,8 @@ export {
   OrangeCutout,
   BrownTape, 
   TornPaperPiece,
-  ScrapbookCorner 
+  ScrapbookCorner,
+  ColoredPaper,
+  CategoryBadge
 } from './Decorations'
+export { LogoOutro } from './LogoOutro'

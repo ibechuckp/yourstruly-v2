@@ -8,6 +8,11 @@ import {
   Music, ChevronLeft, ChevronRight, Loader2, Check
 } from 'lucide-react'
 import Image from 'next/image'
+import { FFmpeg } from '@ffmpeg/ffmpeg'
+import { fetchFile, toBlobURL } from '@ffmpeg/util'
+
+// Singleton FFmpeg instance for reuse
+let ffmpegInstance: FFmpeg | null = null
 
 interface SlideItem {
   id: string
@@ -70,6 +75,8 @@ export default function SlideshowPlayer({
   )
   const [isExporting, setIsExporting] = useState(false)
   const [exportProgress, setExportProgress] = useState(0)
+  const [exportStage, setExportStage] = useState<'recording' | 'converting' | 'done'>('recording')
+  const [audioError, setAudioError] = useState<string | null>(null)
   
   const containerRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -114,10 +121,22 @@ export default function SlideshowPlayer({
 
     const audio = voiceRecordingUrl ? voiceRef.current : audioRef.current
     if (audio && selectedTrack.url) {
+      setAudioError(null)
       audio.muted = isMuted
       audio.src = selectedTrack.url
+      
+      // Handle load errors
+      audio.onerror = () => {
+        setAudioError('Music file not found')
+        console.warn(`Audio file not available: ${selectedTrack.url}`)
+      }
+      
       if (isPlaying && !isExporting) {
-        audio.play().catch(() => {})
+        audio.play().catch((err) => {
+          if (err.name !== 'AbortError') {
+            setAudioError('Could not play audio')
+          }
+        })
       } else {
         audio.pause()
       }
@@ -191,12 +210,73 @@ export default function SlideshowPlayer({
     }
   }, [])
 
+  // Load FFmpeg instance (lazy, singleton)
+  const loadFFmpeg = useCallback(async () => {
+    if (ffmpegInstance && ffmpegInstance.loaded) {
+      return ffmpegInstance
+    }
+    
+    const ffmpeg = new FFmpeg()
+    
+    // Progress callback for conversion
+    ffmpeg.on('progress', ({ progress }) => {
+      setExportProgress(Math.round(progress * 100))
+    })
+    
+    // Load from local files (faster than CDN)
+    const baseURL = '/ffmpeg'
+    await ffmpeg.load({
+      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+    })
+    
+    ffmpegInstance = ffmpeg
+    return ffmpeg
+  }, [])
+
+  // Convert WebM to MP4 using FFmpeg
+  const convertWebMToMP4 = useCallback(async (webmBlob: Blob): Promise<Blob> => {
+    setExportStage('converting')
+    setExportProgress(0)
+    
+    const ffmpeg = await loadFFmpeg()
+    
+    // Write input file
+    await ffmpeg.writeFile('input.webm', await fetchFile(webmBlob))
+    
+    // Convert to MP4 with H.264 codec for maximum compatibility
+    // Using -movflags +faststart for web/mobile streaming
+    await ffmpeg.exec([
+      '-i', 'input.webm',
+      '-c:v', 'libx264',
+      '-preset', 'fast',
+      '-crf', '23',
+      '-c:a', 'aac',
+      '-b:a', '128k',
+      '-movflags', '+faststart',
+      '-pix_fmt', 'yuv420p',
+      'output.mp4'
+    ])
+    
+    // Read output file
+    const mp4Data = await ffmpeg.readFile('output.mp4')
+    
+    // Cleanup
+    await ffmpeg.deleteFile('input.webm')
+    await ffmpeg.deleteFile('output.mp4')
+    
+    // Convert FileData (Uint8Array) to Blob
+    const mp4Buffer = mp4Data instanceof Uint8Array ? mp4Data : new TextEncoder().encode(mp4Data)
+    return new Blob([mp4Buffer], { type: 'video/mp4' })
+  }, [loadFFmpeg])
+
   // Export as MP4
   const handleExport = useCallback(async () => {
     if (items.length === 0) return
     
     setIsExporting(true)
     setExportProgress(0)
+    setExportStage('recording')
     setIsPlaying(false)
 
     try {
@@ -226,8 +306,19 @@ export default function SlideshowPlayer({
       }
 
       const chunks: Blob[] = []
+      
+      // Try MP4 first (Safari), fall back to WebM (Chrome/Firefox)
+      const mimeTypes = [
+        'video/mp4;codecs=avc1',
+        'video/mp4',
+        'video/webm;codecs=vp9',
+        'video/webm'
+      ]
+      const supportedMimeType = mimeTypes.find(mt => MediaRecorder.isTypeSupported(mt)) || 'video/webm'
+      const isNativeMP4 = supportedMimeType.includes('mp4')
+      
       const recorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp9',
+        mimeType: supportedMimeType,
         videoBitsPerSecond: 5000000
       })
 
@@ -342,12 +433,30 @@ export default function SlideshowPlayer({
       recorder.stop()
       await recordingComplete
 
+      // Create blob from recorded chunks
+      let finalBlob = new Blob(chunks, { type: supportedMimeType })
+      let finalExt = isNativeMP4 ? 'mp4' : 'webm'
+      
+      // If recorded as WebM, convert to MP4 for universal compatibility
+      if (!isNativeMP4) {
+        try {
+          setExportStage('converting')
+          setExportProgress(0)
+          finalBlob = await convertWebMToMP4(finalBlob)
+          finalExt = 'mp4'
+        } catch (conversionError) {
+          console.warn('MP4 conversion failed, falling back to WebM:', conversionError)
+          // Keep WebM if conversion fails
+        }
+      }
+      
+      setExportStage('done')
+
       // Create download link
-      const blob = new Blob(chunks, { type: 'video/webm' })
-      const url = URL.createObjectURL(blob)
+      const url = URL.createObjectURL(finalBlob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${title || 'slideshow'}-${Date.now()}.webm`
+      a.download = `${title || 'slideshow'}-${Date.now()}.${finalExt}`
       a.click()
       URL.revokeObjectURL(url)
 
@@ -357,8 +466,9 @@ export default function SlideshowPlayer({
     } finally {
       setIsExporting(false)
       setExportProgress(0)
+      setExportStage('recording')
     }
-  }, [items, title, slideDuration, selectedTrack])
+  }, [items, title, slideDuration, selectedTrack, convertWebMToMP4])
 
   if (!isOpen) return null
 
@@ -399,7 +509,14 @@ export default function SlideshowPlayer({
       {isExporting && (
         <div className="absolute inset-0 z-50 bg-black/80 flex flex-col items-center justify-center">
           <Loader2 className="w-12 h-12 text-white animate-spin mb-4" />
-          <p className="text-white text-lg mb-2">Creating your video...</p>
+          <p className="text-white text-lg mb-2">
+            {exportStage === 'recording' && 'Recording slideshow...'}
+            {exportStage === 'converting' && 'Converting to MP4...'}
+            {exportStage === 'done' && 'Preparing download...'}
+          </p>
+          <p className="text-white/50 text-sm mb-3">
+            {exportStage === 'converting' && 'This ensures your video works on iOS, WhatsApp & social media'}
+          </p>
           <div className="w-64 h-2 bg-white/20 rounded-full overflow-hidden">
             <div 
               className="h-full bg-[#406A56] transition-all duration-300"
@@ -558,6 +675,11 @@ export default function SlideshowPlayer({
               <p className="text-white/40 text-xs mt-4 text-center">
                 Music will play during the slideshow
               </p>
+              {audioError && (
+                <p className="text-red-400 text-xs mt-2 text-center">
+                  ⚠️ {audioError} — add audio files to /public/audio/slideshow/
+                </p>
+              )}
             </motion.div>
           </motion.div>
         )}

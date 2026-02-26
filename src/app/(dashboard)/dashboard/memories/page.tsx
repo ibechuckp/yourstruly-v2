@@ -1,15 +1,26 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Image as ImageIcon, Calendar, MapPin, Sparkles, Grid, List, Globe, ChevronLeft, Search, X, Clock, Users, Share2, BookOpen } from 'lucide-react'
+import { Plus, Image as ImageIcon, Calendar, MapPin, Sparkles, Grid, List, Globe, ChevronLeft, Search, X, Clock, Users, Share2, BookOpen, Album, User } from 'lucide-react'
 import Link from 'next/link'
 import CreateMemoryModal from '@/components/memories/CreateMemoryModal'
 import MemoryCard from '@/components/memories/MemoryCard'
+import MemoryCardClean from '@/components/memories/MemoryCardClean'
+import ScrapbookCard from '@/components/memories/ScrapbookCard'
 import GlobeView from '@/components/memories/GlobeView'
 import { MemoryTimeline } from '@/components/memories/MemoryTimeline'
+import { PeopleBrowse } from '@/components/memories/PeopleBrowse'
+import { PlacesBrowse } from '@/components/memories/PlacesBrowse'
+import { TimelineBrowse } from '@/components/memories/TimelineBrowse'
 import MilestonePrompt from '@/components/photobook/MilestonePrompt'
+import MemoryStats from '@/components/memories/MemoryStats'
+import MoodFilterChips from '@/components/memories/MoodFilterChips'
+import EmotionalJourney from '@/components/memories/EmotionalJourney'
+import { MoodType, MOOD_DEFINITIONS } from '@/lib/ai/moodAnalysis'
 import '@/styles/page-styles.css'
+import '@/styles/scrapbook.css'
 import { getCategoryIcon } from '@/lib/dashboard/icons'
 
 interface Memory {
@@ -26,6 +37,8 @@ interface Memory {
   ai_category: string
   ai_labels: string[]
   is_favorite: boolean
+  mood: MoodType | null
+  mood_override: boolean
   memory_media?: {
     id: string
     file_url: string
@@ -44,24 +57,42 @@ interface SharedMemory extends Memory {
   permission_level?: string
 }
 
-type ViewMode = 'grid' | 'timeline' | 'globe'
+type ViewMode = 'grid' | 'cards' | 'scrapbook' | 'timeline'
 type TabMode = 'mine' | 'shared'
+type BrowseMode = 'all' | 'people' | 'places' | 'timeline'
+
+const VALID_MOODS: MoodType[] = ['joyful', 'proud', 'grateful', 'bittersweet', 'peaceful', 'nostalgic', 'loving']
 
 export default function MemoriesPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  
   const [memories, setMemories] = useState<Memory[]>([])
   const [sharedMemories, setSharedMemories] = useState<SharedMemory[]>([])
   const [filteredMemories, setFilteredMemories] = useState<Memory[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingShared, setLoadingShared] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  const [viewModeLoaded, setViewModeLoaded] = useState(false)
   const [tabMode, setTabMode] = useState<TabMode>('mine')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedMood, setSelectedMood] = useState<MoodType | null>(null)
+  const [moodCounts, setMoodCounts] = useState<Record<string, number>>({})
   const [searchQuery, setSearchQuery] = useState('')
   const [dateFilter, setDateFilter] = useState<{ start: string; end: string }>({ start: '', end: '' })
   const [showFilters, setShowFilters] = useState(false)
   const [userId, setUserId] = useState<string | undefined>()
+  const [browseMode, setBrowseMode] = useState<BrowseMode>('all')
   const supabase = createClient()
+  
+  // Initialize mood filter from URL params
+  useEffect(() => {
+    const moodParam = searchParams.get('mood')
+    if (moodParam && VALID_MOODS.includes(moodParam as MoodType)) {
+      setSelectedMood(moodParam as MoodType)
+    }
+  }, [searchParams])
 
   const loadMemories = useCallback(async () => {
     setLoading(true)
@@ -86,12 +117,29 @@ export default function MemoriesPage() {
     if (dateFilter.end) {
       query = query.lte('memory_date', dateFilter.end)
     }
+    
+    // Apply mood filter
+    if (selectedMood) {
+      query = query.eq('mood', selectedMood)
+    }
 
     const { data } = await query
     setMemories(data || [])
     setFilteredMemories(data || [])
+    
+    // Count moods for filter chips (only if not filtered by mood)
+    if (!selectedMood) {
+      const counts: Record<string, number> = {}
+      for (const m of data || []) {
+        if (m.mood) {
+          counts[m.mood] = (counts[m.mood] || 0) + 1
+        }
+      }
+      setMoodCounts(counts)
+    }
+    
     setLoading(false)
-  }, [selectedCategory, dateFilter, supabase])
+  }, [selectedCategory, selectedMood, dateFilter, supabase])
 
   const loadSharedMemories = useCallback(async () => {
     setLoadingShared(true)
@@ -169,6 +217,22 @@ export default function MemoriesPage() {
     checkAuthAndLoad()
   }, [loadMemories, loadSharedMemories, supabase])
 
+  // Load view mode from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('memories-view-mode') as ViewMode
+    if (saved && ['grid', 'cards', 'scrapbook', 'timeline'].includes(saved)) {
+      setViewMode(saved)
+    }
+    setViewModeLoaded(true)
+  }, [])
+
+  // Persist view mode to localStorage
+  useEffect(() => {
+    if (viewModeLoaded) {
+      localStorage.setItem('memories-view-mode', viewMode)
+    }
+  }, [viewMode, viewModeLoaded])
+
   // Filter by search query
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -210,10 +274,23 @@ export default function MemoriesPage() {
   const clearFilters = () => {
     setSearchQuery('')
     setSelectedCategory(null)
+    setSelectedMood(null)
     setDateFilter({ start: '', end: '' })
+    // Clear URL params
+    router.push('/dashboard/memories')
+  }
+  
+  const handleMoodSelect = (mood: MoodType | null) => {
+    setSelectedMood(mood)
+    // Update URL params
+    if (mood) {
+      router.push(`/dashboard/memories?mood=${mood}`)
+    } else {
+      router.push('/dashboard/memories')
+    }
   }
 
-  const hasActiveFilters = searchQuery || selectedCategory || dateFilter.start || dateFilter.end
+  const hasActiveFilters = searchQuery || selectedCategory || selectedMood || dateFilter.start || dateFilter.end
 
   return (
     <div className="page-container">
@@ -262,27 +339,39 @@ export default function MemoriesPage() {
                 )}
               </div>
 
-              {/* View Mode Toggle */}
+              {/* View Mode Toggle - only show when in "All" browse mode */}
+              {browseMode === 'all' && (
               <div className="hidden sm:flex items-center glass-card-page p-1">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'}`}
-                >
-                  <Grid size={18} />
-                </button>
                 <button
                   onClick={() => setViewMode('timeline')}
                   className={`p-2 rounded-lg transition-all ${viewMode === 'timeline' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'}`}
+                  title="Timeline View"
                 >
                   <Clock size={18} />
                 </button>
                 <button
-                  onClick={() => setViewMode('globe')}
-                  className={`p-2 rounded-lg transition-all ${viewMode === 'globe' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'}`}
+                  onClick={() => setViewMode('scrapbook')}
+                  className={`p-2 rounded-lg transition-all ${viewMode === 'scrapbook' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'}`}
+                  title="Scrapbook View"
                 >
-                  <Globe size={18} />
+                  <Album size={18} />
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'}`}
+                  title="Grid View"
+                >
+                  <Grid size={18} />
+                </button>
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`p-2 rounded-lg transition-all ${viewMode === 'cards' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'}`}
+                  title="Cards View"
+                >
+                  <List size={18} />
                 </button>
               </div>
+              )}
 
               {/* Create Photo Book Button */}
               <Link
@@ -344,52 +433,108 @@ export default function MemoriesPage() {
             </button>
           </div>
 
-          {/* Filters Row - only show for "My Memories" tab */}
+          {/* Browse Mode Toggle - only show for "My Memories" tab */}
           {tabMode === 'mine' && (
-          <div className="flex items-center gap-2 mt-4 overflow-x-auto pb-2">
-            {/* Category Filters */}
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id === 'all' ? null : cat.id)}
-                className={`filter-btn ${(cat.id === 'all' && !selectedCategory) || selectedCategory === cat.id ? 'filter-btn-active' : ''}`}
-              >
-                {cat.label}
-              </button>
-            ))}
+            <div className="flex items-center gap-2 mt-4">
+              <span className="text-sm text-[#406A56]/60 mr-2">Browse by:</span>
+              <div className="flex items-center glass-card-page p-1">
+                <button
+                  onClick={() => setBrowseMode('all')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    browseMode === 'all' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'
+                  }`}
+                >
+                  <Grid size={14} />
+                  All
+                </button>
+                <button
+                  onClick={() => setBrowseMode('people')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    browseMode === 'people' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'
+                  }`}
+                >
+                  <User size={14} />
+                  People
+                </button>
+                <button
+                  onClick={() => setBrowseMode('places')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    browseMode === 'places' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'
+                  }`}
+                >
+                  <MapPin size={14} />
+                  Places
+                </button>
+                <button
+                  onClick={() => setBrowseMode('timeline')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    browseMode === 'timeline' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'
+                  }`}
+                >
+                  <Clock size={14} />
+                  Timeline
+                </button>
+              </div>
+            </div>
+          )}
 
-            {/* Date Filter */}
-            <div className="flex items-center gap-2 ml-2">
-              <input
-                type="date"
-                value={dateFilter.start}
-                onChange={(e) => setDateFilter({ ...dateFilter, start: e.target.value })}
-                className="form-input text-sm py-2"
-              />
-              <span className="text-[#406A56]/60">to</span>
-              <input
-                type="date"
-                value={dateFilter.end}
-                onChange={(e) => setDateFilter({ ...dateFilter, end: e.target.value })}
-                className="form-input text-sm py-2"
+          {/* Filters Row - only show for "My Memories" tab and "All" browse mode */}
+          {tabMode === 'mine' && browseMode === 'all' && (
+          <div className="space-y-3 mt-4">
+            {/* Mood Filter Chips */}
+            <div className="pb-1">
+              <MoodFilterChips
+                selectedMood={selectedMood}
+                onMoodSelect={handleMoodSelect}
+                moodCounts={moodCounts}
               />
             </div>
+            
+            <div className="flex items-center gap-2 overflow-x-auto pb-2">
+              {/* Category Filters */}
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id === 'all' ? null : cat.id)}
+                  className={`filter-btn ${(cat.id === 'all' && !selectedCategory) || selectedCategory === cat.id ? 'filter-btn-active' : ''}`}
+                >
+                  {cat.label}
+                </button>
+              ))}
 
-            {/* Clear Filters */}
-            {hasActiveFilters && (
-              <button
-                onClick={clearFilters}
-                className="text-[#C35F33] hover:text-[#a84d28] text-sm whitespace-nowrap font-medium"
-              >
-                Clear filters
-              </button>
-            )}
+              {/* Date Filter */}
+              <div className="flex items-center gap-2 ml-2">
+                <input
+                  type="date"
+                  value={dateFilter.start}
+                  onChange={(e) => setDateFilter({ ...dateFilter, start: e.target.value })}
+                  className="form-input text-sm py-2"
+                />
+                <span className="text-[#406A56]/60">to</span>
+                <input
+                  type="date"
+                  value={dateFilter.end}
+                  onChange={(e) => setDateFilter({ ...dateFilter, end: e.target.value })}
+                  className="form-input text-sm py-2"
+                />
+              </div>
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="text-[#C35F33] hover:text-[#a84d28] text-sm whitespace-nowrap font-medium"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
           </div>
           )}
         </header>
 
-        {/* Horizontal Timeline (only show for "My Memories" tab) */}
-        {!loading && tabMode === 'mine' && memories.length > 0 && (
+        {/* Horizontal Timeline (only show for "My Memories" tab and "All" browse mode) */}
+        {!loading && tabMode === 'mine' && browseMode === 'all' && memories.length > 0 && (
           <MemoryTimeline 
             memories={memories.map(m => ({
               id: m.id,
@@ -399,6 +544,16 @@ export default function MemoriesPage() {
               memory_type: m.memory_type
             }))}
           />
+        )}
+
+        {/* Memory Stats Dashboard (only show for "My Memories" tab and "All" browse mode) */}
+        {!loading && tabMode === 'mine' && browseMode === 'all' && memories.length > 0 && (
+          <MemoryStats />
+        )}
+        
+        {/* Emotional Journey Visualization (only show for "All" browse mode) */}
+        {!loading && tabMode === 'mine' && browseMode === 'all' && memories.length > 0 && (
+          <EmotionalJourney userId={userId} />
         )}
 
         {/* Content */}
@@ -435,6 +590,15 @@ export default function MemoriesPage() {
                 ))}
               </div>
             )
+          ) : browseMode === 'people' ? (
+            /* People Browse Mode */
+            <PeopleBrowse />
+          ) : browseMode === 'places' ? (
+            /* Places Browse Mode */
+            <PlacesBrowse memories={memories} />
+          ) : browseMode === 'timeline' ? (
+            /* Timeline Browse Mode */
+            <TimelineBrowse memories={memories} />
           ) : loading ? (
             <div className="loading-container">
               <div className="loading-text">Loading memories...</div>
@@ -464,15 +628,29 @@ export default function MemoriesPage() {
                 </button>
               )}
             </div>
+          ) : viewMode === 'scrapbook' ? (
+            /* Scrapbook View - Polaroid cards with washi tape */
+            <div className="scrapbook-grid">
+              {filteredMemories.map((memory, index) => (
+                <ScrapbookCard key={memory.id} memory={memory} index={index} />
+              ))}
+            </div>
           ) : viewMode === 'grid' ? (
-            /* Grid View */
+            /* Grid View - Square cards with overlay */
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {filteredMemories.map((memory) => (
                 <MemoryCard key={memory.id} memory={memory} />
               ))}
             </div>
-          ) : viewMode === 'timeline' ? (
-            /* Timeline View */
+          ) : viewMode === 'cards' ? (
+            /* Cards View - Photo on top, info below, reactions */
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {filteredMemories.map((memory) => (
+                <MemoryCardClean key={memory.id} memory={memory} showReactions={true} />
+              ))}
+            </div>
+          ) : (
+            /* Timeline View (default) */
             <div className="space-y-8">
               {sortedGroups.map((groupKey) => {
                 const [year, month] = groupKey.split('-')
@@ -498,14 +676,6 @@ export default function MemoriesPage() {
                 )
               })}
             </div>
-          ) : (
-            /* Globe View */
-            <GlobeView 
-              memories={filteredMemories} 
-              onSelectMemory={(memory) => {
-                window.location.href = `/dashboard/memories/${memory.id}`
-              }}
-            />
           )}
         </main>
       </div>

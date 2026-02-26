@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
       accessToken,
       exchanges,
       originalQuestion,
+      attachedMediaUrls = [],
     } = body;
 
     if (!sessionId || !questionId || !accessToken || !exchanges?.length) {
@@ -56,7 +57,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No contact linked to session' }, { status: 400 });
     }
 
-    // Build full transcript from all exchanges
+    // Build formatted conversation transcript for display
+    const conversationMarkdown = (exchanges as Exchange[])
+      .map((ex, i) => {
+        let md = `**Q${i + 1}:** ${ex.question}\n\n**A${i + 1}:** ${ex.response}`;
+        if (ex.audioUrl) {
+          md += `\n\n🎙️ [Audio](${ex.audioUrl})`;
+        }
+        return md;
+      })
+      .join('\n\n---\n\n');
+    
+    // Build plain transcript for search/AI
     const fullTranscript = (exchanges as Exchange[])
       .map((ex, i) => `Q${i + 1}: ${ex.question}\nA${i + 1}: ${ex.response}`)
       .join('\n\n');
@@ -122,12 +134,15 @@ export async function POST(request: NextRequest) {
       .update({ status: 'answered' })
       .eq('id', questionId);
 
-    // Create memory for the interviewer
+    // Create memory for the interviewer with formatted description
+    const formattedDescription = `## Summary\n${summary}\n\n## Conversation\n${conversationMarkdown}`;
+    
     const { data: memoryRecord } = await supabaseAdmin
       .from('memories')
       .insert({
         user_id: session.user_id,
-        title: `Interview: ${originalQuestion.slice(0, 50)}${originalQuestion.length > 50 ? '...' : ''}`,
+        title: `Interview with ${contact.full_name}: ${originalQuestion.slice(0, 40)}${originalQuestion.length > 40 ? '...' : ''}`,
+        description: formattedDescription,
         content: fullTranscript,
         memory_type: 'interview',
         source: 'video_journalist',
@@ -144,9 +159,24 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
+    // Add attached media to the memory
+    if (memoryRecord && attachedMediaUrls.length > 0) {
+      const mediaRecords = attachedMediaUrls.map((url: string, index: number) => ({
+        memory_id: memoryRecord.id,
+        user_id: session.user_id,
+        file_url: url,
+        file_type: url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') ? 'video' : 'image',
+        is_cover: index === 0,
+        sort_order: index,
+      }));
+      
+      await supabaseAdmin.from('memory_media').insert(mediaRecords);
+    }
+
     return NextResponse.json({ 
       success: true,
       responseId: responseRecord.id,
+      mediaCount: attachedMediaUrls.length,
       memoryId: memoryRecord?.id,
       exchangeCount: exchanges.length,
     });

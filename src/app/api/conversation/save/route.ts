@@ -52,6 +52,12 @@ export async function POST(request: NextRequest) {
     // Map prompt type to a display-friendly category
     const aiCategory = getAICategoryFromPromptType(promptType);
 
+    // For wisdom entries, use AI to determine the best category
+    let wisdomCategory: string | null = null;
+    if (memoryType === 'wisdom') {
+      wisdomCategory = await detectWisdomCategory(exchanges, summary);
+    }
+
     // Create memory record - use existing columns
     const { data: memory, error: memoryError } = await supabase
       .from('memories')
@@ -62,8 +68,9 @@ export async function POST(request: NextRequest) {
         ai_summary: aiInsights,            // AI-generated insights
         memory_type: memoryType,
         ai_category: aiCategory,           // Category for UI pills
+        category: wisdomCategory,          // AI-detected wisdom category
         audio_url: primaryAudioUrl,
-        tags,
+        tags: wisdomCategory ? [...tags, wisdomCategory] : tags,
         memory_date: new Date().toISOString().split('T')[0],
       })
       .select()
@@ -321,4 +328,100 @@ Be specific to what they said. No generic advice. Output ONLY the bullets.`;
   const firstResponse = exchanges[0]?.response || '';
   const preview = firstResponse.slice(0, 200) + (firstResponse.length > 200 ? '...' : '');
   return `- **Key Theme**: ${preview}`;
+}
+
+// Wisdom categories for auto-detection
+const WISDOM_CATEGORIES = [
+  'life_lessons',    // Hard-earned wisdom and insights
+  'relationships',   // Love, friendship, and connection
+  'career',          // Professional wisdom and advice
+  'parenting',       // Raising children, family values
+  'health',          // Physical and mental wellbeing
+  'spirituality',    // Faith, purpose, meaning
+  'creativity',      // Art, expression, imagination
+  'family',          // Family traditions and bonds
+  'values',          // Core beliefs and principles
+  'recipes',         // Recipes and culinary wisdom
+  'advice',          // Guidance for others
+  'other',           // Doesn't fit other categories
+];
+
+async function detectWisdomCategory(exchanges: Exchange[], summary: string): Promise<string> {
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  
+  // Build conversation context
+  const conversationText = exchanges.map((e) => 
+    `Q: ${e.question}\nA: ${e.response}`
+  ).join('\n\n');
+
+  const prompt = `Categorize this wisdom/advice conversation into exactly ONE category.
+
+CATEGORIES:
+- life_lessons: Hard-earned wisdom, life insights, mistakes learned from
+- relationships: Love, friendship, dating, marriage, connection with others
+- career: Work, professional advice, business, success, money
+- parenting: Raising children, being a parent, family values
+- health: Physical wellness, mental health, exercise, diet, aging
+- spirituality: Faith, religion, purpose, meaning of life, meditation
+- creativity: Art, music, writing, expression, hobbies, imagination
+- family: Family traditions, relatives, ancestry, heritage
+- values: Core beliefs, ethics, principles, what matters most
+- recipes: Cooking, recipes, food traditions, culinary tips
+- advice: General guidance, recommendations, tips for others
+- other: Doesn't clearly fit other categories
+
+CONVERSATION:
+${conversationText}
+
+SUMMARY:
+${summary}
+
+Reply with ONLY the category name (e.g., "life_lessons"). No explanation.`;
+
+  if (GEMINI_API_KEY) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.2,
+              maxOutputTokens: 50,
+            }
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const category = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase();
+        
+        // Validate it's a valid category
+        if (category && WISDOM_CATEGORIES.includes(category)) {
+          console.log('AI detected wisdom category:', category);
+          return category;
+        }
+      }
+    } catch (e) {
+      console.error('Gemini category detection error:', e);
+    }
+  }
+
+  // Fallback: Use keyword-based detection
+  const text = (conversationText + ' ' + summary).toLowerCase();
+  
+  if (/\b(child|kids?|parent|son|daughter|raise|raising)\b/.test(text)) return 'parenting';
+  if (/\b(love|marriage|dating|relationship|spouse|partner)\b/.test(text)) return 'relationships';
+  if (/\b(job|career|work|business|money|success|professional)\b/.test(text)) return 'career';
+  if (/\b(health|exercise|diet|wellness|mental|stress|body)\b/.test(text)) return 'health';
+  if (/\b(god|faith|pray|spiritual|church|believe|purpose|meaning)\b/.test(text)) return 'spirituality';
+  if (/\b(recipe|cook|bake|food|kitchen|ingredient)\b/.test(text)) return 'recipes';
+  if (/\b(art|music|creative|write|paint|design|imagine)\b/.test(text)) return 'creativity';
+  if (/\b(family|tradition|heritage|ancestor|generation)\b/.test(text)) return 'family';
+  if (/\b(value|believe|principle|ethics|moral|important)\b/.test(text)) return 'values';
+  
+  return 'life_lessons'; // Default fallback
 }
