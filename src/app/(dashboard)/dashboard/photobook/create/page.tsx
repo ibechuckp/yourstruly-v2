@@ -2065,21 +2065,23 @@ function PreviewStep({
         </button>
       </div>
 
-      {/* Low Resolution Warning */}
-      {lowResWarnings.length > 0 && (
-        <GlassCard variant="warm" padding="md" className="mt-4 border-amber-200">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-amber-800">Image Quality Warning</h4>
-              <p className="text-sm text-amber-700 mt-1">
-                {lowResWarnings.length} photo(s) may appear blurry when printed at 300 DPI.
-                For best results, use high-resolution images (at least {Math.round(getPrintDimensions().pixelWidth / 2)} pixels wide).
-              </p>
-            </div>
+      {/* Stats Row - Compact horizontal layout */}
+      <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
+        {/* Page count */}
+        <div className="flex items-center gap-2 px-4 py-2 bg-white/80 rounded-xl border border-[#406A56]/10">
+          <BookOpen className="w-5 h-5 text-[#406A56]" />
+          <span className="text-sm font-medium text-[#406A56]">{pages.length} pages</span>
+          <span className="text-xs text-[#406A56]/60">• {selectedMemories.length} memories</span>
+        </div>
+        
+        {/* Low res warning (compact) */}
+        {lowResWarnings.length > 0 && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-xl border border-amber-200">
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+            <span className="text-sm text-amber-700">{lowResWarnings.length} low-res image(s)</span>
           </div>
-        </GlassCard>
-      )}
+        )}
+      </div>
 
       {/* Print Preview Modal */}
       <AnimatePresence>
@@ -2159,23 +2161,6 @@ function PreviewStep({
         )}
       </AnimatePresence>
 
-      {/* Page summary */}
-      <GlassCard variant="warm" padding="md" className="mt-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <BookOpen className="w-6 h-6 text-[#406A56]" />
-            <div>
-              <p className="font-medium text-[#406A56]">{pages.length} pages total</p>
-              <p className="text-sm text-[#406A56]/60">
-                {pages.filter(p => p.slots.some(s => s.type === 'qr')).length} pages with QR codes
-              </p>
-            </div>
-          </div>
-          <div className="text-sm text-[#406A56]/60">
-            {selectedMemories.length} memories included
-          </div>
-        </div>
-      </GlassCard>
     </div>
   )
 }
@@ -2956,15 +2941,20 @@ export default function CreatePhotobookPage() {
         })
       })
       
-      if (!response.ok) throw new Error('Checkout failed')
+      const data = await response.json()
       
-      const { url } = await response.json()
-      if (url) {
-        window.location.href = url
+      if (!response.ok) {
+        throw new Error(data.error || 'Checkout failed')
+      }
+      
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        throw new Error('No checkout URL returned')
       }
     } catch (error) {
       console.error('Checkout error:', error)
-      alert('Checkout failed. Please try again.')
+      alert(`Checkout failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
     
     setIsSubmitting(false)
@@ -3000,7 +2990,7 @@ export default function CreatePhotobookPage() {
   }
   
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-24 pt-14">
       {/* Header */}
       <div className="sticky top-14 z-40 bg-[#E8E4D6]/95 backdrop-blur-sm border-b border-[#406A56]/10">
         <div className="max-w-7xl mx-auto px-4 py-4">
