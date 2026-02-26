@@ -2980,24 +2980,23 @@ export default function CreatePhotobookPage() {
             )}
             
             {currentStep === 1 && (
-              <DesignPagesStep
+              <ArrangeStep
                 pages={pages}
                 setPages={setPages}
-                memories={memories}
+                selectedMemories={memories}
                 onAutoArrange={autoArrange}
                 canUndo={canUndo}
                 canRedo={canRedo}
                 onUndo={handleUndo}
                 onRedo={handleRedo}
                 saveHistory={saveHistory}
-                isLoadingMemories={isLoading}
               />
             )}
             
             {currentStep === 2 && selectedProduct && (
               <PreviewStep
                 pages={pages}
-                memories={memories}
+                selectedMemories={memories}
                 product={selectedProduct}
               />
             )}
