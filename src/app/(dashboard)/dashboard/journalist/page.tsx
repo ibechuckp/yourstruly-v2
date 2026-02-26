@@ -17,6 +17,13 @@ interface Contact {
   email: string
 }
 
+interface Circle {
+  id: string
+  name: string
+  color: string
+  members: { contact_id: string }[]
+}
+
 // Note: Circles are for user collaboration, not contact grouping
 // Contact groups feature could be added later for interview targeting
 
@@ -71,11 +78,12 @@ const CATEGORIES = [
   { id: 'custom', label: 'My Questions', emoji: '✨' },
 ]
 
-type RecipientMode = 'single' | 'multiple'
+type RecipientMode = 'single' | 'multiple' | 'circle'
 
 export default function JournalistPage() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
+  const [circles, setCircles] = useState<Circle[]>([])
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
   
@@ -85,6 +93,7 @@ export default function JournalistPage() {
   
   // Recipient selection
   const [recipientMode, setRecipientMode] = useState<RecipientMode>('single')
+  const [selectedCircle, setSelectedCircle] = useState<Circle | null>(null)
   const [selectedContacts, setSelectedContacts] = useState<Contact[]>([])
   
   // Question selection
@@ -106,7 +115,7 @@ export default function JournalistPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const [sessionsRes, contactsRes, questionsRes] = await Promise.all([
+    const [sessionsRes, contactsRes, questionsRes, circlesRes] = await Promise.all([
       supabase
         .from('interview_sessions')
         .select(`
@@ -126,11 +135,17 @@ export default function JournalistPage() {
         .select('*')
         .or(`user_id.eq.${user.id},is_system.eq.true`)
         .order('category'),
+      supabase
+        .from('circles')
+        .select('id, name, color, members:circle_members(contact_id)')
+        .eq('user_id', user.id)
+        .order('name'),
     ])
 
     setSessions(sessionsRes.data || [])
     setContacts(contactsRes.data || [])
     setQuestions(questionsRes.data || [])
+    setCircles(circlesRes.data || [])
     setLoading(false)
   }
 
@@ -259,6 +274,7 @@ export default function JournalistPage() {
     setStep('recipients')
     setRecipientMode('single')
     setSelectedContacts([])
+    setSelectedCircle(null)
     setSelectedQuestion(null)
     setSelectedCategory(null)
     setCustomQuestion('')
@@ -305,7 +321,7 @@ export default function JournalistPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F2F1E5]">
+    <div className="bg-[#F2F1E5] pb-8">
       {/* Header */}
       <header className="px-6 py-6">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -549,7 +565,7 @@ export default function JournalistPage() {
                   {/* Mode Selector */}
                   <div className="flex gap-2 p-4 border-b border-[#E8E7DC]">
                     <button
-                      onClick={() => { setRecipientMode('single'); setSelectedContacts([]) }}
+                      onClick={() => { setRecipientMode('single'); setSelectedContacts([]); setSelectedCircle(null) }}
                       className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${
                         recipientMode === 'single' ? 'bg-[#406A56] text-white' : 'bg-white/70 text-[#666]'
                       }`}
@@ -558,19 +574,108 @@ export default function JournalistPage() {
                       One Person
                     </button>
                     <button
-                      onClick={() => { setRecipientMode('multiple'); setSelectedContacts([]) }}
+                      onClick={() => { setRecipientMode('multiple'); setSelectedContacts([]); setSelectedCircle(null) }}
                       className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${
                         recipientMode === 'multiple' ? 'bg-[#406A56] text-white' : 'bg-white/70 text-[#666]'
                       }`}
                     >
                       <Users size={16} />
-                      Multiple People
+                      Multiple
+                    </button>
+                    <button
+                      onClick={() => { setRecipientMode('circle'); setSelectedContacts([]); setSelectedCircle(null) }}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                        recipientMode === 'circle' ? 'bg-[#406A56] text-white' : 'bg-white/70 text-[#666]'
+                      }`}
+                    >
+                      <Heart size={16} />
+                      Circle
                     </button>
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-4">
+                    {/* Circle Selection */}
+                    {recipientMode === 'circle' && (
+                      <div className="space-y-4">
+                        {circles.length === 0 ? (
+                          <div className="text-center py-8">
+                            <Heart size={40} className="text-[#888] mx-auto mb-3" />
+                            <p className="text-[#666] mb-4">No circles yet</p>
+                            <Link href="/dashboard/circles" className="text-[#C35F33] hover:underline">
+                              Create a circle first →
+                            </Link>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-sm text-[#666] mb-2">Select a circle:</p>
+                            <div className="grid grid-cols-2 gap-2 mb-4">
+                              {circles.map((circle) => (
+                                <button
+                                  key={circle.id}
+                                  onClick={() => {
+                                    setSelectedCircle(circle)
+                                    // Auto-select all members in the circle
+                                    const memberContacts = contacts.filter(c => 
+                                      circle.members.some(m => m.contact_id === c.id)
+                                    )
+                                    setSelectedContacts(memberContacts)
+                                  }}
+                                  className={`flex items-center gap-3 p-3 rounded-xl transition-all text-left ${
+                                    selectedCircle?.id === circle.id 
+                                      ? 'bg-[#406A56]/10 ring-2 ring-[#406A56]' 
+                                      : 'bg-white/70 hover:bg-white'
+                                  }`}
+                                >
+                                  <div 
+                                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                                    style={{ backgroundColor: circle.color + '20', color: circle.color }}
+                                  >
+                                    <Heart size={16} />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-[#2d2d2d]">{circle.name}</p>
+                                    <p className="text-xs text-[#888]">{circle.members.length} members</p>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                            
+                            {/* Show selected circle members */}
+                            {selectedCircle && selectedContacts.length > 0 && (
+                              <div className="border-t border-[#E8E7DC] pt-4">
+                                <p className="text-sm text-[#666] mb-2">Members to interview ({selectedContacts.length}):</p>
+                                <div className="space-y-2">
+                                  {selectedContacts.map((contact) => (
+                                    <div
+                                      key={contact.id}
+                                      className="flex items-center gap-3 p-3 bg-white/70 rounded-xl"
+                                    >
+                                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center border-[#406A56] bg-[#406A56]`}>
+                                        <Check size={14} className="text-white" />
+                                      </div>
+                                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4A3552] to-[#6b4a7a] flex items-center justify-center text-white text-sm font-medium">
+                                        {contact.full_name.charAt(0)}
+                                      </div>
+                                      <span className="text-[#2d2d2d]">{contact.full_name}</span>
+                                      <button
+                                        onClick={() => setSelectedContacts(prev => prev.filter(c => c.id !== contact.id))}
+                                        className="ml-auto p-1 text-[#888] hover:text-red-500"
+                                      >
+                                        <X size={14} />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+
                     {/* Contact Selection (single or multiple) */}
-                    {contacts.length === 0 ? (
+                    {recipientMode !== 'circle' && (
+                      contacts.length === 0 ? (
                         <div className="text-center py-8">
                           <User size={40} className="text-[#888] mx-auto mb-3" />
                           <p className="text-[#666] mb-4">No contacts yet</p>
@@ -608,7 +713,8 @@ export default function JournalistPage() {
                             )
                           })}
                         </div>
-                      )}
+                      )
+                    )}
                   </div>
 
                   {/* Continue button for multiple mode */}
