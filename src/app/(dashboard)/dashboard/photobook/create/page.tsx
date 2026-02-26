@@ -622,9 +622,19 @@ function ArrangeStep({
     // Also sync to page slot data for preview
     setPages(prevPages => prevPages.map(p => {
       if (p.id !== pageId) return p
-      return {
-        ...p,
-        slots: p.slots.map(s => s.id === slotId ? { ...s, textStyle: newStyle } : s)
+      // Check if slot exists, if not add it
+      const existingSlot = p.slots.find(s => s.slotId === slotId)
+      if (existingSlot) {
+        return {
+          ...p,
+          slots: p.slots.map(s => s.slotId === slotId ? { ...s, textStyle: newStyle } : s)
+        }
+      } else {
+        // Create new text slot with style
+        return {
+          ...p,
+          slots: [...p.slots, { slotId, type: 'text' as const, textStyle: newStyle }]
+        }
       }
     }))
   }
@@ -639,9 +649,19 @@ function ArrangeStep({
     // Also sync to page slot data for preview
     setPages(prevPages => prevPages.map(p => {
       if (p.id !== pageId) return p
-      return {
-        ...p,
-        slots: p.slots.map(s => s.id === slotId ? { ...s, text: content } : s)
+      // Check if slot exists, if not add it
+      const existingSlot = p.slots.find(s => s.slotId === slotId)
+      if (existingSlot) {
+        return {
+          ...p,
+          slots: p.slots.map(s => s.slotId === slotId ? { ...s, text: content } : s)
+        }
+      } else {
+        // Create new text slot
+        return {
+          ...p,
+          slots: [...p.slots, { slotId, type: 'text' as const, text: content }]
+        }
       }
     }))
   }
