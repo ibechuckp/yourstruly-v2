@@ -9,6 +9,7 @@ import ProviderTabs from '@/components/marketplace/ProviderTabs';
 import { CategoryChips } from '@/components/marketplace/CategorySidebar';
 import { useMarketplaceProducts, useCategories } from '@/hooks/useMarketplace';
 import { ProviderType, Product } from '@/types/marketplace';
+import PostscriptCreditsSection from '@/components/marketplace/PostscriptCreditsSection';
 
 // Price filter options
 const PRICE_RANGES = [
@@ -249,6 +250,9 @@ export default function MarketplacePage() {
           </div>
         </div>
       </div>
+
+      {/* Postscript Credits Section */}
+      <PostscriptCreditsSection />
 
       {/* Horizontal Categories Bar */}
       <div className="glass-subtle border-b border-white/5 sticky top-14 z-20">

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/home.css'
+import { EVENT_OPTIONS } from '@/lib/postscripts/events'
 
 interface Contact {
   id: string
@@ -67,20 +68,7 @@ interface FormData {
   gift: SelectedGift | null
 }
 
-const EVENT_OPTIONS = [
-  { key: 'birthday', label: 'Birthday', icon: '🎂' },
-  { key: 'wedding', label: 'Wedding', icon: '💒' },
-  { key: 'graduation', label: 'Graduation', icon: '🎓' },
-  { key: 'anniversary', label: 'Anniversary', icon: '💕' },
-  { key: 'first_child', label: 'First Child', icon: '👶' },
-  { key: '18th_birthday', label: '18th Birthday', icon: '🎉' },
-  { key: '21st_birthday', label: '21st Birthday', icon: '🍾' },
-  { key: 'retirement', label: 'Retirement', icon: '🏖️' },
-  { key: 'tough_times', label: 'When Times Are Tough', icon: '💪' },
-  { key: 'proud_moment', label: 'When You\'re Proud', icon: '⭐' },
-  { key: 'christmas', label: 'Christmas', icon: '🎄' },
-  { key: 'new_year', label: 'New Year', icon: '🎊' },
-]
+// EVENT_OPTIONS imported from @/lib/postscripts/events
 
 const STEPS = [
   { id: 1, title: 'Recipient', icon: User },
@@ -661,19 +649,27 @@ export default function NewPostScriptPage() {
         {/* Event Selection */}
         {form.delivery_type === 'event' && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {EVENT_OPTIONS.map(event => (
-              <button
-                key={event.key}
-                onClick={() => setForm({ ...form, delivery_event: event.key })}
-                className={`p-4 rounded-xl border-2 text-center transition-all
-                  ${form.delivery_event === event.key 
-                    ? 'border-[#C35F33] bg-[#C35F33]/5' 
-                    : 'border-gray-100 hover:border-gray-200'}`}
-              >
-                <span className="text-2xl block mb-1">{event.icon}</span>
-                <span className="text-sm font-medium text-gray-700">{event.label}</span>
-              </button>
-            ))}
+            {EVENT_OPTIONS.map(event => {
+              const EventIcon = event.Icon
+              return (
+                <button
+                  key={event.key}
+                  onClick={() => setForm({ ...form, delivery_event: event.key })}
+                  className={`p-4 rounded-xl border-2 text-center transition-all
+                    ${form.delivery_event === event.key 
+                      ? 'border-[#C35F33] bg-[#C35F33]/5' 
+                      : 'border-gray-100 hover:border-gray-200'}`}
+                >
+                  <div className={`w-10 h-10 mx-auto mb-2 rounded-full flex items-center justify-center
+                    ${form.delivery_event === event.key 
+                      ? 'bg-[#C35F33]/10 text-[#C35F33]' 
+                      : 'bg-gray-100 text-gray-500'}`}>
+                    <EventIcon size={20} />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">{event.label}</span>
+                </button>
+              )
+            })}
           </div>
         )}
 
@@ -731,8 +727,9 @@ export default function NewPostScriptPage() {
           <div className="grid grid-cols-2 gap-4">
             {/* Photos Tile */}
             <div className="h-36">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                📸 Attach Photos <span className="text-gray-400 font-normal">(max 5)</span>
+              <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                <ImagePlus size={14} className="text-[#C35F33]" />
+                Attach Photos <span className="text-gray-400 font-normal">(max 5)</span>
               </label>
               
               {form.attachments.length > 0 ? (
@@ -784,8 +781,9 @@ export default function NewPostScriptPage() {
 
             {/* Gift Tile - Same Height */}
             <div className="h-36">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                🎁 Add Gift <span className="text-gray-400 font-normal">(optional)</span>
+              <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                <Gift size={14} className="text-[#D9C61A]" />
+                Add Gift <span className="text-gray-400 font-normal">(optional)</span>
               </label>
               
               {form.gift ? (
@@ -871,7 +869,9 @@ export default function NewPostScriptPage() {
 
   // Step 4: Review
   function renderReviewStep() {
-    const eventLabel = EVENT_OPTIONS.find(e => e.key === form.delivery_event)?.label
+    const eventOption = EVENT_OPTIONS.find(e => e.key === form.delivery_event)
+    const eventLabel = eventOption?.label
+    const EventIcon = eventOption?.Icon
 
     return (
       <div className="space-y-6">
@@ -907,17 +907,27 @@ export default function NewPostScriptPage() {
           {/* Delivery */}
           <div className="p-4">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Delivery</p>
-            <p className="font-medium text-gray-900">
-              {form.delivery_type === 'date' && form.delivery_date && 
-                new Date(form.delivery_date).toLocaleDateString('en-US', { 
-                  weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' 
-                })
-              }
-              {form.delivery_type === 'event' && eventLabel}
-              {form.delivery_type === 'after_passing' && 'After I\'m gone'}
-            </p>
+            <div className="flex items-center gap-2">
+              {form.delivery_type === 'event' && EventIcon && (
+                <div className="w-8 h-8 rounded-full bg-[#C35F33]/10 flex items-center justify-center">
+                  <EventIcon size={16} className="text-[#C35F33]" />
+                </div>
+              )}
+              <p className="font-medium text-gray-900">
+                {form.delivery_type === 'date' && form.delivery_date && 
+                  new Date(form.delivery_date).toLocaleDateString('en-US', { 
+                    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' 
+                  })
+                }
+                {form.delivery_type === 'event' && eventLabel}
+                {form.delivery_type === 'after_passing' && 'After I\'m gone'}
+              </p>
+            </div>
             {form.delivery_recurring && (
-              <p className="text-sm text-amber-600">🔄 Repeats annually</p>
+              <p className="text-sm text-amber-600 flex items-center gap-1 mt-1">
+                <Calendar size={14} />
+                Repeats annually
+              </p>
             )}
           </div>
 

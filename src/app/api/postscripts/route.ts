@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
     gift_details,
     gift_budget,
     status = 'draft',
-    attachments = []
+    attachments = [],
+    skip_credit_check = false // For admin/system use
   } = body
 
   // Validate required fields
@@ -78,6 +79,23 @@ export async function POST(request: NextRequest) {
       { error: 'Title and recipient name are required' },
       { status: 400 }
     )
+  }
+
+  // Check and deduct postscript credit (unless it's a draft or system bypass)
+  if (status !== 'draft' && !skip_credit_check) {
+    // Check credit balance
+    const { data: creditBalance, error: creditError } = await supabase
+      .rpc('get_postscript_credits', { p_user_id: user.id })
+
+    if (creditError) {
+      console.error('Error checking credits:', creditError)
+      // Continue without credit check if function doesn't exist
+    } else if (creditBalance !== null && creditBalance <= 0) {
+      return NextResponse.json(
+        { error: 'No postscript credits remaining. Please purchase more credits or trade XP.' },
+        { status: 402 } // Payment Required
+      )
+    }
   }
 
   // Create postscript - ensure empty strings become null for date fields
@@ -112,6 +130,21 @@ export async function POST(request: NextRequest) {
   if (error) {
     console.error('Error creating postscript:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  // Deduct credit for non-draft postscripts
+  if (status !== 'draft' && !skip_credit_check) {
+    const { error: deductError } = await supabase
+      .rpc('use_postscript_credit', { 
+        p_user_id: user.id, 
+        p_postscript_id: postscript.id,
+        p_description: `Created postscript: ${title}`
+      })
+    
+    if (deductError) {
+      console.error('Error deducting credit:', deductError)
+      // Don't fail the request, credit tracking is non-critical
+    }
   }
 
   // Add attachments if provided

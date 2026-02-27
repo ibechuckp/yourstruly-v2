@@ -4,13 +4,17 @@ import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { 
   Send, Calendar, Clock, CheckCircle, Mail, Plus,
-  ChevronRight, Sparkles, Heart, User, Users, Image as ImageIcon, Mic
+  ChevronRight, Sparkles, Heart, User, Users, Image as ImageIcon, Mic,
+  LayoutGrid, Clock3
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/page-styles.css'
 import '@/styles/engagement.css'
 import '@/styles/home.css'
 import { getCategoryIcon } from '@/lib/dashboard/icons'
+import PostscriptTimeline from '@/components/postscripts/PostscriptTimeline'
+import PostscriptCreditsCounter from '@/components/postscripts/PostscriptCreditsCounter'
+import { usePostscriptCredits } from '@/hooks/usePostscriptCredits'
 
 interface PostScript {
   id: string
@@ -158,6 +162,8 @@ export default function PostScriptsPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
   const [stats, setStats] = useState({ total: 0, scheduled: 0, sent: 0, opened: 0 })
+  const [viewMode, setViewMode] = useState<'grid' | 'timeline'>('grid')
+  const { canCreatePostscript, credits } = usePostscriptCredits()
 
   async function fetchPostScripts() {
     setLoading(true)
@@ -233,14 +239,36 @@ export default function PostScriptsPage() {
                 <p className="text-gray-600 text-sm">Schedule messages for your loved ones</p>
               </div>
             </div>
-            <Link
-              href="/dashboard/postscripts/new"
-              className="flex items-center gap-2 bg-[#C35F33] text-white px-4 py-2 rounded-xl 
-                         font-medium hover:bg-[#A84E2A] transition-colors shadow-sm"
-            >
-              <Plus size={18} />
-              <span className="hidden sm:inline">Add a PostScript</span>
-            </Link>
+            <div className="flex items-center gap-3">
+              {/* Credits Counter */}
+              <PostscriptCreditsCounter variant="compact" />
+              
+              {/* Add Button */}
+              {canCreatePostscript ? (
+                <Link
+                  href="/dashboard/postscripts/new"
+                  className="flex items-center gap-2 bg-[#C35F33] text-white px-4 py-2 rounded-xl 
+                             font-medium hover:bg-[#A84E2A] transition-colors shadow-sm"
+                >
+                  <Plus size={18} />
+                  <span className="hidden sm:inline">Add a PostScript</span>
+                </Link>
+              ) : (
+                <button
+                  onClick={() => {
+                    // Trigger the credits modal by clicking the counter
+                    const counter = document.querySelector('[data-credits-counter]') as HTMLButtonElement
+                    counter?.click()
+                  }}
+                  className="flex items-center gap-2 bg-gray-300 text-gray-600 px-4 py-2 rounded-xl 
+                             font-medium cursor-not-allowed"
+                  title="You need postscript credits to create a new message"
+                >
+                  <Plus size={18} />
+                  <span className="hidden sm:inline">No Credits</span>
+                </button>
+              )}
+            </div>
           </div>
         </header>
 
@@ -264,53 +292,86 @@ export default function PostScriptsPage() {
           </div>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {filters.map(f => (
+        {/* Filter Tabs & View Toggle */}
+        <div className="flex items-center justify-between gap-4 mb-6">
+          {/* Filter Tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {filters.map(f => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all
+                  ${filter === f.key
+                    ? 'bg-[#C35F33] text-white'
+                    : 'glass-card text-gray-600 hover:bg-white/90'
+                  }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          
+          {/* View Toggle */}
+          <div className="flex-shrink-0 flex bg-white/80 backdrop-blur-sm rounded-xl p-1 border border-gray-200/50 shadow-sm">
             <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all
-                ${filter === f.key
-                  ? 'bg-[#C35F33] text-white'
-                  : 'glass-card text-gray-600 hover:bg-white/90'
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-lg transition-all flex items-center gap-1.5 text-sm
+                ${viewMode === 'grid'
+                  ? 'bg-[#C35F33] text-white shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
                 }`}
+              title="Grid view"
             >
-              {f.label}
+              <LayoutGrid size={16} />
+              <span className="hidden sm:inline">Grid</span>
             </button>
-          ))}
+            <button
+              onClick={() => setViewMode('timeline')}
+              className={`p-2 rounded-lg transition-all flex items-center gap-1.5 text-sm
+                ${viewMode === 'timeline'
+                  ? 'bg-[#C35F33] text-white shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+                }`}
+              title="Timeline view"
+            >
+              <Clock3 size={16} />
+              <span className="hidden sm:inline">Timeline</span>
+            </button>
+          </div>
         </div>
 
         {/* PostScript List */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#C35F33] border-t-transparent" />
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#C35F33] border-t-transparent" />
+          </div>
+        ) : postscripts.length === 0 ? (
+          <div className="glass-card p-12 text-center">
+            <div className="w-16 h-16 rounded-full bg-[#C35F33]/10 flex items-center justify-center mx-auto mb-4">
+              <Mail size={32} className="text-[#C35F33]" />
             </div>
-          ) : postscripts.length === 0 ? (
-            <div className="glass-card p-12 text-center">
-              <div className="w-16 h-16 rounded-full bg-[#C35F33]/10 flex items-center justify-center mx-auto mb-4">
-                <Mail size={32} className="text-[#C35F33]" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No messages yet</h3>
-              <p className="text-gray-600 mb-6">
-                Create your first future message to send to a loved one.
-              </p>
-              <Link
-                href="/dashboard/postscripts/new"
-                className="inline-flex items-center gap-2 bg-[#C35F33] text-white px-6 py-3 rounded-full
-                           font-medium hover:bg-[#A84E2A] transition-colors"
-              >
-                <Plus size={20} />
-                Create PostScript
-              </Link>
-            </div>
-          ) : (
-            postscripts.map(ps => (
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No messages yet</h3>
+            <p className="text-gray-600 mb-6">
+              Create your first future message to send to a loved one.
+            </p>
+            <Link
+              href="/dashboard/postscripts/new"
+              className="inline-flex items-center gap-2 bg-[#C35F33] text-white px-6 py-3 rounded-full
+                         font-medium hover:bg-[#A84E2A] transition-colors"
+            >
+              <Plus size={20} />
+              Create PostScript
+            </Link>
+          </div>
+        ) : viewMode === 'timeline' ? (
+          <PostscriptTimeline postscripts={postscripts} />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {postscripts.map(ps => (
               <PostScriptCard key={ps.id} postscript={ps} />
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

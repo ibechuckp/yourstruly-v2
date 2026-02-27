@@ -10,6 +10,7 @@ import {
 import Link from 'next/link'
 import '@/styles/page-styles.css'
 import Modal from '@/components/ui/Modal'
+import { EVENT_LABELS, getEventIcon } from '@/lib/postscripts/events'
 
 interface PostScript {
   id: string
@@ -48,20 +49,7 @@ interface PostScript {
   }>
 }
 
-const EVENT_LABELS: Record<string, string> = {
-  birthday: 'Birthday',
-  wedding: 'Wedding',
-  graduation: 'Graduation',
-  anniversary: 'Anniversary',
-  first_child: 'First Child',
-  '18th_birthday': '18th Birthday',
-  '21st_birthday': '21st Birthday',
-  retirement: 'Retirement',
-  tough_times: 'When Times Are Tough',
-  proud_moment: 'When You\'re Proud',
-  christmas: 'Christmas',
-  new_year: 'New Year'
-}
+// EVENT_LABELS imported from @/lib/postscripts/events
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return 'Not set'
@@ -231,6 +219,10 @@ export default function PostScriptDetailPage({ params }: { params: Promise<{ id:
       return EVENT_LABELS[postscript.delivery_event || ''] || postscript.delivery_event
     }
   }
+  
+  const DeliveryIcon = postscript.delivery_type === 'event' 
+    ? getEventIcon(postscript.delivery_event) 
+    : Calendar
 
   return (
     <div className="page-container">
@@ -314,7 +306,7 @@ export default function PostScriptDetailPage({ params }: { params: Promise<{ id:
           {/* Delivery Info Bar */}
           <div className="px-6 py-4 bg-[#F2F1E5]/50 border-b border-gray-100 flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2 text-gray-700">
-              <Calendar size={16} className="text-[#C35F33]" />
+              <DeliveryIcon size={16} className="text-[#C35F33]" />
               <span className="text-sm font-medium">{getDeliveryText()}</span>
             </div>
             

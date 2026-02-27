@@ -113,13 +113,17 @@ export default function JournalistPage() {
   const loadData = async () => {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) {
+      console.error('No user found')
+      setLoading(false)
+      return
+    }
 
     const [sessionsRes, contactsRes, questionsRes, circlesRes] = await Promise.all([
       supabase
         .from('interview_sessions')
         .select(`
-          *, contact:contacts(id, full_name),
+          *, contact:contacts!contact_id(id, full_name),
           session_questions(id, question_text, status),
           video_responses(id, duration, ai_summary)
         `)
@@ -142,7 +146,27 @@ export default function JournalistPage() {
         .order('name'),
     ])
 
-    setSessions(sessionsRes.data || [])
+    // Log any errors for debugging
+    if (sessionsRes.error) {
+      console.error('Error fetching interview sessions:', sessionsRes.error)
+    }
+    if (contactsRes.error) {
+      console.error('Error fetching contacts:', contactsRes.error)
+    }
+    if (questionsRes.error) {
+      console.error('Error fetching questions:', questionsRes.error)
+    }
+    if (circlesRes.error) {
+      console.error('Error fetching circles:', circlesRes.error)
+    }
+
+    // Process sessions - normalize contact (might be array or single object)
+    const processedSessions = (sessionsRes.data || []).map((session: any) => ({
+      ...session,
+      contact: Array.isArray(session.contact) ? session.contact[0] : session.contact
+    }))
+
+    setSessions(processedSessions)
     setContacts(contactsRes.data || [])
     setQuestions(questionsRes.data || [])
     setCircles(circlesRes.data || [])

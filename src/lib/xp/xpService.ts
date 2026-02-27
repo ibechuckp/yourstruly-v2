@@ -57,7 +57,7 @@ export const XP_REWARDS = {
 
 // XP costs
 export const XP_COSTS = {
-  POSTSCRIPT: 500,
+  POSTSCRIPT: 200, // Trade XP for postscript credit
   STREAK_FREEZE: 200,
   PREMIUM_THEME: 300,
 }
