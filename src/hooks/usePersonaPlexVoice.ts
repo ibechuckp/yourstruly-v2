@@ -45,11 +45,14 @@ export interface UsePersonaPlexOptions {
   padMult?: number
   repetitionPenalty?: number
   repetitionPenaltyContext?: number
+  // Audio recording (captures both user and AI audio)
+  enableRecording?: boolean
   // Callbacks
   onTranscript?: (userText: string, aiText: string) => void
   onComplete?: (transcript: TranscriptEntry[]) => void
   onError?: (error: Error) => void
   onAudioStats?: (stats: AudioStats) => void
+  onRecordingComplete?: (blob: Blob) => void
 }
 
 export interface UsePersonaPlexReturn {
@@ -60,6 +63,11 @@ export interface UsePersonaPlexReturn {
   error: Error | null
   isSupported: boolean
   audioStats: AudioStats | null
+  // Recording
+  isRecording: boolean
+  recordingBlob: Blob | null
+  recordingUrl: string | null
+  // Actions
   start: () => Promise<void>
   stop: () => void
   abort: () => void
@@ -483,10 +491,12 @@ export function usePersonaPlexVoice(options: UsePersonaPlexOptions = {}): UsePer
     padMult = 1.0,
     repetitionPenalty = 1.0,
     repetitionPenaltyContext = 100,
+    enableRecording = false,
     onTranscript,
     onComplete,
     onError,
     onAudioStats,
+    onRecordingComplete,
   } = options
 
   // State
@@ -496,6 +506,11 @@ export function usePersonaPlexVoice(options: UsePersonaPlexOptions = {}): UsePer
   const [currentAiText, setCurrentAiText] = useState('')
   const [error, setError] = useState<Error | null>(null)
   const [audioStats, setAudioStats] = useState<AudioStats | null>(null)
+  
+  // Recording state
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null)
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null)
 
   // Refs
   const socketRef = useRef<WebSocket | null>(null)
@@ -508,6 +523,12 @@ export function usePersonaPlexVoice(options: UsePersonaPlexOptions = {}): UsePer
   const micDurationRef = useRef(0)
   const lastMessageTimeRef = useRef<number>(Date.now())
   const isConnectedRef = useRef(false)
+  
+  // Recording refs
+  const stereoRecorderRef = useRef<MediaRecorder | null>(null)
+  const recordingChunksRef = useRef<Blob[]>([])
+  const stereoMergerRef = useRef<ChannelMergerNode | null>(null)
+  const recordingDestinationRef = useRef<MediaStreamAudioDestinationNode | null>(null)
 
   // Check browser support
   const isSupported = typeof window !== 'undefined' &&
@@ -533,6 +554,22 @@ export function usePersonaPlexVoice(options: UsePersonaPlexOptions = {}): UsePer
 
   // Cleanup function
   const cleanup = useCallback(() => {
+    // Stop stereo recording if active
+    if (stereoRecorderRef.current && stereoRecorderRef.current.state === 'recording') {
+      stereoRecorderRef.current.stop()
+    }
+    stereoRecorderRef.current = null
+    
+    // Disconnect stereo merger
+    if (stereoMergerRef.current) {
+      stereoMergerRef.current.disconnect()
+      stereoMergerRef.current = null
+    }
+    
+    if (recordingDestinationRef.current) {
+      recordingDestinationRef.current = null
+    }
+    
     // Close WebSocket
     if (socketRef.current) {
       socketRef.current.close()
@@ -594,9 +631,52 @@ export function usePersonaPlexVoice(options: UsePersonaPlexOptions = {}): UsePer
       setAudioStats(stats)
       onAudioStats?.(stats)
     }
+    
+    // Set up stereo recording if enabled
+    // Left channel = AI audio (from worklet), Right channel = User mic
+    if (enableRecording) {
+      const stereoMerger = audioContext.createChannelMerger(2)
+      const recordingDestination = audioContext.createMediaStreamDestination()
+      
+      // Connect AI audio (worklet output) to left channel (0)
+      workletNode.connect(stereoMerger, 0, 0)
+      
+      // Connect merger to recording destination
+      stereoMerger.connect(recordingDestination)
+      
+      stereoMergerRef.current = stereoMerger
+      recordingDestinationRef.current = recordingDestination
+      
+      // Set up MediaRecorder
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+        ? 'audio/webm;codecs=opus'
+        : 'audio/webm'
+      
+      const recorder = new MediaRecorder(recordingDestination.stream, {
+        mimeType,
+        audioBitsPerSecond: 128000,
+      })
+      
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          recordingChunksRef.current.push(e.data)
+        }
+      }
+      
+      recorder.onstop = () => {
+        const blob = new Blob(recordingChunksRef.current, { type: mimeType })
+        setRecordingBlob(blob)
+        setRecordingUrl(URL.createObjectURL(blob))
+        setIsRecording(false)
+        onRecordingComplete?.(blob)
+        recordingChunksRef.current = []
+      }
+      
+      stereoRecorderRef.current = recorder
+    }
 
     return audioContext
-  }, [onAudioStats])
+  }, [onAudioStats, enableRecording, onRecordingComplete])
 
   // Start microphone recording
   const startMicrophoneRecording = useCallback(async (audioContext: AudioContext, ws: WebSocket) => {
@@ -636,9 +716,20 @@ export function usePersonaPlexVoice(options: UsePersonaPlexOptions = {}): UsePer
     source.connect(processor)
     processor.connect(audioContext.destination) // Required for onaudioprocess to fire
     recorderRef.current = processor
+    
+    // Connect mic to stereo recording (right channel = 1) if enabled
+    if (enableRecording && stereoMergerRef.current) {
+      source.connect(stereoMergerRef.current, 0, 1)
+      
+      // Start recording
+      if (stereoRecorderRef.current && stereoRecorderRef.current.state === 'inactive') {
+        stereoRecorderRef.current.start()
+        setIsRecording(true)
+      }
+    }
 
     setState('listening')
-  }, [])
+  }, [enableRecording])
 
   // Handle incoming WebSocket message
   const handleMessage = useCallback((data: ArrayBuffer) => {
@@ -864,6 +955,11 @@ export function usePersonaPlexVoice(options: UsePersonaPlexOptions = {}): UsePer
     error,
     isSupported,
     audioStats,
+    // Recording
+    isRecording,
+    recordingBlob,
+    recordingUrl,
+    // Actions
     start,
     stop,
     abort,
