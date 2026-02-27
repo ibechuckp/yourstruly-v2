@@ -290,8 +290,6 @@ export function VoiceChatUI({
               `}
               whileTap={{ scale: 0.95 }}
             >
-                {isConnecting ? (
-                  <Loader2 size={36} className="animate-spin" />
               {isConnecting ? (
                 <Loader2 size={28} className="animate-spin" />
               ) : isSaving ? (
