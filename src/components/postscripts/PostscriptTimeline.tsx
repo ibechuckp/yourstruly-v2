@@ -253,13 +253,69 @@ function TimelineItem({ postscript, index }: TimelineItemProps) {
   )
 }
 
+// Group header for "After I'm Gone" section
+function AfterPassingGroup({ postscripts, startIndex }: { postscripts: PostScript[], startIndex: number }) {
+  return (
+    <div className="relative">
+      {/* Timeline connector - the dot on the center line */}
+      <div className="absolute left-1/2 transform -translate-x-1/2 z-10">
+        <div className="w-4 h-4 rounded-full border-4 border-white shadow-sm bg-[#8DACAB]" />
+      </div>
+      
+      {/* Group header badge - positioned above the dot */}
+      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full mb-2
+        px-3 py-1.5 rounded-full bg-white shadow-sm border border-gray-100
+        flex items-center gap-1.5 text-xs font-medium text-gray-700 whitespace-nowrap">
+        <Calendar size={12} className="text-[#C35F33]" />
+        <span>After I'm gone</span>
+        <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[#8DACAB]/20 text-[#8DACAB] text-[10px]">
+          {postscripts.length}
+        </span>
+      </div>
+      
+      {/* Cards in alternating layout */}
+      <div className="pt-8 space-y-6">
+        {postscripts.map((postscript, idx) => {
+          const isLeft = (startIndex + idx) % 2 === 0
+          return (
+            <div key={postscript.id} className="relative">
+              {/* Secondary connector dot for items after the first */}
+              {idx > 0 && (
+                <div className="absolute left-1/2 transform -translate-x-1/2 -top-3 z-10">
+                  <div className={`w-2 h-2 rounded-full ${getStatusColor(postscript.status)}`} />
+                </div>
+              )}
+              
+              <div className={`grid grid-cols-2 gap-8 ${isLeft ? '' : ''}`}>
+                {/* Left side */}
+                <div className={isLeft ? 'pr-4' : ''}>
+                  {isLeft && <TimelineCard postscript={postscript} isLeft={true} />}
+                </div>
+                
+                {/* Right side */}
+                <div className={!isLeft ? 'pl-4' : ''}>
+                  {!isLeft && <TimelineCard postscript={postscript} isLeft={false} />}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 interface PostscriptTimelineProps {
   postscripts: PostScript[]
 }
 
 export default function PostscriptTimeline({ postscripts }: PostscriptTimelineProps) {
-  // Sort postscripts by delivery date/event chronologically
-  const sortedPostscripts = [...postscripts].sort((a, b) => {
+  // Separate regular postscripts from "after passing" ones
+  const regularPostscripts = postscripts.filter(p => p.delivery_type !== 'after_passing')
+  const afterPassingPostscripts = postscripts.filter(p => p.delivery_type === 'after_passing')
+  
+  // Sort regular postscripts by delivery date/event chronologically
+  const sortedRegular = [...regularPostscripts].sort((a, b) => {
     // Prioritize by delivery date if available
     if (a.delivery_date && b.delivery_date) {
       return new Date(a.delivery_date).getTime() - new Date(b.delivery_date).getTime()
@@ -267,12 +323,14 @@ export default function PostscriptTimeline({ postscripts }: PostscriptTimelinePr
     // Put dated ones before events
     if (a.delivery_date && !b.delivery_date) return -1
     if (!a.delivery_date && b.delivery_date) return 1
-    // Put "after passing" at the end
-    if (a.delivery_type === 'after_passing') return 1
-    if (b.delivery_type === 'after_passing') return -1
     // Default to created_at
     return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   })
+  
+  // Sort after passing by created_at
+  const sortedAfterPassing = [...afterPassingPostscripts].sort((a, b) => 
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  )
   
   if (postscripts.length === 0) {
     return null
@@ -288,13 +346,22 @@ export default function PostscriptTimeline({ postscripts }: PostscriptTimelinePr
       
       {/* Timeline items */}
       <div className="space-y-16">
-        {sortedPostscripts.map((postscript, index) => (
+        {/* Regular postscripts (dated and events) */}
+        {sortedRegular.map((postscript, index) => (
           <TimelineItem 
             key={postscript.id} 
             postscript={postscript} 
             index={index} 
           />
         ))}
+        
+        {/* "After I'm Gone" grouped section */}
+        {sortedAfterPassing.length > 0 && (
+          <AfterPassingGroup 
+            postscripts={sortedAfterPassing} 
+            startIndex={sortedRegular.length} 
+          />
+        )}
       </div>
       
       {/* End cap */}

@@ -113,13 +113,13 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#406A56] text-white text-[10px] font-semibold flex-shrink-0">
                 +{activity.xp} XP
               </span>
-              <p className="text-xs text-gray-700 truncate flex-1">
+              <p className="text-xs text-gray-700 line-clamp-2 flex-1">
                 {activity.description}
               </p>
-              <span className="text-[10px] text-gray-400 flex-shrink-0">
-                {formatRelativeTime(activity.timestamp)}
-              </span>
             </div>
+            <span className="text-[10px] text-gray-400 flex-shrink-0 mt-0.5">
+              {formatRelativeTime(activity.timestamp)}
+            </span>
           </div>
 
           {/* Thumbnail - smaller */}
@@ -146,10 +146,10 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
     >
       <Link 
         href={activity.link}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[#406A56]/5 transition-colors group"
+        className="flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-[#406A56]/5 transition-colors group"
       >
         {/* Avatar or Icon - smaller */}
-        <div className="flex-shrink-0 relative">
+        <div className="flex-shrink-0 relative mt-0.5">
           {activity.actor?.avatar_url ? (
             <div className="relative">
               <img 
@@ -187,18 +187,18 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
                 +{activity.xp}
               </span>
             )}
-            <p className="text-xs text-gray-700 truncate flex-1">
+            <p className="text-xs text-gray-700 line-clamp-2 flex-1">
               {activity.description}
             </p>
-            <span className="text-[10px] text-gray-400 flex-shrink-0">
-              {formatRelativeTime(activity.timestamp)}
-            </span>
           </div>
+          <span className="text-[10px] text-gray-400 flex-shrink-0 mt-0.5">
+            {formatRelativeTime(activity.timestamp)}
+          </span>
         </div>
 
         {/* Thumbnail - smaller */}
         {activity.thumbnail && (
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 mt-0.5">
             <img 
               src={activity.thumbnail} 
               alt=""
@@ -210,7 +210,7 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
         {/* Arrow indicator on hover */}
         <ChevronRight 
           size={12} 
-          className="flex-shrink-0 text-gray-300 group-hover:text-[#406A56] transition-colors"
+          className="flex-shrink-0 mt-1 text-gray-300 group-hover:text-[#406A56] transition-colors"
         />
       </Link>
     </motion.div>

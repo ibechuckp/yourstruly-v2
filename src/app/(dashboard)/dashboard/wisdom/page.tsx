@@ -11,8 +11,7 @@ import '@/styles/engagement.css';
 import { getCategoryIcon } from '@/lib/dashboard/icons';
 import { QuestionPromptBar, type WisdomQuestion } from '@/components/wisdom/QuestionPromptBar';
 import { VoiceWisdomCapture } from '@/components/wisdom/VoiceWisdomCapture';
-import { ConversationView } from '@/components/conversation';
-import type { EngagementPrompt } from '@/types/engagement';
+import { UnifiedEngagementModal } from '@/components/engagement/UnifiedEngagementModal';
 
 interface WisdomEntry {
   id: string;
@@ -94,8 +93,13 @@ export default function WisdomPage() {
   const [showExploreSection, setShowExploreSection] = useState(true);
   const [showSmartTags, setShowSmartTags] = useState(false);
   
-  // Conversation modal state for answering instant questions
-  const [conversationPrompt, setConversationPrompt] = useState<EngagementPrompt | null>(null);
+  // Engagement modal state for answering instant questions
+  const [engagementPrompt, setEngagementPrompt] = useState<{
+    id: string;
+    type: string;
+    promptText: string;
+    metadata?: Record<string, any>;
+  } | null>(null);
   
   // Voice capture modal state
   const [voiceQuestion, setVoiceQuestion] = useState<WisdomQuestion | null>(null);
@@ -365,21 +369,16 @@ export default function WisdomPage() {
         {tabMode === 'mine' && (
           <QuestionPromptBar 
             onCreateWisdom={(question: WisdomQuestion) => {
-              const prompt: EngagementPrompt = {
+              setEngagementPrompt({
                 id: question.id,
-                userId: '',
                 type: 'knowledge',
-                category: question.category,
                 promptText: question.question_text,
-                status: 'pending',
-                priority: 1,
                 metadata: {
                   question_text: question.question_text,
                   source: 'instant_question',
+                  category: question.category,
                 },
-                createdAt: new Date().toISOString(),
-              };
-              setConversationPrompt(prompt);
+              });
             }}
             onVoiceCapture={(question: WisdomQuestion) => {
               setVoiceQuestion(question);
