@@ -1262,20 +1262,10 @@ function ArrangeStep({
           </div>
         </div>
         
-        {/* Text Formatting Toolbar - onMouseDown prevents blur on text area */}
+        {/* Text Formatting Toolbar */}
         {activeTextSlotId && selectedPageId && activeStyle && (
           <div 
-            className="flex items-center gap-2 mb-4 p-3 bg-white rounded-xl shadow-sm border border-[#406A56]/10 flex-wrap"
-            onMouseDown={(e) => {
-              // Only prevent default for non-interactive elements (allows selects to work)
-              const target = e.target as HTMLElement
-              const isInteractive = target.tagName === 'SELECT' || 
-                                    target.tagName === 'OPTION' ||
-                                    target.closest('select')
-              if (!isInteractive) {
-                e.preventDefault()
-              }
-            }}
+            className="text-toolbar flex items-center gap-2 mb-4 p-3 bg-white rounded-xl shadow-sm border border-[#406A56]/10 flex-wrap"
           >
             {/* Font Family */}
             <select
@@ -1566,11 +1556,17 @@ function ArrangeStep({
                         value={getTextContent(selectedPage.id, slot.id)}
                         onChange={(e) => setTextContent(selectedPage.id, slot.id, e.target.value)}
                         onFocus={() => setActiveTextSlotId(slot.id)}
-                        onBlur={() => {
-                          // Keep toolbar visible for a moment to allow clicking
-                          setTimeout(() => {
-                            setActiveTextSlotId(prev => prev === slot.id ? null : prev)
-                          }, 200)
+                        onBlur={(e) => {
+                          // Check if focus moved to toolbar element - if so, don't close
+                          const relatedTarget = e.relatedTarget as HTMLElement
+                          const isToolbarClick = relatedTarget?.closest('.text-toolbar')
+                          
+                          if (!isToolbarClick) {
+                            // Keep toolbar visible longer to allow dropdown interaction
+                            setTimeout(() => {
+                              setActiveTextSlotId(prev => prev === slot.id ? null : prev)
+                            }, 500)
+                          }
                         }}
                         placeholder={slot.placeholder || 'Click to add text...'}
                         className="w-full h-full resize-none bg-transparent focus:outline-none cursor-text"
