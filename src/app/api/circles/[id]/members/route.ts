@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { sendCircleInviteEmail } from '@/lib/email'
 
 // Helper to check membership
 async function checkMembership(supabase: any, circleId: string, userId: string) {
@@ -259,13 +260,40 @@ export async function POST(
       return NextResponse.json({ error: inviteError.message }, { status: 500 })
     }
 
-    // TODO: Send email invitation
+    // Get inviter name and circle name for email
+    const { data: inviterProfile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single()
+
+    const { data: circleData } = await supabase
+      .from('circles')
+      .select('name')
+      .eq('id', circleId)
+      .single()
+
+    // Send email invitation
+    let emailSent = false
+    try {
+      await sendCircleInviteEmail({
+        recipientEmail: email,
+        inviterName: inviterProfile?.full_name || 'Someone',
+        circleName: circleData?.name || 'a circle',
+        inviteToken: invite.token,
+      })
+      emailSent = true
+    } catch (emailError) {
+      console.error('Failed to send circle invite email:', emailError)
+    }
 
     return NextResponse.json({ 
       invite,
       invite_url: `/circles/invite/${invite.token}`,
-      email_sent: false, // Would be true when email sending is implemented
-      message: 'User not found. Invite link generated.'
+      email_sent: emailSent,
+      message: emailSent 
+        ? `Invitation email sent to ${email}` 
+        : 'Invite link generated but email failed to send.'
     }, { status: 201 })
   }
 

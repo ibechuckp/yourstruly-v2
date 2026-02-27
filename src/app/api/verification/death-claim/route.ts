@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { headers } from 'next/headers'
 import { extractDeathCertificateData } from '@/lib/verification/document-ai'
 import { calculateConfidenceScore } from '@/lib/verification/confidence'
+import { sendDeathClaimReceivedEmail } from '@/lib/email'
 
 // Rate limiting: Store in memory (in production, use Redis)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
@@ -244,8 +245,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // TODO: Send confirmation email to claimant
-    // await sendVerificationSubmittedEmail(claimantEmail, claimantName, verification.id)
+    // Send confirmation email to claimant
+    try {
+      await sendDeathClaimReceivedEmail({
+        recipientEmail: claimantEmail,
+        claimantName,
+        deceasedName,
+        claimId: verification.id,
+      })
+    } catch (emailError) {
+      // Log but don't fail the request
+      console.error('Failed to send confirmation email:', emailError)
+    }
 
     return NextResponse.json({
       success: true,
