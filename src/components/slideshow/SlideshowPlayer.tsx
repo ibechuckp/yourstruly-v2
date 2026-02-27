@@ -267,7 +267,7 @@ export default function SlideshowPlayer({
     
     // Convert FileData (Uint8Array) to Blob
     const mp4Buffer = mp4Data instanceof Uint8Array ? mp4Data : new TextEncoder().encode(mp4Data)
-    return new Blob([mp4Buffer], { type: 'video/mp4' })
+    return new Blob([mp4Buffer as BlobPart], { type: 'video/mp4' })
   }, [loadFFmpeg])
 
   // Export as MP4

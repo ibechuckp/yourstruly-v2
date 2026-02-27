@@ -128,7 +128,7 @@ export function GoogleContactsImport({ onImportComplete }: GoogleContactsImportP
 
       setContacts(data.contacts || [])
       // Auto-select non-duplicate contacts
-      const nonDuplicates = new Set(
+      const nonDuplicates = new Set<string>(
         data.contacts
           ?.filter((c: GoogleContact) => !c.isDuplicate)
           .map((c: GoogleContact) => c.sourceId) || []

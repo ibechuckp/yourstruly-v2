@@ -210,6 +210,6 @@ function getPersonaByName(name: 'journalist' | 'friend' | 'life-story'): Persona
       return LIFE_STORY_PERSONA
     case 'journalist':
     default:
-      return DEFAULT_PERSONA
+      return JOURNALIST_PERSONA
   }
 }

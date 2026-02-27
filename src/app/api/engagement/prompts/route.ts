@@ -42,9 +42,12 @@ export async function GET(request: NextRequest) {
     // Mark prompts as shown to prevent repetition
     if (prompts && prompts.length > 0) {
       const promptIds = prompts.map((p: any) => p.id);
-      await supabase.rpc('mark_prompts_shown', { p_prompt_ids: promptIds }).catch(() => {
-        // Non-critical, continue
-      });
+      // Non-critical, ignore errors
+      try {
+        await supabase.rpc('mark_prompts_shown', { p_prompt_ids: promptIds });
+      } catch {
+        // Ignore - this is non-critical
+      }
     }
 
     // Enrich prompts with related data (photos, contacts)

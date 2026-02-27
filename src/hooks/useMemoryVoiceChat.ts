@@ -150,11 +150,10 @@ export function useMemoryVoiceChat(
                       state === 'thinking' || state === 'aiSpeaking'
   const isListening = state === 'listening'
   const isAiSpeaking = state === 'aiSpeaking'
-  const isSaving = state === 'saving'
+  const isSaving = false // 'saving' is not in state types
   const canSave = transcript.length >= 2 && 
                   sessionDuration >= minDurationSeconds && 
-                  !isSaving && 
-                  state !== 'saving'
+                  !isSaving
 
   // Generate session ID on mount
   useEffect(() => {

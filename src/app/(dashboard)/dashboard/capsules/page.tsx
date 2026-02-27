@@ -211,7 +211,7 @@ export default function AlbumsPage() {
           <CreateAlbumModal
             isOpen={showCreateModal}
             onClose={() => { setShowCreateModal(false); setEditAlbum(null) }}
-            onSave={handleSaveAlbum}
+            onCreated={handleSaveAlbum}
             editAlbum={editAlbum}
           />
         )}

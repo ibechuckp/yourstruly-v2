@@ -595,16 +595,16 @@ export default function DashboardPage() {
           </div>
           
           {/* Streak Counter */}
-          {engagementStats?.currentStreakDays > 0 && (
+          {(engagementStats?.currentStreakDays ?? 0) > 0 && (
             <div className="flex items-center justify-center gap-2 mt-4 px-4 py-2 bg-gradient-to-r from-[#D9C61A]/10 to-[#C35F33]/10 rounded-xl">
               <span className="text-xl">🔥</span>
               <div className="text-center">
-                <div className="text-lg font-bold text-[#C35F33]">{engagementStats.currentStreakDays}</div>
+                <div className="text-lg font-bold text-[#C35F33]">{engagementStats?.currentStreakDays}</div>
                 <div className="text-[10px] text-[#406A56]/60 uppercase tracking-wide">Day Streak</div>
               </div>
-              {engagementStats.longestStreakDays > engagementStats.currentStreakDays && (
+              {(engagementStats?.longestStreakDays ?? 0) > (engagementStats?.currentStreakDays ?? 0) && (
                 <div className="text-xs text-[#406A56]/50 ml-2">
-                  Best: {engagementStats.longestStreakDays}
+                  Best: {engagementStats?.longestStreakDays}
                 </div>
               )}
             </div>

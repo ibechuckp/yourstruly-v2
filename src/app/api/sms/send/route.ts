@@ -49,18 +49,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Log to database for tracking
-    await supabase.from('sms_logs').insert({
-      user_id: user.id,
-      to_number: to,
-      message_preview: message.substring(0, 100),
-      template_used: template || null,
-      telnyx_message_id: result.messageId,
-      status: 'sent',
-    }).catch(() => {
+    // Log to database for tracking (non-critical)
+    try {
+      await supabase.from('sms_logs').insert({
+        user_id: user.id,
+        to_number: to,
+        message_preview: message.substring(0, 100),
+        template_used: template || null,
+        telnyx_message_id: result.messageId,
+        status: 'sent',
+      });
+    } catch {
       // Don't fail if logging fails
       console.warn('Failed to log SMS to database');
-    });
+    }
 
     return NextResponse.json({
       success: true,

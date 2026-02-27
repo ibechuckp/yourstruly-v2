@@ -231,7 +231,7 @@ export default function PageEditor({ page, availableMemories, onUpdate }: PageEd
           ...page.content_json.text,
           content: textContents[textSlots[0]?.id] || '',
           ...textStyles[textSlots[0]?.id],
-        },
+        } as any,
         textStyles: textStyles,
       }
     })
@@ -270,7 +270,7 @@ export default function PageEditor({ page, availableMemories, onUpdate }: PageEd
           ...page.content_json.text,
           content: textContents[textSlots[0]?.id] || '',
           ...newStyles[textSlots[0]?.id],
-        },
+        } as any,
       }
     })
   }

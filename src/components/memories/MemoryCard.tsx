@@ -133,12 +133,10 @@ export default function MemoryCard({ memory }: MemoryCardProps) {
         {/* Mood Indicator */}
         {memory.mood && MOOD_DEFINITIONS[memory.mood] && (
           <div 
-            className="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-sm shadow-sm"
-            style={{ backgroundColor: `${MOOD_DEFINITIONS[memory.mood].color}30` }}
+            className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center backdrop-blur-sm shadow-sm"
+            style={{ backgroundColor: MOOD_DEFINITIONS[memory.mood].color }}
             title={MOOD_DEFINITIONS[memory.mood].label}
-          >
-            <span className="text-sm">{MOOD_DEFINITIONS[memory.mood].emoji}</span>
-          </div>
+          />
         )}
 
         {/* Scope Indicator */}

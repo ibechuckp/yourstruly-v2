@@ -11,7 +11,7 @@ import {
 
 interface Session {
   id: string
-  contact: { id: string; full_name: string }
+  contact: { id: string; full_name: string } | { id: string; full_name: string }[] | null
   status: string
   access_token: string
   video_responses: {
@@ -22,6 +22,13 @@ interface Session {
     duration: number
     created_at: string
   }[]
+}
+
+// Helper to get contact from session (handles array vs single object)
+const getContact = (session: Session) => {
+  if (!session.contact) return { id: '', full_name: 'Unknown' }
+  if (Array.isArray(session.contact)) return session.contact[0] || { id: '', full_name: 'Unknown' }
+  return session.contact
 }
 
 interface GroupData {
@@ -109,7 +116,7 @@ export default function GroupStoryTimePage({ params }: { params: Promise<{ group
     .map(s => ({
       session: s,
       response: s.video_responses[0], // First response
-      participant: s.contact,
+      participant: getContact(s),
     })) || []
 
   const goNext = () => {
@@ -209,10 +216,10 @@ export default function GroupStoryTimePage({ params }: { params: Promise<{ group
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white">
-                      {session.contact?.full_name?.charAt(0) || '?'}
+                      {getContact(session).full_name?.charAt(0) || '?'}
                     </div>
                     <div>
-                      <p className="text-white font-medium">{session.contact?.full_name}</p>
+                      <p className="text-white font-medium">{getContact(session).full_name}</p>
                       <p className={`text-xs ${
                         session.status === 'completed' ? 'text-green-400' : 'text-white/50'
                       }`}>
@@ -239,7 +246,7 @@ export default function GroupStoryTimePage({ params }: { params: Promise<{ group
                       {/* Share Buttons */}
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => shareViaEmail(session.access_token, session.contact?.full_name || 'there')}
+                          onClick={() => shareViaEmail(session.access_token, getContact(session).full_name || 'there')}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-[#406A56]/80 hover:bg-[#406A56] text-white text-sm rounded-lg transition-all"
                           title="Share via Email"
                         >

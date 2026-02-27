@@ -104,7 +104,7 @@ export const mockPrompts: EngagementPrompt[] = [
     status: 'pending',
     priority: 75,
     personalizationContext: {
-      religion: 'Hindu',
+      interest: 'spirituality',
     },
     createdAt: '2026-02-20T10:06:00Z',
   },
@@ -113,11 +113,10 @@ export const mockPrompts: EngagementPrompt[] = [
     userId: 'user-123',
     type: 'connect_dots',
     category: 'connections',
-    promptText: 'Is this the same trip as your Barcelona memory?',
+    promptText: 'Is this the same trip as your Barcelona memory? (Barcelona study abroad)',
     status: 'pending',
     priority: 50,
     photoUrl: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=400',
-    compareMemoryTitle: 'Study abroad in Barcelona',
     createdAt: '2026-02-20T10:07:00Z',
   },
 ];

@@ -7,11 +7,11 @@
 
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 
-export default function GoogleOAuthCallbackPage() {
+function GoogleOAuthCallbackContent() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -39,17 +39,35 @@ export default function GoogleOAuthCallbackPage() {
           window.location.origin
         )
       }
-      
-      // Close the popup after a brief delay
-      setTimeout(() => window.close(), 500)
+      // Close popup after a short delay
+      setTimeout(() => window.close(), 100)
+    } else {
+      // Not in popup - might be a direct navigation
+      console.warn('OAuth callback: not in popup context')
     }
   }, [searchParams])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#F2F1E5]">
-      <Loader2 size={48} className="text-[#406A56] animate-spin mb-4" />
-      <p className="text-[#666]">Completing authorization...</p>
-      <p className="text-sm text-[#888] mt-2">You can close this window if it doesn&apos;t close automatically</p>
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#406A56] mx-auto mb-4" />
+        <p className="text-gray-600">Completing authentication...</p>
+      </div>
     </div>
+  )
+}
+
+export default function GoogleOAuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[#406A56] mx-auto mb-4" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <GoogleOAuthCallbackContent />
+    </Suspense>
   )
 }

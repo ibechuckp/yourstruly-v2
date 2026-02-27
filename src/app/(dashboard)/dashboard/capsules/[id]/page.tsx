@@ -550,7 +550,7 @@ export default function AlbumDetailPage({ params }: PageProps) {
           <CreateAlbumModal
             isOpen={showEditModal}
             onClose={() => setShowEditModal(false)}
-            onSave={handleSaveAlbum}
+            onCreated={handleSaveAlbum}
             editAlbum={album}
           />
         )}

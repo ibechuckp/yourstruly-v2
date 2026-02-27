@@ -28,6 +28,7 @@ export async function sendSMS(to: string, text: string): Promise<{
     // Normalize phone number (ensure E.164 format)
     const normalizedTo = normalizePhoneNumber(to);
     
+    // @ts-expect-error - Telnyx SDK types may be outdated
     const message = await telnyx.messages.create({
       from: TELNYX_FROM_NUMBER,
       to: normalizedTo,

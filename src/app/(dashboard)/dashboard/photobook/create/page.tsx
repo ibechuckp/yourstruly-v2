@@ -644,7 +644,7 @@ function ArrangeStep({
       [key]: newStyle
     }))
     // Also sync to page slot data for preview
-    setPages(prevPages => prevPages.map(p => {
+    setPages(pages.map(p => {
       if (p.id !== pageId) return p
       // Check if slot exists, if not add it
       const existingSlot = p.slots.find(s => s.slotId === slotId)
@@ -671,7 +671,7 @@ function ArrangeStep({
   const setTextContent = (pageId: string, slotId: string, content: string) => {
     setTextContents(prev => ({ ...prev, [`${pageId}:${slotId}`]: content }))
     // Also sync to page slot data for preview
-    setPages(prevPages => prevPages.map(p => {
+    setPages(pages.map(p => {
       if (p.id !== pageId) return p
       // Check if slot exists, if not add it
       const existingSlot = p.slots.find(s => s.slotId === slotId)

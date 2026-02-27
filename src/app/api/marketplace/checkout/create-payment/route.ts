@@ -9,7 +9,7 @@ const getStripeClient = (testMode: boolean) => {
     : process.env.STRIPE_SECRET_KEY;
   
   return new Stripe(key || '', {
-    apiVersion: '2024-12-18.acacia',
+    apiVersion: '2026-01-28.clover',
   });
 };
 

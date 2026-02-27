@@ -2,6 +2,15 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { Order } from '@/types/marketplace';
 
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  isGift?: boolean;
+  giftMessage?: string;
+}
+
 // GET: List user's orders
 export async function GET(req: NextRequest) {
   try {

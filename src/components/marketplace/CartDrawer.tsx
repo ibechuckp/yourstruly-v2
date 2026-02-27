@@ -35,19 +35,34 @@ const providerColors: Record<ProviderType, string> = {
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const {
     items,
-    itemCount,
-    subtotal,
-    shipping,
-    tax,
-    total,
-    isLoading,
-    error,
-    itemsByProvider,
-    subtotalByProvider,
+    cartCount: itemCount,
+    cartTotal,
+    isLoaded,
     removeItem,
     updateQuantity,
     clearCart,
   } = useCart();
+  
+  // Calculate derived values
+  const subtotal = cartTotal;
+  const shipping = items.length > 0 ? 9.99 : 0; // Flat rate estimate
+  const tax = subtotal * 0.08; // Estimate 8% tax
+  const total = subtotal + shipping + tax;
+  const isLoading = !isLoaded;
+  const error = null;
+  
+  // Group items by provider
+  const itemsByProvider = items.reduce((acc, item) => {
+    const provider = item.provider || 'other';
+    if (!acc[provider]) acc[provider] = [];
+    acc[provider].push(item);
+    return acc;
+  }, {} as Record<string, typeof items>);
+  
+  const subtotalByProvider = Object.entries(itemsByProvider).reduce((acc, [provider, providerItems]) => {
+    acc[provider] = providerItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return acc;
+  }, {} as Record<string, number>);
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
@@ -182,8 +197,8 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                         {/* Product Image */}
                                         <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-white">
                                           <Image
-                                            src={item.product.thumbnail || '/images/placeholder.png'}
-                                            alt={item.product.name}
+                                            src={item.thumbnail || '/images/placeholder.png'}
+                                            alt={item.name}
                                             fill
                                             className="object-cover"
                                           />
@@ -192,36 +207,26 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                         {/* Product Details */}
                                         <div className="flex-1 min-w-0">
                                           <h4 className="text-sm font-medium text-gray-900 truncate">
-                                            {item.product.name}
+                                            {item.name}
                                           </h4>
                                           
                                           {/* Variant/Options */}
-                                          {(item.selectedColor || item.selectedSize || item.selectedVariant) && (
+                                          {item.variant && (
                                             <p className="mt-0.5 text-xs text-gray-500">
-                                              {[item.selectedColor, item.selectedSize, item.selectedVariant?.name]
-                                                .filter(Boolean)
-                                                .join(' • ')}
+                                              {item.variant.name}
                                             </p>
-                                          )}
-
-                                          {/* Gift indicator */}
-                                          {item.isGift && (
-                                            <div className="flex items-center gap-1 mt-1 text-xs text-purple-600">
-                                              <GiftIcon className="h-3 w-3" />
-                                              <span>Gift wrapped</span>
-                                            </div>
                                           )}
 
                                           {/* Price */}
                                           <p className="mt-1 text-sm font-medium text-gray-900">
-                                            {formatPrice(item.priceAtAdd)}
+                                            {formatPrice(item.price)}
                                           </p>
 
                                           {/* Quantity Controls */}
                                           <div className="flex items-center gap-3 mt-2">
                                             <div className="flex items-center border border-gray-300 rounded-lg bg-white">
                                               <button
-                                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                onClick={() => updateQuantity(item.id, item.variant?.id, item.quantity - 1)}
                                                 className="p-1.5 hover:bg-gray-100 rounded-l-lg transition-colors"
                                                 disabled={item.quantity <= 1}
                                               >
@@ -231,14 +236,14 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                                 {item.quantity}
                                               </span>
                                               <button
-                                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                onClick={() => updateQuantity(item.id, item.variant?.id, item.quantity + 1)}
                                                 className="p-1.5 hover:bg-gray-100 rounded-r-lg transition-colors"
                                               >
                                                 <PlusIcon className="h-4 w-4" />
                                               </button>
                                             </div>
                                             <button
-                                              onClick={() => removeItem(item.id)}
+                                              onClick={() => removeItem(item.id, item.variant?.id)}
                                               className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
                                             >
                                               <TrashIcon className="h-4 w-4" />
@@ -249,7 +254,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                         {/* Item Total */}
                                         <div className="text-right">
                                           <p className="text-sm font-semibold text-gray-900">
-                                            {formatPrice(item.total)}
+                                            {formatPrice(item.price * item.quantity)}
                                           </p>
                                         </div>
                                       </div>
@@ -344,7 +349,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
 // Cart Button Component (for navbar)
 export function CartButton({ onClick }: { onClick: () => void }) {
-  const { itemCount, isLoading } = useCart();
+  const { cartCount, isLoaded } = useCart();
 
   return (
     <button
@@ -353,9 +358,9 @@ export function CartButton({ onClick }: { onClick: () => void }) {
       aria-label="Open cart"
     >
       <ShoppingCartIcon className="h-6 w-6" />
-      {!isLoading && itemCount > 0 && (
+      {isLoaded && cartCount > 0 && (
         <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-xs font-medium text-white">
-          {itemCount > 99 ? '99+' : itemCount}
+          {cartCount > 99 ? '99+' : cartCount}
         </span>
       )}
     </button>

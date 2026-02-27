@@ -406,7 +406,7 @@ export default function GalleryPage() {
                     <ImmersiveTimeline 
                       media={sortedMedia}
                       initialIndex={timelineIndex}
-                      onPhotoClick={(item) => setPreviewMedia(item)}
+                      onPhotoClick={(item) => setPreviewMedia(item as MediaItem)}
                       onIndexChange={setTimelineIndex}
                     />
                   </div>

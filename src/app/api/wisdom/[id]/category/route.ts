@@ -21,7 +21,7 @@ const VALID_CATEGORIES = [
 // Update the category of a wisdom entry
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();

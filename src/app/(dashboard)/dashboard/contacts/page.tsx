@@ -155,9 +155,13 @@ export default function ContactsPage() {
     const circleMap: ContactCircleMap = new Map()
     
     if (userCircleMemberships && userCircleMemberships.length > 0) {
-      // Get circle IDs
+      // Get circle IDs - circles join can return single object or array
       const circleIds = userCircleMemberships
-        .map(m => (m.circles as { id: string } | null)?.id)
+        .map(m => {
+          const circles = m.circles as { id: string; name?: string } | { id: string; name?: string }[] | null
+          if (Array.isArray(circles)) return circles[0]?.id
+          return circles?.id
+        })
         .filter((id): id is string => !!id)
       
       if (circleIds.length > 0) {
@@ -171,14 +175,17 @@ export default function ContactsPage() {
         // Build lookup of circle id -> name
         const circleNames: Record<string, string> = {}
         for (const m of userCircleMemberships) {
-          const circle = m.circles as { id: string; name: string } | null
+          const circles = m.circles as { id: string; name: string } | { id: string; name: string }[] | null
+          const circle = Array.isArray(circles) ? circles[0] : circles
           if (circle) circleNames[circle.id] = circle.name
         }
         
         // Build map of email -> circle memberships
         if (allMembers) {
           for (const member of allMembers) {
-            const email = (member.profiles as { email: string } | null)?.email?.toLowerCase()
+            const profiles = member.profiles as { email: string } | { email: string }[] | null
+            const profile = Array.isArray(profiles) ? profiles[0] : profiles
+            const email = profile?.email?.toLowerCase()
             if (!email) continue
             
             const circleName = circleNames[member.circle_id]

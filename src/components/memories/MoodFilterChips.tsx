@@ -49,7 +49,7 @@ export default function MoodFilterChips({
               color: isSelected ? 'white' : def.color
             }}
           >
-            <span>{def.emoji}</span>
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: isSelected ? 'white' : def.color }} />
             <span>{def.label}</span>
             {count > 0 && (
               <span

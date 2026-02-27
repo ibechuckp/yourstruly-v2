@@ -145,7 +145,7 @@ export default function EmotionalJourney({ userId }: EmotionalJourneyProps) {
                   <div key={item.mood} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <span className="flex items-center gap-2">
-                        <span>{moodDef.emoji}</span>
+                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: moodDef.color }} />
                         <span className="text-[#2d2d2d]">{moodDef.label}</span>
                       </span>
                       <span className="text-[#406A56]/60">
@@ -207,7 +207,7 @@ export default function EmotionalJourney({ userId }: EmotionalJourneyProps) {
                     <div className="w-20 flex items-center gap-1 text-sm flex-shrink-0">
                       {dominantDef && (
                         <>
-                          <span>{dominantDef.emoji}</span>
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: dominantDef.color }} />
                           <span className="text-[#2d2d2d] truncate">{dominantDef.label}</span>
                         </>
                       )}
@@ -236,7 +236,7 @@ export default function EmotionalJourney({ userId }: EmotionalJourneyProps) {
                     className="w-2 h-2 rounded-full"
                     style={{ backgroundColor: def.color }}
                   />
-                  <span>{def.emoji}</span>
+                  <span>{def.label}</span>
                 </div>
               ))}
             </div>

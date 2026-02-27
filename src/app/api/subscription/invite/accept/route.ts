@@ -52,7 +52,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if subscription is still active
-    if (seat.subscription?.status !== 'active' || seat.subscription?.plan?.name !== 'premium') {
+    const subscription = Array.isArray(seat.subscription) ? seat.subscription[0] : seat.subscription
+    const plan = Array.isArray(subscription?.plan) ? subscription?.plan[0] : subscription?.plan
+    if (subscription?.status !== 'active' || plan?.name !== 'premium') {
       return NextResponse.json({ error: 'This subscription is no longer active' }, { status: 400 })
     }
 
@@ -74,7 +76,8 @@ export async function POST(request: NextRequest) {
       .eq('status', 'active')
       .single()
 
-    if (existingSub?.plan?.name === 'premium') {
+    const existingPlan = Array.isArray(existingSub?.plan) ? existingSub?.plan[0] : existingSub?.plan
+    if (existingPlan?.name === 'premium') {
       return NextResponse.json({ 
         error: 'You already have your own Premium subscription' 
       }, { status: 400 })

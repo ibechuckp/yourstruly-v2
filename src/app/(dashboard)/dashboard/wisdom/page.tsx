@@ -403,8 +403,8 @@ export default function WisdomPage() {
                       minHeight: `${80 + (count * 5)}px`,
                       maxWidth: '140px',
                       maxHeight: '140px',
-                      ringColor: isSelected ? cat.color : undefined,
-                    }}
+                      '--tw-ring-color': isSelected ? cat.color : undefined,
+                    } as React.CSSProperties}
                   >
                     {/* Count Badge */}
                     <div 

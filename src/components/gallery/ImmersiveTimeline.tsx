@@ -40,7 +40,7 @@ export default function ImmersiveTimeline({ media, initialIndex = 0, onPhotoClic
   const [direction, setDirection] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
   const scrollAccumulator = useRef(0)
-  const scrollTimeout = useRef<NodeJS.Timeout>()
+  const scrollTimeout = useRef<NodeJS.Timeout | undefined>(undefined)
 
   // Media is already filtered and sorted by parent - use directly
   const filteredMedia = media
@@ -171,13 +171,13 @@ export default function ImmersiveTimeline({ media, initialIndex = 0, onPhotoClic
       y: 0,
       scale: 1,
       opacity: 1,
-      transition: { type: 'spring', stiffness: 300, damping: 25 }
+      transition: { type: 'spring' as const, stiffness: 300, damping: 25 }
     },
     exit: (dir: number) => ({
       y: dir > 0 ? -60 : 60,
       scale: 0.95,
       opacity: 0,
-      transition: { type: 'spring', stiffness: 400, damping: 30 }
+      transition: { type: 'spring' as const, stiffness: 400, damping: 30 }
     })
   }
 
