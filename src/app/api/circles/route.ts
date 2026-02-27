@@ -1,6 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
+interface MemberProfile {
+  id: string
+  full_name: string | null
+  avatar_url: string | null
+}
+
 // GET /api/circles - List user's circles (where they're a member)
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -39,13 +45,58 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Get circle IDs for fetching members
+  const circleIds = circles?.map(cm => {
+    const circle = Array.isArray(cm.circle) ? cm.circle[0] : cm.circle
+    return circle?.id
+  }).filter(Boolean) || []
+
+  // Fetch all members for these circles with their profiles
+  const { data: allMembers } = circleIds.length > 0 ? await supabase
+    .from('circle_members')
+    .select(`
+      circle_id,
+      user_id,
+      profile:profiles (
+        id,
+        full_name,
+        avatar_url
+      )
+    `)
+    .in('circle_id', circleIds)
+    .eq('invite_status', 'accepted')
+    .order('joined_at', { ascending: true }) : { data: [] }
+
+  // Group members by circle_id
+  const membersByCircle: Record<string, { count: number; members: MemberProfile[] }> = {}
+  for (const member of allMembers || []) {
+    if (!membersByCircle[member.circle_id]) {
+      membersByCircle[member.circle_id] = { count: 0, members: [] }
+    }
+    membersByCircle[member.circle_id].count++
+    // Only keep first 5 members for avatar display
+    if (membersByCircle[member.circle_id].members.length < 5) {
+      const profile = Array.isArray(member.profile) ? member.profile[0] : member.profile
+      if (profile) {
+        membersByCircle[member.circle_id].members.push({
+          id: profile.id,
+          full_name: profile.full_name,
+          avatar_url: profile.avatar_url
+        })
+      }
+    }
+  }
+
   // Flatten the response (circle is an array from Supabase join)
   const flatCircles = circles?.map(cm => {
     const circle = Array.isArray(cm.circle) ? cm.circle[0] : cm.circle
+    const circleMembers = membersByCircle[circle?.id] || { count: 0, members: [] }
     return {
       ...circle,
       my_role: cm.role,
-      joined_at: cm.joined_at
+      joined_at: cm.joined_at,
+      member_count: circleMembers.count,
+      members: circleMembers.members
     }
   }).filter(c => c?.id) || []
 

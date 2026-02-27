@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Users, ChevronLeft, Crown, Shield, User, Search } from 'lucide-react'
 import Link from 'next/link'
 import CreateCircleModal from '@/components/circles/CreateCircleModal'
+import MemberAvatarStack from '@/components/circles/MemberAvatarStack'
 import '@/styles/page-styles.css'
 import { getCategoryIcon } from '@/lib/dashboard/icons'
 
@@ -12,11 +13,18 @@ import { getCategoryIcon } from '@/lib/dashboard/icons'
 // ============================================
 type CircleRole = 'owner' | 'admin' | 'member'
 
+interface CircleMember {
+  id: string
+  full_name: string | null
+  avatar_url: string | null
+}
+
 interface Circle {
   id: string
   name: string
   description?: string
   member_count?: number
+  members?: CircleMember[]
   my_role: CircleRole
   created_at: string
   joined_at?: string
@@ -250,13 +258,16 @@ export default function CirclesPage() {
                 )}
 
                 <div className="flex items-center justify-between pt-3 border-t border-[#406A56]/10">
-                  <span className="text-xs text-[#888]">
-                    Created {new Date(circle.created_at).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
-                  </span>
+                  {circle.members && circle.members.length > 0 ? (
+                    <MemberAvatarStack 
+                      members={circle.members} 
+                      totalCount={circle.member_count || circle.members.length}
+                      maxDisplay={4}
+                      size="sm"
+                    />
+                  ) : (
+                    <span className="text-xs text-[#888]">No members yet</span>
+                  )}
                   <span className="text-sm text-[#406A56] font-medium group-hover:underline">
                     View →
                   </span>

@@ -2,6 +2,8 @@
 export { default as CircleMemberCard } from './CircleMemberCard'
 export type { CircleRole } from './CircleMemberCard'
 
+export { default as MemberAvatarStack } from './MemberAvatarStack'
+
 export { default as CircleVoteModal } from './CircleVoteModal'
 export type { VoteType, VoteStatus } from './CircleVoteModal'
 
