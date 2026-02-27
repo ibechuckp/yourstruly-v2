@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useMemoryVoiceChat } from '@/hooks/useMemoryVoiceChat'
+import { usePersonaPlexVoice, type PersonaPlexVoice as PPVoice } from '@/hooks/usePersonaPlexVoice'
 import { VoiceChatUI } from './VoiceChatUI'
 import type { 
   Voice, 
@@ -121,36 +122,49 @@ export function VoiceChat({
   const selectedPersona = persona || getPersonaByName(personaName)
 
   // For PersonaPlex, convert voice to PersonaPlex format
-  const effectiveVoice = provider === 'personaplex' 
-    ? toPersonaPlexVoice(voice) as unknown as Voice  // Cast back for interface compatibility
-    : voice
+  const personaPlexVoice = toPersonaPlexVoice(voice) as PPVoice
 
-  // Use OpenAI hook (PersonaPlex hook will be integrated when available)
-  // TODO: When usePersonaPlexVoice is ready, conditionally use it based on provider
-  const {
-    state,
-    isConnected,
-    isListening,
-    isAiSpeaking,
-    isSaving,
-    transcript,
-    currentUserText,
-    currentAiText,
-    questionCount,
-    sessionDuration,
-    canSave,
-    error,
-    isSupported,
-    start,
-    stop,
-    saveMemory,
-    abort,
-    reset,
-  } = useMemoryVoiceChat({
+  // Track session duration and question count for PersonaPlex
+  const [ppSessionDuration, setPpSessionDuration] = useState(0)
+  const [ppQuestionCount, setPpQuestionCount] = useState(0)
+  const [ppIsSaving, setPpIsSaving] = useState(false)
+
+  // PersonaPlex hook
+  const personaPlex = usePersonaPlexVoice({
+    serverUrl: process.env.NEXT_PUBLIC_PERSONAPLEX_URL,
+    systemPrompt: selectedPersona.systemPrompt,
+    voice: personaPlexVoice,
+    enableRecording: true,
+    onTranscript: (userText, aiText) => {
+      // Count AI questions (roughly)
+      if (aiText && aiText.includes('?')) {
+        setPpQuestionCount(prev => prev + 1)
+      }
+    },
+    onComplete: (transcript) => {
+      onComplete?.({
+        sessionType,
+        transcript,
+        duration: ppSessionDuration,
+        questionCount: ppQuestionCount,
+      } as VoiceSessionResult)
+    },
+    onError,
+    onRecordingComplete: async (blob) => {
+      // Save the recording when session ends
+      if (blob && onMemorySaved) {
+        // TODO: Upload blob and create memory
+        console.log('Recording complete, size:', blob.size)
+      }
+    },
+  })
+
+  // OpenAI hook (used when provider is 'openai')
+  const openAI = useMemoryVoiceChat({
     sessionType,
     topic,
     contactId,
-    voice,  // Use original voice for OpenAI
+    voice,
     persona: selectedPersona,
     maxQuestions,
     maxDurationSeconds,
@@ -159,21 +173,63 @@ export function VoiceChat({
     onError,
   })
 
+  // Select the active hook based on provider
+  const isPersonaPlex = provider === 'personaplex'
+  
+  // Unified state (adapts PersonaPlex state to match OpenAI interface)
+  const state = isPersonaPlex ? personaPlex.state : openAI.state
+  const isConnected = isPersonaPlex 
+    ? ['connected', 'listening', 'thinking', 'aiSpeaking'].includes(personaPlex.state)
+    : openAI.isConnected
+  const isListening = isPersonaPlex ? personaPlex.state === 'listening' : openAI.isListening
+  const isAiSpeaking = isPersonaPlex ? personaPlex.state === 'aiSpeaking' : openAI.isAiSpeaking
+  const isSaving = isPersonaPlex ? ppIsSaving : openAI.isSaving
+  const transcript = isPersonaPlex ? personaPlex.transcript : openAI.transcript
+  const currentUserText = isPersonaPlex ? personaPlex.currentUserText : openAI.currentUserText
+  const currentAiText = isPersonaPlex ? personaPlex.currentAiText : openAI.currentAiText
+  const questionCount = isPersonaPlex ? ppQuestionCount : openAI.questionCount
+  const sessionDuration = isPersonaPlex ? ppSessionDuration : openAI.sessionDuration
+  const canSave = isPersonaPlex ? transcript.length >= 2 : openAI.canSave
+  const error = isPersonaPlex ? personaPlex.error : openAI.error
+  const isSupported = isPersonaPlex ? personaPlex.isSupported : openAI.isSupported
+
   const handleStart = useCallback(async () => {
-    await start()
-  }, [start])
+    if (isPersonaPlex) {
+      await personaPlex.start()
+    } else {
+      await openAI.start()
+    }
+  }, [isPersonaPlex, personaPlex, openAI])
 
   const handleStop = useCallback(async () => {
-    await stop()
-  }, [stop])
+    if (isPersonaPlex) {
+      personaPlex.stop()
+    } else {
+      await openAI.stop()
+    }
+  }, [isPersonaPlex, personaPlex, openAI])
 
   const handleSave = useCallback(async () => {
-    await saveMemory()
-  }, [saveMemory])
+    if (isPersonaPlex) {
+      setPpIsSaving(true)
+      // For PersonaPlex, we'd need to save the transcript + recording
+      // TODO: Implement proper memory save for PersonaPlex
+      console.log('Saving PersonaPlex memory...', personaPlex.transcript)
+      setPpIsSaving(false)
+    } else {
+      await openAI.saveMemory()
+    }
+  }, [isPersonaPlex, personaPlex, openAI])
 
   const handleReset = useCallback(() => {
-    reset()
-  }, [reset])
+    if (isPersonaPlex) {
+      personaPlex.abort()
+      setPpQuestionCount(0)
+      setPpSessionDuration(0)
+    } else {
+      openAI.reset()
+    }
+  }, [isPersonaPlex, personaPlex, openAI])
 
   // Show loading while checking browser support (avoids hydration mismatch)
   if (isSupported === null) {
@@ -200,15 +256,22 @@ export function VoiceChat({
     )
   }
 
-  // PersonaPlex placeholder - will be replaced with actual PersonaPlex UI
+  // Unified abort handler
+  const handleAbort = useCallback(() => {
+    if (isPersonaPlex) {
+      personaPlex.abort()
+    } else {
+      openAI.abort()
+    }
+  }, [isPersonaPlex, personaPlex, openAI])
+
+  // PersonaPlex uses same UI, just with different provider
   if (provider === 'personaplex') {
-    // For now, show a message that PersonaPlex support is coming
-    // TODO: Replace with PersonaPlex-specific implementation
     return (
       <div className="p-6 bg-white/80 backdrop-blur-sm border border-[#406A56]/10 rounded-2xl">
         <div className="text-center mb-4">
-          <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
-            PersonaPlex Provider
+          <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
+            PersonaPlex (73% cheaper)
           </span>
         </div>
         <VoiceChatUI
@@ -226,7 +289,7 @@ export function VoiceChat({
           onStart={handleStart}
           onStop={handleStop}
           onSave={handleSave}
-          onAbort={abort}
+          onAbort={handleAbort}
           onReset={handleReset}
           showTranscript={showTranscript}
           className={className}
@@ -251,7 +314,7 @@ export function VoiceChat({
       onStart={handleStart}
       onStop={handleStop}
       onSave={handleSave}
-      onAbort={abort}
+      onAbort={handleAbort}
       onReset={handleReset}
       showTranscript={showTranscript}
       className={className}
