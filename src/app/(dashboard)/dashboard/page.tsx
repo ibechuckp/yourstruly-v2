@@ -511,7 +511,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden">
+    <div className="overflow-x-hidden">
       {/* Background */}
       <div className="home-background">
         <div className="home-blob home-blob-1" />
