@@ -39,6 +39,14 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
+    // Mark prompts as shown to prevent repetition
+    if (prompts && prompts.length > 0) {
+      const promptIds = prompts.map((p: any) => p.id);
+      await supabase.rpc('mark_prompts_shown', { p_prompt_ids: promptIds }).catch(() => {
+        // Non-critical, continue
+      });
+    }
+
     // Enrich prompts with related data (photos, contacts)
     const enrichedPrompts = await Promise.all(
       (prompts || []).map(async (prompt: any) => {
