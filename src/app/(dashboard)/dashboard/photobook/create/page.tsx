@@ -1268,7 +1268,11 @@ function ArrangeStep({
             className="flex items-center gap-2 mb-4 p-3 bg-white rounded-xl shadow-sm border border-[#406A56]/10 flex-wrap"
             onMouseDown={(e) => {
               // Only prevent default for non-interactive elements (allows selects to work)
-              if (!(e.target instanceof HTMLSelectElement)) {
+              const target = e.target as HTMLElement
+              const isInteractive = target.tagName === 'SELECT' || 
+                                    target.tagName === 'OPTION' ||
+                                    target.closest('select')
+              if (!isInteractive) {
                 e.preventDefault()
               }
             }}
