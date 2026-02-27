@@ -36,6 +36,8 @@ export interface TranscriptEntry {
 export interface UsePersonaPlexOptions {
   serverUrl?: string
   systemPrompt?: string
+  /** Topic/question to start with - AI will speak this first */
+  initialTopic?: string
   voice?: PersonaPlexVoice
   // Model parameters
   textTemperature?: number
@@ -482,7 +484,8 @@ const DEFAULT_SERVER_URL = process.env.NEXT_PUBLIC_PERSONAPLEX_URL || 'wss://100
 export function usePersonaPlexVoice(options: UsePersonaPlexOptions = {}): UsePersonaPlexReturn {
   const {
     serverUrl = DEFAULT_SERVER_URL,
-    systemPrompt = 'You enjoy having a good conversation.',
+    systemPrompt: baseSystemPrompt = 'You enjoy having a good conversation.',
+    initialTopic,
     voice = 'NATF2',
     textTemperature = 0.7,
     textTopk = 25,
@@ -498,6 +501,11 @@ export function usePersonaPlexVoice(options: UsePersonaPlexOptions = {}): UsePer
     onAudioStats,
     onRecordingComplete,
   } = options
+  
+  // Build system prompt with initial topic
+  const systemPrompt = initialTopic 
+    ? `${baseSystemPrompt}\n\nIMPORTANT: Start the conversation by asking about: "${initialTopic}". Say something like "Let's talk about ${initialTopic}. Tell me about it." Keep your opening brief and warm.`
+    : baseSystemPrompt
 
   // State
   const [state, setState] = useState<PersonaPlexState>('idle')

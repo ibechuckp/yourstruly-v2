@@ -133,6 +133,7 @@ export function VoiceChat({
   const personaPlex = usePersonaPlexVoice({
     serverUrl: process.env.NEXT_PUBLIC_PERSONAPLEX_URL,
     systemPrompt: selectedPersona.systemPrompt,
+    initialTopic: topic, // AI will speak this prompt first
     voice: personaPlexVoice,
     enableRecording: true,
     onTranscript: (userText, aiText) => {
