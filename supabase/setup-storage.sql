@@ -80,3 +80,39 @@ USING (bucket_id = 'videos');
 CREATE POLICY "Authenticated can delete videos" ON storage.objects
 FOR DELETE TO authenticated
 USING (bucket_id = 'videos');
+
+-- ============================================
+-- VERIFICATION DOCUMENTS BUCKET (private - admin only)
+-- ============================================
+
+-- Create the verification-documents bucket (private - sensitive documents)
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'verification-documents',
+  'verification-documents',
+  false,
+  10485760, -- 10MB limit
+  ARRAY['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+)
+ON CONFLICT (id) DO UPDATE SET 
+  public = false,
+  file_size_limit = 10485760,
+  allowed_mime_types = ARRAY['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+
+-- Only allow service role to upload (API handles this)
+-- No direct public/authenticated access - all access through signed URLs
+
+-- Admin users can read verification documents via signed URLs
+CREATE POLICY "Admin can read verification documents" ON storage.objects
+FOR SELECT TO authenticated
+USING (
+  bucket_id = 'verification-documents' AND
+  EXISTS (
+    SELECT 1 FROM admin_users
+    WHERE admin_users.id = auth.uid()
+    AND admin_users.is_active = true
+  )
+);
+
+-- Service role can upload (API uses admin client)
+-- No explicit policy needed - service role bypasses RLS

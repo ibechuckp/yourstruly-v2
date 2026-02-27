@@ -19,6 +19,7 @@ import {
   LogOut,
   Crown,
   BookOpen,
+  HeartHandshake,
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -36,6 +37,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { label: 'Users', href: '/admin/users', icon: Users, permission: 'users:read' },
+  { label: 'Verifications', href: '/admin/verifications', icon: HeartHandshake, permission: 'moderation:read' },
   { label: 'Analytics', href: '/admin/analytics', icon: BarChart3, permission: 'analytics:read' },
   { label: 'Billing', href: '/admin/billing', icon: CreditCard, permission: 'billing:read' },
   { label: 'Marketplace', href: '/admin/marketplace', icon: ShoppingBag, permission: 'marketplace:read' },
