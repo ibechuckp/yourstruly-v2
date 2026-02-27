@@ -122,7 +122,8 @@ export async function POST(
     .from('memories')
     .getPublicUrl(fileName)
 
-  // Run face detection for images (open source)
+  // Face detection disabled temporarily due to TextEncoder compatibility issues in container
+  // TODO: Fix canvas/face-api compatibility for Docker deployment
   let detectedFaces: Array<{
     boundingBox: { x: number; y: number; width: number; height: number }
     confidence: number
@@ -132,23 +133,24 @@ export async function POST(
     expression?: string
   }> = []
 
-  if (fileType === 'image') {
-    try {
-      const { detectFaces, getDominantExpression } = await getFaceDetection()
-      const faces = await detectFaces(buffer)
-      detectedFaces = faces.map(f => ({
-        boundingBox: f.boundingBox,
-        confidence: f.confidence,
-        embedding: f.embedding,
-        age: f.age,
-        gender: f.gender,
-        expression: f.expressions ? getDominantExpression(f.expressions) : undefined,
-      }))
-    } catch (e) {
-      console.error('Face detection failed:', e)
-      // Continue without face data
-    }
-  }
+  // Face detection disabled - uncomment when fixed:
+  // if (fileType === 'image') {
+  //   try {
+  //     const { detectFaces, getDominantExpression } = await getFaceDetection()
+  //     const faces = await detectFaces(buffer)
+  //     detectedFaces = faces.map(f => ({
+  //       boundingBox: f.boundingBox,
+  //       confidence: f.confidence,
+  //       embedding: f.embedding,
+  //       age: f.age,
+  //       gender: f.gender,
+  //       expression: f.expressions ? getDominantExpression(f.expressions) : undefined,
+  //     }))
+  //   } catch (e) {
+  //     console.error('Face detection failed:', e)
+  //     // Continue without face data
+  //   }
+  // }
 
   // No XP for photo upload - only backstory earns XP
 

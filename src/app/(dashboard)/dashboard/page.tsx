@@ -15,6 +15,7 @@ import '@/styles/engagement.css'
 import '@/styles/conversation.css'
 import CommandBar from '@/components/dashboard/CommandBar'
 import { AddContactModal } from '@/components/contacts/AddContactModal'
+import PhotoUploadModal from '@/components/dashboard/PhotoUploadModal'
 import ActivityFeed, { XPCompletion } from '@/components/dashboard/ActivityFeed'
 import OnThisDay from '@/components/dashboard/OnThisDay'
 import { StorageUsageBar } from '@/components/subscription/StorageUsageBar'
@@ -909,53 +910,10 @@ export default function DashboardPage() {
       </div> {/* End home-layout */}
       
       {/* Photo Upload Modal */}
-      <AnimatePresence>
-        {showPhotoUpload && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={() => setShowPhotoUpload(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-[#F2F1E5] rounded-2xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-[#406A56]">Add Photos</h3>
-                <button onClick={() => setShowPhotoUpload(false)} className="p-2 hover:bg-[#406A56]/10 rounded-lg">
-                  <X size={20} className="text-[#406A56]" />
-                </button>
-              </div>
-              <p className="text-[#406A56]/70 mb-4">Upload photos to create new memories</p>
-              
-              <div className="border-2 border-dashed border-[#406A56]/30 rounded-xl p-8 text-center hover:border-[#406A56]/50 transition-colors cursor-pointer">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  id="photo-upload"
-                  onChange={(e) => {
-                    // TODO: Handle file upload
-                    console.log('Files:', e.target.files)
-                    setShowPhotoUpload(false)
-                  }}
-                />
-                <label htmlFor="photo-upload" className="cursor-pointer">
-                  <Image size={48} className="mx-auto text-[#406A56]/40 mb-3" />
-                  <p className="text-[#406A56] font-medium">Click to upload photos</p>
-                  <p className="text-sm text-[#406A56]/50 mt-1">or drag and drop</p>
-                </label>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <PhotoUploadModal 
+        isOpen={showPhotoUpload} 
+        onClose={() => setShowPhotoUpload(false)} 
+      />
       
       {/* Postscript Modal - Step 1: Select Recipient */}
       <AnimatePresence>
