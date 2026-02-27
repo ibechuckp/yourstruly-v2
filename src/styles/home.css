@@ -1,31 +1,58 @@
 /* =============================================================================
-   HOME PAGE - Modern Warm Glassmorphism Design
+   HOME PAGE - Clean Flexbox Layout
    Based on Color Theory & YT Brand Guidelines
+   
+   LAYOUT STRUCTURE:
+   ┌─────────────────────────────────────────────────────┐
+   │  HEADER (nav) - handled by layout.tsx               │
+   ├──────────────┬──────────────────────────────────────┤
+   │  LEFT SIDEBAR│         MAIN CONTENT                 │
+   │  (280px)     │  (flex-1, centered)                  │
+   │              │                                       │
+   │  • Profile   │  • Engagement Tiles (grid inside)   │
+   │  • OnThisDay │  • Quick Actions (flex row)         │
+   │  • Activity  │  • Command Bar                       │
+   └──────────────┴──────────────────────────────────────┘
    ============================================================================= */
 
-/* 
- * COLOR PALETTE (Analogous Warm + Accent)
- * Primary: Green #406A56 (trust, growth)
- * Warm Accent: Yellow #D9C61A (energy, optimism)  
- * Emotional: Red/Coral #C35F33 (passion, memories)
- * Cool Balance: Blue #8DACAB (calm, depth)
- * Wisdom: Purple #4A3552 (legacy, depth)
- * Background: Off White #F2F1E5 (warmth, scrapbook)
- */
+/* =============================================================================
+   CSS VARIABLES
+   ============================================================================= */
+:root {
+  /* Layout dimensions */
+  --sidebar-width: 280px;
+  --sidebar-gap: 48px;
+  --content-max-width: 720px;
+  --tile-size: 220px;
+  --tile-gap: 20px;
+  --nav-height: 56px;
+  --page-padding: 24px;
+  
+  /* Colors - YT Brand */
+  --yt-offwhite: #F2F1E5;
+  --yt-green: #406A56;
+  --yt-green-light: #D3E1DF;
+  --yt-yellow: #D9C61A;
+  --yt-yellow-dark: #8a7c08;
+  --yt-red: #C35F33;
+  --yt-blue: #8DACAB;
+  --yt-purple: #4A3552;
+}
 
-/* Home background - complementary to body gradient */
+/* =============================================================================
+   BACKGROUND - Decorative layer
+   ============================================================================= */
 .home-background {
   position: fixed;
   inset: 0;
   overflow: hidden;
   z-index: 0;
-  /* Uses body gradient, add subtle texture overlay */
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   opacity: 0.025;
   mix-blend-mode: multiply;
+  pointer-events: none;
 }
 
-/* Paper edge shadow effect at top */
 .home-background::before {
   content: '';
   position: absolute;
@@ -33,28 +60,20 @@
   left: 0;
   right: 0;
   height: 12px;
-  background: linear-gradient(to bottom, 
-    rgba(0, 0, 0, 0.04) 0%,
-    transparent 100%
-  );
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.04), transparent);
   z-index: 1;
 }
 
-/* Warm vignette for depth */
 .home-background::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 50%,
-    rgba(195, 95, 51, 0.03) 100%
-  );
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(195, 95, 51, 0.03) 100%);
   pointer-events: none;
   z-index: 1;
 }
 
-/* Floating organic shapes for depth */
+/* Floating organic blobs */
 .home-blob {
   position: absolute;
   border-radius: 50%;
@@ -70,7 +89,6 @@
   background: linear-gradient(135deg, #D9C61A40, #C35F3330);
   top: -100px;
   right: -100px;
-  animation-delay: 0s;
 }
 
 .home-blob-2 {
@@ -107,116 +125,63 @@
   75% { transform: translate(15px, 15px) scale(1.02); }
 }
 
-/* Main content container - top aligned with profile card */
-/* Layout already adds pt-14 (56px) for nav, so we just add 48px gap */
-.home-content {
+/* =============================================================================
+   MAIN LAYOUT CONTAINER - Flexbox Row
+   ============================================================================= */
+.home-layout {
   position: relative;
   z-index: 10;
-  height: calc(100vh - 56px); /* Full height minus nav - NO SCROLL */
-  max-height: calc(100vh - 56px);
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 48px 24px 16px;
-  overflow: hidden; /* No scrolling */
+  flex-direction: row;
+  min-height: calc(100vh - var(--nav-height));
+  padding: var(--page-padding);
+  padding-top: calc(var(--nav-height) + var(--page-padding));
+  gap: var(--sidebar-gap);
 }
 
-/* Adjust content for left sidebar on large screens */
-@media (min-width: 1024px) {
-  .home-content {
-    padding-left: 328px; /* 280px profile + 48px gap */
-    align-items: center; /* Center over command bar */
-  }
-}
-
-/* Engagement column - contains both tiles and CommandBar for alignment */
-/* Left-aligned with profile card on large screens */
-.engagement-column {
-  width: 100%;
-  max-width: 776px; /* 3×240px tiles + 2×28px gaps */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  flex: 1;
-  min-height: 0; /* Allow flex shrink */
-  gap: 20px; /* Consistent gap between all children */
-}
-
-@media (min-width: 1024px) {
-  .engagement-column {
-    align-items: center; /* Center over command bar */
-  }
-}
-
-/* Quick action buttons below engagement tiles */
-.quick-actions {
-  width: 100%;
-  max-width: 776px;
-  padding: 0 12px;
+/* =============================================================================
+   LEFT SIDEBAR - Fixed width, full height column
+   ============================================================================= */
+.home-sidebar {
   flex-shrink: 0;
+  width: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: calc(100vh - var(--nav-height) - var(--page-padding) * 2);
+  position: sticky;
+  top: calc(var(--nav-height) + var(--page-padding));
 }
 
-.quick-action-btn {
+/* Hide sidebar on mobile/tablet */
+@media (max-width: 1023px) {
+  .home-sidebar {
+    display: none;
+  }
+}
+
+/* =============================================================================
+   MAIN CONTENT - Flexible width, centered content
+   ============================================================================= */
+.home-main {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(64, 106, 86, 0.1);
-  border-radius: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  gap: var(--tile-gap);
+  min-width: 0; /* Allow flex shrink */
 }
 
-.quick-action-btn:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(64, 106, 86, 0.2);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+/* Center content when sidebar is hidden on mobile */
+@media (max-width: 1023px) {
+  .home-main {
+    width: 100%;
+  }
 }
 
-.quick-action-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(64, 106, 86, 0.1), rgba(64, 106, 86, 0.05));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #406A56;
-}
-
-.quick-action-btn span {
-  font-size: 12px;
-  font-weight: 500;
-  color: #406A56;
-}
-
-/* Profile section - left aligned, below nav bar with 48px gap */
-/* Nav bar is h-14 (56px), so top = 56 + 48 = 104px */
-/* Max height: viewport - nav - top gap - bottom padding */
-.home-profile {
-  position: fixed;
-  top: 104px;
-  left: 48px;
-  z-index: 20;
-  max-height: calc(100vh - 104px - 24px);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* Activity Feed section - now inline in main content */
-.home-activity-inline {
-  width: 100%;
-  max-width: 816px;
-}
-
-/* Glass card base - matches profile-card style */
+/* =============================================================================
+   PROFILE CARD - Glass morphism style
+   ============================================================================= */
 .glass-card {
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(20px);
@@ -257,17 +222,9 @@
   transform: translateY(-2px);
 }
 
-/* Profile card styling - glass effect */
 .profile-card {
-  width: 280px;
   padding: 24px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 
-    0 4px 16px rgba(195, 95, 51, 0.06),
-    0 12px 32px rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
 }
 
 .profile-avatar {
@@ -323,7 +280,7 @@
 .profile-stat-value {
   font-size: 20px;
   font-weight: 700;
-  color: #406A56;
+  color: var(--yt-green);
 }
 
 .profile-stat-label {
@@ -333,7 +290,6 @@
   letter-spacing: 0.05em;
 }
 
-/* Upcoming events in profile card */
 .profile-events {
   margin-top: 16px;
   padding-top: 16px;
@@ -365,51 +321,163 @@
   flex-shrink: 0;
 }
 
-/* Engagement bubbles area - aligned with profile card top */
-.home-bubbles {
+/* =============================================================================
+   SIDEBAR COMPONENTS - OnThisDay, ActivityFeed
+   ============================================================================= */
+.sidebar-section {
+  flex-shrink: 0;
+}
+
+.sidebar-section-grow {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* =============================================================================
+   ENGAGEMENT TILES AREA
+   ============================================================================= */
+.home-tiles {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  padding: 0 20px;
-  flex-shrink: 0; /* Don't shrink - tiles have fixed height */
+  gap: var(--tile-gap);
 }
 
-@media (max-width: 1024px) {
-  .home-profile {
-    position: relative;
-    top: 0;
-    left: 0;
-    margin: 0 auto 32px;
+/* Tile grid: 3 columns, photo tile spans 2 rows */
+.tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, var(--tile-size));
+  grid-template-rows: auto auto;
+  gap: var(--tile-gap);
+  width: fit-content;
+}
+
+/* Responsive: 2 columns on smaller screens */
+@media (max-width: 800px) {
+  .tiles-grid {
+    grid-template-columns: repeat(2, var(--tile-size));
+  }
+}
+
+/* Single column on mobile */
+@media (max-width: 520px) {
+  .tiles-grid {
+    grid-template-columns: 1fr;
   }
   
-  .home-bubbles {
-    padding-left: 0;
+  :root {
+    --tile-size: 100%;
+  }
+}
+
+/* Tall tile (photo tile) - spans 2 rows */
+.tile-tall {
+  grid-column: 3;
+  grid-row: 1 / 3;
+}
+
+@media (max-width: 800px) {
+  .tile-tall {
+    grid-column: auto;
+    grid-row: auto;
   }
 }
 
 /* Expanded tile overlay */
-/* Bubble tiles - base styles only, specifics in engagement.css */
-.bubble-tile.shadow-2xl {
+.tile-expanded {
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 50 !important;
+  width: 360px !important;
+  max-height: 80vh !important;
+  overflow: auto !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
 }
 
-/* Accent bars hidden - using glow effect instead */
-.bubble-accent {
-  display: none;
+/* =============================================================================
+   QUICK ACTIONS - Horizontal row of buttons
+   ============================================================================= */
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  max-width: calc(var(--tile-size) * 3 + var(--tile-gap) * 2);
 }
 
-/* Bubble content - base styles, engagement.css has tile-specific overrides */
+.quick-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(64, 106, 86, 0.1);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-action-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(64, 106, 86, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.quick-action-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(64, 106, 86, 0.1), rgba(64, 106, 86, 0.05));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--yt-green);
+}
+
+.quick-action-btn span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--yt-green);
+}
+
+/* =============================================================================
+   BUBBLE TILES - Engagement cards
+   ============================================================================= */
+.bubble-tile {
+  position: relative;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  overflow: visible;
+  box-shadow: 
+    0 4px 16px rgba(195, 95, 51, 0.06),
+    0 12px 32px rgba(0, 0, 0, 0.06);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bubble-tile:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 
+    0 6px 20px rgba(195, 95, 51, 0.08),
+    0 16px 40px rgba(0, 0, 0, 0.08);
+}
+
 .bubble-content {
   padding: 16px;
 }
 
-/* bubble-type styles are in engagement.css (with torn edge SVG backgrounds) */
-
-.bubble-text {
-  font-size: 14px;
-  line-height: 1.5;
-  color: #3d3d3d;
+.bubble-accent {
+  display: none;
 }
 
 /* XP badge */
@@ -426,11 +494,40 @@
   gap: 4px;
 }
 
-.bubble-xp-yellow { background: rgba(217, 198, 26, 0.15); color: #a39507; }
-.bubble-xp-green { background: rgba(64, 106, 86, 0.1); color: #406A56; }
-.bubble-xp-red { background: rgba(195, 95, 51, 0.1); color: #C35F33; }
+.bubble-xp-yellow { background: rgba(217, 198, 26, 0.15); color: var(--yt-yellow-dark); }
+.bubble-xp-green { background: rgba(64, 106, 86, 0.1); color: var(--yt-green); }
+.bubble-xp-red { background: rgba(195, 95, 51, 0.1); color: var(--yt-red); }
 .bubble-xp-blue { background: rgba(141, 172, 171, 0.15); color: #5d8585; }
-.bubble-xp-purple { background: rgba(74, 53, 82, 0.1); color: #4A3552; }
+.bubble-xp-purple { background: rgba(74, 53, 82, 0.1); color: var(--yt-purple); }
+
+/* Category type pill */
+.bubble-type {
+  position: relative;
+  font-family: var(--font-inter-tight), 'Inter Tight', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 6px 12px;
+  display: inline-block;
+  color: #3d3d3d;
+  margin-left: -4px;
+}
+
+.bubble-type::before {
+  content: '';
+  position: absolute;
+  inset: -2px -2px;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: -1;
+}
+
+.bubble-type-yellow::before { background-image: url('/images/torn-edge-yellow.svg'); }
+.bubble-type-green::before { background-image: url('/images/torn-edge-green.svg'); }
+.bubble-type-blue::before { background-image: url('/images/torn-edge-blue.svg'); }
+.bubble-type-red::before { background-image: url('/images/torn-edge-red.svg'); }
+.bubble-type-purple::before { background-image: url('/images/torn-edge-purple.svg'); }
 
 /* Photo preview */
 .bubble-photo {
@@ -439,6 +536,10 @@
   object-fit: cover;
   border-radius: 12px;
   margin: 8px 0;
+}
+
+.bubble-photo-tall {
+  height: 200px;
 }
 
 /* Contact card inside bubble */
@@ -461,7 +562,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  color: #406A56;
+  color: var(--yt-green);
   font-size: 16px;
   flex-shrink: 0;
 }
@@ -483,7 +584,6 @@
   max-width: 120px;
 }
 
-/* Container for contact text - needs to constrain overflow */
 .bubble-contact > div:last-child {
   overflow: hidden;
   min-width: 0;
@@ -492,10 +592,15 @@
 
 .bubble-contact-sub {
   font-size: 12px;
-  color: #406A56;
+  color: var(--yt-green);
 }
 
-/* Tap hint */
+.bubble-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #3d3d3d;
+}
+
 .bubble-hint {
   font-size: 11px;
   color: #999;
@@ -503,52 +608,9 @@
   margin-top: 8px;
 }
 
-/* Stats/refresh bar */
-.home-actions {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.home-stat-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(8px);
-  border-radius: 20px;
-  font-size: 13px;
-  color: #666;
-  border: 1px solid rgba(64, 106, 86, 0.1);
-}
-
-.home-stat-pill strong {
-  color: #406A56;
-}
-
-.home-refresh-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 20px;
-  background: rgba(64, 106, 86, 0.1);
-  border: 1px solid rgba(64, 106, 86, 0.2);
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #406A56;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.home-refresh-btn:hover {
-  background: #406A56;
-  color: white;
-}
-
-/* Empty state */
+/* =============================================================================
+   EMPTY STATE
+   ============================================================================= */
 .home-empty {
   text-align: center;
   padding: 48px;
@@ -568,7 +630,7 @@
 .home-empty h3 {
   font-size: 22px;
   font-weight: 600;
-  color: #406A56;
+  color: var(--yt-green);
   margin: 0 0 8px;
 }
 
@@ -579,40 +641,93 @@
   margin: 0 auto 24px;
 }
 
-/* Masonry layout - spacious with larger tiles */
-.home-masonry {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 260px));
-  gap: 32px;
+.home-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: rgba(64, 106, 86, 0.1);
+  border: 1px solid rgba(64, 106, 86, 0.2);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--yt-green);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.home-refresh-btn:hover {
+  background: var(--yt-green);
+  color: white;
+}
+
+/* =============================================================================
+   MILESTONE CELEBRATION MODAL
+   ============================================================================= */
+.milestone-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
   justify-content: center;
-  align-content: center;
-  max-width: 920px;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
 }
 
-/* Staggered masonry effect for visual interest */
-.home-masonry > *:nth-child(2n) { margin-top: 24px; }
-.home-masonry > *:nth-child(3n) { margin-top: 16px; }
-.home-masonry > *:nth-child(5n) { margin-top: 32px; }
-
-/* Responsive */
-@media (max-width: 768px) {
-  .home-masonry {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-  
-  .home-masonry > *:nth-child(2n),
-  .home-masonry > *:nth-child(3n),
-  .home-masonry > *:nth-child(5n) {
-    margin-top: 0;
-  }
-  
-  .bubble-tile {
-    transform: rotate(0deg) !important;
-  }
+.milestone-modal {
+  background: white;
+  border-radius: 24px;
+  padding: 40px;
+  text-align: center;
+  max-width: 360px;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Loading animation */
+.milestone-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  animation: bounce 0.6s ease-out;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+.milestone-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--yt-green);
+  margin: 0 0 8px;
+}
+
+.milestone-message {
+  font-size: 16px;
+  color: #555;
+  margin: 0 0 24px;
+}
+
+.milestone-button {
+  padding: 14px 32px;
+  background: var(--yt-green);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.milestone-button:hover {
+  background: #4a7a64;
+}
+
+/* =============================================================================
+   LOADING ANIMATION
+   ============================================================================= */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -628,4 +743,38 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 8px;
+}
+
+/* =============================================================================
+   LEGACY COMPATIBILITY - Keep old class names working during transition
+   ============================================================================= */
+.home-content {
+  /* Map to new layout */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--tile-gap);
+}
+
+.home-profile {
+  /* Map to sidebar styles */
+  flex-shrink: 0;
+  width: var(--sidebar-width);
+}
+
+.home-bubbles {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--tile-gap);
+}
+
+.engagement-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--tile-gap);
+  width: 100%;
+  max-width: calc(var(--tile-size) * 3 + var(--tile-gap) * 2);
 }

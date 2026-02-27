@@ -511,7 +511,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="h-screen overflow-hidden">
+    <div className="min-h-screen overflow-x-hidden">
       {/* Background */}
       <div className="home-background">
         <div className="home-blob home-blob-1" />
@@ -564,128 +564,131 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
 
-      {/* Profile card - fixed left */}
-      <div className="home-profile hidden lg:block">
-        <div className="glass-card glass-card-strong profile-card">
-          <div className="profile-avatar">
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-3xl text-[#406A56]/50">
-                {profile?.full_name?.charAt(0) || '?'}
-              </div>
-            )}
-          </div>
-          <h2 className="profile-name">{profile?.full_name || 'Your Name'}</h2>
-          <p className="profile-title">{profile?.occupation || 'Your Story'}</p>
-          
-          <div className="profile-stats">
-            <Link href="/dashboard/memories" className="profile-stat hover:opacity-70 transition-opacity">
-              <div className="profile-stat-value">{stats.memories}</div>
-              <div className="profile-stat-label">Memories</div>
-            </Link>
-            <Link href="/dashboard/contacts" className="profile-stat hover:opacity-70 transition-opacity">
-              <div className="profile-stat-value">{stats.contacts}</div>
-              <div className="profile-stat-label">People</div>
-            </Link>
-            <Link href="/dashboard/postscripts" className="profile-stat hover:opacity-70 transition-opacity">
-              <div className="profile-stat-value">{stats.postscripts}</div>
-              <div className="profile-stat-label">Messages</div>
-            </Link>
-          </div>
-          
-          {/* Streak Counter */}
-          {(engagementStats?.currentStreakDays ?? 0) > 0 && (
-            <div className="flex items-center justify-center gap-2 mt-4 px-4 py-2 bg-gradient-to-r from-[#D9C61A]/10 to-[#C35F33]/10 rounded-xl">
-              <span className="text-xl">🔥</span>
-              <div className="text-center">
-                <div className="text-lg font-bold text-[#C35F33]">{engagementStats?.currentStreakDays}</div>
-                <div className="text-[10px] text-[#406A56]/60 uppercase tracking-wide">Day Streak</div>
-              </div>
-              {(engagementStats?.longestStreakDays ?? 0) > (engagementStats?.currentStreakDays ?? 0) && (
-                <div className="text-xs text-[#406A56]/50 ml-2">
-                  Best: {engagementStats?.longestStreakDays}
+      {/* ============================================
+          MAIN LAYOUT: Flexbox Row (Sidebar + Content)
+          ============================================ */}
+      <div className="home-layout">
+        
+        {/* LEFT SIDEBAR - Profile, OnThisDay, ActivityFeed */}
+        <aside className="home-sidebar hidden lg:flex">
+          {/* Profile Card */}
+          <div className="glass-card glass-card-strong profile-card">
+            <div className="profile-avatar">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-3xl text-[#406A56]/50">
+                  {profile?.full_name?.charAt(0) || '?'}
                 </div>
               )}
             </div>
-          )}
-
-          {/* Upcoming Birthdays */}
-          {upcomingEvents.length > 0 && (
-            <div className="profile-events">
-              {upcomingEvents.slice(0, 2).map((event) => (
-                <Link 
-                  key={event.contactId}
-                  href={`/dashboard/contacts/${event.contactId}`}
-                  className="profile-event"
-                >
-                  <Gift size={12} />
-                  <span>
-                    {event.contactName}
-                    {event.daysUntil === 0 ? ' 🎂 Today!' : 
-                     event.daysUntil === 1 ? ' tomorrow' : 
-                     ` in ${event.daysUntil}d`}
-                  </span>
-                </Link>
-              ))}
+            <h2 className="profile-name">{profile?.full_name || 'Your Name'}</h2>
+            <p className="profile-title">{profile?.occupation || 'Your Story'}</p>
+            
+            <div className="profile-stats">
+              <Link href="/dashboard/memories" className="profile-stat hover:opacity-70 transition-opacity">
+                <div className="profile-stat-value">{stats.memories}</div>
+                <div className="profile-stat-label">Memories</div>
+              </Link>
+              <Link href="/dashboard/contacts" className="profile-stat hover:opacity-70 transition-opacity">
+                <div className="profile-stat-value">{stats.contacts}</div>
+                <div className="profile-stat-label">People</div>
+              </Link>
+              <Link href="/dashboard/postscripts" className="profile-stat hover:opacity-70 transition-opacity">
+                <div className="profile-stat-value">{stats.postscripts}</div>
+                <div className="profile-stat-label">Messages</div>
+              </Link>
             </div>
-          )}
+            
+            {/* Streak Counter */}
+            {(engagementStats?.currentStreakDays ?? 0) > 0 && (
+              <div className="flex items-center justify-center gap-2 mt-4 px-4 py-2 bg-gradient-to-r from-[#D9C61A]/10 to-[#C35F33]/10 rounded-xl">
+                <span className="text-xl">🔥</span>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-[#C35F33]">{engagementStats?.currentStreakDays}</div>
+                  <div className="text-[10px] text-[#406A56]/60 uppercase tracking-wide">Day Streak</div>
+                </div>
+                {(engagementStats?.longestStreakDays ?? 0) > (engagementStats?.currentStreakDays ?? 0) && (
+                  <div className="text-xs text-[#406A56]/50 ml-2">
+                    Best: {engagementStats?.longestStreakDays}
+                  </div>
+                )}
+              </div>
+            )}
 
-          {/* Storage Usage - Sleek inline bar */}
-          <div className="mt-5 pt-4 border-t border-[#406A56]/10">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-[#406A56]/70 uppercase tracking-wide">Storage</span>
-              <span className="text-xs text-gray-500">
-                {subscription?.storage 
-                  ? `${(subscription.storage.total_bytes / (1024*1024*1024)).toFixed(1)} / ${(subscription.storage.limit_bytes / (1024*1024*1024)).toFixed(0)} GB`
-                  : '0 / 10 GB'
-                }
-              </span>
-            </div>
-            <div className="h-2 bg-[#F2F1E5] rounded-full overflow-hidden">
-              <motion.div 
-                className="h-full rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min(subscription?.storage?.percentage || 0, 100)}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                style={{ 
-                  background: (subscription?.storage?.percentage || 0) >= 90 
-                    ? 'linear-gradient(90deg, #C35F33, #dc2626)' 
-                    : 'linear-gradient(90deg, #406A56, #8DACAB)'
-                }}
-              />
+            {/* Upcoming Birthdays */}
+            {upcomingEvents.length > 0 && (
+              <div className="profile-events">
+                {upcomingEvents.slice(0, 2).map((event) => (
+                  <Link 
+                    key={event.contactId}
+                    href={`/dashboard/contacts/${event.contactId}`}
+                    className="profile-event"
+                  >
+                    <Gift size={12} />
+                    <span>
+                      {event.contactName}
+                      {event.daysUntil === 0 ? ' 🎂 Today!' : 
+                       event.daysUntil === 1 ? ' tomorrow' : 
+                       ` in ${event.daysUntil}d`}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Storage Usage */}
+            <div className="mt-5 pt-4 border-t border-[#406A56]/10">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-[#406A56]/70 uppercase tracking-wide">Storage</span>
+                <span className="text-xs text-gray-500">
+                  {subscription?.storage 
+                    ? `${(subscription.storage.total_bytes / (1024*1024*1024)).toFixed(1)} / ${(subscription.storage.limit_bytes / (1024*1024*1024)).toFixed(0)} GB`
+                    : '0 / 10 GB'
+                  }
+                </span>
+              </div>
+              <div className="h-2 bg-[#F2F1E5] rounded-full overflow-hidden">
+                <motion.div 
+                  className="h-full rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min(subscription?.storage?.percentage || 0, 100)}%` }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  style={{ 
+                    background: (subscription?.storage?.percentage || 0) >= 90 
+                      ? 'linear-gradient(90deg, #C35F33, #dc2626)' 
+                      : 'linear-gradient(90deg, #406A56, #8DACAB)'
+                  }}
+                />
+              </div>
             </div>
           </div>
-        </div>
-        
-        {/* Personality/Essence Graph - TODO: Add back when properly analyzing data */}
-        
-        {/* On This Day - Memory flashbacks from same date in previous years */}
-        <div className="mt-4" style={{ width: 280 }}>
-          <OnThisDay />
-        </div>
-        
-        {/* Activity Feed - In left column, below profile card, flex to fill remaining height */}
-        <div className="mt-4 flex-1 min-h-0 overflow-hidden" style={{ width: 280 }}>
-          <ActivityFeed 
-            xpCompletions={completedTiles.slice(0, 10).map(tile => ({
-              id: tile.id,
-              type: tile.type,
-              icon: tile.icon,
-              title: tile.title,
-              xp: tile.xp || 0,
-              photoUrl: tile.photoUrl,
-              contactName: tile.contactName,
-              timestamp: tile.answeredAt,
-            }))}
-          />
-        </div>
-      </div>
+          
+          {/* On This Day */}
+          <div className="sidebar-section">
+            <OnThisDay />
+          </div>
+          
+          {/* Activity Feed - fills remaining space */}
+          <div className="sidebar-section-grow">
+            <ActivityFeed 
+              xpCompletions={completedTiles.slice(0, 10).map(tile => ({
+                id: tile.id,
+                type: tile.type,
+                icon: tile.icon,
+                title: tile.title,
+                xp: tile.xp || 0,
+                photoUrl: tile.photoUrl,
+                contactName: tile.contactName,
+                timestamp: tile.answeredAt,
+              }))}
+            />
+          </div>
+        </aside>
 
-      {/* Main content - right column containing tiles + commandbar */}
-      <div className="home-content">
-        {/* Engagement column - contains both tiles and CommandBar for alignment */}
-        <div className="engagement-column">
+        {/* MAIN CONTENT - Engagement tiles, Quick Actions, Command Bar */}
+        <main className="home-main">
+          <div className="engagement-column">
           <div className="home-bubbles">
             {isLoading ? (
             <div className="flex flex-col items-center gap-4">
@@ -738,16 +741,7 @@ export default function DashboardPage() {
               )}
 
               {/* Tile grid: CSS Grid - 3 columns, photo tile spans 2 rows */}
-              {/* Width: 3×220px + 2×20px = 700px - compact to fit viewport */}
-              <div 
-                className="grid mx-auto"
-                style={{ 
-                  gridTemplateColumns: '220px 220px 220px',
-                  gridTemplateRows: 'auto auto',
-                  gap: '20px',
-                  width: 'fit-content',
-                }}
-              >
+              <div className="tiles-grid">
                 <AnimatePresence mode="popLayout">
                   {(() => {
                     // Reorder prompts: photo tasks go to position 4 (tall tile)
@@ -774,11 +768,6 @@ export default function DashboardPage() {
                     const isTall = i === 4 && hasPhoto
                     const staggerDelay = i * 0.08
 
-                    // Grid positioning: tiles 0-3 in 2x2, tile 4 spans rows on right
-                    const gridStyle: React.CSSProperties = isTall 
-                      ? { gridColumn: 3, gridRow: '1 / 3' }
-                      : {}
-
                     return (
                       <motion.div
                         key={`${tilesKey}-${prompt.id}`}
@@ -797,12 +786,9 @@ export default function DashboardPage() {
                           delay: staggerDelay,
                         }}
                         onClick={() => !isExpanded && handleTileClick(prompt)}
-                        className={`bubble-tile ${isExpanded ? 'shadow-xl !fixed !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2 z-50 w-[360px] max-h-[80vh] overflow-auto' : ''}`}
+                        className={`bubble-tile ${isTall ? 'tile-tall' : ''} ${isExpanded ? 'tile-expanded' : ''}`}
                         data-type={prompt.type}
-                        style={{ 
-                          ...gridStyle,
-                          cursor: isExpanded ? 'default' : 'pointer',
-                        }}
+                        style={{ cursor: isExpanded ? 'default' : 'pointer' }}
                       >
                         {/* Colored accent bar */}
                         <div className={`bubble-accent bubble-accent-${config.color}`} />
@@ -853,8 +839,7 @@ export default function DashboardPage() {
                             <img 
                               src={prompt.photoUrl} 
                               alt="" 
-                              className="bubble-photo"
-                              style={{ height: isTall ? 200 : 100 }}
+                              className={`bubble-photo ${isTall ? 'bubble-photo-tall' : ''}`}
                             />
                           )}
 
@@ -937,8 +922,8 @@ export default function DashboardPage() {
           )}
           </div>
           
-          {/* Quick Action Links - Compact */}
-          <div className="quick-actions flex items-center justify-center gap-4">
+          {/* Quick Actions */}
+          <div className="quick-actions">
             <button onClick={() => shuffle()} className="quick-action-btn">
               <div className="quick-action-icon"><RefreshCw size={18} /></div>
               <span>Shuffle</span>
@@ -961,10 +946,11 @@ export default function DashboardPage() {
             </button>
           </div>
         
-          {/* CommandBar - now inside the engagement column for alignment */}
+          {/* Command Bar */}
           <CommandBar />
-        </div>
-      </div>
+          </div>
+        </main>
+      </div> {/* End home-layout */}
       
       {/* Photo Upload Modal */}
       <AnimatePresence>
