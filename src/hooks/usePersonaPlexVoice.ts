@@ -546,6 +546,10 @@ export function usePersonaPlexVoice(options: UsePersonaPlexOptions = {}): UsePer
   // Build WebSocket URL with parameters
   const buildWebSocketUrl = useCallback(() => {
     const url = new URL(serverUrl)
+    // Ensure /api/chat path is present
+    if (!url.pathname || url.pathname === '/') {
+      url.pathname = '/api/chat'
+    }
     url.searchParams.set('text_prompt', systemPrompt)
     url.searchParams.set('voice_prompt', `${voice}.pt`)
     url.searchParams.set('text_temperature', textTemperature.toString())

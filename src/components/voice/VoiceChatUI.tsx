@@ -124,55 +124,78 @@ export function VoiceChatUI({
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
+  // Simplified countdown view
+  if (isCountingDown) {
+    return (
+      <div className={`relative ${className}`}>
+        <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-[#406A56]/10 shadow-lg p-6 text-center">
+          {/* Countdown number */}
+          <motion.div
+            key={countdown}
+            initial={{ scale: 1.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-20 h-20 mx-auto mb-4 rounded-full bg-[#406A56] text-white flex items-center justify-center"
+          >
+            <span className="text-4xl font-bold">{countdown}</span>
+          </motion.div>
+          
+          {/* Topic */}
+          <p className="text-[#406A56] font-medium mb-2">
+            {topic ? `"${topic}"` : 'Starting...'}
+          </p>
+          <p className="text-sm text-[#406A56]/60 mb-4">Get ready to share</p>
+          
+          {/* Cancel */}
+          <button
+            onClick={cancelCountdown}
+            className="text-sm text-[#406A56]/50 hover:text-[#406A56] underline"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={`relative ${className}`}>
       {/* Main Voice Chat Container */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-[#406A56]/10 shadow-xl overflow-hidden">
+      <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-[#406A56]/10 shadow-lg overflow-hidden">
         
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#406A56]/10 bg-gradient-to-r from-[#406A56]/5 to-transparent">
-          <div className="flex items-center gap-3">
+        {/* Header - Compact */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#406A56]/10 bg-gradient-to-r from-[#406A56]/5 to-transparent">
+          <div className="flex items-center gap-2">
             {/* Status indicator */}
             <div className={`
-              w-3 h-3 rounded-full transition-all duration-300
+              w-2.5 h-2.5 rounded-full transition-all duration-300
               ${isActive ? 'bg-green-500 shadow-lg shadow-green-500/30' : 'bg-gray-400'}
               ${isActive && 'animate-pulse'}
             `} />
             
-            <div>
-              <span className="text-sm font-semibold text-[#406A56]">
-                {isCompleted 
-                  ? 'Memory Saved'
-                  : isSaving
-                    ? 'Saving Memory...'
-                    : state === 'idle' && 'Ready to Listen'}
-                {state === 'requesting' && 'Getting Ready...'}
-                {state === 'connecting' && 'Connecting...'}
-                {state === 'connected' && 'Connected'}
-                {state === 'listening' && 'Listening...'}
-                {state === 'thinking' && 'Thinking...'}
-                {state === 'aiSpeaking' && 'Speaking...'}
-                {state === 'error' && 'Error'}
-              </span>
-              
-              {/* Subtitle with persona info */}
-              <p className="text-xs text-[#406A56]/60">
-                {persona?.name || 'Journalist'} mode
-                {topic && ` • ${topic}`}
-              </p>
-            </div>
+            <span className="text-sm font-medium text-[#406A56]">
+              {isCompleted && 'Memory Saved'}
+              {isSaving && 'Saving...'}
+              {state === 'idle' && 'Ready'}
+              {state === 'requesting' && 'Starting...'}
+              {state === 'connecting' && 'Connecting...'}
+              {state === 'connected' && 'Connected'}
+              {state === 'listening' && 'Listening...'}
+              {state === 'thinking' && 'Thinking...'}
+              {state === 'aiSpeaking' && 'Speaking...'}
+              {state === 'error' && 'Error'}
+            </span>
           </div>
 
-          {/* Stats when active */}
+          {/* Stats when active - compact */}
           {isActive && (
-            <div className="flex items-center gap-4 text-sm text-[#406A56]/70">
-              <div className="flex items-center gap-1.5" title="Duration">
-                <Clock size={14} />
-                <span className="font-medium">{formatDuration(sessionDuration)}</span>
+            <div className="flex items-center gap-3 text-xs text-[#406A56]/70">
+              <div className="flex items-center gap-1" title="Duration">
+                <Clock size={12} />
+                <span>{formatDuration(sessionDuration)}</span>
               </div>
-              <div className="flex items-center gap-1.5" title="Questions">
-                <MessageSquare size={14} />
-                <span className="font-medium">{questionCount}</span>
+              <div className="flex items-center gap-1" title="Questions">
+                <MessageSquare size={12} />
+                <span>{questionCount}</span>
               </div>
             </div>
           )}
@@ -181,7 +204,7 @@ export function VoiceChatUI({
           {isActive && (
             <button
               onClick={onStop}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-full transition-colors"
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-full transition-colors"
             >
               <PhoneOff size={12} />
               End
@@ -214,11 +237,11 @@ export function VoiceChatUI({
           )}
         </AnimatePresence>
 
-        {/* Main Content Area */}
-        <div className="p-8 flex flex-col items-center">
+        {/* Main Content Area - Compact */}
+        <div className="p-5 flex flex-col items-center">
           
           {/* Status Icon / Microphone Button */}
-          <div className="relative mb-8">
+          <div className="relative mb-4">
             {/* Animated rings when listening */}
             <AnimatePresence>
               {isListening && (
@@ -245,72 +268,46 @@ export function VoiceChatUI({
               )}
             </AnimatePresence>
 
-            {/* Main Button / Countdown */}
-            {isCountingDown ? (
-              // Countdown display
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="relative w-28 h-28 rounded-full flex items-center justify-center bg-[#406A56] text-white shadow-2xl shadow-[#406A56]/40"
-              >
-                <motion.span
-                  key={countdown}
-                  initial={{ scale: 1.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.5, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="text-5xl font-bold"
-                >
-                  {countdown}
-                </motion.span>
-                
-                {/* Cancel button */}
-                <button
-                  onClick={cancelCountdown}
-                  className="absolute -bottom-12 text-sm text-[#406A56]/60 hover:text-[#406A56] underline"
-                >
-                  Cancel
-                </button>
-              </motion.div>
-            ) : (
-              <motion.button
-                onClick={state === 'idle' ? onStart : isCompleted ? onReset : onStop}
-                disabled={isConnecting || isSaving}
-                className={`
-                  relative w-28 h-28 rounded-full flex items-center justify-center
-                  transition-all duration-300 shadow-2xl
-                  ${isConnecting || isSaving
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                    : isListening
-                      ? 'bg-[#406A56] text-white shadow-[#406A56]/40'
-                      : isAiSpeaking
-                        ? 'bg-[#D9C61A] text-white shadow-[#D9C61A]/40'
-                        : isActive
-                          ? 'bg-[#406A56]/10 text-[#406A56] hover:bg-[#406A56]/20'
-                          : isCompleted
-                            ? 'bg-green-500 text-white shadow-green-500/40'
-                            : 'bg-[#406A56] text-white hover:bg-[#4a7a64] hover:scale-105'
-                  }
-                `}
-                whileTap={{ scale: 0.95 }}
-              >
+            {/* Main Button - smaller */}
+            <motion.button
+              onClick={state === 'idle' ? onStart : isCompleted ? onReset : onStop}
+              disabled={isConnecting || isSaving}
+              className={`
+                relative w-20 h-20 rounded-full flex items-center justify-center
+                transition-all duration-300 shadow-xl
+                ${isConnecting || isSaving
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  : isListening
+                    ? 'bg-[#406A56] text-white shadow-[#406A56]/40'
+                    : isAiSpeaking
+                      ? 'bg-[#D9C61A] text-white shadow-[#D9C61A]/40'
+                      : isActive
+                        ? 'bg-[#406A56]/10 text-[#406A56] hover:bg-[#406A56]/20'
+                        : isCompleted
+                          ? 'bg-green-500 text-white shadow-green-500/40'
+                          : 'bg-[#406A56] text-white hover:bg-[#4a7a64] hover:scale-105'
+                }
+              `}
+              whileTap={{ scale: 0.95 }}
+            >
                 {isConnecting ? (
                   <Loader2 size={36} className="animate-spin" />
-                ) : isSaving ? (
-                  <Loader2 size={36} className="animate-spin" />
-                ) : isListening ? (
-                  <Mic size={36} />
-                ) : isAiSpeaking ? (
-                  <Volume2 size={36} />
-                ) : isActive ? (
-                  <Radio size={36} />
-                ) : isCompleted ? (
-                  <Sparkles size={36} />
-                ) : (
-                  <Mic size={36} />
-                )}
-              </motion.button>
-            )}
+              {isConnecting ? (
+                <Loader2 size={28} className="animate-spin" />
+              ) : isSaving ? (
+                <Loader2 size={28} className="animate-spin" />
+              ) : isListening ? (
+                <Mic size={28} />
+              ) : isAiSpeaking ? (
+                <Volume2 size={28} />
+              ) : isActive ? (
+                <Radio size={28} />
+              ) : isCompleted ? (
+                <Sparkles size={28} />
+              ) : (
+                <Mic size={28} />
+              )}
+            </motion.button>
 
             {/* Recording indicator */}
             <AnimatePresence>
@@ -327,25 +324,10 @@ export function VoiceChatUI({
             </AnimatePresence>
           </div>
 
-          {/* Status Text */}
-          <div className="text-center mb-6">
+          {/* Status Text - compact */}
+          <div className="text-center mb-4">
             <AnimatePresence mode="wait">
-              {isCountingDown ? (
-                <motion.div
-                  key="countdown"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="text-center"
-                >
-                  <p className="text-lg font-medium text-[#406A56]">
-                    {topic ? `Let's talk about "${topic}"` : 'Starting your conversation...'}
-                  </p>
-                  <p className="text-sm text-[#406A56]/60 mt-1">
-                    Get ready to share your story
-                  </p>
-                </motion.div>
-              ) : isConnecting ? (
+              {isConnecting ? (
                 <motion.p
                   key="connecting"
                   initial={{ opacity: 0, y: 10 }}
