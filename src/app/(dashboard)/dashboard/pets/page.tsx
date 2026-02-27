@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Edit2, Trash2, X, Heart } from 'lucide-react'
+import { Plus, Edit2, Trash2, X, Heart, ChevronLeft, Calendar, Sparkles } from 'lucide-react'
+import Link from 'next/link'
+import '@/styles/page-styles.css'
 
 interface Pet {
   id: string
@@ -78,78 +80,125 @@ export default function PetsPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64 text-gray-400">Loading pets...</div>
+    return (
+      <div className="page-container">
+        <div className="page-background">
+          <div className="page-blob page-blob-1" />
+          <div className="page-blob page-blob-2" />
+          <div className="page-blob page-blob-3" />
+        </div>
+        <div className="relative z-10 flex items-center justify-center h-64">
+          <div className="loading-text">Loading pets...</div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Pets</h1>
-          <p className="text-gray-400 mt-1">Your furry, feathered, and scaly family members.</p>
-        </div>
-        <button
-          onClick={openNew}
-          className="flex items-center gap-2 px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg font-medium transition-colors"
-        >
-          <Plus size={18} />
-          Add Pet
-        </button>
+    <div className="page-container">
+      {/* Warm gradient background with blobs */}
+      <div className="page-background">
+        <div className="page-blob page-blob-1" />
+        <div className="page-blob page-blob-2" />
+        <div className="page-blob page-blob-3" />
       </div>
 
-      {/* Pets Grid */}
-      {pets.length === 0 ? (
-        <div className="bg-gray-900 rounded-xl p-12 border border-gray-800 text-center">
-          <Heart className="mx-auto text-gray-600 mb-4" size={48} />
-          <h3 className="text-xl font-semibold text-white mb-2">No pets yet</h3>
-          <p className="text-gray-400 mb-4">Add your beloved pets to your life story.</p>
-          <button
-            onClick={openNew}
-            className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg font-medium transition-colors"
-          >
-            Add Your First Pet
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {pets.map(pet => (
-            <div 
-              key={pet.id} 
-              className={`bg-gray-900 rounded-xl p-5 border ${pet.is_deceased ? 'border-gray-700 opacity-75' : 'border-gray-800 hover:border-pink-500/50'} transition-colors`}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-600 to-orange-600 flex items-center justify-center text-2xl">
-                    {speciesEmoji[pet.species] || '🐾'}
-                  </div>
-                  <div>
-                    <h3 className="text-white font-semibold">{pet.name}</h3>
-                    <p className="text-gray-400 text-sm">{pet.species}{pet.breed ? ` · ${pet.breed}` : ''}</p>
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <button onClick={() => openEdit(pet)} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
-                    <Edit2 size={16} />
-                  </button>
-                  <button onClick={() => handleDelete(pet.id)} className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition-colors">
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-1 text-sm">
-                {pet.color && <p className="text-gray-400">Color: {pet.color}</p>}
-                {pet.personality && <p className="text-gray-400">{pet.personality}</p>}
-                {pet.is_deceased && (
-                  <p className="text-gray-500 italic">
-                    🌈 Rainbow Bridge {pet.date_of_passing ? `· ${new Date(pet.date_of_passing).toLocaleDateString()}` : ''}
-                  </p>
-                )}
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Header */}
+        <header className="mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard/contacts" className="page-header-back">
+                <ChevronLeft size={20} />
+              </Link>
+              <div>
+                <h1 className="page-header-title">Pets</h1>
+                <p className="page-header-subtitle">
+                  Your furry, feathered, and scaly family members
+                </p>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            <button
+              onClick={openNew}
+              className="btn-primary"
+            >
+              <Plus size={18} />
+              <span>Add Pet</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Pets Grid */}
+        {pets.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">
+              <Heart size={32} className="text-[#C35F33]" />
+            </div>
+            <h3 className="empty-state-title">No pets yet</h3>
+            <p className="empty-state-text">Add your beloved pets to your life story.</p>
+            <button
+              onClick={openNew}
+              className="btn-primary mx-auto"
+            >
+              <Plus size={18} />
+              Add Your First Pet
+            </button>
+          </div>
+        ) : (
+          <div className="cards-grid">
+            {pets.map(pet => (
+              <div 
+                key={pet.id} 
+                className={`glass-card-page p-5 ${pet.is_deceased ? 'opacity-75' : ''}`}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C35F33] to-[#D9C61A] flex items-center justify-center text-2xl shadow-sm">
+                      {speciesEmoji[pet.species] || '🐾'}
+                    </div>
+                    <div>
+                      <h3 className="text-[#2d2d2d] font-semibold">{pet.name}</h3>
+                      <p className="text-[#666] text-sm">{pet.species}{pet.breed ? ` · ${pet.breed}` : ''}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <button 
+                      onClick={() => openEdit(pet)} 
+                      className="p-2 text-[#406A56]/60 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-colors"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(pet.id)} 
+                      className="p-2 text-[#406A56]/60 hover:text-[#C35F33] hover:bg-[#C35F33]/10 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-1 text-sm">
+                  {pet.color && <p className="text-[#666]">Color: {pet.color}</p>}
+                  {pet.personality && <p className="text-[#666]">{pet.personality}</p>}
+                  {pet.date_of_birth && (
+                    <p className="text-[#666] flex items-center gap-1">
+                      <Calendar size={12} className="text-[#D9C61A]" />
+                      Born: {new Date(pet.date_of_birth).toLocaleDateString()}
+                    </p>
+                  )}
+                  {pet.is_deceased && (
+                    <p className="text-[#888] italic flex items-center gap-1 mt-2">
+                      <Sparkles size={12} className="text-[#D9C61A]" />
+                      Rainbow Bridge {pet.date_of_passing ? `· ${new Date(pet.date_of_passing).toLocaleDateString()}` : ''}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Modal */}
       {showModal && (
@@ -220,13 +269,13 @@ function PetModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-xl p-6 border border-gray-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-[#FDF8F3] rounded-2xl p-6 border border-[#406A56]/10 shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto scrollbar-thin">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">
+          <h2 className="text-xl font-semibold text-[#2d2d2d]">
             {pet ? 'Edit Pet' : 'Add Pet'}
           </h2>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg">
+          <button onClick={onClose} className="p-2 text-[#406A56]/60 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -234,20 +283,20 @@ function PetModal({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Name *</label>
+              <label className="block text-sm text-[#666] mb-1">Name *</label>
               <input
                 value={form.name}
                 onChange={e => setForm({ ...form, name: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="form-input"
                 placeholder="Buddy"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Species *</label>
+              <label className="block text-sm text-[#666] mb-1">Species *</label>
               <select
                 value={form.species}
                 onChange={e => setForm({ ...form, species: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="form-input"
               >
                 <option value="">Select...</option>
                 {speciesOptions.map(s => (
@@ -259,20 +308,20 @@ function PetModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Breed</label>
+              <label className="block text-sm text-[#666] mb-1">Breed</label>
               <input
                 value={form.breed}
                 onChange={e => setForm({ ...form, breed: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="form-input"
                 placeholder="Golden Retriever"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Color</label>
+              <label className="block text-sm text-[#666] mb-1">Color</label>
               <input
                 value={form.color}
                 onChange={e => setForm({ ...form, color: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="form-input"
                 placeholder="Golden"
               />
             </div>
@@ -280,75 +329,75 @@ function PetModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Date of Birth</label>
+              <label className="block text-sm text-[#666] mb-1">Date of Birth</label>
               <input
                 type="date"
                 value={form.date_of_birth}
                 onChange={e => setForm({ ...form, date_of_birth: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="form-input"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Adoption Date</label>
+              <label className="block text-sm text-[#666] mb-1">Adoption Date</label>
               <input
                 type="date"
                 value={form.adoption_date}
                 onChange={e => setForm({ ...form, adoption_date: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="form-input"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Personality</label>
+            <label className="block text-sm text-[#666] mb-1">Personality</label>
             <textarea
               value={form.personality}
               onChange={e => setForm({ ...form, personality: e.target.value })}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
+              className="form-input resize-none"
               rows={2}
               placeholder="Playful, loves belly rubs..."
             />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Favorite Things (comma-separated)</label>
+            <label className="block text-sm text-[#666] mb-1">Favorite Things (comma-separated)</label>
             <input
               value={form.favorite_things}
               onChange={e => setForm({ ...form, favorite_things: e.target.value })}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+              className="form-input"
               placeholder="Treats, squeaky toys, naps"
             />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Medical Notes</label>
+            <label className="block text-sm text-[#666] mb-1">Medical Notes</label>
             <textarea
               value={form.medical_notes}
               onChange={e => setForm({ ...form, medical_notes: e.target.value })}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
+              className="form-input resize-none"
               rows={2}
               placeholder="Allergies, medications, vet info..."
             />
           </div>
 
-          <div className="p-4 bg-gray-800/50 rounded-lg">
+          <div className="p-4 bg-[#406A56]/5 rounded-xl border border-[#406A56]/10">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={form.is_deceased}
                 onChange={e => setForm({ ...form, is_deceased: e.target.checked })}
-                className="w-5 h-5 rounded border-gray-700 bg-gray-800 text-pink-500 focus:ring-pink-500"
+                className="w-5 h-5 rounded border-[#406A56]/30 bg-white text-[#406A56] focus:ring-[#406A56]"
               />
-              <span className="text-gray-300">This pet has passed away 🌈</span>
+              <span className="text-[#666]">This pet has passed away 🌈</span>
             </label>
             {form.is_deceased && (
               <div className="mt-3">
-                <label className="block text-sm text-gray-400 mb-1">Date of Passing</label>
+                <label className="block text-sm text-[#666] mb-1">Date of Passing</label>
                 <input
                   type="date"
                   value={form.date_of_passing}
                   onChange={e => setForm({ ...form, date_of_passing: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  className="form-input"
                 />
               </div>
             )}
@@ -356,13 +405,13 @@ function PetModal({
         </div>
 
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors">
+          <button onClick={onClose} className="btn-secondary">
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving || !form.name || !form.species}
-            className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+            className="btn-primary disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Pet'}
           </button>

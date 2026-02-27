@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { MessageSquare, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { 
+import {
   ConversationList, 
   MessageThread, 
   CircleMessageThread,
@@ -13,6 +13,7 @@ import {
   Poll,
   ScheduleProposal
 } from '@/components/messages'
+import '@/styles/page-styles.css'
 
 // ============================================
 // MOCK DATA
@@ -347,7 +348,7 @@ export default function MessagesPage() {
             circleId: c.circleId,
             circleDescription: c.circleDescription,
           }))
-          
+
           // Merge with existing conversations (mock DMs and memory threads)
           setConversations(prev => {
             // Remove any existing circle conversations and add fresh ones
@@ -355,13 +356,13 @@ export default function MessagesPage() {
             const merged = [...nonCircleConvos, ...circleConversations].sort(
               (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
             )
-            
+
             // Set first conversation as active if none selected
             if (!activeConversation && merged.length > 0) {
               // Use setTimeout to avoid setting state during render
               setTimeout(() => setActiveConversation(merged[0]), 0)
             }
-            
+
             return merged
           })
         }
@@ -390,7 +391,7 @@ export default function MessagesPage() {
   }
 
   const handleSendMessage = (
-    content: string, 
+    content: string,
     type: 'text' | 'image' | 'voice' | 'poll' | 'schedule',
     extras?: { poll?: Poll; schedule?: ScheduleProposal; replyTo?: Message }
   ) => {
@@ -420,12 +421,12 @@ export default function MessagesPage() {
     }))
 
     // Update conversation preview
-    const previewText = type === 'poll' 
-      ? '📊 Poll created' 
-      : type === 'schedule' 
-        ? '📅 Times proposed' 
+    const previewText = type === 'poll'
+      ? '📊 Poll created'
+      : type === 'schedule'
+        ? '📅 Times proposed'
         : content
-    
+
     setConversations(prev =>
       prev.map(c =>
         c.id === activeConversation.id
@@ -521,15 +522,22 @@ export default function MessagesPage() {
     : []
 
   return (
-    <div className="h-[calc(100vh-56px)] bg-[#F2F1E5] overflow-hidden">
+    <div className="h-[calc(100vh-56px)] overflow-hidden relative">
+      {/* Warm gradient background with blobs */}
+      <div className="page-background">
+        <div className="page-blob page-blob-1" />
+        <div className="page-blob page-blob-2" />
+        <div className="page-blob page-blob-3" />
+      </div>
+
       {/* Main Content - Full Height - 80% Width - NO SCROLL */}
-      <main className="h-full px-4 lg:px-6 py-4 lg:py-6">
+      <main className="h-full px-4 lg:px-6 py-4 lg:py-6 relative z-10">
         <div className="h-full w-full max-w-[80%] mx-auto">
           {/* Messages Panel - Glass Card */}
           <div className="bg-white/80 backdrop-blur-xl rounded-[20px] shadow-lg border border-white/50 overflow-hidden h-full">
             <div className="flex h-full">
               {/* Conversation List - Left Panel */}
-              <div 
+              <div
                 className={`w-full lg:w-[360px] border-r border-[#406A56]/10 bg-[#F2F1E5]/50 flex-shrink-0 flex flex-col ${
                   activeConversation ? 'hidden lg:flex' : 'flex'
                 }`}
@@ -593,7 +601,7 @@ export default function MessagesPage() {
                         Select a conversation
                       </h3>
                       <p className="text-sm text-[#666] max-w-sm">
-                        Choose a conversation from the list to start messaging, 
+                        Choose a conversation from the list to start messaging,
                         or browse memory threads to collaborate with family.
                       </p>
                     </div>

@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Sparkles, Search, Filter } from 'lucide-react'
+import { Plus, Sparkles, Search, Filter, ChevronLeft } from 'lucide-react'
+import Link from 'next/link'
 import AlbumCard from '@/components/albums/AlbumCard'
 import CreateAlbumModal from '@/components/albums/CreateAlbumModal'
 import { MemoryAlbum, AlbumTheme, CAPSULE_THEMES } from '@/types/album'
@@ -86,136 +87,149 @@ export default function AlbumsPage() {
   }
 
   return (
-    <div className="pb-8 pb-24">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-[#2d2d2d] mb-2">Memory Albums</h1>
-            <p className="text-gray-600">Curated collections of your precious memories</p>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => { setEditAlbum(null); setShowCreateModal(true) }}
-            className="px-5 py-3 bg-[#406A56] hover:bg-[#4a7a64] text-white rounded-xl font-medium transition-colors flex items-center gap-2 shadow-lg shadow-[#406A56]/20"
-          >
-            <Plus size={20} />
-            Create Album
-          </motion.button>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[200px] max-w-md">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search albums..."
-              className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-sm focus:border-[#406A56] focus:ring-2 focus:ring-[#406A56]/20 outline-none transition-all"
-            />
-          </div>
-
-          {/* Theme Filter */}
-          <div className="flex items-center gap-2">
-            <Filter size={16} className="text-gray-500" />
-            <select
-              value={themeFilter}
-              onChange={e => setThemeFilter(e.target.value as AlbumTheme | 'all')}
-              className="px-4 py-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-sm focus:border-[#406A56] outline-none cursor-pointer"
-            >
-              <option value="all">All Themes</option>
-              {CAPSULE_THEMES.map(theme => (
-                <option key={theme.value} value={theme.value}>{theme.icon} {theme.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
+    <div className="page-container">
+      {/* Warm gradient background with blobs */}
+      <div className="page-background">
+        <div className="page-blob page-blob-1" />
+        <div className="page-blob page-blob-2" />
+        <div className="page-blob page-blob-3" />
       </div>
 
       {/* Content */}
-      {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="aspect-[4/5] rounded-xl bg-white/50 animate-pulse" />
-          ))}
-        </div>
-      ) : filteredAlbums.length === 0 ? (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center py-20"
-        >
-          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
-            <Sparkles size={40} className="text-amber-500" />
+      <div className="relative z-10">
+        {/* Header */}
+        <header className="mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard" className="page-header-back">
+                <ChevronLeft size={20} />
+              </Link>
+              <div>
+                <h1 className="page-header-title">Memory Albums</h1>
+                <p className="page-header-subtitle">Curated collections of your precious memories</p>
+              </div>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => { setEditAlbum(null); setShowCreateModal(true) }}
+              className="btn-primary"
+            >
+              <Plus size={18} />
+              Create Album
+            </motion.button>
           </div>
-          {searchQuery || themeFilter !== 'all' ? (
-            <>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">No albums found</h3>
-              <p className="text-gray-500 mb-6">Try adjusting your search or filters</p>
-              <button
-                onClick={() => { setSearchQuery(''); setThemeFilter('all') }}
-                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors"
-              >
-                Clear Filters
-              </button>
-            </>
-          ) : (
-            <>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">Create your first album</h3>
-              <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                Memory albums let you curate and organize your favorite memories into themed collections — perfect for reliving your best moments.
-              </p>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="px-6 py-3 bg-[#406A56] hover:bg-[#4a7a64] text-white rounded-xl font-medium transition-colors inline-flex items-center gap-2"
-              >
-                <Plus size={20} />
-                Create Your First Album
-              </button>
-            </>
-          )}
-        </motion.div>
-      ) : (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
-        >
-          <AnimatePresence>
-            {filteredAlbums.map((album, index) => (
-              <motion.div
-                key={album.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <AlbumCard
-                  album={album}
-                  onEdit={handleEditAlbum}
-                  onDelete={handleDeleteAlbum}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
-      )}
 
-      {/* Create/Edit Modal */}
-      <AnimatePresence>
-        {showCreateModal && (
-          <CreateAlbumModal
-            isOpen={showCreateModal}
-            onClose={() => { setShowCreateModal(false); setEditAlbum(null) }}
-            onCreated={handleSaveAlbum}
-            editAlbum={editAlbum}
-          />
-        )}
-      </AnimatePresence>
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-4 mt-6">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[200px] max-w-md">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#406A56]/50" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search albums..."
+                className="form-input pl-12 w-full"
+              />
+            </div>
+
+            {/* Theme Filter */}
+            <div className="flex items-center gap-2">
+              <Filter size={16} className="text-[#406A56]/50" />
+              <select
+                value={themeFilter}
+                onChange={e => setThemeFilter(e.target.value as AlbumTheme | 'all')}
+                className="form-input"
+              >
+                <option value="all">All Themes</option>
+                {CAPSULE_THEMES.map(theme => (
+                  <option key={theme.value} value={theme.value}>{theme.icon} {theme.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main>
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="aspect-[4/5] rounded-xl bg-white/50 animate-pulse" />
+              ))}
+            </div>
+          ) : filteredAlbums.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <Sparkles size={32} className="text-[#D9C61A]" />
+              </div>
+              {searchQuery || themeFilter !== 'all' ? (
+                <>
+                  <h3 className="empty-state-title">No albums found</h3>
+                  <p className="empty-state-text">Try adjusting your search or filters</p>
+                  <button
+                    onClick={() => { setSearchQuery(''); setThemeFilter('all') }}
+                    className="btn-secondary mx-auto"
+                  >
+                    Clear Filters
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="empty-state-title">Create your first album</h3>
+                  <p className="empty-state-text">
+                    Memory albums let you curate and organize your favorite memories into themed collections — perfect for reliving your best moments.
+                  </p>
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="btn-primary mx-auto"
+                  >
+                    <Plus size={18} />
+                    Create Your First Album
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+            >
+              <AnimatePresence>
+                {filteredAlbums.map((album, index) => (
+                  <motion.div
+                    key={album.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <AlbumCard
+                      album={album}
+                      onEdit={handleEditAlbum}
+                      onDelete={handleDeleteAlbum}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </main>
+
+        {/* Create/Edit Modal */}
+        <AnimatePresence>
+          {showCreateModal && (
+            <CreateAlbumModal
+              isOpen={showCreateModal}
+              onClose={() => { setShowCreateModal(false); setEditAlbum(null) }}
+              onCreated={handleSaveAlbum}
+              editAlbum={editAlbum}
+            />
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

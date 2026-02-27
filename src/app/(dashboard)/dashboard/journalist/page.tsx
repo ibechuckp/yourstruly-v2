@@ -9,6 +9,7 @@ import {
   Copy, Mail, MessageSquare
 } from 'lucide-react'
 import Link from 'next/link'
+import '@/styles/page-styles.css'
 
 interface Contact {
   id: string
@@ -345,36 +346,42 @@ export default function JournalistPage() {
   }
 
   return (
-    <div className="bg-[#F2F1E5] pb-8">
-      {/* Header */}
-      <header className="px-6 py-6">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link 
-              href="/dashboard" 
-              className="p-2.5 bg-white/80 backdrop-blur-sm rounded-xl text-[#406A56] hover:bg-white transition-all shadow-sm"
-            >
-              <ChevronLeft size={20} />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-[#2d2d2d]">Interviews</h1>
-              <p className="text-[#666] text-sm">Capture family stories remotely</p>
+    <div className="page-container">
+      {/* Warm gradient background with blobs */}
+      <div className="page-background">
+        <div className="page-blob page-blob-1" />
+        <div className="page-blob page-blob-2" />
+        <div className="page-blob page-blob-3" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Header */}
+        <header className="mb-6">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard" className="page-header-back">
+                <ChevronLeft size={20} />
+              </Link>
+              <div>
+                <h1 className="page-header-title">Interviews</h1>
+                <p className="page-header-subtitle">Capture family stories remotely</p>
+              </div>
             </div>
+
+            <button
+              onClick={() => setShowNewSession(true)}
+              className="btn-primary"
+            >
+              <Plus size={18} />
+              <span className="hidden sm:inline">New Interview</span>
+            </button>
           </div>
+        </header>
 
-          <button
-            onClick={() => setShowNewSession(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#C35F33] hover:bg-[#a54d28] text-white rounded-xl transition-all shadow-md"
-          >
-            <Plus size={18} />
-            <span className="hidden sm:inline">New Interview</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="px-6 pb-12">
-        <div className="max-w-4xl mx-auto">
+        {/* Main Content */}
+        <main className="pb-12">
+          <div className="max-w-4xl mx-auto">
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-[#666]">Loading...</div>
@@ -874,6 +881,7 @@ export default function JournalistPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   )
 }

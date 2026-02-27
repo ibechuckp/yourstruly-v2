@@ -17,6 +17,7 @@ import {
   calculateTotalMonthlyCost 
 } from '@/types/subscription'
 import '@/components/subscription/subscription.css'
+import '@/styles/page-styles.css'
 
 export default function SubscriptionPage() {
   const { subscription, isLoading, refetch, isPremium } = useSubscription()
@@ -109,18 +110,34 @@ export default function SubscriptionPage() {
 
   if (isLoading) {
     return (
-      <div className="subscription-page">
-        <div style={{ textAlign: 'center', padding: 60 }}>Loading...</div>
+      <div className="page-container">
+        <div className="page-background">
+          <div className="page-blob page-blob-1" />
+          <div className="page-blob page-blob-2" />
+          <div className="page-blob page-blob-3" />
+        </div>
+        <div className="relative z-10 flex items-center justify-center h-64">
+          <div className="loading-text">Loading...</div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="subscription-page">
-      <div className="subscription-header">
-        <h1>Subscription</h1>
-        <p>Manage your plan and family seats</p>
+    <div className="page-container">
+      {/* Warm gradient background with blobs */}
+      <div className="page-background">
+        <div className="page-blob page-blob-1" />
+        <div className="page-blob page-blob-2" />
+        <div className="page-blob page-blob-3" />
       </div>
+
+      {/* Content */}
+      <div className="relative z-10">
+        <div className="subscription-header">
+          <h1>Subscription</h1>
+          <p>Manage your plan and family seats</p>
+        </div>
 
       {/* Storage Usage */}
       {subscription?.storage && (
@@ -315,6 +332,7 @@ export default function SubscriptionPage() {
           </div>
         </motion.div>
       )}
+      </div>
 
       {/* Invite Modal */}
       {showInviteModal && (

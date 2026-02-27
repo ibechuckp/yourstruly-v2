@@ -12,11 +12,11 @@ import {
   ChevronRight,
   RefreshCw,
   Sparkles,
-  ArrowLeft,
-  Filter
+  ChevronLeft
 } from 'lucide-react'
 import Link from 'next/link'
 import { formatDistanceToNow, format } from 'date-fns'
+import '@/styles/page-styles.css'
 
 interface ActivityActor {
   id: string
@@ -75,7 +75,7 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
     >
       <Link 
         href={activity.link}
-        className="flex items-start gap-4 p-4 rounded-2xl bg-white/70 backdrop-blur-sm border border-[#406A56]/10 hover:bg-white hover:shadow-md transition-all group"
+        className="flex items-start gap-4 p-4 rounded-2xl glass-card-page hover:shadow-md transition-all group"
       >
         {/* Avatar or Icon */}
         <div className="flex-shrink-0 relative">
@@ -108,15 +108,15 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-800 leading-snug">
+          <p className="text-sm font-medium text-[#2d2d2d] leading-snug">
             {activity.description}
           </p>
           {activity.title && activity.title !== activity.description && (
-            <p className="text-sm text-gray-500 mt-1 line-clamp-1">
+            <p className="text-sm text-[#666] mt-1 line-clamp-1">
               {activity.title}
             </p>
           )}
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-[#888] mt-2">
             {formatRelativeTime(activity.timestamp)}
           </p>
         </div>
@@ -135,7 +135,7 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
         {/* Arrow */}
         <ChevronRight 
           size={20} 
-          className="flex-shrink-0 text-gray-300 group-hover:text-[#406A56] transition-colors"
+          className="flex-shrink-0 text-[#406A56]/30 group-hover:text-[#406A56] transition-colors"
         />
       </Link>
     </motion.div>
@@ -182,116 +182,116 @@ export default function ActivityPage() {
   }))
 
   return (
-    <div className="pb-8 pb-24">
-      {/* Background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-[#F2F1E5] via-[#FAF7E8] to-[#F5EFE0] -z-10" />
+    <div className="page-container">
+      {/* Warm gradient background with blobs */}
+      <div className="page-background">
+        <div className="page-blob page-blob-1" />
+        <div className="page-blob page-blob-2" />
+        <div className="page-blob page-blob-3" />
+      </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Link 
-              href="/dashboard"
-              className="p-2 rounded-xl bg-white/70 hover:bg-white border border-[#406A56]/10 transition-colors"
-            >
-              <ArrowLeft size={20} className="text-[#406A56]" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Activity</h1>
-              <p className="text-sm text-gray-500">
-                {activities.length} recent updates
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => fetchActivities(true)}
-            disabled={isRefreshing}
-            className="p-2 rounded-xl bg-white/70 hover:bg-white border border-[#406A56]/10 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw 
-              size={18} 
-              className={`text-[#406A56] ${isRefreshing ? 'animate-spin' : ''}`}
-            />
-          </button>
-        </div>
-
-        {/* Filters */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          <button
-            onClick={() => setFilter(null)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex-shrink-0 ${
-              filter === null 
-                ? 'bg-[#406A56] text-white' 
-                : 'bg-white/70 text-gray-600 hover:bg-white border border-[#406A56]/10'
-            }`}
-          >
-            All
-          </button>
-          {filterOptions.map(opt => {
-            const Icon = opt.icon
-            return (
-              <button
-                key={opt.type}
-                onClick={() => setFilter(filter === opt.type ? null : opt.type)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex-shrink-0 flex items-center gap-2 ${
-                  filter === opt.type 
-                    ? 'bg-[#406A56] text-white' 
-                    : 'bg-white/70 text-gray-600 hover:bg-white border border-[#406A56]/10'
-                }`}
-              >
-                <Icon size={14} />
-                {opt.label}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Content */}
-        <div className="space-y-3">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-              >
-                <Sparkles size={28} className="text-[#D9C61A]" />
-              </motion.div>
-              <span className="text-sm text-gray-400">Loading activity...</span>
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <Bell size={32} className="text-gray-300" />
-              <span className="text-sm text-gray-400">{error}</span>
-              <button
-                onClick={() => fetchActivities()}
-                className="text-sm text-[#406A56] hover:underline"
-              >
-                Try again
-              </button>
-            </div>
-          ) : filteredActivities.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <div className="w-16 h-16 rounded-full bg-[#406A56]/5 flex items-center justify-center">
-                <Sparkles size={28} className="text-[#406A56]/40" />
+      {/* Content */}
+      <div className="relative z-10">
+        <div className="max-w-3xl mx-auto">
+          {/* Header */}
+          <header className="mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Link href="/dashboard" className="page-header-back">
+                  <ChevronLeft size={20} />
+                </Link>
+                <div>
+                  <h1 className="page-header-title">Activity</h1>
+                  <p className="page-header-subtitle">
+                    {activities.length} recent updates
+                  </p>
+                </div>
               </div>
-              <span className="text-lg text-gray-500">
-                {filter ? 'No activity in this category' : 'No recent activity'}
-              </span>
-              <span className="text-sm text-gray-400 text-center max-w-md">
-                Activity from shared memories, wisdom, and circles will appear here
-              </span>
-            </div>
-          ) : (
-            <AnimatePresence>
-              {filteredActivities.map((activity, index) => (
-                <ActivityItemCard 
-                  key={activity.id} 
-                  activity={activity} 
-                  index={index}
+              <button
+                onClick={() => fetchActivities(true)}
+                disabled={isRefreshing}
+                className="p-2 rounded-xl glass-card-page hover:bg-white transition-colors disabled:opacity-50"
+              >
+                <RefreshCw 
+                  size={18} 
+                  className={`text-[#406A56] ${isRefreshing ? 'animate-spin' : ''}`}
                 />
-              ))}
-            </AnimatePresence>
-          )}
+              </button>
+            </div>
+
+            {/* Filters */}
+            <div className="flex gap-2 mt-6 overflow-x-auto pb-2 scrollbar-thin">
+              <button
+                onClick={() => setFilter(null)}
+                className={`filter-btn flex-shrink-0 ${filter === null ? 'filter-btn-active' : ''}`}
+              >
+                All
+              </button>
+              {filterOptions.map(opt => {
+                const Icon = opt.icon
+                return (
+                  <button
+                    key={opt.type}
+                    onClick={() => setFilter(filter === opt.type ? null : opt.type)}
+                    className={`filter-btn flex-shrink-0 flex items-center gap-2 ${filter === opt.type ? 'filter-btn-active' : ''}`}
+                  >
+                    <Icon size={14} />
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+          </header>
+
+          {/* Content */}
+          <main className="space-y-3">
+            {isLoading ? (
+              <div className="loading-container">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                >
+                  <Sparkles size={28} className="text-[#D9C61A]" />
+                </motion.div>
+                <span className="loading-text">Loading activity...</span>
+              </div>
+            ) : error ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <Bell size={32} className="text-[#406A56]/30" />
+                </div>
+                <span className="empty-state-text">{error}</span>
+                <button
+                  onClick={() => fetchActivities()}
+                  className="text-sm text-[#406A56] hover:underline"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : filteredActivities.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <Sparkles size={32} className="text-[#406A56]/40" />
+                </div>
+                <h3 className="empty-state-title">
+                  {filter ? 'No activity in this category' : 'No recent activity'}
+                </h3>
+                <p className="empty-state-text">
+                  Activity from shared memories, wisdom, and circles will appear here
+                </p>
+              </div>
+            ) : (
+              <AnimatePresence>
+                {filteredActivities.map((activity, index) => (
+                  <ActivityItemCard 
+                    key={activity.id} 
+                    activity={activity} 
+                    index={index}
+                  />
+                ))}
+              </AnimatePresence>
+            )}
+          </main>
         </div>
       </div>
     </div>
