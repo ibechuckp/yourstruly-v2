@@ -133,25 +133,71 @@ export function useSubscription(): UseSubscriptionReturn {
       .eq('subscription_id', subData.id)
       .order('seat_number')
 
-    // Fetch storage breakdown
-    const { data: storageData } = await supabase
-      .from('storage_usage')
-      .select('content_type, size_bytes')
-      .eq('user_id', userId)
-
+    // Fetch storage breakdown from multiple sources
     const storageByType = {
       video: 0,
       image: 0,
       audio: 0,
       document: 0
     }
-
     let totalBytes = 0
+
+    // 1. Check storage_usage table (legacy/explicit tracking)
+    const { data: storageData } = await supabase
+      .from('storage_usage')
+      .select('content_type, size_bytes')
+      .eq('user_id', userId)
+
     if (storageData) {
       storageData.forEach(item => {
         storageByType[item.content_type as keyof typeof storageByType] += item.size_bytes
         totalBytes += item.size_bytes
       })
+    }
+
+    // 2. Calculate from memory_media (actual uploaded files)
+    const { data: mediaData } = await supabase
+      .from('memory_media')
+      .select('file_size, file_type, memory_id')
+      .eq('memory_id', supabase.from('memories').select('id').eq('user_id', userId))
+    
+    // Alternative: Direct query for user's media
+    const { data: userMedia } = await supabase
+      .from('memory_media')
+      .select('file_size, file_type, memories!inner(user_id)')
+      .eq('memories.user_id', userId)
+
+    if (userMedia) {
+      userMedia.forEach((item: any) => {
+        const size = item.file_size || 0
+        const type = item.file_type || 'document'
+        
+        // Map file_type to category
+        if (type.startsWith('video') || type === 'video') {
+          storageByType.video += size
+        } else if (type.startsWith('image') || type === 'image') {
+          storageByType.image += size
+        } else if (type.startsWith('audio') || type === 'audio') {
+          storageByType.audio += size
+        } else {
+          storageByType.document += size
+        }
+        totalBytes += size
+      })
+    }
+
+    // 3. Estimate text content size (memories descriptions)
+    const { data: memoriesData } = await supabase
+      .from('memories')
+      .select('description')
+      .eq('user_id', userId)
+
+    if (memoriesData) {
+      const textBytes = memoriesData.reduce((acc, m) => {
+        return acc + (m.description?.length || 0) * 2 // UTF-16 estimate
+      }, 0)
+      storageByType.document += textBytes
+      totalBytes += textBytes
     }
 
     const limitBytes = subData.plan?.storage_limit_bytes || 10737418240 // 10GB default
