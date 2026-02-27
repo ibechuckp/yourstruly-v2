@@ -974,16 +974,16 @@ export default function WisdomPage() {
           )}
         </AnimatePresence>
 
-        {/* Conversation View Modal - for answering instant wisdom questions */}
-        {conversationPrompt && (
-          <ConversationView
-            prompt={conversationPrompt}
+        {/* Unified Engagement Modal - for answering instant wisdom questions */}
+        {engagementPrompt && (
+          <UnifiedEngagementModal
+            prompt={engagementPrompt}
             expectedXp={100}
             onComplete={(result) => {
               loadWisdom();
-              setConversationPrompt(null);
+              setEngagementPrompt(null);
             }}
-            onClose={() => setConversationPrompt(null)}
+            onClose={() => setEngagementPrompt(null)}
           />
         )}
 
