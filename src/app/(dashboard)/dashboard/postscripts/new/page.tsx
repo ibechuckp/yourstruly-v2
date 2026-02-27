@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { 
   ChevronLeft, ChevronRight, User, Users, Calendar, Gift,
   MessageSquare, Send, Check, X, Search, Mail, Phone, ImagePlus, Trash2,
-  Mic, Square, Play, Pause
+  Mic
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/home.css'

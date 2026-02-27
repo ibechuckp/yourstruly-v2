@@ -1,10 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { 
   Send, Calendar, Clock, CheckCircle, Mail, Plus,
-  ChevronRight, Sparkles, Heart, User, Users, Image as ImageIcon, Mic,
+  User, Users, Image as ImageIcon, Mic,
   LayoutGrid, Clock3
 } from 'lucide-react'
 import Link from 'next/link'
