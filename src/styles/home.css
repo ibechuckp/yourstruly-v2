@@ -135,7 +135,7 @@
   flex-direction: row;
   min-height: calc(100vh - var(--nav-height));
   padding: var(--page-padding);
-  padding-top: calc(var(--nav-height) + 12px); /* Reduced from --page-padding */
+  padding-top: 12px; /* Layout already handles nav height with pt-14 */
   gap: var(--sidebar-gap);
 }
 
@@ -148,9 +148,9 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-height: calc(100vh - var(--nav-height) - 12px - var(--page-padding));
+  max-height: calc(100vh - var(--nav-height) - var(--page-padding));
   position: sticky;
-  top: calc(var(--nav-height) + 12px);
+  top: 12px; /* Relative to scrolling container, not viewport */
 }
 
 /* Hide sidebar on mobile/tablet */
