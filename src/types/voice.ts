@@ -1,13 +1,35 @@
 /**
- * Voice Types - OpenAI Realtime Voice Memory Capture
+ * Voice Types - Voice Memory Capture
  * 
- * Type definitions for voice-based memory capture sessions using
- * OpenAI's Realtime API with journalist/biographer persona.
+ * Type definitions for voice-based memory capture sessions.
+ * Supports multiple voice providers: OpenAI Realtime API, PersonaPlex.
  */
+
+// ============================================================================
+// Voice Provider Types
+// ============================================================================
+
+export type VoiceProvider = 'openai' | 'personaplex'
+
+// ============================================================================
+// OpenAI Voice Types
+// ============================================================================
 
 // Voice options from OpenAI Realtime API
 // coral = warm & friendly, sage = calm & wise, ballad = storyteller
 export type Voice = 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse' | 'marin' | 'cedar'
+
+// ============================================================================
+// PersonaPlex Voice Types
+// ============================================================================
+
+// PersonaPlex native voice IDs
+export type PersonaPlexVoice = 
+  | 'NATF0' | 'NATF1' | 'NATF2'  // Female voices (Natural Female 0-2)
+  | 'NATM0' | 'NATM1' | 'NATM2'  // Male voices (Natural Male 0-2)
+
+// Union type for any supported voice
+export type AnyVoice = Voice | PersonaPlexVoice
 
 // Connection and interaction states
 export type VoiceChatState = 
