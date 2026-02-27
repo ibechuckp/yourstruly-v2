@@ -38,16 +38,6 @@ interface PostScript {
   }[]
 }
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return 'Not scheduled'
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
-  })
-}
-
 function formatLongDate(dateStr: string | null): string {
   if (!dateStr) return 'Not scheduled'
   const date = new Date(dateStr)
@@ -203,9 +193,14 @@ interface TimelineItemProps {
 
 function TimelineItem({ postscript, index }: TimelineItemProps) {
   const isLeft = index % 2 === 0
-  const DeliveryIcon = postscript.delivery_type === 'event' 
-    ? getEventIcon(postscript.delivery_event) 
-    : Calendar
+  
+  // Render delivery icon based on type
+  const renderDeliveryIcon = () => {
+    const Icon = postscript.delivery_type === 'event' 
+      ? getEventIcon(postscript.delivery_event) 
+      : Calendar
+    return <Icon size={12} className="text-[#C35F33]" />
+  }
   
   // Get display date
   let displayDate = ''
@@ -231,7 +226,7 @@ function TimelineItem({ postscript, index }: TimelineItemProps) {
         px-3 py-1.5 rounded-full bg-white shadow-sm border border-gray-100
         flex items-center gap-1.5 text-xs font-medium text-gray-700 whitespace-nowrap
       `}>
-        <DeliveryIcon size={12} className="text-[#C35F33]" />
+        {renderDeliveryIcon()}
         <span>{displayDate}</span>
       </div>
       

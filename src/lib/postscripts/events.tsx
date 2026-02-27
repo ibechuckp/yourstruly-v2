@@ -15,7 +15,6 @@ import {
   Star,
   TreePine,
   Sparkles,
-  Gift,
   Calendar,
   Clock,
   Send,
