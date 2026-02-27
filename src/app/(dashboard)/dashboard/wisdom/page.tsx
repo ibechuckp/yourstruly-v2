@@ -37,6 +37,25 @@ interface WisdomStats {
   categories: Record<string, number>;
 }
 
+// Extract all unique tags from entries for smart tag filtering
+const extractAllTags = (entries: WisdomEntry[]): Map<string, number> => {
+  const tagCounts = new Map<string, number>();
+  const excludeTags = ['wisdom', 'conversation', 'knowledge'];
+  
+  entries.forEach(entry => {
+    entry.tags?.forEach(tag => {
+      const normalizedTag = tag.toLowerCase().trim();
+      if (!excludeTags.includes(normalizedTag) && 
+          normalizedTag !== entry.category?.toLowerCase() &&
+          normalizedTag !== entry.ai_category?.toLowerCase()) {
+        tagCounts.set(normalizedTag, (tagCounts.get(normalizedTag) || 0) + 1);
+      }
+    });
+  });
+  
+  return tagCounts;
+};
+
 type TabMode = 'mine' | 'shared';
 
 // Enhanced wisdom categories with icons, colors, and descriptions
@@ -70,8 +89,10 @@ export default function WisdomPage() {
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [tabMode, setTabMode] = useState<TabMode>('mine');
   const [showExploreSection, setShowExploreSection] = useState(true);
+  const [showSmartTags, setShowSmartTags] = useState(false);
   
   // Conversation modal state for answering instant questions
   const [conversationPrompt, setConversationPrompt] = useState<EngagementPrompt | null>(null);
@@ -98,7 +119,16 @@ export default function WisdomPage() {
     return counts;
   }, [entries]);
 
-  // Filter entries based on search and category
+  // Extract smart tags for filtering
+  const smartTags = useMemo(() => {
+    const tagMap = extractAllTags(entries);
+    // Sort by count descending, then alphabetically
+    return Array.from(tagMap.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 30); // Top 30 tags
+  }, [entries]);
+
+  // Filter entries based on search, category, and tag
   const filteredEntries = useMemo(() => {
     return entries.filter(entry => {
       const matchesSearch = !searchQuery || 
@@ -111,9 +141,12 @@ export default function WisdomPage() {
         entry.tags?.includes(selectedCategory) ||
         entryCategory === selectedCategory;
       
-      return matchesSearch && matchesCategory;
+      const matchesTag = !selectedTag ||
+        entry.tags?.some(t => t.toLowerCase() === selectedTag.toLowerCase());
+      
+      return matchesSearch && matchesCategory && matchesTag;
     });
-  }, [entries, searchQuery, selectedCategory]);
+  }, [entries, searchQuery, selectedCategory, selectedTag]);
 
   const loadWisdom = async () => {
     setIsLoading(true);
@@ -202,6 +235,7 @@ export default function WisdomPage() {
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedCategory(null);
+    setSelectedTag(null);
   };
 
   const playAudio = (url: string) => {
@@ -455,6 +489,73 @@ export default function WisdomPage() {
           </motion.div>
         )}
 
+        {/* ✨ Smart Tags Section - clickable tags for filtering */}
+        {tabMode === 'mine' && entries.length > 0 && smartTags.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <button
+                onClick={() => setShowSmartTags(!showSmartTags)}
+                className="text-sm font-semibold text-[#406A56] flex items-center gap-2 hover:text-[#4a7a64] transition-colors"
+              >
+                <Star size={16} className="text-[#D9C61A]" />
+                Smart Tags
+                <span className="text-xs text-gray-400">({smartTags.length})</span>
+                <ChevronRight 
+                  size={14} 
+                  className={`transition-transform ${showSmartTags ? 'rotate-90' : ''}`} 
+                />
+              </button>
+              {selectedTag && (
+                <button
+                  onClick={() => setSelectedTag(null)}
+                  className="text-xs text-[#C35F33] hover:text-[#a84d28] flex items-center gap-1"
+                >
+                  <X size={12} />
+                  Clear tag filter
+                </button>
+              )}
+            </div>
+            
+            <AnimatePresence>
+              {showSmartTags && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex flex-wrap gap-2 p-4 bg-gradient-to-br from-[#406A56]/5 to-[#D9C61A]/5 rounded-2xl border border-[#406A56]/10">
+                    {smartTags.map(([tag, count]) => (
+                      <button
+                        key={tag}
+                        onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                        className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all ${
+                          selectedTag === tag
+                            ? 'bg-[#406A56] text-white shadow-md'
+                            : 'bg-white text-[#406A56] hover:bg-[#406A56]/10 border border-[#406A56]/20 hover:border-[#406A56]/40'
+                        }`}
+                      >
+                        <span className="capitalize">{tag}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                          selectedTag === tag
+                            ? 'bg-white/20'
+                            : 'bg-[#406A56]/10 group-hover:bg-[#406A56]/20'
+                        }`}>
+                          {count}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
         {/* Category Filter Pills (compact) - only show when explore section hidden */}
         {tabMode === 'mine' && !showExploreSection && (
           <div className="mb-6">
@@ -499,15 +600,29 @@ export default function WisdomPage() {
         )}
 
         {/* Clear Filters */}
-        {tabMode === 'mine' && (searchQuery || selectedCategory) && (
-          <div className="mb-4">
+        {tabMode === 'mine' && (searchQuery || selectedCategory || selectedTag) && (
+          <div className="mb-4 flex items-center gap-3">
             <button 
               onClick={clearFilters}
               className="text-[#C35F33] hover:text-[#a84d28] text-sm font-medium flex items-center gap-1"
             >
               <X size={14} />
-              Clear filters
+              Clear all filters
             </button>
+            {(selectedCategory || selectedTag) && (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                {selectedCategory && (
+                  <span className="px-2 py-1 bg-[#4A3552]/10 rounded-full text-[#4A3552]">
+                    Topic: {getCategoryConfig(selectedCategory).label}
+                  </span>
+                )}
+                {selectedTag && (
+                  <span className="px-2 py-1 bg-[#406A56]/10 rounded-full text-[#406A56]">
+                    Tag: {selectedTag}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -651,14 +766,15 @@ export default function WisdomPage() {
                           )}
                         </div>
                         
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {entry.tags?.filter(t => t !== 'wisdom').slice(0, 3).map(tag => (
+                        {/* Smart Tags */}
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {entry.tags?.filter(t => !['wisdom', 'conversation', 'knowledge'].includes(t.toLowerCase())).map(tag => (
                             <span 
                               key={tag} 
-                              className="text-xs px-2 py-0.5 bg-[#4A3552]/10 text-[#4A3552] rounded-full"
+                              className="text-xs px-2.5 py-1 bg-[#4A3552]/10 text-[#4A3552] rounded-full flex items-center gap-1"
                             >
-                              {tag}
+                              <Star size={10} className="text-[#D9C61A]/70" />
+                              <span className="capitalize">{tag}</span>
                             </span>
                           ))}
                         </div>
@@ -755,16 +871,29 @@ export default function WisdomPage() {
                           </button>
                         )}
                         
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {entry.tags?.filter(t => !['wisdom', 'conversation', 'knowledge', entry.category, entry.ai_category].includes(t)).slice(0, 3).map(tag => (
-                            <span 
-                              key={tag} 
-                              className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full"
+                        {/* Smart Tags - clickable for filtering */}
+                        <div className="flex flex-wrap gap-1.5 mt-3">
+                          {entry.tags?.filter(t => !['wisdom', 'conversation', 'knowledge', entry.category?.toLowerCase(), entry.ai_category?.toLowerCase()].includes(t.toLowerCase())).map(tag => (
+                            <button
+                              key={tag}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedTag(selectedTag === tag.toLowerCase() ? null : tag.toLowerCase());
+                                setShowSmartTags(true);
+                              }}
+                              className={`text-xs px-2.5 py-1 rounded-full transition-all flex items-center gap-1 ${
+                                selectedTag === tag.toLowerCase()
+                                  ? 'bg-[#406A56] text-white shadow-sm'
+                                  : 'bg-[#406A56]/10 text-[#406A56] hover:bg-[#406A56]/20'
+                              }`}
                             >
-                              {tag}
-                            </span>
+                              <Star size={10} className={selectedTag === tag.toLowerCase() ? 'text-[#D9C61A]' : 'text-[#D9C61A]/70'} />
+                              <span className="capitalize">{tag}</span>
+                            </button>
                           ))}
+                          {(!entry.tags || entry.tags.filter(t => !['wisdom', 'conversation', 'knowledge', entry.category?.toLowerCase(), entry.ai_category?.toLowerCase()].includes(t.toLowerCase())).length === 0) && (
+                            <span className="text-xs text-gray-400 italic">No tags</span>
+                          )}
                         </div>
                       </div>
                       <ChevronRight size={20} className="text-gray-300 flex-shrink-0 group-hover:text-gray-400 transition-colors" />

@@ -110,7 +110,7 @@ export function MemoryTimeline({ memories }: MemoryTimelineProps) {
 
             {/* Memory Cards */}
             <div className="flex gap-3">
-              {group.memories.slice(0, 4).map((memory, idx) => (
+              {group.memories.map((memory, idx) => (
                 <Link
                   key={memory.id}
                   href={`/dashboard/memories/${memory.id}`}
@@ -150,18 +150,6 @@ export function MemoryTimeline({ memories }: MemoryTimelineProps) {
                   </motion.div>
                 </Link>
               ))}
-              
-              {/* More indicator */}
-              {group.memories.length > 4 && (
-                <Link
-                  href={`/dashboard/memories?year=${group.year}&month=${group.month}`}
-                  className="w-28 h-36 rounded-2xl bg-white/60 border-2 border-dashed border-gray-200 
-                           flex flex-col items-center justify-center hover:border-[#406A56] hover:bg-white/80 transition-all"
-                >
-                  <span className="text-2xl font-bold text-gray-400">+{group.memories.length - 4}</span>
-                  <span className="text-xs text-gray-400">more</span>
-                </Link>
-              )}
             </div>
           </motion.div>
         ))}
