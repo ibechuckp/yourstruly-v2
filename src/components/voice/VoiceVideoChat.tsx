@@ -4,6 +4,7 @@ import { useCallback, useRef, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Video, VideoOff, Camera, Loader2 } from 'lucide-react'
 import { useMemoryVoiceChat } from '@/hooks/useMemoryVoiceChat'
+import { usePersonaPlexVoice, type PersonaPlexVoice } from '@/hooks/usePersonaPlexVoice'
 import { useVideoRecorder } from '@/hooks/useVideoRecorder'
 import { VoiceChatUI } from './VoiceChatUI'
 import { createClient } from '@/lib/supabase/client'
@@ -12,10 +13,14 @@ import type {
   VoiceSessionType, 
   PersonaConfig,
   VoiceSessionResult,
+  VoiceProvider,
 } from '@/types/voice'
 import { JOURNALIST_PERSONA, FRIEND_PERSONA, LIFE_STORY_PERSONA } from '@/types/voice'
+import { getDefaultProvider, toPersonaPlexVoice } from '@/lib/voice/config'
 
 export interface VoiceVideoChatProps {
+  /** Voice provider - defaults to env config */
+  provider?: VoiceProvider
   /** Session type */
   sessionType?: VoiceSessionType
   /** Optional topic */
@@ -59,6 +64,7 @@ export interface VoiceVideoChatProps {
  * Video is uploaded to Supabase storage and linked to the memory.
  */
 export function VoiceVideoChat({
+  provider: providerProp,
   sessionType = 'memory_capture',
   topic,
   contactId,
@@ -83,9 +89,16 @@ export function VoiceVideoChat({
   const [showVideoPreview, setShowVideoPreview] = useState(false)
   const [hasAutoStarted, setHasAutoStarted] = useState(false)
   const savedMemoryIdRef = useRef<string | null>(null)
+  
+  // Determine provider (prop > env > default)
+  const provider = providerProp || getDefaultProvider()
+  const isPersonaPlex = provider === 'personaplex'
 
   // Get persona
   const selectedPersona = persona || getPersonaByName(personaName)
+  
+  // PersonaPlex voice conversion
+  const ppVoice = toPersonaPlexVoice(voice) as PersonaPlexVoice
 
   // Video recorder hook
   const {
@@ -105,24 +118,27 @@ export function VoiceVideoChat({
     onError,
   })
 
-  // Voice chat hook
-  const {
-    state,
-    isConnected,
-    transcript,
-    currentUserText,
-    currentAiText,
-    questionCount,
-    sessionDuration,
-    canSave,
-    error,
-    isSupported,
-    start: startVoice,
-    stop: stopVoice,
-    saveMemory: saveVoiceMemory,
-    abort,
-    reset: resetVoice,
-  } = useMemoryVoiceChat({
+  // Track PersonaPlex session state
+  const [ppQuestionCount, setPpQuestionCount] = useState(0)
+  const [ppSessionDuration, setPpSessionDuration] = useState(0)
+  const [ppIsSaving, setPpIsSaving] = useState(false)
+
+  // PersonaPlex hook (only active when provider is personaplex)
+  const personaPlex = usePersonaPlexVoice({
+    serverUrl: process.env.NEXT_PUBLIC_PERSONAPLEX_URL,
+    systemPrompt: selectedPersona.systemPrompt,
+    voice: ppVoice,
+    enableRecording: true,
+    onTranscript: (userText, aiText) => {
+      if (aiText && aiText.includes('?')) {
+        setPpQuestionCount(prev => prev + 1)
+      }
+    },
+    onError,
+  })
+
+  // OpenAI hook (only active when provider is openai)
+  const openAI = useMemoryVoiceChat({
     sessionType,
     topic,
     contactId,
@@ -163,6 +179,68 @@ export function VoiceVideoChat({
     },
     onError,
   })
+
+  // Unified state - select from active provider
+  const state = isPersonaPlex ? personaPlex.state : openAI.state
+  const isConnected = isPersonaPlex 
+    ? ['connected', 'listening', 'thinking', 'aiSpeaking'].includes(personaPlex.state)
+    : openAI.isConnected
+  const transcript = isPersonaPlex ? personaPlex.transcript : openAI.transcript
+  const currentUserText = isPersonaPlex ? personaPlex.currentUserText : openAI.currentUserText
+  const currentAiText = isPersonaPlex ? personaPlex.currentAiText : openAI.currentAiText
+  const questionCount = isPersonaPlex ? ppQuestionCount : openAI.questionCount
+  const sessionDuration = isPersonaPlex ? ppSessionDuration : openAI.sessionDuration
+  const canSave = isPersonaPlex ? transcript.length >= 2 : openAI.canSave
+  const error = isPersonaPlex ? personaPlex.error : openAI.error
+  const isSupported = isPersonaPlex ? personaPlex.isSupported : openAI.isSupported
+  const isSaving = isPersonaPlex ? ppIsSaving : false // OpenAI tracks this internally
+
+  // Unified actions
+  const startVoice = useCallback(async () => {
+    if (isPersonaPlex) {
+      await personaPlex.start()
+    } else {
+      await openAI.start()
+    }
+  }, [isPersonaPlex, personaPlex, openAI])
+
+  const stopVoice = useCallback(async () => {
+    if (isPersonaPlex) {
+      personaPlex.stop()
+    } else {
+      await openAI.stop()
+    }
+  }, [isPersonaPlex, personaPlex, openAI])
+
+  const saveVoiceMemory = useCallback(async () => {
+    if (isPersonaPlex) {
+      setPpIsSaving(true)
+      // TODO: Implement PersonaPlex memory save
+      // For now, we have the transcript and recording blob
+      console.log('PersonaPlex save:', personaPlex.transcript, personaPlex.recordingBlob)
+      setPpIsSaving(false)
+    } else {
+      await openAI.saveMemory()
+    }
+  }, [isPersonaPlex, personaPlex, openAI])
+
+  const abort = useCallback(() => {
+    if (isPersonaPlex) {
+      personaPlex.abort()
+    } else {
+      openAI.abort()
+    }
+  }, [isPersonaPlex, personaPlex, openAI])
+
+  const resetVoice = useCallback(() => {
+    if (isPersonaPlex) {
+      personaPlex.abort()
+      setPpQuestionCount(0)
+      setPpSessionDuration(0)
+    } else {
+      openAI.reset()
+    }
+  }, [isPersonaPlex, personaPlex, openAI])
 
   // Auto-start when component mounts if autoStart is true
   useEffect(() => {
