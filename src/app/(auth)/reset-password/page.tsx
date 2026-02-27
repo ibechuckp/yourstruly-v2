@@ -48,7 +48,8 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen home-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#FDF8F3] relative overflow-hidden flex items-center justify-center p-4">
+        <div className="home-background" />
         <div className="home-blob home-blob-1" />
         <div className="home-blob home-blob-2" />
         
@@ -58,7 +59,7 @@ export default function ResetPasswordPage() {
             <p className="text-2xl text-[#406A56] font-script italic -mt-1" style={{ fontFamily: 'Georgia, serif' }}>Truly</p>
           </div>
 
-          <div className="glass-card glass-card-strong p-8 text-center">
+          <div className="bg-white/90 backdrop-blur-xl p-8 rounded-2xl shadow-xl border border-white/50 text-center">
             <div className="w-16 h-16 bg-[#406A56]/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8 text-[#406A56]" />
             </div>
@@ -76,7 +77,8 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen home-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#FDF8F3] relative overflow-hidden flex items-center justify-center p-4">
+      <div className="home-background" />
       <div className="home-blob home-blob-1" />
       <div className="home-blob home-blob-2" />
       
@@ -86,7 +88,7 @@ export default function ResetPasswordPage() {
           <p className="text-2xl text-[#406A56] font-script italic -mt-1" style={{ fontFamily: 'Georgia, serif' }}>Truly</p>
         </div>
 
-        <div className="glass-card glass-card-strong p-8">
+        <div className="bg-white/90 backdrop-blur-xl p-8 rounded-2xl shadow-xl border border-white/50">
           <h2 className="text-2xl font-semibold text-[#2d2d2d] mb-2">Reset your password</h2>
           <p className="text-gray-600 mb-6">
             Enter your new password below.

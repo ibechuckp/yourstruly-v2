@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // Use service role for database operations (interviewees may not be authenticated)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 // POST /api/interviews/save-response
 // Save interview response and create memories
@@ -32,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     // Validate session token and get session data
     // First check if session exists at all
-    const { data: sessionCheck, error: checkError } = await supabaseAdmin
+    const { data: sessionCheck, error: checkError } = await createAdminClient()
       .from('interview_sessions')
       .select('id, access_token')
       .eq('id', sessionId)
@@ -58,7 +54,7 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
-    const { data: session, error: sessionError } = await supabaseAdmin
+    const { data: session, error: sessionError } = await createAdminClient()
       .from('interview_sessions')
       .select('id, user_id, title, contact_id')
       .eq('id', sessionId)
@@ -72,7 +68,7 @@ export async function POST(request: NextRequest) {
     // Get contact info separately
     let contact: { id: string; full_name: string } | null = null;
     if (session.contact_id) {
-      const { data: contactData, error: contactError } = await supabaseAdmin
+      const { data: contactData, error: contactError } = await createAdminClient()
         .from('contacts')
         .select('id, full_name')
         .eq('id', session.contact_id)
@@ -88,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get question text
-    const { data: questionData } = await supabaseAdmin
+    const { data: questionData } = await createAdminClient()
       .from('session_questions')
       .select('question_text')
       .eq('id', questionId)
@@ -106,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     // Create video response record
     // For text/voice answers, use placeholder values for required video fields
-    const { data: responseRecord, error: responseError } = await supabaseAdmin
+    const { data: responseRecord, error: responseError } = await createAdminClient()
       .from('video_responses')
       .insert({
         session_id: sessionId,
@@ -136,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Mark question as answered
-    await supabaseAdmin
+    await createAdminClient()
       .from('session_questions')
       .update({ status: 'answered' })
       .eq('id', questionId);
@@ -159,7 +155,7 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    const { data: interviewerMemoryRecord } = await supabaseAdmin
+    const { data: interviewerMemoryRecord } = await createAdminClient()
       .from('memories')
       .insert(interviewerMemory)
       .select()

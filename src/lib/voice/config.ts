@@ -152,6 +152,7 @@ export const OPENAI_VOICES: Record<Voice, VoiceInfo> = {
   'echo': { id: 'echo', name: 'Echo', description: 'Clear, direct voice', gender: 'male', tone: 'neutral' },
   'fable': { id: 'fable', name: 'Fable', description: 'Expressive, animated voice', gender: 'male', tone: 'warm' },
   'marin': { id: 'marin', name: 'Marin', description: 'Gentle, soothing voice', gender: 'female', tone: 'neutral' },
+  'nova': { id: 'nova', name: 'Nova', description: 'Warm, engaging voice', gender: 'female', tone: 'warm' },
   'onyx': { id: 'onyx', name: 'Onyx', description: 'Deep, authoritative voice', gender: 'male', tone: 'deep' },
   'sage': { id: 'sage', name: 'Sage', description: 'Calm, wise voice', gender: 'female', tone: 'neutral' },
   'shimmer': { id: 'shimmer', name: 'Shimmer', description: 'Bright, upbeat voice', gender: 'female', tone: 'bright' },

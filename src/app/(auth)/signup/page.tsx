@@ -46,12 +46,9 @@ export default function SignupPage() {
       setError('An account with this email already exists. Please sign in instead.');
       setLoading(false);
     } else {
-      // Check if email confirmation is required
       if (data.session) {
-        // Auto-confirmed, redirect to onboarding
         router.push('/onboarding');
       } else {
-        // Email confirmation required
         router.push('/verify-email?email=' + encodeURIComponent(email));
       }
     }
@@ -69,7 +66,10 @@ export default function SignupPage() {
   const strengthColors = ['', 'bg-red-500', 'bg-yellow-500', 'bg-blue-500', 'bg-[#406A56]'];
 
   return (
-    <div className="min-h-screen home-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#FDF8F3] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Decorative background */}
+      <div className="home-background" />
+      
       {/* Animated blobs */}
       <div className="home-blob home-blob-1" />
       <div className="home-blob home-blob-2" />
@@ -84,8 +84,8 @@ export default function SignupPage() {
           <p className="text-[#406A56]/70 mt-2">Start documenting your legacy today.</p>
         </div>
 
-        {/* Glass card */}
-        <div className="glass-card glass-card-strong p-8">
+        {/* Card */}
+        <div className="bg-white/90 backdrop-blur-xl p-8 rounded-2xl shadow-xl border border-white/50">
           <h2 className="text-2xl font-semibold text-[#2d2d2d] mb-6">Create your account</h2>
 
           <form onSubmit={handleSignup} className="space-y-4">
@@ -99,7 +99,7 @@ export default function SignupPage() {
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56]/40 transition-all"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/40 focus:border-[#406A56] transition-all"
                   placeholder="John Doe"
                   required
                 />
@@ -116,7 +116,7 @@ export default function SignupPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56]/40 transition-all"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/40 focus:border-[#406A56] transition-all"
                   placeholder="you@example.com"
                   required
                 />
@@ -133,7 +133,7 @@ export default function SignupPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/50 border border-[#406A56]/20 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56]/40 transition-all"
+                  className="w-full pl-10 pr-12 py-3 rounded-xl bg-white border border-gray-200 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/40 focus:border-[#406A56] transition-all"
                   placeholder="••••••••"
                   minLength={6}
                   required
@@ -147,7 +147,6 @@ export default function SignupPage() {
                 </button>
               </div>
               
-              {/* Password strength indicator */}
               {password.length > 0 && (
                 <div className="mt-2">
                   <div className="flex gap-1 h-1">
@@ -160,16 +159,13 @@ export default function SignupPage() {
                       />
                     ))}
                   </div>
-                  <p className={`text-xs mt-1 ${
-                    passwordStrength() >= 3 ? 'text-[#406A56]' : 'text-gray-400'
-                  }`}>
+                  <p className={`text-xs mt-1 ${passwordStrength() >= 3 ? 'text-[#406A56]' : 'text-gray-400'}`}>
                     {strengthLabels[passwordStrength()]}
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Terms checkbox */}
             <label className="flex items-start gap-3 cursor-pointer">
               <input 
                 type="checkbox" 

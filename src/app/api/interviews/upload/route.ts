@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // Use service role for uploads (interviewees may not be authenticated)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 // POST /api/interviews/upload
 // Upload interview recordings (no auth required - validated by session token)
@@ -23,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate session token
-    const { data: session, error: sessionError } = await supabaseAdmin
+    const { data: session, error: sessionError } = await createAdminClient()
       .from('interview_sessions')
       .select('id, user_id')
       .eq('id', sessionId)
@@ -51,7 +47,7 @@ export async function POST(request: NextRequest) {
     const fileName = `${sessionId}/${questionId}-${Date.now()}.webm`;
 
     // Upload to Supabase Storage with service role (bypasses RLS)
-    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+    const { data: uploadData, error: uploadError } = await createAdminClient().storage
       .from(bucket)
       .upload(fileName, buffer, {
         contentType: type === 'video' ? 'video/webm' : 'audio/webm',
@@ -65,7 +61,7 @@ export async function POST(request: NextRequest) {
       if (uploadError.message?.includes('not found') || uploadError.message?.includes('Bucket')) {
         // Try uploading to 'memories' bucket as fallback
         const fallbackFileName = `interviews/${sessionId}/${questionId}-${Date.now()}.webm`;
-        const { data: fallbackData, error: fallbackError } = await supabaseAdmin.storage
+        const { data: fallbackData, error: fallbackError } = await createAdminClient().storage
           .from('memories')
           .upload(fallbackFileName, buffer, {
             contentType: type === 'video' ? 'video/webm' : 'audio/webm',
@@ -80,7 +76,7 @@ export async function POST(request: NextRequest) {
           }, { status: 500 });
         }
 
-        const { data: { publicUrl } } = supabaseAdmin.storage
+        const { data: { publicUrl } } = createAdminClient().storage
           .from('memories')
           .getPublicUrl(fallbackFileName);
 
@@ -98,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get public URL
-    const { data: { publicUrl } } = supabaseAdmin.storage
+    const { data: { publicUrl } } = createAdminClient().storage
       .from(bucket)
       .getPublicUrl(fileName);
 

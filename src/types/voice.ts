@@ -17,7 +17,7 @@ export type VoiceProvider = 'openai' | 'personaplex'
 
 // Voice options from OpenAI Realtime API
 // coral = warm & friendly, sage = calm & wise, ballad = storyteller
-export type Voice = 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse' | 'marin' | 'cedar'
+export type Voice = 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'fable' | 'marin' | 'nova' | 'onyx' | 'sage' | 'shimmer' | 'verse' | 'cedar'
 
 // ============================================================================
 // PersonaPlex Voice Types
@@ -96,6 +96,7 @@ export interface MemoryCaptureConfig {
 export interface VoiceSessionResult {
   success: boolean
   sessionId: string
+  sessionType?: VoiceSessionType
   memoryId?: string
   title?: string
   content?: string

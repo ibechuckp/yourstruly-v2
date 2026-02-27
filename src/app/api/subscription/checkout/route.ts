@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-01-28.clover',
-})
+import { getStripeServer } from '@/lib/stripe'
 
 // Stripe Price IDs
 const PRICE_IDS = {
@@ -63,7 +59,7 @@ export async function POST(request: NextRequest) {
     let customerId = profile?.stripe_customer_id
 
     if (!customerId) {
-      const customer = await stripe.customers.create({
+      const customer = await getStripeServer().customers.create({
         email: user.email,
         name: profile?.full_name || undefined,
         metadata: {
@@ -84,7 +80,7 @@ export async function POST(request: NextRequest) {
     
     // For seat-based pricing, we need to use a custom amount
     // Create a checkout session with line items
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripeServer().checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
       payment_method_types: ['card'],

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { stripe } from '@/lib/stripe';
+import { getStripeServer } from '@/lib/stripe';
 import { NextRequest, NextResponse } from 'next/server';
 import { CartItem, ProviderType } from '@/types/marketplace';
 
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     if (!customerId) {
       // Create new Stripe customer
-      const customer = await stripe.customers.create({
+      const customer = await getStripeServer().customers.create({
         email: user.email || profile?.email,
         name: profile?.full_name,
         metadata: {
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     const orderNumber = `YT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     // Create checkout session
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripeServer().checkout.sessions.create({
       customer: customerId,
       line_items: lineItems,
       mode: 'payment',

@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { stripe } from '@/lib/stripe';
+import { getStripeServer } from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+    event = getStripeServer().webhooks.constructEvent(payload, signature, webhookSecret);
   } catch (err: any) {
     console.error('Webhook signature verification failed:', err.message);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
@@ -85,7 +85,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   }
 
   // Fetch the subscription details from Stripe
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
+  const subscription = await getStripeServer().subscriptions.retrieve(subscriptionId) as any;
 
   // Create or update subscription in database
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

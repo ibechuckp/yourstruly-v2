@@ -98,7 +98,8 @@ export default function PostScriptRecipientPage({ params }: { params: Promise<{ 
 
   if (loading) {
     return (
-      <div className="min-h-screen home-background flex items-center justify-center">
+      <div className="min-h-screen bg-[#FDF8F3] relative overflow-hidden flex items-center justify-center">
+        <div className="home-background" />
         <div className="animate-pulse text-[#406A56]">
           <Heart className="w-12 h-12 mx-auto mb-4 animate-bounce" />
           <p className="text-lg">Loading your special message...</p>
@@ -152,7 +153,8 @@ export default function PostScriptRecipientPage({ params }: { params: Promise<{ 
 
   // Show full content after envelope is opened
   return (
-    <div className="min-h-screen home-background">
+    <div className="min-h-screen bg-[#FDF8F3] relative overflow-hidden">
+      <div className="home-background" />
       <div className="home-blob home-blob-1" />
       <div className="home-blob home-blob-2" />
       

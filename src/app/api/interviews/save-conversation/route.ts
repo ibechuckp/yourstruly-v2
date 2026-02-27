@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 interface Exchange {
   question: string;
@@ -31,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate session
-    const { data: session, error: sessionError } = await supabaseAdmin
+    const { data: session, error: sessionError } = await createAdminClient()
       .from('interview_sessions')
       .select('id, user_id, title, contact_id')
       .eq('id', sessionId)
@@ -45,7 +41,7 @@ export async function POST(request: NextRequest) {
     // Get contact
     let contact: { id: string; full_name: string } | null = null;
     if (session.contact_id) {
-      const { data: contactData } = await supabaseAdmin
+      const { data: contactData } = await createAdminClient()
         .from('contacts')
         .select('id, full_name')
         .eq('id', session.contact_id)
@@ -103,7 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Save the video response record
-    const { data: responseRecord, error: responseError } = await supabaseAdmin
+    const { data: responseRecord, error: responseError } = await createAdminClient()
       .from('video_responses')
       .insert({
         session_id: sessionId,
@@ -129,7 +125,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Mark question as answered
-    await supabaseAdmin
+    await createAdminClient()
       .from('session_questions')
       .update({ status: 'answered' })
       .eq('id', questionId);
@@ -137,7 +133,7 @@ export async function POST(request: NextRequest) {
     // Create memory for the interviewer with formatted description
     const formattedDescription = `## Summary\n${summary}\n\n## Conversation\n${conversationMarkdown}`;
     
-    const { data: memoryRecord } = await supabaseAdmin
+    const { data: memoryRecord } = await createAdminClient()
       .from('memories')
       .insert({
         user_id: session.user_id,
@@ -170,7 +166,7 @@ export async function POST(request: NextRequest) {
         sort_order: index,
       }));
       
-      await supabaseAdmin.from('memory_media').insert(mediaRecords);
+      await createAdminClient().from('memory_media').insert(mediaRecords);
     }
 
     return NextResponse.json({ 

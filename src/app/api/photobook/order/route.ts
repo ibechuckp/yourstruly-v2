@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripeServer } from '@/lib/stripe'
 import { estimateOrder } from '@/lib/marketplace/providers/prodigi'
 import { randomUUID } from 'crypto'
 
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     const totalCents = Math.round(totalWithMarkup * 100)
 
     // Create Stripe Payment Intent
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntent = await getStripeServer().paymentIntents.create({
       amount: totalCents,
       currency: quote.currency.toLowerCase(),
       metadata: {
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
     if (orderError) {
       console.error('Order creation error:', orderError)
       // Cancel the payment intent if order save fails
-      await stripe.paymentIntents.cancel(paymentIntent.id)
+      await getStripeServer().paymentIntents.cancel(paymentIntent.id)
       return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
     }
 

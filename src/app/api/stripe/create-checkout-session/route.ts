@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { stripe, STRIPE_PLANS } from '@/lib/stripe';
+import { getStripeServer, STRIPE_PLANS } from '@/lib/stripe';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     if (!customerId) {
       // Create new Stripe customer
-      const customer = await stripe.customers.create({
+      const customer = await getStripeServer().customers.create({
         email: user.email,
         metadata: {
           userId: user.id,
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create checkout session
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripeServer().checkout.sessions.create({
       customer: customerId,
       line_items: [
         {

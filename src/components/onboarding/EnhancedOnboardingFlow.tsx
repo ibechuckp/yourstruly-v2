@@ -161,7 +161,8 @@ export function EnhancedOnboardingFlow({ onComplete }: EnhancedOnboardingFlowPro
   }, [data, onComplete]);
 
   return (
-    <div className="min-h-screen home-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#FDF8F3] relative overflow-hidden flex items-center justify-center p-4">
+      <div className="home-background" />
       <div className="home-blob home-blob-1" />
       <div className="home-blob home-blob-2" />
 

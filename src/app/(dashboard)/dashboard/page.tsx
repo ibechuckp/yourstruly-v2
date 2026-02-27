@@ -700,7 +700,7 @@ export default function DashboardPage() {
               {/* Backdrop for expanded tile */}
               {expandedId && (
                 <div 
-                  className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+                  className="tile-expanded-backdrop"
                   onClick={() => { setExpandedId(null); setTextValue(''); }}
                 />
               )}

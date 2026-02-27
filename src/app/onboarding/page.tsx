@@ -114,7 +114,8 @@ export default function OnboardingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen home-background flex items-center justify-center">
+      <div className="min-h-screen bg-[#FDF8F3] relative overflow-hidden flex items-center justify-center">
+        <div className="home-background" />
         <div className="home-blob home-blob-1" />
         <div className="home-blob home-blob-2" />
         <Loader2 className="w-8 h-8 animate-spin text-[#406A56]" />

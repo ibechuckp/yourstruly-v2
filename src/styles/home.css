@@ -390,11 +390,21 @@
   left: 50% !important;
   top: 50% !important;
   transform: translate(-50%, -50%) !important;
-  z-index: 50 !important;
-  width: 360px !important;
-  max-height: 80vh !important;
+  z-index: 1000 !important;
+  width: min(90vw, 480px) !important;
+  max-height: 85vh !important;
   overflow: auto !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+  border-radius: 24px !important;
+}
+
+/* Backdrop for expanded tile */
+.tile-expanded-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 999;
 }
 
 /* =============================================================================
@@ -409,6 +419,16 @@
   max-width: calc(var(--tile-size) * 3 + var(--tile-gap) * 2);
 }
 
+/* Mobile: single row, no wrap, compact buttons */
+@media (max-width: 640px) {
+  .quick-actions {
+    flex-wrap: nowrap;
+    gap: 8px;
+    max-width: 100%;
+    padding: 0 8px;
+  }
+}
+
 .quick-action-btn {
   display: flex;
   flex-direction: column;
@@ -421,6 +441,29 @@
   border-radius: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+/* Mobile: compact buttons to fit in single row */
+@media (max-width: 640px) {
+  .quick-action-btn {
+    padding: 8px 10px;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .quick-action-btn span {
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  
+  .quick-action-icon {
+    width: 28px;
+    height: 28px;
+  }
 }
 
 .quick-action-btn:hover {

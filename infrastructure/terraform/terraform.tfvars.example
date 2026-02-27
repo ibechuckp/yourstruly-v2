@@ -1,0 +1,30 @@
+# AWS Configuration
+aws_region   = "us-east-2"
+environment  = "production"
+project_name = "yourstruly"
+domain_name  = "yourstruly.love"
+
+# Database (start small, scale later)
+db_instance_class    = "db.t4g.micro"
+db_allocated_storage = 20
+db_name              = "yourstruly"
+db_username          = "yourstruly_admin"
+
+# ECS (start small)
+ecs_cpu           = 512   # 0.5 vCPU
+ecs_memory        = 1024  # 1 GB
+ecs_desired_count = 1
+
+# Supabase (keeping for auth/realtime)
+supabase_url         = "https://ffgetlejrwhpwvwtviqm.supabase.co"
+supabase_anon_key    = "YOUR_SUPABASE_ANON_KEY"
+supabase_service_key = "YOUR_SUPABASE_SERVICE_KEY"
+
+# API Keys
+openai_api_key        = "YOUR_OPENAI_API_KEY"
+stripe_secret_key     = "YOUR_STRIPE_SECRET_KEY"
+stripe_webhook_secret = "YOUR_STRIPE_WEBHOOK_SECRET"
+resend_api_key        = "YOUR_RESEND_API_KEY"
+
+# PersonaPlex (will update after Tailscale Funnel setup)
+personaplex_url = ""

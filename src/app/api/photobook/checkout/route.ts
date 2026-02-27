@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { stripe } from '@/lib/stripe'
+import { getStripeServer } from '@/lib/stripe'
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       .eq('id', projectId)
     
     // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripeServer().checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
       customer_email: user.email,

@@ -36,6 +36,17 @@ export async function middleware(request: NextRequest) {
     onboardingCompleted = profile?.onboarding_completed ?? false
   }
 
+  // Root path redirect: logged in → dashboard, logged out → login
+  if (request.nextUrl.pathname === '/') {
+    const url = request.nextUrl.clone()
+    if (user) {
+      url.pathname = onboardingCompleted ? '/dashboard' : '/onboarding'
+    } else {
+      url.pathname = '/login'
+    }
+    return NextResponse.redirect(url)
+  }
+
   // Protected routes - require authentication
   if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
     const url = request.nextUrl.clone()
@@ -79,10 +90,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',
     '/dashboard/:path*', 
     '/login', 
     '/signup', 
     '/onboarding',
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

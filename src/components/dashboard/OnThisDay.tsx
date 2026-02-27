@@ -82,24 +82,58 @@ function MemoryPreview({ memory, onClick }: { memory: OnThisDayMemory; onClick: 
   )
 }
 
+// Format interview Q&A content into styled blocks
+function formatInterviewContent(text: string) {
+  // Check if this looks like interview content (has Q1:, A1: patterns)
+  if (!text || (!text.includes('Q1:') && !text.includes('Q1.'))) {
+    return null
+  }
+  
+  // Split into Q&A pairs
+  const pairs: { question: string; answer: string }[] = []
+  const qPattern = /Q(\d+)[:.]\s*([^A]*?)(?=A\1[:.]\s*|$)/gi
+  const aPattern = /A(\d+)[:.]\s*([^Q]*?)(?=Q\d+[:.]\s*|$)/gi
+  
+  // Simple approach: split by Q and A markers
+  const parts = text.split(/(?=Q\d+[:.]\s*)/i).filter(p => p.trim())
+  
+  for (const part of parts) {
+    const qMatch = part.match(/Q\d+[:.]\s*(.+?)(?=A\d+[:.]\s*)/is)
+    const aMatch = part.match(/A\d+[:.]\s*(.+?)$/is)
+    
+    if (qMatch && aMatch) {
+      pairs.push({
+        question: qMatch[1].trim(),
+        answer: aMatch[1].trim()
+      })
+    }
+  }
+  
+  if (pairs.length === 0) return null
+  
+  return pairs
+}
+
 function MemoryModal({ memory, onClose }: { memory: OnThisDayMemory; onClose: () => void }) {
   const coverMedia = memory.memory_media?.find(m => m.is_cover) || memory.memory_media?.[0]
   const hasImage = coverMedia && coverMedia.file_type?.startsWith('image')
+  const description = memory.description || memory.ai_summary || ''
+  const interviewPairs = formatInterviewContent(description)
   
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg bg-[#FDF8F3] rounded-2xl overflow-hidden shadow-xl"
+        className="relative w-full max-w-lg max-h-[85vh] bg-[#FDF8F3] rounded-2xl overflow-hidden shadow-2xl flex flex-col"
       >
         {/* Close button */}
         <button 
@@ -129,8 +163,8 @@ function MemoryModal({ memory, onClose }: { memory: OnThisDayMemory; onClose: ()
           </div>
         )}
         
-        {/* Content */}
-        <div className="p-5">
+        {/* Content - scrollable */}
+        <div className="p-5 overflow-y-auto flex-1">
           {!hasImage && (
             <div className="flex items-center gap-2 mb-3">
               <Calendar size={16} className="text-[#C35F33]" />
@@ -144,7 +178,7 @@ function MemoryModal({ memory, onClose }: { memory: OnThisDayMemory; onClose: ()
             {memory.title || 'Untitled memory'}
           </h3>
           
-          <p className="text-sm text-gray-500 mb-3">
+          <p className="text-sm text-gray-500 mb-4">
             {new Date(memory.memory_date).toLocaleDateString('en-US', {
               weekday: 'long',
               year: 'numeric',
@@ -153,9 +187,25 @@ function MemoryModal({ memory, onClose }: { memory: OnThisDayMemory; onClose: ()
             })}
           </p>
           
-          <p className="text-gray-600 leading-relaxed">
-            {memory.description || memory.ai_summary || 'No description available.'}
-          </p>
+          {/* Interview Q&A format */}
+          {interviewPairs ? (
+            <div className="space-y-4">
+              {interviewPairs.map((pair, index) => (
+                <div key={index} className="bg-white/50 rounded-xl p-4 border border-[#406A56]/10">
+                  <p className="text-sm font-medium text-[#406A56] mb-2">
+                    {pair.question}
+                  </p>
+                  <p className="text-gray-700 leading-relaxed">
+                    {pair.answer}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-600 leading-relaxed">
+              {memory.description || memory.ai_summary || 'No description available.'}
+            </p>
+          )}
           
           {/* View full memory link */}
           <Link

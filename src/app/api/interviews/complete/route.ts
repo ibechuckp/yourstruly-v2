@@ -1,11 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Use service role for database operations
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // POST /api/interviews/complete
 // Mark interview session as completed
@@ -19,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate session token
-    const { data: session, error: sessionError } = await supabaseAdmin
+    const { data: session, error: sessionError } = await createAdminClient()
       .from('interview_sessions')
       .select('id')
       .eq('id', sessionId)
@@ -31,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update session status
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await createAdminClient()
       .from('interview_sessions')
       .update({ 
         status: 'completed', 

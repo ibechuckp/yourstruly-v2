@@ -29,7 +29,8 @@ export default function VerifyEmailPage({ searchParams }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen home-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#FDF8F3] relative overflow-hidden flex items-center justify-center p-4">
+      <div className="home-background" />
       <div className="home-blob home-blob-1" />
       <div className="home-blob home-blob-2" />
       
@@ -39,7 +40,7 @@ export default function VerifyEmailPage({ searchParams }: PageProps) {
           <p className="text-2xl text-[#406A56] font-script italic -mt-1" style={{ fontFamily: 'Georgia, serif' }}>Truly</p>
         </div>
 
-        <div className="glass-card glass-card-strong p-8 text-center">
+        <div className="bg-white/90 backdrop-blur-xl p-8 rounded-2xl shadow-xl border border-white/50 text-center">
           <div className="w-20 h-20 bg-[#D9C61A]/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <Mail className="w-10 h-10 text-[#D9C61A]" />
           </div>

@@ -1,11 +1,23 @@
 import Stripe from 'stripe';
 import { loadStripe, Stripe as StripeClient } from '@stripe/stripe-js';
 
-// Server-side Stripe instance
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-01-28.clover', // Latest stable API version
-  typescript: true,
-});
+// Server-side Stripe instance (lazy initialization for build compatibility)
+let _stripe: Stripe | null = null;
+export function getStripeServer(): Stripe {
+  if (!_stripe) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY environment variable is required');
+    }
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2026-01-28.clover',
+      typescript: true,
+    });
+  }
+  return _stripe;
+}
+
+// Alias for backward compatibility
+export const stripe = { get: getStripeServer };
 
 // Client-side Stripe promise
 let stripePromise: Promise<StripeClient | null> | null = null;

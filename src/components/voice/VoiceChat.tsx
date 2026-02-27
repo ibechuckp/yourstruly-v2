@@ -144,11 +144,13 @@ export function VoiceChat({
     },
     onComplete: (transcript) => {
       onComplete?.({
+        success: true,
+        sessionId: Date.now().toString(),
         sessionType,
         transcript,
-        duration: ppSessionDuration,
+        durationSeconds: ppSessionDuration,
         questionCount: ppQuestionCount,
-      } as VoiceSessionResult)
+      })
     },
     onError,
     onRecordingComplete: async (blob) => {

@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
-import '@/styles/home.css';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -35,7 +34,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen home-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#FDF8F3] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Decorative background */}
+      <div className="home-background" />
+      
       {/* Animated blobs */}
       <div className="home-blob home-blob-1" />
       <div className="home-blob home-blob-2" />
@@ -51,7 +53,7 @@ export default function LoginPage() {
         </div>
 
         {/* Glass card */}
-        <div className="glass-card glass-card-strong p-8">
+        <div className="bg-white/90 backdrop-blur-xl p-8 rounded-2xl shadow-xl border border-white/50">
           <h2 className="text-2xl font-semibold text-[#2d2d2d] mb-6">Welcome back</h2>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -65,7 +67,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-[#406A56]/30 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/40 focus:border-[#406A56]/50 transition-all shadow-sm"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/40 focus:border-[#406A56] transition-all"
                   placeholder="you@example.com"
                   required
                 />
@@ -82,7 +84,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 rounded-xl bg-white border border-[#406A56]/30 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/40 focus:border-[#406A56]/50 transition-all shadow-sm"
+                  className="w-full pl-10 pr-12 py-3 rounded-xl bg-white border border-gray-200 text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/40 focus:border-[#406A56] transition-all"
                   placeholder="••••••••"
                   required
                 />
@@ -144,7 +146,7 @@ export default function LoginPage() {
 
         {/* Trust indicators */}
         <div className="mt-8 text-center">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-500">
             Your memories are encrypted and stored securely
           </p>
         </div>

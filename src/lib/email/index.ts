@@ -10,7 +10,17 @@
 
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization to avoid build-time errors
+let resendInstance: Resend | null = null;
+function getResend(): Resend {
+  if (!resendInstance) {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error('RESEND_API_KEY environment variable is required');
+    }
+    resendInstance = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resendInstance;
+}
 
 const FROM_EMAIL = process.env.EMAIL_FROM || 'YoursTruly <noreply@yourstruly.love>';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yourstruly.love';
@@ -361,7 +371,7 @@ export async function sendCircleInviteEmail(data: CircleInviteEmailData): Promis
   try {
     const template = circleInviteTemplate(data);
     
-    const { data: result, error } = await resend.emails.send({
+    const { data: result, error } = await getResend().emails.send({
       from: FROM_EMAIL,
       to: data.recipientEmail,
       subject: template.subject,
@@ -386,7 +396,7 @@ export async function sendDeathClaimReceivedEmail(data: DeathClaimReceivedEmailD
   try {
     const template = deathClaimReceivedTemplate(data);
     
-    const { data: result, error } = await resend.emails.send({
+    const { data: result, error } = await getResend().emails.send({
       from: FROM_EMAIL,
       to: data.recipientEmail,
       subject: template.subject,
@@ -411,7 +421,7 @@ export async function sendDeathClaimStatusEmail(data: DeathClaimStatusEmailData)
   try {
     const template = deathClaimStatusTemplate(data);
     
-    const { data: result, error } = await resend.emails.send({
+    const { data: result, error } = await getResend().emails.send({
       from: FROM_EMAIL,
       to: data.recipientEmail,
       subject: template.subject,
@@ -434,7 +444,7 @@ export async function sendDeathClaimStatusEmail(data: DeathClaimStatusEmailData)
 
 export async function sendAdminNotificationEmail(data: AdminNotificationEmailData): Promise<EmailResult> {
   try {
-    const { data: result, error } = await resend.emails.send({
+    const { data: result, error } = await getResend().emails.send({
       from: FROM_EMAIL,
       to: data.recipientEmail,
       subject: data.subject,
