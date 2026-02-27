@@ -52,12 +52,13 @@ export async function GET(request: NextRequest) {
   }).filter(Boolean) || []
 
   // Fetch all members for these circles with their profiles
+  // Use explicit FK hint to resolve ambiguous relationship (user_id vs invited_by)
   const { data: allMembers } = circleIds.length > 0 ? await supabase
     .from('circle_members')
     .select(`
       circle_id,
       user_id,
-      profile:profiles (
+      profile:profiles!circle_members_user_id_fkey (
         id,
         full_name,
         avatar_url

@@ -98,38 +98,37 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
         {/* Subtle celebration effect */}
         <Link 
           href={activity.link}
-          className="flex items-start gap-3 p-3 rounded-xl bg-[#406A56]/5 border border-[#406A56]/15 hover:bg-[#406A56]/10 transition-all group"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#406A56]/5 border border-[#406A56]/15 hover:bg-[#406A56]/10 transition-all group"
         >
-          {/* XP Icon - warm green */}
+          {/* XP Icon - warm green, smaller */}
           <div className="flex-shrink-0 relative">
-            <div className="w-10 h-10 rounded-full bg-[#406A56] flex items-center justify-center shadow-sm">
-              <Sparkles size={16} className="text-white" />
+            <div className="w-7 h-7 rounded-full bg-[#406A56] flex items-center justify-center shadow-sm">
+              <Sparkles size={12} className="text-white" />
             </div>
           </div>
 
-          {/* Content with XP badge */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#406A56] text-white text-xs font-semibold">
+          {/* Content with XP badge - compact single line when possible */}
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#406A56] text-white text-[10px] font-semibold flex-shrink-0">
                 +{activity.xp} XP
               </span>
-              <span className="text-xs text-[#406A56]/70">earned</span>
+              <p className="text-xs text-gray-700 truncate flex-1">
+                {activity.description}
+              </p>
+              <span className="text-[10px] text-gray-400 flex-shrink-0">
+                {formatRelativeTime(activity.timestamp)}
+              </span>
             </div>
-            <p className="text-sm text-gray-700 leading-snug line-clamp-2">
-              {activity.description}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              {formatRelativeTime(activity.timestamp)}
-            </p>
           </div>
 
-          {/* Thumbnail */}
+          {/* Thumbnail - smaller */}
           {activity.thumbnail && (
             <div className="flex-shrink-0">
               <img 
                 src={activity.thumbnail} 
                 alt=""
-                className="w-12 h-12 rounded-lg object-cover shadow-sm ring-1 ring-[#406A56]/20"
+                className="w-8 h-8 rounded-md object-cover shadow-sm ring-1 ring-[#406A56]/20"
               />
             </div>
           )}
@@ -138,7 +137,7 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
     )
   }
 
-  // Regular activity
+  // Regular activity - compact single-row layout
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
@@ -147,68 +146,70 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
     >
       <Link 
         href={activity.link}
-        className="flex items-start gap-3 p-3 rounded-xl hover:bg-[#406A56]/5 transition-colors group"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[#406A56]/5 transition-colors group"
       >
-        {/* Avatar or Icon */}
+        {/* Avatar or Icon - smaller */}
         <div className="flex-shrink-0 relative">
           {activity.actor?.avatar_url ? (
             <div className="relative">
               <img 
                 src={activity.actor.avatar_url} 
                 alt={activity.actor.name}
-                className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                className="w-7 h-7 rounded-full object-cover border border-white shadow-sm"
               />
-              <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full ${config.bg} flex items-center justify-center shadow-sm`}>
-                <Icon size={10} className={config.color} />
+              <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full ${config.bg} flex items-center justify-center shadow-sm`}>
+                <Icon size={8} className={config.color} />
               </div>
             </div>
           ) : activity.actor ? (
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#406A56] to-[#4a7a64] flex items-center justify-center text-white font-medium text-sm shadow-sm">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#406A56] to-[#4a7a64] flex items-center justify-center text-white font-medium text-[10px] shadow-sm">
                 {activity.actor.name.charAt(0).toUpperCase()}
               </div>
-              <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full ${config.bg} flex items-center justify-center shadow-sm`}>
-                <Icon size={10} className={config.color} />
+              <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full ${config.bg} flex items-center justify-center shadow-sm`}>
+                <Icon size={8} className={config.color} />
               </div>
             </div>
           ) : (
-            <div className={`w-10 h-10 rounded-full ${config.bg} flex items-center justify-center`}>
-              <Icon size={18} className={config.color} />
+            <div className={`w-7 h-7 rounded-full ${config.bg} flex items-center justify-center`}>
+              <Icon size={14} className={config.color} />
             </div>
           )}
         </div>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          {/* Show XP badge for non-new XP activities too */}
-          {activity.xp && !activity.isNew && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#D9C61A]/20 text-[#8a7c08] text-[10px] font-semibold mb-1">
-              <Sparkles size={8} />
-              +{activity.xp} XP
+        {/* Content - compact inline */}
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-1.5">
+            {/* Show XP badge for non-new XP activities too */}
+            {activity.xp && !activity.isNew && (
+              <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-[#D9C61A]/20 text-[#8a7c08] text-[9px] font-semibold flex-shrink-0">
+                <Sparkles size={7} />
+                +{activity.xp}
+              </span>
+            )}
+            <p className="text-xs text-gray-700 truncate flex-1">
+              {activity.description}
+            </p>
+            <span className="text-[10px] text-gray-400 flex-shrink-0">
+              {formatRelativeTime(activity.timestamp)}
             </span>
-          )}
-          <p className="text-sm text-gray-800 leading-snug line-clamp-2">
-            {activity.description}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            {formatRelativeTime(activity.timestamp)}
-          </p>
+          </div>
         </div>
 
-        {/* Thumbnail */}
+        {/* Thumbnail - smaller */}
         {activity.thumbnail && (
           <div className="flex-shrink-0">
             <img 
               src={activity.thumbnail} 
               alt=""
-              className="w-12 h-12 rounded-lg object-cover shadow-sm group-hover:shadow-md transition-shadow"
+              className="w-7 h-7 rounded-md object-cover shadow-sm group-hover:shadow-md transition-shadow"
             />
           </div>
         )}
 
         {/* Arrow indicator on hover */}
         <ChevronRight 
-          size={16} 
+          size={12} 
           className="flex-shrink-0 text-gray-300 group-hover:text-[#406A56] transition-colors"
         />
       </Link>
@@ -272,58 +273,56 @@ export default function ActivityFeed({ xpCompletions = [] }: ActivityFeedProps) 
 
   return (
     <div className="bg-[#FDF8F3] rounded-[20px] shadow-sm overflow-hidden border border-white/50 h-full flex flex-col max-h-full">
-      {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-[#406A56]/10">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-[#406A56]/10 flex items-center justify-center">
-            <Bell size={12} className="text-[#406A56]" />
-          </div>
-          <h3 className="text-sm font-semibold text-gray-800">Recent Activity</h3>
+      {/* Header - compact */}
+      <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-b border-[#406A56]/10">
+        <div className="flex items-center gap-1.5">
+          <Bell size={12} className="text-[#406A56]" />
+          <h3 className="text-xs font-semibold text-gray-700">Recent Activity</h3>
         </div>
         <button
           onClick={() => fetchActivities(true)}
           disabled={isRefreshing}
-          className="p-1.5 rounded-lg hover:bg-[#406A56]/10 transition-colors disabled:opacity-50"
+          className="p-1 rounded-md hover:bg-[#406A56]/10 transition-colors disabled:opacity-50"
           title="Refresh"
         >
           <RefreshCw 
-            size={14} 
+            size={12} 
             className={`text-[#406A56] ${isRefreshing ? 'animate-spin' : ''}`}
           />
         </button>
       </div>
 
-      {/* Content - Scrollable */}
-      <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-[#406A56]/5">
+      {/* Content - Scrollable, no dividers for compact look */}
+      <div className="flex-1 min-h-0 overflow-y-auto py-1">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-8 gap-3">
+          <div className="flex flex-col items-center justify-center py-4 gap-2">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
             >
-              <Sparkles size={20} className="text-[#D9C61A]" />
+              <Sparkles size={14} className="text-[#D9C61A]" />
             </motion.div>
-            <span className="text-xs text-gray-400">Loading activity...</span>
+            <span className="text-[10px] text-gray-400">Loading...</span>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-8 gap-2">
-            <Bell size={20} className="text-gray-300" />
-            <span className="text-xs text-gray-400">{error}</span>
+          <div className="flex flex-col items-center justify-center py-4 gap-1">
+            <Bell size={14} className="text-gray-300" />
+            <span className="text-[10px] text-gray-400">{error}</span>
             <button
               onClick={() => fetchActivities()}
-              className="text-xs text-[#406A56] hover:underline"
+              className="text-[10px] text-[#406A56] hover:underline"
             >
               Try again
             </button>
           </div>
         ) : mergedActivities().length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 gap-2">
-            <div className="w-12 h-12 rounded-full bg-[#406A56]/5 flex items-center justify-center">
-              <Sparkles size={20} className="text-[#406A56]/40" />
+          <div className="flex flex-col items-center justify-center py-4 gap-1">
+            <div className="w-8 h-8 rounded-full bg-[#406A56]/5 flex items-center justify-center">
+              <Sparkles size={14} className="text-[#406A56]/40" />
             </div>
-            <span className="text-sm text-gray-500">No recent activity</span>
-            <span className="text-xs text-gray-400 text-center px-4">
-              Complete prompts to earn XP and see your progress here!
+            <span className="text-xs text-gray-500">No recent activity</span>
+            <span className="text-[10px] text-gray-400 text-center px-2">
+              Complete prompts to earn XP!
             </span>
           </div>
         ) : (
@@ -339,15 +338,15 @@ export default function ActivityFeed({ xpCompletions = [] }: ActivityFeedProps) 
         )}
       </div>
 
-      {/* Footer - See All */}
+      {/* Footer - See All - compact */}
       {activities.length > 0 && (
-        <div className="px-4 py-2 border-t border-[#406A56]/10 bg-[#406A56]/5">
+        <div className="px-3 py-1.5 border-t border-[#406A56]/10 bg-[#406A56]/5">
           <Link 
             href="/dashboard/activity"
-            className="flex items-center justify-center gap-1 text-xs text-[#406A56] hover:text-[#2d4d3d] transition-colors font-medium"
+            className="flex items-center justify-center gap-1 text-[10px] text-[#406A56] hover:text-[#2d4d3d] transition-colors font-medium"
           >
-            See all activity
-            <ChevronRight size={12} />
+            See all
+            <ChevronRight size={10} />
           </Link>
         </div>
       )}

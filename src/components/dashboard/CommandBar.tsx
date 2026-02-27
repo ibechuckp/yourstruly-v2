@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { Mic, Send, Sparkles, X, Loader2, ChevronUp, ChevronDown, Brain } from 'lucide-react'
+import { Mic, Send, Sparkles, X, Loader2, ChevronUp, ChevronDown, Brain, Search } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -242,21 +242,25 @@ export default function CommandBar() {
           <div className="flex items-center gap-3 px-4 py-3 glass rounded-refined-lg card-shadow-md">
             <button 
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-gray-400 hover:text-[#C35F33] transition-colors"
+              className="text-gray-400 hover:text-[#C35F33] transition-colors flex-shrink-0"
             >
               {isExpanded ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
             </button>
             
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-              onFocus={() => !isExpanded && messages.length > 0 && setIsExpanded(true)}
-              placeholder="Ask me anything... (⌘K)"
-              className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 focus:outline-none text-sm"
-            />
+            {/* Search icon + input container */}
+            <div className="flex-1 flex items-center gap-2 min-w-0">
+              <Search size={16} className="text-gray-400 flex-shrink-0" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                onFocus={() => !isExpanded && messages.length > 0 && setIsExpanded(true)}
+                placeholder="Ask me anything... (⌘K)"
+                className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 focus:outline-none text-sm min-w-0"
+              />
+            </div>
 
             <button 
               onClick={toggleVoice}
