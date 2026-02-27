@@ -244,19 +244,23 @@ DELETE FROM prompt_templates WHERE prompt_text ILIKE '%recipe%share%' AND id NOT
 
 -- ============================================
 -- UPDATE PROMPT GENERATION TO PREVENT REPETITION
--- Add unique constraint if not exists
+-- First clean up existing duplicates, then add unique constraint
 -- ============================================
-DO $$ 
-BEGIN
-  -- Add index on engagement_prompts to prevent duplicates
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_indexes WHERE indexname = 'idx_engagement_prompts_no_dupe'
-  ) THEN
-    CREATE UNIQUE INDEX idx_engagement_prompts_no_dupe 
-    ON engagement_prompts(user_id, prompt_text) 
-    WHERE status = 'pending';
-  END IF;
-END $$;
+
+-- Delete duplicate pending prompts (keep the oldest one)
+DELETE FROM engagement_prompts a
+USING engagement_prompts b
+WHERE a.id > b.id 
+  AND a.user_id = b.user_id 
+  AND a.prompt_text = b.prompt_text
+  AND a.status = 'pending'
+  AND b.status = 'pending';
+
+-- Now add the unique index
+DROP INDEX IF EXISTS idx_engagement_prompts_no_dupe;
+CREATE UNIQUE INDEX idx_engagement_prompts_no_dupe 
+ON engagement_prompts(user_id, prompt_text) 
+WHERE status = 'pending';
 
 -- Mark old recipe prompts as inactive
 UPDATE prompt_templates 
