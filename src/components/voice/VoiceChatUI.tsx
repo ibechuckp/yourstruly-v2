@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Mic, 
@@ -41,6 +41,8 @@ interface VoiceChatUIProps {
   onReset: () => void
   showTranscript?: boolean
   className?: string
+  /** Auto-start with countdown (default: true) */
+  autoStartWithCountdown?: boolean
 }
 
 /**
@@ -72,12 +74,44 @@ export function VoiceChatUI({
   onReset,
   showTranscript = true,
   className = '',
+  autoStartWithCountdown = true,
 }: VoiceChatUIProps) {
   const [isTranscriptOpen, setIsTranscriptOpen] = useState(false)
+  const [countdown, setCountdown] = useState<number | null>(null)
+  const [hasAutoStarted, setHasAutoStarted] = useState(false)
+
+  // Auto-start with countdown when component mounts (if enabled)
+  useEffect(() => {
+    if (autoStartWithCountdown && state === 'idle' && !hasAutoStarted && countdown === null) {
+      setCountdown(3)
+      setHasAutoStarted(true)
+    }
+  }, [autoStartWithCountdown, state, hasAutoStarted, countdown])
+
+  // Countdown timer
+  useEffect(() => {
+    if (countdown === null) return
+    
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
+      return () => clearTimeout(timer)
+    } else if (countdown === 0) {
+      // Countdown finished, start the session
+      setCountdown(null)
+      onStart()
+    }
+  }, [countdown, onStart])
+
+  // Cancel countdown
+  const cancelCountdown = useCallback(() => {
+    setCountdown(null)
+    onAbort()
+  }, [onAbort])
 
   const isActive = state !== 'idle' && state !== 'error' && state !== 'completed'
   const isListening = state === 'listening'
   const isThinking = state === 'thinking'
+  const isCountingDown = countdown !== null
   const isAiSpeaking = state === 'aiSpeaking'
   const isConnecting = state === 'connecting' || state === 'requesting'
   const isSaving = state === 'saving'
@@ -211,44 +245,72 @@ export function VoiceChatUI({
               )}
             </AnimatePresence>
 
-            {/* Main Button */}
-            <motion.button
-              onClick={state === 'idle' ? onStart : isCompleted ? onReset : onStop}
-              disabled={isConnecting || isSaving}
-              className={`
-                relative w-28 h-28 rounded-full flex items-center justify-center
-                transition-all duration-300 shadow-2xl
-                ${isConnecting || isSaving
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : isListening
-                    ? 'bg-[#406A56] text-white shadow-[#406A56]/40'
-                    : isAiSpeaking
-                      ? 'bg-[#D9C61A] text-white shadow-[#D9C61A]/40'
-                      : isActive
-                        ? 'bg-[#406A56]/10 text-[#406A56] hover:bg-[#406A56]/20'
-                        : isCompleted
-                          ? 'bg-green-500 text-white shadow-green-500/40'
-                          : 'bg-[#406A56] text-white hover:bg-[#4a7a64] hover:scale-105'
-                }
-              `}
-              whileTap={{ scale: 0.95 }}
-            >
-              {isConnecting ? (
-                <Loader2 size={36} className="animate-spin" />
-              ) : isSaving ? (
-                <Loader2 size={36} className="animate-spin" />
-              ) : isListening ? (
-                <Mic size={36} />
-              ) : isAiSpeaking ? (
-                <Volume2 size={36} />
-              ) : isActive ? (
-                <Radio size={36} />
-              ) : isCompleted ? (
-                <Sparkles size={36} />
-              ) : (
-                <Mic size={36} />
-              )}
-            </motion.button>
+            {/* Main Button / Countdown */}
+            {isCountingDown ? (
+              // Countdown display
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="relative w-28 h-28 rounded-full flex items-center justify-center bg-[#406A56] text-white shadow-2xl shadow-[#406A56]/40"
+              >
+                <motion.span
+                  key={countdown}
+                  initial={{ scale: 1.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.5, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-5xl font-bold"
+                >
+                  {countdown}
+                </motion.span>
+                
+                {/* Cancel button */}
+                <button
+                  onClick={cancelCountdown}
+                  className="absolute -bottom-12 text-sm text-[#406A56]/60 hover:text-[#406A56] underline"
+                >
+                  Cancel
+                </button>
+              </motion.div>
+            ) : (
+              <motion.button
+                onClick={state === 'idle' ? onStart : isCompleted ? onReset : onStop}
+                disabled={isConnecting || isSaving}
+                className={`
+                  relative w-28 h-28 rounded-full flex items-center justify-center
+                  transition-all duration-300 shadow-2xl
+                  ${isConnecting || isSaving
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : isListening
+                      ? 'bg-[#406A56] text-white shadow-[#406A56]/40'
+                      : isAiSpeaking
+                        ? 'bg-[#D9C61A] text-white shadow-[#D9C61A]/40'
+                        : isActive
+                          ? 'bg-[#406A56]/10 text-[#406A56] hover:bg-[#406A56]/20'
+                          : isCompleted
+                            ? 'bg-green-500 text-white shadow-green-500/40'
+                            : 'bg-[#406A56] text-white hover:bg-[#4a7a64] hover:scale-105'
+                  }
+                `}
+                whileTap={{ scale: 0.95 }}
+              >
+                {isConnecting ? (
+                  <Loader2 size={36} className="animate-spin" />
+                ) : isSaving ? (
+                  <Loader2 size={36} className="animate-spin" />
+                ) : isListening ? (
+                  <Mic size={36} />
+                ) : isAiSpeaking ? (
+                  <Volume2 size={36} />
+                ) : isActive ? (
+                  <Radio size={36} />
+                ) : isCompleted ? (
+                  <Sparkles size={36} />
+                ) : (
+                  <Mic size={36} />
+                )}
+              </motion.button>
+            )}
 
             {/* Recording indicator */}
             <AnimatePresence>
@@ -268,7 +330,22 @@ export function VoiceChatUI({
           {/* Status Text */}
           <div className="text-center mb-6">
             <AnimatePresence mode="wait">
-              {isConnecting ? (
+              {isCountingDown ? (
+                <motion.div
+                  key="countdown"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="text-center"
+                >
+                  <p className="text-lg font-medium text-[#406A56]">
+                    {topic ? `Let's talk about "${topic}"` : 'Starting your conversation...'}
+                  </p>
+                  <p className="text-sm text-[#406A56]/60 mt-1">
+                    Get ready to share your story
+                  </p>
+                </motion.div>
+              ) : isConnecting ? (
                 <motion.p
                   key="connecting"
                   initial={{ opacity: 0, y: 10 }}

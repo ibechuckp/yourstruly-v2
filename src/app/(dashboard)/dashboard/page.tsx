@@ -571,74 +571,39 @@ export default function DashboardPage() {
         
         {/* LEFT SIDEBAR - Profile, OnThisDay, ActivityFeed */}
         <aside className="home-sidebar hidden lg:flex">
-          {/* Profile Card */}
-          <div className="glass-card glass-card-strong profile-card">
-            <div className="profile-avatar">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-3xl text-[#406A56]/50">
-                  {profile?.full_name?.charAt(0) || '?'}
+          {/* Compact Profile Card */}
+          <div className="glass-card glass-card-strong p-4">
+            {/* Greeting + Streak inline */}
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xl font-semibold text-[#406A56]">
+                Hey {profile?.full_name?.split(' ')[0] || 'there'}
+              </h2>
+              {(engagementStats?.currentStreakDays ?? 0) > 0 && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-[#D9C61A]/20 to-[#C35F33]/20 rounded-full">
+                  <span className="text-sm">🔥</span>
+                  <span className="text-sm font-bold text-[#C35F33]">{engagementStats?.currentStreakDays}</span>
                 </div>
               )}
             </div>
-            <h2 className="profile-name">{profile?.full_name || 'Your Name'}</h2>
-            <p className="profile-title">{profile?.occupation || 'Your Story'}</p>
             
-            <div className="profile-stats">
-              <Link href="/dashboard/memories" className="profile-stat hover:opacity-70 transition-opacity">
-                <div className="profile-stat-value">{stats.memories}</div>
-                <div className="profile-stat-label">Memories</div>
+            {/* Stats Row - Compact */}
+            <div className="flex items-center justify-between text-center mb-3">
+              <Link href="/dashboard/memories" className="flex-1 hover:opacity-70 transition-opacity">
+                <div className="text-2xl font-bold text-[#406A56]">{stats.memories}</div>
+                <div className="text-[10px] text-[#406A56]/60 uppercase tracking-wide">Memories</div>
               </Link>
-              <Link href="/dashboard/contacts" className="profile-stat hover:opacity-70 transition-opacity">
-                <div className="profile-stat-value">{stats.contacts}</div>
-                <div className="profile-stat-label">People</div>
+              <Link href="/dashboard/contacts" className="flex-1 hover:opacity-70 transition-opacity border-x border-[#406A56]/10">
+                <div className="text-2xl font-bold text-[#406A56]">{stats.contacts}</div>
+                <div className="text-[10px] text-[#406A56]/60 uppercase tracking-wide">People</div>
               </Link>
-              <Link href="/dashboard/postscripts" className="profile-stat hover:opacity-70 transition-opacity">
-                <div className="profile-stat-value">{stats.postscripts}</div>
-                <div className="profile-stat-label">Messages</div>
+              <Link href="/dashboard/postscripts" className="flex-1 hover:opacity-70 transition-opacity">
+                <div className="text-2xl font-bold text-[#406A56]">{stats.postscripts}</div>
+                <div className="text-[10px] text-[#406A56]/60 uppercase tracking-wide">Messages</div>
               </Link>
             </div>
-            
-            {/* Streak Counter */}
-            {(engagementStats?.currentStreakDays ?? 0) > 0 && (
-              <div className="flex items-center justify-center gap-2 mt-4 px-4 py-2 bg-gradient-to-r from-[#D9C61A]/10 to-[#C35F33]/10 rounded-xl">
-                <span className="text-xl">🔥</span>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-[#C35F33]">{engagementStats?.currentStreakDays}</div>
-                  <div className="text-[10px] text-[#406A56]/60 uppercase tracking-wide">Day Streak</div>
-                </div>
-                {(engagementStats?.longestStreakDays ?? 0) > (engagementStats?.currentStreakDays ?? 0) && (
-                  <div className="text-xs text-[#406A56]/50 ml-2">
-                    Best: {engagementStats?.longestStreakDays}
-                  </div>
-                )}
-              </div>
-            )}
 
-            {/* Upcoming Birthdays */}
-            {upcomingEvents.length > 0 && (
-              <div className="profile-events">
-                {upcomingEvents.slice(0, 2).map((event) => (
-                  <Link 
-                    key={event.contactId}
-                    href={`/dashboard/contacts/${event.contactId}`}
-                    className="profile-event"
-                  >
-                    <Gift size={12} />
-                    <span>
-                      {event.contactName}
-                      {event.daysUntil === 0 ? ' 🎂 Today!' : 
-                       event.daysUntil === 1 ? ' tomorrow' : 
-                       ` in ${event.daysUntil}d`}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            {/* Storage Usage */}
-            <div className="mt-5 pt-4 border-t border-[#406A56]/10">
+            {/* Storage Usage - Compact */}
+            <div className="pt-3 border-t border-[#406A56]/10">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-[#406A56]/70 uppercase tracking-wide">Storage</span>
                 <span className="text-xs text-gray-500">
