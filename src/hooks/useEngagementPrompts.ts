@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { EngagementPrompt, PromptResponse, EngagementStats } from '@/types/engagement';
 
@@ -21,17 +21,25 @@ export function useEngagementPrompts(count: number = 5): UseEngagementPromptsRet
   const [stats, setStats] = useState<EngagementStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const hasFetched = useRef(false);
+  const isFetching = useRef(false);
 
   const supabase = createClient();
 
   // Fetch prompts with related data
   const fetchPrompts = useCallback(async (regenerate: boolean = false) => {
+    // Prevent concurrent fetches
+    if (isFetching.current) return;
+    isFetching.current = true;
+    
     try {
       setIsLoading(true);
       setError(null);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      // Use getSession instead of getUser to avoid lock contention
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error('Not authenticated');
+      const user = session.user;
 
       // Call the shuffle function to get/generate prompts
       const { data: rawPrompts, error: fetchError } = await supabase
@@ -117,14 +125,16 @@ export function useEngagementPrompts(count: number = 5): UseEngagementPromptsRet
       setError(err instanceof Error ? err : new Error('Failed to fetch prompts'));
     } finally {
       setIsLoading(false);
+      isFetching.current = false;
     }
   }, [count, supabase]);
 
   // Fetch engagement stats
   const fetchStats = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const user = session.user;
 
       const { data, error: statsError } = await supabase
         .from('engagement_stats')
@@ -252,21 +262,29 @@ export function useEngagementPrompts(count: number = 5): UseEngagementPromptsRet
     }
   }, [prompts.length, fetchPrompts, supabase]);
 
-  // Initial fetch - depends on auth state
+  // Initial fetch - only run once on mount
   useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+    
     const checkAuthAndFetch = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        fetchPrompts();
-      } else {
-        // Reset state when no user to prevent data leakage
-        setPrompts([]);
-        setStats(null);
-        setError(null);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          fetchPrompts();
+        } else {
+          setPrompts([]);
+          setStats(null);
+          setError(null);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('Auth check failed:', err);
+        setIsLoading(false);
       }
     };
     checkAuthAndFetch();
-  }, [fetchPrompts, supabase]);
+  }, []); // Empty deps - only run once
 
   return {
     prompts,
