@@ -902,15 +902,6 @@ export default function DashboardPage() {
                             </div>
                           )}
 
-                          {/* Skip button for non-expanded tiles */}
-                          {!isExpanded && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); skipPrompt(prompt.id); }}
-                              className="absolute bottom-3 right-3 text-xs text-gray-400 hover:text-gray-600"
-                            >
-                              Skip
-                            </button>
-                          )}
                         </div>
                       </motion.div>
                     )
