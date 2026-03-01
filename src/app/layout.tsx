@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Caveat, Playfair_Display, Patrick_Hand, Inter_Tight, Dancing_Script, Crimson_Text } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import 'mapbox-gl/dist/mapbox-gl.css';
-import CookieConsent from "@/components/ui/CookieConsent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -66,11 +66,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* CookieYes GDPR Cookie Consent */}
+        <Script
+          id="cookieyes"
+          src="https://cdn-cookieyes.com/client_data/58428a871654efaa39eb49e8ba3039f0/script.js"
+          strategy="beforeInteractive"
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${interTight.variable} ${caveat.variable} ${patrickHand.variable} ${playfair.variable} ${dancingScript.variable} ${crimsonText.variable} antialiased`}
       >
         {children}
-        <CookieConsent privacyUrl="/privacy" />
       </body>
     </html>
   );
