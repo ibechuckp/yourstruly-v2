@@ -230,7 +230,8 @@ export default function ImmersiveTimeline({ media, initialIndex = 0, onPhotoClic
               >
                 <div className="h-7 bg-[#406A56]/80" />
                 <div className="aspect-[4/3] bg-[#1a1a2e]">
-                  <img src={photo.file_url} alt="" className="w-full h-full object-cover" loading="eager" />
+                  
+<img src={photo.file_url} alt="" className="w-full h-full object-cover" loading="eager" />
                 </div>
                 <div className="h-9 bg-[#F2F1E5]/90" />
               </div>

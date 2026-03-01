@@ -143,7 +143,7 @@ export default function AuditLogViewer() {
             type="text"
             value={filter.search}
             onChange={(e) => setFilter({ ...filter, search: e.target.value })}
-            placeholder="Search..."
+            aria-label="Search" placeholder="Search..."
             className="px-4 py-2 bg-white/80 border border-[#C35F33]/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#406A56]/20"
           />
         </div>

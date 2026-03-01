@@ -195,7 +195,7 @@ export default function ShareWisdomModal({ isOpen, onClose, wisdomId, wisdomTitl
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name or email..."
+                aria-label="Search" placeholder="Search by name or email..."
                 className="w-full pl-10 pr-4 py-3 bg-[#F2F1E5] border border-gray-200 rounded-xl text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4A3552]/30 focus:border-[#4A3552] transition-all"
               />
               {isSearching && (

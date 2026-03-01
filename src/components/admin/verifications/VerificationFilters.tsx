@@ -44,7 +44,7 @@ export function VerificationFilters({ currentSearch, currentStatus }: Verificati
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, email..."
+          aria-label="Search" placeholder="Search by name, email..."
           className="w-full pl-10 pr-10 py-2 rounded-xl border border-[#2a1f1a]/10 bg-white/50 focus:outline-none focus:ring-2 focus:ring-[#406A56]/20 focus:border-[#406A56]/30"
         />
         {search && (

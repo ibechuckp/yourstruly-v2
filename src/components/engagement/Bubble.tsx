@@ -364,7 +364,8 @@ export function Bubble({
           <div className="bubble-contact-card">
             <div className="bubble-contact-avatar">
               {prompt.contactPhotoUrl ? (
-                <img src={prompt.contactPhotoUrl} alt="" />
+                
+<img src={prompt.contactPhotoUrl} alt="" />
               ) : (
                 contactDisplayName.charAt(0).toUpperCase()
               )}
@@ -385,7 +386,8 @@ export function Bubble({
             <div className="flex items-center gap-4 mb-4 pb-4 border-b border-gray-100">
               <div className="w-16 h-16 rounded-full bg-[var(--yt-green-light)] text-[var(--yt-green)] flex items-center justify-center text-2xl font-bold">
                 {prompt.contactPhotoUrl ? (
-                  <img src={prompt.contactPhotoUrl} alt="" className="w-full h-full rounded-full object-cover" />
+                  
+<img src={prompt.contactPhotoUrl} alt="" className="w-full h-full rounded-full object-cover" />
                 ) : (
                   contactDisplayName.charAt(0).toUpperCase()
                 )}

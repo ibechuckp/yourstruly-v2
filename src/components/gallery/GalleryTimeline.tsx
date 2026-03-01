@@ -171,7 +171,7 @@ export default function GalleryTimeline({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search memories..."
+              aria-label="Search" placeholder="Search memories..."
               className="tl-search-input"
               autoFocus
               onBlur={() => !searchQuery && setShowSearch(false)}

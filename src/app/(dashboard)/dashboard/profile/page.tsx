@@ -859,7 +859,7 @@ function EditModal({
         {(profile[field] as string[]).map(item => (
           <span key={item} className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 ${colorClass}`}>
             {item}
-            <button onClick={() => removeTag(field, item)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+            <button onClick={() => removeTag(field, item)} className="hover:text-red-500 ml-1" aria-label="Remove"><X size={14} /></button>
           </span>
         ))}
       </div>
@@ -894,7 +894,8 @@ function EditModal({
               <div className="flex justify-center mb-4">
                 {profile.avatar_url ? (
                   <div className="relative">
-                    <img src={profile.avatar_url} alt="Profile" className="w-28 h-28 rounded-full object-cover border-4 border-[#406A56]/20" />
+                    <img src={profile.avatar_url}
+                alt="" alt="Profile" className="w-28 h-28 rounded-full object-cover border-4 border-[#406A56]/20" />
                     <label className="absolute bottom-0 right-0 w-9 h-9 bg-[#406A56] text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-[#355a48]">
                       <Camera size={16} />
                       <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploading} />
@@ -985,7 +986,7 @@ function EditModal({
                   {(profile.personality_traits || []).map(trait => (
                     <span key={trait} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#406A56]/10 text-[#406A56]">
                       {trait}
-                      <button onClick={() => removeTag('personality_traits', trait)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                      <button onClick={() => removeTag('personality_traits', trait)} className="hover:text-red-500 ml-1" aria-label="Remove"><X size={14} /></button>
                     </span>
                   ))}
                 </div>
@@ -1027,7 +1028,7 @@ function EditModal({
                 {(profile.interests || []).map(interest => (
                   <span key={interest} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#C35F33]/10 text-[#C35F33]">
                     {interest}
-                    <button onClick={() => removeTag('interests', interest)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                    <button onClick={() => removeTag('interests', interest)} className="hover:text-red-500 ml-1" aria-label="Remove"><X size={14} /></button>
                   </span>
                 ))}
               </div>
@@ -1069,7 +1070,7 @@ function EditModal({
                 {(profile.hobbies || []).map(hobby => (
                   <span key={hobby} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#D9C61A]/20 text-[#8B7B0A]">
                     {hobby}
-                    <button onClick={() => removeTag('hobbies', hobby)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                    <button onClick={() => removeTag('hobbies', hobby)} className="hover:text-red-500 ml-1" aria-label="Remove"><X size={14} /></button>
                   </span>
                 ))}
               </div>
@@ -1110,7 +1111,7 @@ function EditModal({
                 {(profile.skills || []).map(skill => (
                   <span key={skill} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#8DACAB]/20 text-[#5d8585]">
                     {skill}
-                    <button onClick={() => removeTag('skills', skill)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                    <button onClick={() => removeTag('skills', skill)} className="hover:text-red-500 ml-1" aria-label="Remove"><X size={14} /></button>
                   </span>
                 ))}
               </div>
@@ -1176,7 +1177,7 @@ function EditModal({
                 {(profile.life_goals || []).map(goal => (
                   <span key={goal} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#4A3552]/10 text-[#4A3552]">
                     {goal}
-                    <button onClick={() => removeTag('life_goals', goal)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                    <button onClick={() => removeTag('life_goals', goal)} className="hover:text-red-500 ml-1" aria-label="Remove"><X size={14} /></button>
                   </span>
                 ))}
               </div>
@@ -1271,7 +1272,7 @@ function EditModal({
                 {(profile.languages || []).map(lang => (
                   <span key={lang} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#406A56]/10 text-[#406A56]">
                     {lang}
-                    <button onClick={() => removeTag('languages', lang)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                    <button onClick={() => removeTag('languages', lang)} className="hover:text-red-500 ml-1" aria-label="Remove"><X size={14} /></button>
                   </span>
                 ))}
               </div>
@@ -1300,7 +1301,7 @@ function EditModal({
                 {(profile.religions || []).map(rel => (
                   <span key={rel} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#4A3552]/10 text-[#4A3552]">
                     {rel}
-                    <button onClick={() => removeTag('religions', rel)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                    <button onClick={() => removeTag('religions', rel)} className="hover:text-red-500 ml-1" aria-label="Remove"><X size={14} /></button>
                   </span>
                 ))}
               </div>
@@ -1565,7 +1566,7 @@ function EditModal({
                   {(profile.favorite_books || []).map(book => (
                     <span key={book} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#406A56]/10 text-[#406A56]">
                       {book}
-                      <button onClick={() => removeTag('favorite_books', book)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                      <button onClick={() => removeTag('favorite_books', book)} className="hover:text-red-500 ml-1" aria-label="Remove"><X size={14} /></button>
                     </span>
                   ))}
                 </div>
@@ -1604,7 +1605,7 @@ function EditModal({
                   {(profile.favorite_movies || []).map(movie => (
                     <span key={movie} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#4A3552]/10 text-[#4A3552]">
                       {movie}
-                      <button onClick={() => removeTag('favorite_movies', movie)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                      <button onClick={() => removeTag('favorite_movies', movie)} className="hover:text-red-500 ml-1" aria-label="Remove"><X size={14} /></button>
                     </span>
                   ))}
                 </div>
@@ -1643,7 +1644,7 @@ function EditModal({
                   {(profile.favorite_music || []).map(music => (
                     <span key={music} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#8DACAB]/20 text-[#5d8585]">
                       {music}
-                      <button onClick={() => removeTag('favorite_music', music)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                      <button onClick={() => removeTag('favorite_music', music)} className="hover:text-red-500 ml-1" aria-label="Remove"><X size={14} /></button>
                     </span>
                   ))}
                 </div>
@@ -1682,7 +1683,7 @@ function EditModal({
                   {(profile.favorite_foods || []).map(food => (
                     <span key={food} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-[#C35F33]/10 text-[#C35F33]">
                       {food}
-                      <button onClick={() => removeTag('favorite_foods', food)} className="hover:text-red-500 ml-1"><X size={14} /></button>
+                      <button onClick={() => removeTag('favorite_foods', food)} className="hover:text-red-500 ml-1" aria-label="Remove"><X size={14} /></button>
                     </span>
                   ))}
                 </div>

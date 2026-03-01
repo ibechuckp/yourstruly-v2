@@ -189,7 +189,7 @@ export default function PhotoMetadataModal({ media, onClose, onSave }: Props) {
                     setSelectedLocation(null)
                   }}
                   onFocus={() => locationResults.length > 0 && setShowResults(true)}
-                  placeholder="Search for a place..."
+                  aria-label="Search" placeholder="Search for a place..."
                   className="w-full px-3 py-2.5 pl-10 rounded-lg border border-gray-300 focus:border-[#406A56] focus:ring-2 focus:ring-[#406A56]/20 outline-none text-[#1a1a1a] font-medium placeholder:text-gray-400 placeholder:font-normal"
                 />
                 <div className="absolute left-3 top-1/2 -translate-y-1/2">

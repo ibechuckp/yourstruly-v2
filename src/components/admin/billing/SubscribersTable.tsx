@@ -107,7 +107,7 @@ export default function SubscribersTable() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by email..."
+                aria-label="Search" placeholder="Search by email..."
                 className="w-full pl-10 pr-4 py-2 bg-white/80 border border-[#C35F33]/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#406A56]/20 focus:border-[#406A56]/30 transition-all placeholder:text-[#2a1f1a]/40"
               />
             </div>

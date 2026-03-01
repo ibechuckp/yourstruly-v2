@@ -16,7 +16,7 @@ export default function AdminHeader({ admin }: AdminHeaderProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2a1f1a]/40" />
           <input
             type="text"
-            placeholder="Search users, orders, settings..."
+            aria-label="Search" placeholder="Search users, orders, settings..."
             className="w-full pl-10 pr-4 py-2 bg-white/80 border border-[#C35F33]/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#406A56]/20 focus:border-[#406A56]/30 transition-all placeholder:text-[#2a1f1a]/40"
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[#2a1f1a]/30">

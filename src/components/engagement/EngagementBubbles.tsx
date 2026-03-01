@@ -390,9 +390,11 @@ export function EngagementBubbles({
                 onClick={() => handleCompletedTileClick(tile)}
               >
                 {tile.photoUrl ? (
-                  <img src={tile.photoUrl} alt="" />
+                  
+<img src={tile.photoUrl} alt="" />
                 ) : tile.contactPhotoUrl ? (
-                  <img src={tile.contactPhotoUrl} alt="" />
+                  
+<img src={tile.contactPhotoUrl} alt="" />
                 ) : tile.contactName ? (
                   <div className="progress-tile-avatar">
                     {tile.contactName.charAt(0).toUpperCase()}

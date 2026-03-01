@@ -251,7 +251,8 @@ export default function CreateAlbumModal({ isOpen, onClose, onSave, editAlbum }:
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Cover Image</label>
                     <div className="relative w-32 aspect-[4/5] rounded-xl overflow-hidden">
-                      <img src={coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
+                      
+<img src={coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
                       <button
                         onClick={() => setCoverImageUrl(null)}
                         className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70"
@@ -293,7 +294,8 @@ export default function CreateAlbumModal({ isOpen, onClose, onSave, editAlbum }:
                             <GripVertical size={16} className="text-gray-400" />
                             <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
                               {coverMedia ? (
-                                <img src={coverMedia.file_url} alt="" className="w-full h-full object-cover" />
+                                
+<img src={coverMedia.file_url} alt="" className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
                                   <ImageIcon size={16} className="text-gray-400" />
@@ -330,7 +332,7 @@ export default function CreateAlbumModal({ isOpen, onClose, onSave, editAlbum }:
                     type="text"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Search memories..."
+                    aria-label="Search" placeholder="Search memories..."
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#406A56] focus:ring-2 focus:ring-[#406A56]/20 outline-none transition-all text-sm"
                   />
                 </div>
@@ -359,7 +361,8 @@ export default function CreateAlbumModal({ isOpen, onClose, onSave, editAlbum }:
                             }`}
                           >
                             {coverMedia ? (
-                              <img src={coverMedia.file_url} alt="" className="w-full h-full object-cover" />
+                              
+<img src={coverMedia.file_url} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
                                 <ImageIcon size={20} className="text-gray-400" />

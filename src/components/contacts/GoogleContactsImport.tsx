@@ -455,7 +455,7 @@ export function GoogleContactsImport({ onImportComplete }: GoogleContactsImportP
                         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#406A56]/50" />
                         <input
                           type="text"
-                          placeholder="Search contacts..."
+                          aria-label="Search" placeholder="Search contacts..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           className="w-full pl-10 pr-4 py-2 bg-[#F2F1E5] border border-[#406A56]/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"

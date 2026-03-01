@@ -218,7 +218,8 @@ export default function AddToAlbumModal({ isOpen, onClose, memoryId, onAdded }: 
                       !album.cover_image_url ? `bg-gradient-to-br ${theme.color}` : ''
                     } flex items-center justify-center`}>
                       {album.cover_image_url ? (
-                        <img src={album.cover_image_url} alt="" className="w-full h-full object-cover" />
+                        
+<img src={album.cover_image_url} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <span className="text-2xl">{theme.icon}</span>
                       )}

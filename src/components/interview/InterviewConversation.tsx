@@ -490,7 +490,8 @@ export function InterviewConversation({
                     {media.file.type.startsWith('video/') ? (
                       <video src={media.preview} className="w-full h-full object-cover" />
                     ) : (
-                      <img src={media.preview} alt="" className="w-full h-full object-cover" />
+                      
+<img src={media.preview} alt="" className="w-full h-full object-cover" />
                     )}
                     <button
                       onClick={() => handleRemoveMedia(index)}

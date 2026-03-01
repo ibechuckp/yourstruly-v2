@@ -94,7 +94,7 @@ export function ContactPicker({
             setShowDropdown(true);
           }}
           onFocus={() => setShowDropdown(true)}
-          placeholder="Search contacts..."
+          aria-label="Search" placeholder="Search contacts..."
           disabled={disabled}
         />
       </div>

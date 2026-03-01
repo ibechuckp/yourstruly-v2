@@ -173,7 +173,8 @@ export default function FaceTagger({ mediaId, imageUrl, onXPEarned }: FaceTagger
     <div className="space-y-4">
       {/* Photo with face boxes */}
       <div className="relative rounded-xl overflow-hidden bg-black">
-        <img src={imageUrl} alt="" className="w-full" />
+        
+<img src={imageUrl} alt="" className="w-full" />
         
         {/* Face bounding boxes */}
         {faces.map(face => (
@@ -260,7 +261,8 @@ export default function FaceTagger({ mediaId, imageUrl, onXPEarned }: FaceTagger
                         >
                           <div className="w-8 h-8 rounded-full bg-amber-600/30 flex items-center justify-center overflow-hidden">
                             {s.contact.photo_url ? (
-                              <img src={s.contact.photo_url} alt="" className="w-full h-full object-cover" />
+                              
+<img src={s.contact.photo_url} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <User size={16} className="text-amber-500" />
                             )}
@@ -288,7 +290,7 @@ export default function FaceTagger({ mediaId, imageUrl, onXPEarned }: FaceTagger
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search contacts..."
+                        aria-label="Search" placeholder="Search contacts..."
                         className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                         autoFocus
                       />
@@ -301,7 +303,8 @@ export default function FaceTagger({ mediaId, imageUrl, onXPEarned }: FaceTagger
                           >
                             <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
                               {contact.photo_url ? (
-                                <img src={contact.photo_url} alt="" className="w-full h-full object-cover" />
+                                
+<img src={contact.photo_url} alt="" className="w-full h-full object-cover" />
                               ) : (
                                 <span className="text-white/50 text-sm">
                                   {contact.full_name.charAt(0)}
@@ -350,7 +353,8 @@ export default function FaceTagger({ mediaId, imageUrl, onXPEarned }: FaceTagger
             >
               <div className="w-5 h-5 rounded-full bg-green-600/30 flex items-center justify-center overflow-hidden">
                 {face.contact?.photo_url ? (
-                  <img src={face.contact.photo_url} alt="" className="w-full h-full object-cover" />
+                  
+<img src={face.contact.photo_url} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <User size={12} className="text-green-500" />
                 )}
@@ -400,7 +404,7 @@ export default function FaceTagger({ mediaId, imageUrl, onXPEarned }: FaceTagger
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search contacts..."
+                aria-label="Search" placeholder="Search contacts..."
                 className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56] mb-2"
                 autoFocus
               />
@@ -437,7 +441,8 @@ export default function FaceTagger({ mediaId, imageUrl, onXPEarned }: FaceTagger
                   >
                     <div className="w-8 h-8 rounded-full bg-[#406A56]/20 flex items-center justify-center overflow-hidden">
                       {contact.photo_url ? (
-                        <img src={contact.photo_url} alt="" className="w-full h-full object-cover" />
+                        
+<img src={contact.photo_url} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <span className="text-[#406A56] text-sm font-medium">
                           {contact.full_name.charAt(0)}

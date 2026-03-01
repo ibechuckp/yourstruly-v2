@@ -138,7 +138,7 @@ export default function MarketplacePage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search for flowers, gifts, or personalized prints..."
+              aria-label="Search" placeholder="Search for flowers, gifts, or personalized prints..."
               className="w-full pl-12 pr-4 py-3.5 glass rounded-xl text-gray-800 placeholder:text-gray-800/40 focus:outline-none focus:ring-2 focus:ring-[#d4a574]/30 transition-all"
             />
             {searchQuery && (

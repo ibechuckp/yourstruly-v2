@@ -164,7 +164,8 @@ export default function PhotoUploadModal({ isOpen, onClose }: PhotoUploadModalPr
                 <p className="text-[#406A56] font-medium">Uploading photo...</p>
                 {previewUrl && (
                   <div className="mt-4 rounded-xl overflow-hidden max-h-48">
-                    <img src={previewUrl} alt="Preview" className="w-full h-48 object-cover opacity-50" />
+                    
+<img src={previewUrl} alt="Preview" className="w-full h-48 object-cover opacity-50" />
                   </div>
                 )}
               </div>
@@ -174,7 +175,8 @@ export default function PhotoUploadModal({ isOpen, onClose }: PhotoUploadModalPr
               <>
                 {/* Photo Preview */}
                 <div className="rounded-xl overflow-hidden mb-4 shadow-lg">
-                  <img src={previewUrl} alt="Uploaded" className="w-full h-64 object-cover" />
+                  
+<img src={previewUrl} alt="Uploaded" className="w-full h-64 object-cover" />
                 </div>
 
                 {/* Question */}

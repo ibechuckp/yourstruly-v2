@@ -1146,7 +1146,7 @@ function PostscriptRecipientModal({ onClose }: { onClose: () => void }) {
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#406A56]/40" />
                 <input
                   type="text"
-                  placeholder="Search contacts..."
+                  aria-label="Search" placeholder="Search contacts..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#406A56]/20 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"

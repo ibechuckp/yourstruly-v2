@@ -190,7 +190,8 @@ export default function ProfileCard({ profile, onUpdate, compact = false }: Prof
           >
             {profile?.avatar_url ? (
               <>
-                <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                <img src={profile.avatar_url}
+                alt="" alt="Avatar" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
                   <Camera className="text-white" size={24} />
                 </div>

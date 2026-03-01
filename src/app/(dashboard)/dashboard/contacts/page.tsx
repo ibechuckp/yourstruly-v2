@@ -317,7 +317,7 @@ export default function ContactsPage() {
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#406A56]/50" />
               <input
                 type="text"
-                placeholder="Search contacts..."
+                aria-label="Search" placeholder="Search contacts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="form-input !pl-12"
@@ -336,7 +336,8 @@ export default function ContactsPage() {
           {contacts.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon">
-                <img src={getCategoryIcon('contact')} alt="" className="w-12 h-12 opacity-50" />
+                
+<img src={getCategoryIcon('contact')} alt="" className="w-12 h-12 opacity-50" />
               </div>
               <h3 className="empty-state-title mb-2">No contacts yet</h3>
               <p className="empty-state-text mb-4">Add people to your life story</p>
@@ -591,7 +592,7 @@ function ContactModal({ contact, onClose, onSave }: { contact: Contact | null; o
       <div className="modal-content-page">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-[#2d2d2d]">{contact ? 'Edit Contact' : 'Add Contact'}</h2>
-          <button onClick={onClose} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg"><X size={20} /></button>
+          <button onClick={onClose} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg" aria-label="Close"><X size={20} /></button>
         </div>
         <div className="space-y-4">
           <div>
@@ -711,7 +712,7 @@ function PetModal({ pet, onClose, onSave }: { pet: Pet | null; onClose: () => vo
       <div className="modal-content-page">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-[#2d2d2d]">{pet ? 'Edit Pet' : 'Add Pet'}</h2>
-          <button onClick={onClose} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg"><X size={20} /></button>
+          <button onClick={onClose} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg" aria-label="Close"><X size={20} /></button>
         </div>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

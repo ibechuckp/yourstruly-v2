@@ -346,7 +346,7 @@ export default function WisdomPage() {
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4A3552]/40" />
               <input
                 type="text"
-                placeholder="Search your wisdom..."
+                aria-label="Search" placeholder="Search your wisdom..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-xl 
@@ -729,7 +729,8 @@ export default function WisdomPage() {
             ) : sharedEntries.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-icon">
-                  <img src={getCategoryIcon('wisdom')} alt="" className="w-12 h-12 opacity-50" />
+                  
+<img src={getCategoryIcon('wisdom')} alt="" className="w-12 h-12 opacity-50" />
                 </div>
                 <h3 className="empty-state-title">No shared wisdom yet</h3>
                 <p className="empty-state-text">When someone shares their wisdom with you, it will appear here</p>
@@ -801,7 +802,8 @@ export default function WisdomPage() {
           ) : entries.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon">
-                <img src={getCategoryIcon('wisdom')} alt="" className="w-12 h-12 opacity-50" />
+                
+<img src={getCategoryIcon('wisdom')} alt="" className="w-12 h-12 opacity-50" />
               </div>
               <h3 className="empty-state-title">No wisdom yet</h3>
               <p className="empty-state-text mb-4">Share your life lessons and insights to build your wisdom collection</p>

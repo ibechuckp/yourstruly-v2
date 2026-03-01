@@ -199,7 +199,7 @@ export default function ShareMemoryModal({ isOpen, onClose, memoryId, memoryTitl
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name or email..."
+                aria-label="Search" placeholder="Search by name or email..."
                 className="w-full pl-10 pr-4 py-3 bg-[#F2F1E5] border border-gray-200 rounded-xl text-[#2d2d2d] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56] transition-all"
               />
               {isSearching && (

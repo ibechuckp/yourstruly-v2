@@ -107,7 +107,8 @@ function TimelineCard({ postscript, isLeft }: TimelineCardProps) {
         {/* Image Preview */}
         {firstImage && (
           <div className="relative h-32 overflow-hidden">
-            <img src={firstImage.file_url} alt="" className="w-full h-full object-cover" />
+            
+<img src={firstImage.file_url} alt="" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
           </div>
         )}

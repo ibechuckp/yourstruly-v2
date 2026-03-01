@@ -95,7 +95,8 @@ function PostScriptCard({ postscript }: { postscript: PostScript }) {
           {/* Image Preview */}
           {firstImage && (
             <div className="relative h-28 -mx-4 -mt-4 mb-3 rounded-t-xl overflow-hidden">
-              <img src={firstImage.file_url} alt="" className="w-full h-full object-cover" />
+              
+<img src={firstImage.file_url} alt="" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
             </div>
           )}

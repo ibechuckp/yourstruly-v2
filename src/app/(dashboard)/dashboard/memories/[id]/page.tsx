@@ -676,7 +676,8 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
                       selectedMedia?.id === m.id ? 'border-[#406A56]' : 'border-transparent hover:border-gray-300'
                     }`}
                   >
-                    <img src={m.file_url} alt="" className="w-full h-full object-cover" />
+                    
+<img src={m.file_url} alt="" className="w-full h-full object-cover" />
                     {m.is_cover && (
                       <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-amber-600 rounded-full flex items-center justify-center">
                         <Sparkles size={10} className="text-white" />

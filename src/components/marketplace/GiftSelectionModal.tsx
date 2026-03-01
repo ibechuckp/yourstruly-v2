@@ -195,7 +195,7 @@ export default function GiftSelectionModal({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search gifts..."
+              aria-label="Search" placeholder="Search gifts..."
               className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#406A56] transition-colors"
             />
           </div>

@@ -329,7 +329,7 @@ export default function MemoriesPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search memories..."
+                  aria-label="Search" placeholder="Search memories..."
                   className="form-input pl-10 pr-10 w-48 sm:w-64 placeholder:text-[#999]"
                 />
                 {searchQuery && (

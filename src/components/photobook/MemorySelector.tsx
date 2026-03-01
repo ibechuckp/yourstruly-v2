@@ -531,7 +531,7 @@ export default function MemorySelector({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by title, content, or tags..."
+              aria-label="Search" placeholder="Search by title, content, or tags..."
               className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white/80 border border-[#406A56]/20 text-[#2d2d2d] placeholder:text-[#999] focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 transition-all"
             />
             {searchQuery && (
@@ -856,7 +856,8 @@ export default function MemorySelector({
                         className="w-10 h-10 rounded-lg border-2 border-white overflow-hidden flex-shrink-0"
                       >
                         {coverUrl ? (
-                          <img src={coverUrl} alt="" className="w-full h-full object-cover" />
+                          
+<img src={coverUrl} alt="" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-[#406A56]/10 flex items-center justify-center">
                             {getTypeIcon(item)}

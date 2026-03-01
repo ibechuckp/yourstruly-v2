@@ -192,7 +192,7 @@ export default function CirclesPage() {
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#406A56]/50" />
             <input
               type="text"
-              placeholder="Search circles..."
+              aria-label="Search" placeholder="Search circles..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="form-input !pl-12"

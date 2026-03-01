@@ -737,7 +737,8 @@ export default function NewPostScriptPage() {
                   <div className="flex gap-2 overflow-x-auto h-full items-center">
                     {form.attachments.map(att => (
                       <div key={att.id} className="relative h-full aspect-square flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                        <img src={att.preview} alt="" className="w-full h-full object-cover" />
+                        
+<img src={att.preview} alt="" className="w-full h-full object-cover" />
                         <button
                           onClick={() => removeAttachment(att.id)}
                           className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors"

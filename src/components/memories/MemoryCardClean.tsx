@@ -138,7 +138,8 @@ export default function MemoryCardClean({ memory, showReactions = true }: Memory
                   }}
                 >
                   {categoryIcon && (
-                    <img src={categoryIcon} alt="" className="w-3.5 h-3.5" />
+                    
+<img src={categoryIcon} alt="" className="w-3.5 h-3.5" />
                   )}
                   <span className="text-[10px] font-bold uppercase tracking-wider text-gray-700">
                     {memory.ai_category}

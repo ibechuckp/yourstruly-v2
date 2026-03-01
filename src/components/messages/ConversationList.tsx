@@ -66,7 +66,7 @@ export default function ConversationList({
           />
           <input
             type="text"
-            placeholder="Search conversations..."
+            aria-label="Search" placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 bg-[#406A56]/5 border border-[#406A56]/10 rounded-xl text-sm text-[#2d2d2d] placeholder:text-[#999] focus:outline-none focus:border-[#406A56]/30 focus:bg-white transition-all"

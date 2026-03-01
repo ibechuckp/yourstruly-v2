@@ -199,7 +199,8 @@ export default function GalleryStatsPanel({
                           : 'opacity-60 hover:opacity-100'
                       }`}
                     >
-                      <img src={item.file_url} alt="" className="w-full h-full object-cover" />
+                      
+<img src={item.file_url} alt="" className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>

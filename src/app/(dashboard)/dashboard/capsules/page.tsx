@@ -129,7 +129,7 @@ export default function AlbumsPage() {
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search albums..."
+                aria-label="Search" placeholder="Search albums..."
                 className="form-input pl-12 w-full"
               />
             </div>

@@ -307,7 +307,8 @@ export function ReviewScreen({
               <div key={contact.id} className="review-tagged-contact">
                 <div className="review-tagged-avatar">
                   {contact.avatar_url ? (
-                    <img src={contact.avatar_url} alt="" />
+                    <img src={contact.avatar_url}
+                alt="" alt="" />
                   ) : (
                     <span>{contact.full_name.charAt(0)}</span>
                   )}
@@ -338,7 +339,7 @@ export function ReviewScreen({
                 setShowContactDropdown(true);
               }}
               onFocus={() => setShowContactDropdown(true)}
-              placeholder="Search contacts to tag..."
+              aria-label="Search" placeholder="Search contacts to tag..."
               className="review-search-input"
             />
             {loadingContacts && (
@@ -370,7 +371,8 @@ export function ReviewScreen({
                   >
                     <div className="review-contact-option-avatar">
                       {contact.avatar_url ? (
-                        <img src={contact.avatar_url} alt="" />
+                        <img src={contact.avatar_url}
+                alt="" alt="" />
                       ) : (
                         <span>{contact.full_name.charAt(0)}</span>
                       )}
@@ -412,7 +414,8 @@ export function ReviewScreen({
         <div className="review-photos-grid">
           {photos.map((photo, index) => (
             <div key={index} className="review-photo-item">
-              <img src={photo.preview} alt="" />
+              
+<img src={photo.preview} alt="" />
               <button 
                 onClick={() => removePhoto(index)}
                 className="review-photo-remove"

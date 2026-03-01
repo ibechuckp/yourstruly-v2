@@ -459,7 +459,8 @@ export default function AlbumDetailPage({ params }: PageProps) {
                 <GripVertical size={20} className="text-gray-400 flex-shrink-0" />
                 <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
                   {coverMedia ? (
-                    <img src={coverMedia.file_url} alt="" className="w-full h-full object-cover" />
+                    
+<img src={coverMedia.file_url} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <ImageIcon size={24} className="text-gray-400" />
