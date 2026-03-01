@@ -24,7 +24,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen relative">
       <TopNav user={user} profile={profile} />
-      <main className="pt-14">
+      <main id="main-content" className="pt-14" role="main">
         {children}
       </main>
     </div>

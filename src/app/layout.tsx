@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Caveat, Playfair_Display, Patrick_Hand, Inter_Tight,
 import Script from "next/script";
 import "./globals.css";
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { SkipToMain } from "@/components/ui/AccessibleIcon";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -77,6 +78,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${interTight.variable} ${caveat.variable} ${patrickHand.variable} ${playfair.variable} ${dancingScript.variable} ${crimsonText.variable} antialiased`}
       >
+        <SkipToMain />
         {children}
       </body>
     </html>

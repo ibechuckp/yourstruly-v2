@@ -804,7 +804,7 @@ export default function DashboardPage() {
                           {hasPhoto && (
                             <img 
                               src={prompt.photoUrl} 
-                              alt="" 
+                              alt={`Photo for ${getPromptText(prompt).substring(0, 50)}`}
                               className={`bubble-photo ${isTall ? 'bubble-photo-tall' : ''}`}
                             />
                           )}

@@ -333,7 +333,11 @@ export default function MemoriesPage() {
                   className="form-input pl-10 pr-10 w-48 sm:w-64 placeholder:text-[#999]"
                 />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#406A56]/50 hover:text-[#406A56]">
+                  <button 
+                    onClick={() => setSearchQuery('')} 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#406A56]/50 hover:text-[#406A56]"
+                    aria-label="Clear search"
+                  >
                     <X size={16} />
                   </button>
                 )}
@@ -341,34 +345,38 @@ export default function MemoriesPage() {
 
               {/* View Mode Toggle - only show when in "All" browse mode */}
               {browseMode === 'all' && (
-              <div className="hidden sm:flex items-center glass-card-page p-1">
+              <div className="hidden sm:flex items-center glass-card-page p-1" role="group" aria-label="View mode">
                 <button
                   onClick={() => setViewMode('timeline')}
                   className={`p-2 rounded-lg transition-all ${viewMode === 'timeline' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'}`}
-                  title="Timeline View"
+                  aria-label="Timeline View"
+                  aria-pressed={viewMode === 'timeline'}
                 >
-                  <Clock size={18} />
+                  <Clock size={18} aria-hidden="true" />
                 </button>
                 <button
                   onClick={() => setViewMode('scrapbook')}
                   className={`p-2 rounded-lg transition-all ${viewMode === 'scrapbook' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'}`}
-                  title="Scrapbook View"
+                  aria-label="Scrapbook View"
+                  aria-pressed={viewMode === 'scrapbook'}
                 >
-                  <Album size={18} />
+                  <Album size={18} aria-hidden="true" />
                 </button>
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'}`}
-                  title="Grid View"
+                  aria-label="Grid View"
+                  aria-pressed={viewMode === 'grid'}
                 >
-                  <Grid size={18} />
+                  <Grid size={18} aria-hidden="true" />
                 </button>
                 <button
                   onClick={() => setViewMode('cards')}
                   className={`p-2 rounded-lg transition-all ${viewMode === 'cards' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'}`}
-                  title="Cards View"
+                  aria-label="Cards View"
+                  aria-pressed={viewMode === 'cards'}
                 >
-                  <List size={18} />
+                  <List size={18} aria-hidden="true" />
                 </button>
               </div>
               )}
