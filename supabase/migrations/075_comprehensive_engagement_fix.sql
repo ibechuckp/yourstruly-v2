@@ -136,9 +136,7 @@ SELECT
   mm.id as media_id,
   mm.user_id,
   mm.file_url,
-  mm.thumbnail_url,
-  mm.created_at,
-  mm.ai_description
+  mm.created_at
 FROM memory_media mm
 WHERE mm.memory_id IS NULL
   AND mm.file_type LIKE 'image/%'
