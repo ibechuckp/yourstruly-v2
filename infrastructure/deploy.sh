@@ -70,8 +70,9 @@ build() {
     docker build \
         --build-arg NEXT_PUBLIC_SUPABASE_URL="$supabase_url" \
         --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="$supabase_anon_key" \
-        --build-arg NEXT_PUBLIC_APP_URL="https://yourstruly.love" \
+        --build-arg NEXT_PUBLIC_APP_URL="https://app.yourstruly.love" \
         --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_live_51OACyuH94XbyUkwAKkDn9IRXSNnTKPKDzWNVNxMBLD7ExvvRxsbXj8dZOEnUheLu99jdJx9y5HN0w5X67gzTNywm00AMJhykYn" \
+        --build-arg NEXT_PUBLIC_MAPBOX_TOKEN="$MAPBOX_TOKEN" \
         -t "$PROJECT_NAME:latest" \
         .
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendSMS, SMS_TEMPLATES } from '@/lib/telnyx';
-import { sendEmail, getResend } from '@/lib/email';
+import { getResend } from '@/lib/email';
 import { nanoid } from 'nanoid';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.yourstruly.love';
