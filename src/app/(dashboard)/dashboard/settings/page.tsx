@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { ChevronLeft, User, Bell, Shield, Download, Trash2, LogOut, Sparkles, Loader2, CreditCard, ChevronRight } from 'lucide-react'
+import { ChevronLeft, User, Bell, Download, Trash2, LogOut, Sparkles, Loader2, CreditCard, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import '@/styles/page-styles.css'
@@ -11,7 +11,6 @@ interface Settings {
   email_notifications: boolean
   memory_reminders: boolean
   share_notifications: boolean
-  public_profile: boolean
 }
 
 export default function SettingsPage() {
@@ -19,7 +18,6 @@ export default function SettingsPage() {
     email_notifications: true,
     memory_reminders: true,
     share_notifications: true,
-    public_profile: false,
   })
   const [email, setEmail] = useState('')
   const [saving, setSaving] = useState(false)
@@ -256,29 +254,6 @@ export default function SettingsPage() {
                 />
               </label>
             </div>
-          </section>
-
-          {/* Privacy Section */}
-          <section className="glass-card-page p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#4A3552]/10 flex items-center justify-center">
-                <Shield size={20} className="text-[#4A3552]" />
-              </div>
-              <h2 className="text-lg font-semibold text-[#2d2d2d]">Privacy</h2>
-            </div>
-            
-            <label className="flex items-center justify-between cursor-pointer">
-              <div>
-                <p className="text-[#2d2d2d] font-medium">Public Profile</p>
-                <p className="text-sm text-[#666]">Allow others to view your profile</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={settings.public_profile}
-                onChange={(e) => setSettings({ ...settings, public_profile: e.target.checked })}
-                className="w-5 h-5 rounded bg-white border-[#406A56]/20 text-[#406A56] focus:ring-[#406A56]"
-              />
-            </label>
           </section>
 
           {/* Save Button */}
