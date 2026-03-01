@@ -135,7 +135,7 @@
   flex-direction: row;
   min-height: calc(100vh - var(--nav-height));
   padding: var(--page-padding);
-  padding-top: 12px; /* Layout already handles nav height with pt-14 */
+  padding-top: var(--page-padding); /* Match left/right padding */
   gap: var(--sidebar-gap);
 }
 
@@ -150,7 +150,7 @@
   gap: 16px;
   max-height: calc(100vh - var(--nav-height) - var(--page-padding));
   position: sticky;
-  top: 12px; /* Relative to scrolling container, not viewport */
+  top: var(--page-padding); /* Match layout padding */
 }
 
 /* Hide sidebar on mobile/tablet */

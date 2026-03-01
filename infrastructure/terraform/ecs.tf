@@ -152,6 +152,22 @@ resource "aws_ecs_task_definition" "main" {
       {
         name      = "RESEND_API_KEY"
         valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:RESEND_API_KEY::"
+      },
+      {
+        name      = "GEMINI_API_KEY"
+        valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:GEMINI_API_KEY::"
+      },
+      {
+        name      = "ANTHROPIC_API_KEY"
+        valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:ANTHROPIC_API_KEY::"
+      },
+      {
+        name      = "TELNYX_API_KEY"
+        valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:TELNYX_API_KEY::"
+      },
+      {
+        name      = "TELNYX_FROM_NUMBER"
+        valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:TELNYX_FROM_NUMBER::"
       }
     ]
 
