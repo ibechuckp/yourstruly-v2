@@ -3,6 +3,45 @@
 -- Focuses on happy/positive moments, avoids difficult topics
 
 -- ============================================
+-- STEP 0: Add new enum values for prompt types
+-- ============================================
+DO $$ 
+BEGIN
+  -- Add contact_story type
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum 
+    WHERE enumlabel = 'contact_story' 
+    AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'prompt_type')
+  ) THEN
+    ALTER TYPE prompt_type ADD VALUE 'contact_story';
+  END IF;
+END $$;
+
+DO $$ 
+BEGIN
+  -- Add memory_elaboration type
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum 
+    WHERE enumlabel = 'memory_elaboration' 
+    AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'prompt_type')
+  ) THEN
+    ALTER TYPE prompt_type ADD VALUE 'memory_elaboration';
+  END IF;
+END $$;
+
+DO $$ 
+BEGIN
+  -- Add wisdom_elaboration type
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum 
+    WHERE enumlabel = 'wisdom_elaboration' 
+    AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'prompt_type')
+  ) THEN
+    ALTER TYPE prompt_type ADD VALUE 'wisdom_elaboration';
+  END IF;
+END $$;
+
+-- ============================================
 -- STEP 1: Add photo task templates
 -- ============================================
 INSERT INTO prompt_templates (id, type, category, prompt_text, priority_boost, is_active) VALUES
