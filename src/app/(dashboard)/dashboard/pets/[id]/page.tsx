@@ -416,7 +416,7 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
                     <div key={contact.id} className="flex items-center gap-3">
                       {contact.avatar_url ? (
                         <img src={contact.avatar_url}
-                alt="" alt="" className="w-10 h-10 rounded-full object-cover" />
+                alt="" className="w-10 h-10 rounded-full object-cover" />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-[#406A56]/10 flex items-center justify-center">
                           <User size={18} className="text-[#406A56]" />
@@ -721,7 +721,7 @@ function PetEditModal({
                     <div className="flex items-center gap-3">
                       {contact.avatar_url ? (
                         <img src={contact.avatar_url}
-                alt="" alt="" className="w-8 h-8 rounded-full object-cover" />
+                alt="" className="w-8 h-8 rounded-full object-cover" />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-[#406A56]/20 flex items-center justify-center">
                           <User size={14} className="text-[#406A56]" />
@@ -766,7 +766,7 @@ function PetEditModal({
                       >
                         {contact.avatar_url ? (
                           <img src={contact.avatar_url}
-                alt="" alt="" className="w-8 h-8 rounded-full object-cover" />
+                alt="" className="w-8 h-8 rounded-full object-cover" />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-[#406A56]/20 flex items-center justify-center">
                             <User size={14} className="text-[#406A56]" />

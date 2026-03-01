@@ -164,7 +164,7 @@ export default function PostScriptRecipientPage({ params }: { params: Promise<{ 
           <div className="w-16 h-16 rounded-full bg-[#406A56]/20 flex items-center justify-center mx-auto mb-4 overflow-hidden">
             {postscript.sender_avatar ? (
               <img src={postscript.sender_avatar}
-                alt="" alt="" className="w-full h-full object-cover" />
+                alt="" className="w-full h-full object-cover" />
             ) : (
               <User className="w-8 h-8 text-[#406A56]" />
             )}

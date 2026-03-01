@@ -308,7 +308,7 @@ export function ReviewScreen({
                 <div className="review-tagged-avatar">
                   {contact.avatar_url ? (
                     <img src={contact.avatar_url}
-                alt="" alt="" />
+                alt="" />
                   ) : (
                     <span>{contact.full_name.charAt(0)}</span>
                   )}
@@ -372,7 +372,7 @@ export function ReviewScreen({
                     <div className="review-contact-option-avatar">
                       {contact.avatar_url ? (
                         <img src={contact.avatar_url}
-                alt="" alt="" />
+                alt="" />
                       ) : (
                         <span>{contact.full_name.charAt(0)}</span>
                       )}

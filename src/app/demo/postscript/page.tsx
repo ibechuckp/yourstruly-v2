@@ -214,7 +214,7 @@ export default function PostScriptDemoPage() {
               <div className="w-16 h-16 rounded-full bg-[#406A56]/20 flex items-center justify-center mx-auto mb-4 overflow-hidden paper-texture-cream">
                 {selectedDemo.sender_avatar ? (
                   <img src={selectedDemo.sender_avatar}
-                alt="" alt="" className="w-full h-full object-cover" />
+                alt="" className="w-full h-full object-cover" />
                 ) : (
                   <User className="w-8 h-8 text-[#406A56]" />
                 )}

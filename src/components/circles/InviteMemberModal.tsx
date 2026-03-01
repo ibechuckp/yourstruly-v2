@@ -256,7 +256,7 @@ export default function InviteMemberModal({
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#406A56] to-[#8DACAB] flex items-center justify-center text-white font-medium overflow-hidden">
                           {contact.avatar_url ? (
                             <img src={contact.avatar_url}
-                alt="" alt="" className="w-full h-full object-cover" />
+                alt="" className="w-full h-full object-cover" />
                           ) : (
                             contact.full_name.charAt(0)
                           )}
