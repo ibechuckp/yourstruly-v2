@@ -370,9 +370,14 @@ The YoursTruly Team
 
 export async function sendCircleInviteEmail(data: CircleInviteEmailData): Promise<EmailResult> {
   try {
+    const resend = getResend();
+    if (!resend) {
+      return { success: false, error: 'Email service not configured' };
+    }
+    
     const template = circleInviteTemplate(data);
     
-    const { data: result, error } = await getResend().emails.send({
+    const { data: result, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: data.recipientEmail,
       subject: template.subject,
@@ -395,9 +400,14 @@ export async function sendCircleInviteEmail(data: CircleInviteEmailData): Promis
 
 export async function sendDeathClaimReceivedEmail(data: DeathClaimReceivedEmailData): Promise<EmailResult> {
   try {
+    const resend = getResend();
+    if (!resend) {
+      return { success: false, error: 'Email service not configured' };
+    }
+    
     const template = deathClaimReceivedTemplate(data);
     
-    const { data: result, error } = await getResend().emails.send({
+    const { data: result, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: data.recipientEmail,
       subject: template.subject,
@@ -420,9 +430,14 @@ export async function sendDeathClaimReceivedEmail(data: DeathClaimReceivedEmailD
 
 export async function sendDeathClaimStatusEmail(data: DeathClaimStatusEmailData): Promise<EmailResult> {
   try {
+    const resend = getResend();
+    if (!resend) {
+      return { success: false, error: 'Email service not configured' };
+    }
+    
     const template = deathClaimStatusTemplate(data);
     
-    const { data: result, error } = await getResend().emails.send({
+    const { data: result, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: data.recipientEmail,
       subject: template.subject,
@@ -445,7 +460,12 @@ export async function sendDeathClaimStatusEmail(data: DeathClaimStatusEmailData)
 
 export async function sendAdminNotificationEmail(data: AdminNotificationEmailData): Promise<EmailResult> {
   try {
-    const { data: result, error } = await getResend().emails.send({
+    const resend = getResend();
+    if (!resend) {
+      return { success: false, error: 'Email service not configured' };
+    }
+    
+    const { data: result, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: data.recipientEmail,
       subject: data.subject,
