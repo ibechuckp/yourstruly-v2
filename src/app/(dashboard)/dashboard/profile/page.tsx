@@ -895,7 +895,7 @@ function EditModal({
                 {profile.avatar_url ? (
                   <div className="relative">
                     <img src={profile.avatar_url}
-                alt="" alt="Profile" className="w-28 h-28 rounded-full object-cover border-4 border-[#406A56]/20" />
+                alt="Profile photo" className="w-28 h-28 rounded-full object-cover border-4 border-[#406A56]/20" />
                     <label className="absolute bottom-0 right-0 w-9 h-9 bg-[#406A56] text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-[#355a48]">
                       <Camera size={16} />
                       <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploading} />
