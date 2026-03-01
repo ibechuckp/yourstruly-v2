@@ -12,10 +12,11 @@ import { Resend } from 'resend';
 
 // Lazy initialization to avoid build-time errors
 let resendInstance: Resend | null = null;
-function getResend(): Resend {
+export function getResend(): Resend | null {
   if (!resendInstance) {
     if (!process.env.RESEND_API_KEY) {
-      throw new Error('RESEND_API_KEY environment variable is required');
+      console.warn('RESEND_API_KEY not configured - email sending disabled');
+      return null;
     }
     resendInstance = new Resend(process.env.RESEND_API_KEY);
   }
