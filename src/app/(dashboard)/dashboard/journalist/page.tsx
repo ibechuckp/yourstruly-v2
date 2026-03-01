@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/page-styles.css'
+import { SMSConsentInline } from '@/components/ui/SMSConsentCheckbox'
 
 interface Contact {
   id: string
@@ -104,6 +105,7 @@ export default function JournalistPage() {
   
   const [creating, setCreating] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
+  const [smsConsent, setSmsConsent] = useState(false)
   
   const supabase = createClient()
 
@@ -855,11 +857,19 @@ export default function JournalistPage() {
                     )}
                   </div>
 
-                  {/* Create Button */}
-                  <div className="p-4 border-t border-[#E8E7DC]">
+                  {/* SMS Consent + Create Button */}
+                  <div className="p-4 border-t border-[#E8E7DC] space-y-4">
+                    {/* SMS Consent - show if any recipient has a phone number */}
+                    {getSelectedRecipients().some(r => r.phone) && (
+                      <SMSConsentInline
+                        checked={smsConsent}
+                        onChange={setSmsConsent}
+                      />
+                    )}
+                    
                     <button
                       onClick={handleCreateSession}
-                      disabled={creating || (!selectedQuestion && !customQuestion.trim())}
+                      disabled={creating || (!selectedQuestion && !customQuestion.trim()) || (getSelectedRecipients().some(r => r.phone) && !smsConsent)}
                       className="w-full py-3 bg-[#C35F33] hover:bg-[#a54d28] text-white rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       {creating ? (
