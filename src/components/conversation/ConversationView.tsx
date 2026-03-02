@@ -9,7 +9,18 @@ import { ConversationHistory } from './ConversationHistory';
 import { AIPromptBubble } from './AIPromptBubble';
 import { ReviewScreen } from './ReviewScreen';
 import { ScopeSelector, type ScopeSelection } from '@/components/circles';
-import type { EngagementPrompt } from '@/types/engagement';
+
+// Partial prompt type - only fields actually used by ConversationView
+interface ConversationPrompt {
+  id: string;
+  type: string;
+  promptText: string;
+  photoUrl?: string;
+  photoId?: string;
+  contactId?: string;
+  contactName?: string;
+  steps?: string[];
+}
 
 interface Exchange {
   question: string;
@@ -19,7 +30,7 @@ interface Exchange {
 }
 
 interface ConversationViewProps {
-  prompt: EngagementPrompt;
+  prompt: ConversationPrompt;
   expectedXp?: number;  // XP value from prompt type config
   onComplete: (result: {
     exchanges: Exchange[];

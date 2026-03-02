@@ -50,7 +50,7 @@ export async function PATCH(
     const { data: wisdom, error: updateError } = await supabase
       .from('memories')
       .update({ 
-        category,
+        ai_category: category,  // Column is ai_category, not category
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
