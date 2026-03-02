@@ -32,6 +32,11 @@ export function useCart() {
 
   // Load cart from localStorage on mount
   useEffect(() => {
+    // Only access localStorage in browser
+    if (typeof window === 'undefined') {
+      setIsLoaded(true);
+      return;
+    }
     try {
       const stored = localStorage.getItem(CART_STORAGE_KEY);
       if (stored) {
@@ -46,6 +51,8 @@ export function useCart() {
 
   // Save cart to localStorage when items change
   useEffect(() => {
+    // Only access localStorage in browser
+    if (typeof window === 'undefined') return;
     if (isLoaded) {
       try {
         const state: CartState = {

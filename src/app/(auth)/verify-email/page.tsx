@@ -1,16 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
 import { Mail, ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
 
-interface PageProps {
-  searchParams: { email?: string };
-}
-
-export default function VerifyEmailPage({ searchParams }: PageProps) {
-  const email = searchParams.email || '';
+function VerifyEmailContent() {
+  const searchParams = useSearchParams();
+  const email = searchParams.get('email') || '';
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
   const supabase = createClient();
@@ -91,5 +88,17 @@ export default function VerifyEmailPage({ searchParams }: PageProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#FDF8F3] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#406A56]" />
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }
