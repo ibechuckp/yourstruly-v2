@@ -1,4 +1,4 @@
-// Voice Chat Components - OpenAI Realtime Voice Memory Capture
+// Voice Chat Components - PersonaPlex Voice Memory Capture
 export { VoiceChat } from './VoiceChat'
 export { VoiceChatUI } from './VoiceChatUI'
 export { VoiceVideoChat } from './VoiceVideoChat'
@@ -15,5 +15,8 @@ export {
 } from '@/types/voice'
 
 // Re-export hooks
-export { useMemoryVoiceChat } from '@/hooks/useMemoryVoiceChat'
+export { usePersonaPlexVoice } from '@/hooks/usePersonaPlexVoice'
 export { useVideoRecorder } from '@/hooks/useVideoRecorder'
+
+// Re-export PersonaPlex voice types
+export type { PersonaPlexVoice, PersonaPlexState } from '@/hooks/usePersonaPlexVoice'

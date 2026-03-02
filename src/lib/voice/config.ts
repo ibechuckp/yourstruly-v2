@@ -1,126 +1,40 @@
 /**
  * Voice Provider Configuration
  * 
- * Abstraction layer for voice providers (OpenAI, PersonaPlex).
- * Handles voice mapping and provider selection.
+ * PersonaPlex-only voice configuration.
+ * PersonaPlex is a self-hosted NVIDIA Moshi-based voice chat service.
  */
 
-import type { Voice } from '@/types/voice'
-
 // ============================================================================
-// Voice Provider Types
+// PersonaPlex Voice Types
 // ============================================================================
-
-export type VoiceProvider = 'openai' | 'personaplex'
 
 // PersonaPlex voice IDs
 export type PersonaPlexVoice = 
-  | 'NATF0' | 'NATF1' | 'NATF2'  // Female voices
-  | 'NATM0' | 'NATM1' | 'NATM2'  // Male voices
+  | 'NATF0' | 'NATF1' | 'NATF2' | 'NATF3'  // Female voices
+  | 'NATM0' | 'NATM1' | 'NATM2' | 'NATM3'  // Male voices
+  | 'VARF0' | 'VARF1' | 'VARF2' | 'VARF3' | 'VARF4'  // Variable female
+  | 'VARM0' | 'VARM1' | 'VARM2' | 'VARM3' | 'VARM4'  // Variable male
 
-// ============================================================================
-// Voice Mapping
-// ============================================================================
-
-/**
- * Map OpenAI voices to PersonaPlex equivalents
- * Based on voice characteristics (warm/neutral, male/female)
- */
-export const OPENAI_TO_PERSONAPLEX: Record<Voice, PersonaPlexVoice> = {
-  // Female voices
-  'alloy': 'NATF0',    // Alloy → NATF0 (neutral female)
-  'nova': 'NATF1',     // Nova → NATF1 (warm female)
-  'shimmer': 'NATF2',  // Shimmer → NATF2 (bright female)
-  'coral': 'NATF1',    // Coral → NATF1 (warm female, YT default)
-  'sage': 'NATF2',     // Sage → NATF2 (calm female)
-  'marin': 'NATF0',    // Marin → NATF0 (neutral female)
-  
-  // Male voices
-  'echo': 'NATM0',     // Echo → NATM0 (neutral male)
-  'fable': 'NATM1',    // Fable → NATM1 (expressive male)
-  'onyx': 'NATM2',     // Onyx → NATM2 (deep male)
-  'ash': 'NATM0',      // Ash → NATM0 (neutral male)
-  'ballad': 'NATM1',   // Ballad → NATM1 (storyteller male)
-  'cedar': 'NATM2',    // Cedar → NATM2 (deep male)
-  'verse': 'NATM1',    // Verse → NATM1 (expressive male)
-}
-
-/**
- * Map PersonaPlex voices back to OpenAI equivalents
- * (for display purposes or fallback)
- */
-export const PERSONAPLEX_TO_OPENAI: Record<PersonaPlexVoice, Voice> = {
-  'NATF0': 'alloy',
-  'NATF1': 'coral',   // Default warm female
-  'NATF2': 'shimmer',
-  'NATM0': 'echo',
-  'NATM1': 'fable',
-  'NATM2': 'onyx',
-}
+// Default voice - warm, friendly female
+export const DEFAULT_VOICE: PersonaPlexVoice = 'NATF1'
 
 // ============================================================================
 // Provider Configuration
 // ============================================================================
 
-export interface VoiceProviderConfig {
-  provider: VoiceProvider
-  openaiApiUrl: string
-  personaplexUrl: string
+/**
+ * Get the PersonaPlex server URL from environment
+ */
+export function getPersonaPlexUrl(): string {
+  return process.env.NEXT_PUBLIC_PERSONAPLEX_URL || 'wss://100.97.242.10:8998/api/chat'
 }
 
 /**
- * Get voice provider configuration from environment
+ * Check if PersonaPlex is configured
  */
-export function getVoiceProviderConfig(): VoiceProviderConfig {
-  const provider = (process.env.NEXT_PUBLIC_VOICE_PROVIDER as VoiceProvider) || 'openai'
-  
-  return {
-    provider,
-    openaiApiUrl: 'https://api.openai.com/v1/realtime',
-    personaplexUrl: process.env.NEXT_PUBLIC_PERSONAPLEX_URL || 'https://100.97.242.10:8998',
-  }
-}
-
-/**
- * Get the default voice provider from environment
- */
-export function getDefaultProvider(): VoiceProvider {
-  return (process.env.NEXT_PUBLIC_VOICE_PROVIDER as VoiceProvider) || 'openai'
-}
-
-/**
- * Check if PersonaPlex is available (URL configured)
- */
-export function isPersonaPlexAvailable(): boolean {
+export function isPersonaPlexConfigured(): boolean {
   return !!process.env.NEXT_PUBLIC_PERSONAPLEX_URL
-}
-
-// ============================================================================
-// Voice Conversion Utilities
-// ============================================================================
-
-/**
- * Convert an OpenAI voice to the equivalent PersonaPlex voice
- */
-export function toPersonaPlexVoice(openaiVoice: Voice): PersonaPlexVoice {
-  return OPENAI_TO_PERSONAPLEX[openaiVoice] || 'NATF1' // Default to warm female
-}
-
-/**
- * Convert a PersonaPlex voice to the equivalent OpenAI voice
- */
-export function toOpenAIVoice(personaplexVoice: PersonaPlexVoice): Voice {
-  return PERSONAPLEX_TO_OPENAI[personaplexVoice] || 'coral' // Default to coral
-}
-
-/**
- * Get the voice ID for a specific provider
- */
-export function getProviderVoice(voice: Voice, provider: VoiceProvider): string {
-  if (provider === 'personaplex') {
-    return toPersonaPlexVoice(voice)
-  }
-  return voice
 }
 
 // ============================================================================
@@ -128,7 +42,7 @@ export function getProviderVoice(voice: Voice, provider: VoiceProvider): string 
 // ============================================================================
 
 export interface VoiceInfo {
-  id: string
+  id: PersonaPlexVoice
   name: string
   description: string
   gender: 'female' | 'male'
@@ -136,26 +50,50 @@ export interface VoiceInfo {
 }
 
 export const PERSONAPLEX_VOICES: Record<PersonaPlexVoice, VoiceInfo> = {
+  // Natural Female voices
   'NATF0': { id: 'NATF0', name: 'Natural Female 0', description: 'Neutral, clear female voice', gender: 'female', tone: 'neutral' },
-  'NATF1': { id: 'NATF1', name: 'Natural Female 1', description: 'Warm, friendly female voice', gender: 'female', tone: 'warm' },
+  'NATF1': { id: 'NATF1', name: 'Natural Female 1', description: 'Warm, friendly female voice (default)', gender: 'female', tone: 'warm' },
   'NATF2': { id: 'NATF2', name: 'Natural Female 2', description: 'Bright, energetic female voice', gender: 'female', tone: 'bright' },
+  'NATF3': { id: 'NATF3', name: 'Natural Female 3', description: 'Calm, soothing female voice', gender: 'female', tone: 'neutral' },
+  
+  // Natural Male voices
   'NATM0': { id: 'NATM0', name: 'Natural Male 0', description: 'Neutral, clear male voice', gender: 'male', tone: 'neutral' },
   'NATM1': { id: 'NATM1', name: 'Natural Male 1', description: 'Warm, expressive male voice', gender: 'male', tone: 'warm' },
   'NATM2': { id: 'NATM2', name: 'Natural Male 2', description: 'Deep, resonant male voice', gender: 'male', tone: 'deep' },
+  'NATM3': { id: 'NATM3', name: 'Natural Male 3', description: 'Calm, steady male voice', gender: 'male', tone: 'neutral' },
+  
+  // Variable Female voices (more expressive range)
+  'VARF0': { id: 'VARF0', name: 'Variable Female 0', description: 'Versatile female voice', gender: 'female', tone: 'neutral' },
+  'VARF1': { id: 'VARF1', name: 'Variable Female 1', description: 'Expressive female voice', gender: 'female', tone: 'warm' },
+  'VARF2': { id: 'VARF2', name: 'Variable Female 2', description: 'Dynamic female voice', gender: 'female', tone: 'bright' },
+  'VARF3': { id: 'VARF3', name: 'Variable Female 3', description: 'Animated female voice', gender: 'female', tone: 'warm' },
+  'VARF4': { id: 'VARF4', name: 'Variable Female 4', description: 'Theatrical female voice', gender: 'female', tone: 'bright' },
+  
+  // Variable Male voices (more expressive range)
+  'VARM0': { id: 'VARM0', name: 'Variable Male 0', description: 'Versatile male voice', gender: 'male', tone: 'neutral' },
+  'VARM1': { id: 'VARM1', name: 'Variable Male 1', description: 'Expressive male voice', gender: 'male', tone: 'warm' },
+  'VARM2': { id: 'VARM2', name: 'Variable Male 2', description: 'Dynamic male voice', gender: 'male', tone: 'deep' },
+  'VARM3': { id: 'VARM3', name: 'Variable Male 3', description: 'Animated male voice', gender: 'male', tone: 'warm' },
+  'VARM4': { id: 'VARM4', name: 'Variable Male 4', description: 'Theatrical male voice', gender: 'male', tone: 'deep' },
 }
 
-export const OPENAI_VOICES: Record<Voice, VoiceInfo> = {
-  'alloy': { id: 'alloy', name: 'Alloy', description: 'Neutral, versatile voice', gender: 'female', tone: 'neutral' },
-  'ash': { id: 'ash', name: 'Ash', description: 'Calm, balanced voice', gender: 'male', tone: 'neutral' },
-  'ballad': { id: 'ballad', name: 'Ballad', description: 'Storytelling voice', gender: 'male', tone: 'warm' },
-  'coral': { id: 'coral', name: 'Coral', description: 'Warm, friendly voice (YT default)', gender: 'female', tone: 'warm' },
-  'echo': { id: 'echo', name: 'Echo', description: 'Clear, direct voice', gender: 'male', tone: 'neutral' },
-  'fable': { id: 'fable', name: 'Fable', description: 'Expressive, animated voice', gender: 'male', tone: 'warm' },
-  'marin': { id: 'marin', name: 'Marin', description: 'Gentle, soothing voice', gender: 'female', tone: 'neutral' },
-  'nova': { id: 'nova', name: 'Nova', description: 'Warm, engaging voice', gender: 'female', tone: 'warm' },
-  'onyx': { id: 'onyx', name: 'Onyx', description: 'Deep, authoritative voice', gender: 'male', tone: 'deep' },
-  'sage': { id: 'sage', name: 'Sage', description: 'Calm, wise voice', gender: 'female', tone: 'neutral' },
-  'shimmer': { id: 'shimmer', name: 'Shimmer', description: 'Bright, upbeat voice', gender: 'female', tone: 'bright' },
-  'cedar': { id: 'cedar', name: 'Cedar', description: 'Grounded, steady voice', gender: 'male', tone: 'deep' },
-  'verse': { id: 'verse', name: 'Verse', description: 'Poetic, expressive voice', gender: 'male', tone: 'warm' },
+/**
+ * Get voice info by ID
+ */
+export function getVoiceInfo(voice: PersonaPlexVoice): VoiceInfo {
+  return PERSONAPLEX_VOICES[voice] || PERSONAPLEX_VOICES[DEFAULT_VOICE]
+}
+
+/**
+ * Get all available voices
+ */
+export function getAllVoices(): VoiceInfo[] {
+  return Object.values(PERSONAPLEX_VOICES)
+}
+
+/**
+ * Get voices by gender
+ */
+export function getVoicesByGender(gender: 'female' | 'male'): VoiceInfo[] {
+  return Object.values(PERSONAPLEX_VOICES).filter(v => v.gender === gender)
 }

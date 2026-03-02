@@ -2,33 +2,27 @@
 
 import { useCallback, useRef, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Video, VideoOff, Camera, Loader2 } from 'lucide-react'
-import { useMemoryVoiceChat } from '@/hooks/useMemoryVoiceChat'
+import { VideoOff, Camera, Loader2 } from 'lucide-react'
 import { usePersonaPlexVoice, type PersonaPlexVoice } from '@/hooks/usePersonaPlexVoice'
 import { useVideoRecorder } from '@/hooks/useVideoRecorder'
 import { VoiceChatUI } from './VoiceChatUI'
 import { createClient } from '@/lib/supabase/client'
 import type { 
-  Voice, 
   VoiceSessionType, 
   PersonaConfig,
   VoiceSessionResult,
-  VoiceProvider,
 } from '@/types/voice'
 import { JOURNALIST_PERSONA, FRIEND_PERSONA, LIFE_STORY_PERSONA } from '@/types/voice'
-import { getDefaultProvider, toPersonaPlexVoice } from '@/lib/voice/config'
 
 export interface VoiceVideoChatProps {
-  /** Voice provider - defaults to env config */
-  provider?: VoiceProvider
   /** Session type */
   sessionType?: VoiceSessionType
   /** Optional topic */
   topic?: string
   /** Optional contact ID */
   contactId?: string
-  /** Voice to use */
-  voice?: Voice
+  /** Voice to use - defaults to 'NATF1' (warm female) */
+  voice?: PersonaPlexVoice
   /** Persona name shorthand */
   personaName?: 'journalist' | 'friend' | 'life-story'
   /** Custom persona config */
@@ -58,17 +52,16 @@ export interface VoiceVideoChatProps {
 }
 
 /**
- * VoiceVideoChat - Combined voice + video memory capture
+ * VoiceVideoChat - Combined voice + video memory capture using PersonaPlex
  * 
  * Extends VoiceChat to optionally record video alongside the audio conversation.
  * Video is uploaded to Supabase storage and linked to the memory.
  */
 export function VoiceVideoChat({
-  provider: providerProp,
   sessionType = 'memory_capture',
   topic,
   contactId,
-  voice = 'coral',
+  voice = 'NATF1',
   personaName = 'journalist',
   persona,
   maxQuestions = 5,
@@ -89,16 +82,9 @@ export function VoiceVideoChat({
   const [showVideoPreview, setShowVideoPreview] = useState(false)
   const [hasAutoStarted, setHasAutoStarted] = useState(false)
   const savedMemoryIdRef = useRef<string | null>(null)
-  
-  // Determine provider (prop > env > default)
-  const provider = providerProp || getDefaultProvider()
-  const isPersonaPlex = provider === 'personaplex'
 
   // Get persona
   const selectedPersona = persona || getPersonaByName(personaName)
-  
-  // PersonaPlex voice conversion
-  const ppVoice = toPersonaPlexVoice(voice) as PersonaPlexVoice
 
   // Video recorder hook
   const {
@@ -118,142 +104,180 @@ export function VoiceVideoChat({
     onError,
   })
 
-  // Track PersonaPlex session state
-  const [ppQuestionCount, setPpQuestionCount] = useState(0)
-  const [ppSessionDuration, setPpSessionDuration] = useState(0)
-  const [ppIsSaving, setPpIsSaving] = useState(false)
+  // Track session state
+  const [questionCount, setQuestionCount] = useState(0)
+  const [sessionDuration, setSessionDuration] = useState(0)
+  const [isSaving, setIsSaving] = useState(false)
 
-  // PersonaPlex hook (only active when provider is personaplex)
+  // PersonaPlex hook
   const personaPlex = usePersonaPlexVoice({
     serverUrl: process.env.NEXT_PUBLIC_PERSONAPLEX_URL,
     systemPrompt: selectedPersona.systemPrompt,
-    initialTopic: topic, // AI will speak this prompt first
-    voice: ppVoice,
+    initialTopic: topic,
+    voice: voice,
     enableRecording: true,
     onTranscript: (userText, aiText) => {
       if (aiText && aiText.includes('?')) {
-        setPpQuestionCount(prev => prev + 1)
+        setQuestionCount(prev => prev + 1)
       }
+    },
+    onComplete: async (transcript) => {
+      // Stop video if recording
+      if (videoRecording) {
+        stopVideoRecording()
+      }
+      
+      onComplete?.({
+        success: true,
+        sessionId: Date.now().toString(),
+        sessionType,
+        transcript,
+        durationSeconds: sessionDuration,
+        questionCount,
+      })
     },
     onError,
   })
 
-  // OpenAI hook (only active when provider is openai)
-  const openAI = useMemoryVoiceChat({
-    sessionType,
-    topic,
-    contactId,
-    voice,
-    persona: selectedPersona,
-    maxQuestions,
-    maxDurationSeconds,
-    onComplete: async (result) => {
-      // If video was recorded, include it
-      if (recordedBlob && savedMemoryIdRef.current) {
-        const videoUrl = await uploadVideo(savedMemoryIdRef.current, recordedBlob)
-        onComplete?.({ ...result, videoUrl })
-      } else {
-        onComplete?.(result)
-      }
-    },
-    onMemorySaved: async (memoryId) => {
-      savedMemoryIdRef.current = memoryId
-      
-      // Stop video recording
+  // State from PersonaPlex
+  const state = personaPlex.state
+  const isConnected = ['connected', 'listening', 'thinking', 'aiSpeaking'].includes(state)
+  const transcript = personaPlex.transcript
+  const currentUserText = personaPlex.currentUserText
+  const currentAiText = personaPlex.currentAiText
+  const canSave = transcript.length >= 2
+  const error = personaPlex.error
+  const isSupported = personaPlex.isSupported
+
+  // Handle start - start voice and optionally video
+  const handleStart = useCallback(async () => {
+    // Start video first if enabled
+    if (videoEnabled && videoSupported) {
+      await startCamera()
+      startVideoRecording()
+    }
+    // Then start voice
+    await personaPlex.start()
+  }, [videoEnabled, videoSupported, startCamera, startVideoRecording, personaPlex])
+
+  // Handle stop
+  const handleStop = useCallback(async () => {
+    personaPlex.stop()
+    if (videoRecording) {
+      stopVideoRecording()
+    }
+  }, [personaPlex, videoRecording, stopVideoRecording])
+
+  // Handle save
+  const handleSave = useCallback(async () => {
+    setIsSaving(true)
+    
+    try {
+      // Stop recording if still going
       if (videoRecording) {
         stopVideoRecording()
       }
 
-      // Extract people and places from transcript
-      const extractedEntities = extractEntities(transcript)
-      if (extractedEntities.people.length > 0 || extractedEntities.places.length > 0) {
-        onEntitiesExtracted?.(extractedEntities)
+      // Create memory from transcript
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      // Format transcript for memory
+      const fullTranscript = transcript.map(t => 
+        `${t.role === 'user' ? 'User' : 'AI'}: ${t.text}`
+      ).join('\n\n')
+
+      // Call the memory creation API
+      const response = await fetch('/api/voice/memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transcript: fullTranscript,
+          sessionType,
+          topic,
+          contactId,
+          durationSeconds: sessionDuration,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save memory')
+      }
+
+      const { memoryId } = await response.json()
+      savedMemoryIdRef.current = memoryId
+
+      // Extract entities
+      const entities = extractEntities(transcript)
+      if (entities.people.length > 0 || entities.places.length > 0) {
+        onEntitiesExtracted?.(entities)
       }
 
       // Upload video if we have one
+      let videoUrl: string | undefined
       if (recordedBlob) {
-        const videoUrl = await uploadVideo(memoryId, recordedBlob)
-        onMemorySaved?.(memoryId, videoUrl)
-      } else {
-        onMemorySaved?.(memoryId)
+        videoUrl = await uploadVideo(memoryId, recordedBlob)
       }
-    },
-    onError,
-  })
 
-  // Unified state - select from active provider
-  const state = isPersonaPlex ? personaPlex.state : openAI.state
-  const isConnected = isPersonaPlex 
-    ? ['connected', 'listening', 'thinking', 'aiSpeaking'].includes(personaPlex.state)
-    : openAI.isConnected
-  const transcript = isPersonaPlex ? personaPlex.transcript : openAI.transcript
-  const currentUserText = isPersonaPlex ? personaPlex.currentUserText : openAI.currentUserText
-  const currentAiText = isPersonaPlex ? personaPlex.currentAiText : openAI.currentAiText
-  const questionCount = isPersonaPlex ? ppQuestionCount : openAI.questionCount
-  const sessionDuration = isPersonaPlex ? ppSessionDuration : openAI.sessionDuration
-  const canSave = isPersonaPlex ? transcript.length >= 2 : openAI.canSave
-  const error = isPersonaPlex ? personaPlex.error : openAI.error
-  const isSupported = isPersonaPlex ? personaPlex.isSupported : openAI.isSupported
-  const isSaving = isPersonaPlex ? ppIsSaving : false // OpenAI tracks this internally
-
-  // Unified actions
-  const startVoice = useCallback(async () => {
-    if (isPersonaPlex) {
-      await personaPlex.start()
-    } else {
-      await openAI.start()
+      onMemorySaved?.(memoryId, videoUrl)
+    } catch (err) {
+      onError?.(err instanceof Error ? err : new Error('Save failed'))
+    } finally {
+      setIsSaving(false)
     }
-  }, [isPersonaPlex, personaPlex, openAI])
+  }, [
+    videoRecording, stopVideoRecording, transcript, supabase, 
+    sessionType, topic, contactId, sessionDuration, recordedBlob,
+    onMemorySaved, onEntitiesExtracted, onError
+  ])
 
-  const stopVoice = useCallback(async () => {
-    if (isPersonaPlex) {
-      personaPlex.stop()
-    } else {
-      await openAI.stop()
+  // Handle abort
+  const handleAbort = useCallback(() => {
+    personaPlex.abort()
+    if (videoActive) {
+      stopCamera()
     }
-  }, [isPersonaPlex, personaPlex, openAI])
+    resetVideo()
+  }, [personaPlex, videoActive, stopCamera, resetVideo])
 
-  const saveVoiceMemory = useCallback(async () => {
-    if (isPersonaPlex) {
-      setPpIsSaving(true)
-      // TODO: Implement PersonaPlex memory save
-      // For now, we have the transcript and recording blob
-      console.log('PersonaPlex save:', personaPlex.transcript, personaPlex.recordingBlob)
-      setPpIsSaving(false)
-    } else {
-      await openAI.saveMemory()
+  // Handle reset
+  const handleReset = useCallback(() => {
+    personaPlex.abort()
+    setQuestionCount(0)
+    setSessionDuration(0)
+    if (videoActive) {
+      stopCamera()
     }
-  }, [isPersonaPlex, personaPlex, openAI])
+    resetVideo()
+  }, [personaPlex, videoActive, stopCamera, resetVideo])
 
-  const abort = useCallback(() => {
-    if (isPersonaPlex) {
-      personaPlex.abort()
+  // Toggle video
+  const handleToggleVideo = useCallback(async () => {
+    if (videoActive) {
+      stopCamera()
+      if (videoRecording) {
+        stopVideoRecording()
+      }
+      setVideoEnabled(false)
     } else {
-      openAI.abort()
+      await startCamera()
+      if (isConnected) {
+        startVideoRecording()
+      }
+      setVideoEnabled(true)
     }
-  }, [isPersonaPlex, personaPlex, openAI])
-
-  const resetVoice = useCallback(() => {
-    if (isPersonaPlex) {
-      personaPlex.abort()
-      setPpQuestionCount(0)
-      setPpSessionDuration(0)
-    } else {
-      openAI.reset()
-    }
-  }, [isPersonaPlex, personaPlex, openAI])
+  }, [videoActive, stopCamera, videoRecording, stopVideoRecording, startCamera, isConnected, startVideoRecording])
 
   // Auto-start when component mounts if autoStart is true
   useEffect(() => {
     if (autoStart && !hasAutoStarted && isSupported) {
       setHasAutoStarted(true)
-      // Small delay to ensure component is fully mounted
       const timer = setTimeout(() => {
         handleStart()
       }, 300)
       return () => clearTimeout(timer)
     }
-  }, [autoStart, hasAutoStarted, isSupported])
+  }, [autoStart, hasAutoStarted, isSupported, handleStart])
 
   // Upload video to Supabase
   const uploadVideo = async (memoryId: string, blob: Blob): Promise<string | undefined> => {
@@ -274,26 +298,19 @@ export function VoiceVideoChat({
 
       if (uploadError) throw uploadError
 
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from('memory-media')
         .getPublicUrl(fileName)
 
-      const videoUrl = urlData.publicUrl
+      // Update memory with video URL
+      await supabase
+        .from('memories')
+        .update({ video_url: urlData.publicUrl })
+        .eq('id', memoryId)
 
-      // Link video to memory
-      await supabase.from('memory_media').insert({
-        memory_id: memoryId,
-        file_url: videoUrl,
-        file_type: 'video',
-        file_name: `video_${Date.now()}.webm`,
-        mime_type: 'video/webm',
-        file_size: blob.size,
-      })
-
-      return videoUrl
+      return urlData.publicUrl
     } catch (err) {
-      console.error('Video upload error:', err)
+      console.error('Video upload failed:', err)
       onError?.(err instanceof Error ? err : new Error('Video upload failed'))
       return undefined
     } finally {
@@ -301,70 +318,13 @@ export function VoiceVideoChat({
     }
   }
 
-  // Combined start function
-  const handleStart = useCallback(async () => {
-    // Start camera if video enabled
-    if (videoEnabled && videoSupported) {
-      await startCamera()
-      startVideoRecording()
-    }
-    
-    // Start voice
-    await startVoice()
-  }, [videoEnabled, videoSupported, startCamera, startVideoRecording, startVoice])
-
-  // Combined stop function
-  const handleStop = useCallback(async () => {
-    if (videoRecording) {
-      stopVideoRecording()
-    }
-    await stopVoice()
-  }, [videoRecording, stopVideoRecording, stopVoice])
-
-  // Combined save function
-  const handleSave = useCallback(async () => {
-    // Video will be handled in the onMemorySaved callback
-    await saveVoiceMemory()
-  }, [saveVoiceMemory])
-
-  // Combined reset function
-  const handleReset = useCallback(() => {
-    resetVideo()
-    resetVoice()
-    savedMemoryIdRef.current = null
-    setShowVideoPreview(false)
-  }, [resetVideo, resetVoice])
-
-  // Toggle video
-  const toggleVideo = useCallback(async () => {
-    if (videoEnabled) {
-      stopCamera()
-      setVideoEnabled(false)
-    } else {
-      setVideoEnabled(true)
-      if (isConnected) {
-        await startCamera()
-        startVideoRecording()
-      }
-    }
-  }, [videoEnabled, isConnected, startCamera, stopCamera, startVideoRecording])
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (videoActive) {
-        stopCamera()
-      }
-    }
-  }, [videoActive, stopCamera])
-
-  // Loading state
+  // Show loading while checking browser support
   if (isSupported === null) {
     return (
-      <div className="p-6 bg-white/80 backdrop-blur-sm border border-[#406A56]/10 rounded-2xl text-center">
+      <div className={`p-6 bg-white/80 backdrop-blur-sm border border-[#406A56]/10 rounded-2xl text-center ${className}`}>
         <div className="animate-pulse">
           <div className="w-16 h-16 mx-auto rounded-full bg-[#406A56]/20" />
-          <p className="text-[#406A56]/60 mt-4">Initializing...</p>
+          <p className="text-[#406A56]/60 mt-4">Initializing voice chat...</p>
         </div>
       </div>
     )
@@ -372,9 +332,12 @@ export function VoiceVideoChat({
 
   if (!isSupported) {
     return (
-      <div className="p-6 bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-2xl text-center">
+      <div className={`p-6 bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-2xl text-center ${className}`}>
         <p className="text-red-600 font-medium">
           Voice chat is not supported in this browser.
+        </p>
+        <p className="text-red-500 text-sm mt-2">
+          Please use Chrome, Safari, or Firefox with WebRTC support.
         </p>
       </div>
     )
@@ -382,167 +345,148 @@ export function VoiceVideoChat({
 
   return (
     <div className={`relative ${className}`}>
-      {/* Video Preview - always render when videoEnabled so the ref is available for startCamera */}
-      {videoEnabled && (
-        <div className={`mb-4 transition-all duration-300 ${videoActive ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
+      {/* Video preview overlay */}
+      <AnimatePresence>
+        {videoActive && showVideoPreview && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: videoActive ? 1 : 0, scale: videoActive ? 1 : 0.95 }}
-            className="relative aspect-video bg-black rounded-2xl overflow-hidden shadow-xl"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="absolute top-4 right-4 z-10 rounded-xl overflow-hidden shadow-lg border-2 border-white/50"
           >
             <video
               ref={videoRef}
               autoPlay
-              playsInline
               muted
-              className="w-full h-full object-cover"
-              style={{ transform: 'scaleX(-1)' }} // Mirror for selfie cam
+              playsInline
+              className="w-32 h-24 object-cover bg-black"
             />
-            
-            {/* Recording indicator */}
             {videoRecording && (
-              <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-red-500 text-white text-sm font-medium rounded-full">
-                <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                Recording
+              <div className="absolute top-1 left-1 flex items-center gap-1 px-1.5 py-0.5 bg-red-500/90 rounded text-[10px] text-white font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                REC
               </div>
             )}
-            
-            {/* Video toggle */}
-            <button
-              onClick={toggleVideo}
-              className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
-              title="Turn off camera"
-            >
-              <VideoOff size={18} />
-            </button>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Enable video button when not active */}
-      {!videoEnabled && videoSupported && state === 'idle' && (
-        <div className="mb-4 flex justify-center">
-          <button
-            onClick={() => setVideoEnabled(true)}
-            className="flex items-center gap-2 px-4 py-2 text-sm text-[#406A56] bg-[#406A56]/10 hover:bg-[#406A56]/20 rounded-full transition-colors"
-          >
-            <Camera size={16} />
-            Enable video recording
-          </button>
-        </div>
-      )}
-
-      {/* Main Voice UI */}
-      <VoiceChatUI
-        state={isUploadingVideo ? 'saving' : state}
-        transcript={transcript}
-        currentUserText={currentUserText}
-        currentAiText={currentAiText}
-        questionCount={questionCount}
-        sessionDuration={sessionDuration}
-        canSave={canSave && !isUploadingVideo}
-        error={error}
-        persona={selectedPersona}
-        topic={topic}
-        maxQuestions={maxQuestions}
-        onStart={handleStart}
-        onStop={handleStop}
-        onSave={handleSave}
-        onAbort={abort}
-        onReset={handleReset}
-        showTranscript={showTranscript}
-      />
-
-      {/* Video upload indicator */}
-      <AnimatePresence>
-        {isUploadingVideo && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-3xl"
-          >
-            <div className="text-center">
-              <Loader2 size={32} className="animate-spin text-[#406A56] mx-auto mb-3" />
-              <p className="text-[#406A56] font-medium">Uploading video...</p>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Main voice chat UI */}
+      <div className="p-6 bg-white/80 backdrop-blur-sm border border-[#406A56]/10 rounded-2xl">
+        {/* Video controls */}
+        {videoSupported && (
+          <div className="flex items-center gap-2 mb-4 pb-4 border-b border-[#406A56]/10">
+            <button
+              onClick={handleToggleVideo}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                videoActive
+                  ? 'bg-[#406A56] text-white'
+                  : 'bg-[#406A56]/10 text-[#406A56] hover:bg-[#406A56]/20'
+              }`}
+            >
+              {videoActive ? <Camera className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+              {videoActive ? 'Camera On' : 'Camera Off'}
+            </button>
+            
+            {videoActive && (
+              <button
+                onClick={() => setShowVideoPreview(!showVideoPreview)}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-[#406A56]/10 text-[#406A56] hover:bg-[#406A56]/20 transition-colors"
+              >
+                {showVideoPreview ? 'Hide Preview' : 'Show Preview'}
+              </button>
+            )}
+
+            {isUploadingVideo && (
+              <div className="flex items-center gap-2 text-sm text-[#406A56]/60">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Uploading video...
+              </div>
+            )}
+          </div>
+        )}
+
+        <VoiceChatUI
+          state={state}
+          transcript={transcript}
+          currentUserText={currentUserText}
+          currentAiText={currentAiText}
+          questionCount={questionCount}
+          sessionDuration={sessionDuration}
+          canSave={canSave}
+          error={error}
+          persona={selectedPersona}
+          topic={topic}
+          maxQuestions={maxQuestions}
+          onStart={handleStart}
+          onStop={handleStop}
+          onSave={handleSave}
+          onAbort={handleAbort}
+          onReset={handleReset}
+          showTranscript={showTranscript}
+        />
+      </div>
     </div>
   )
 }
 
+/**
+ * Get persona configuration by name
+ */
 function getPersonaByName(name: 'journalist' | 'friend' | 'life-story'): PersonaConfig {
   switch (name) {
     case 'friend':
       return FRIEND_PERSONA
     case 'life-story':
       return LIFE_STORY_PERSONA
+    case 'journalist':
     default:
       return JOURNALIST_PERSONA
   }
 }
 
 /**
- * Extract people names from transcript
- * More conservative extraction - only obvious name patterns
+ * Extract people and places from transcript (simple heuristic)
  */
 function extractEntities(transcript: Array<{ role: string; text: string }>): { people: string[]; places: string[] } {
   const people = new Set<string>()
   const places = new Set<string>()
   
-  // Very strict exclusion list - common words that look like names
-  const excludeWords = new Set([
-    // Pronouns and common words
-    'i', 'the', 'this', 'that', 'what', 'when', 'where', 'who', 'how', 'why',
-    'my', 'your', 'his', 'her', 'its', 'our', 'their', 'we', 'you', 'he', 'she', 'it', 'they',
-    'and', 'but', 'or', 'so', 'if', 'then', 'now', 'just', 'really', 'very', 'always',
-    'would', 'could', 'should', 'will', 'can', 'may', 'might', 'must',
-    'was', 'were', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
-    'about', 'after', 'before', 'because', 'while', 'during', 'through',
-    'with', 'from', 'into', 'over', 'under', 'again', 'further', 'once',
-    // Family terms
-    'mom', 'dad', 'mother', 'father', 'grandma', 'grandpa', 'grandmother', 'grandfather',
-    'sister', 'brother', 'aunt', 'uncle', 'cousin', 'wife', 'husband', 'son', 'daughter',
-    // Common nouns that might be capitalized
-    'recipe', 'family', 'kitchen', 'house', 'home', 'food', 'time', 'day', 'year',
-    'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
-    'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august',
-    'september', 'october', 'november', 'december', 'christmas', 'thanksgiving',
-  ])
-  
-  // Only very specific patterns for names
+  // Common name patterns and place indicators
   const namePatterns = [
-    // "named X" or "called X" - most reliable
-    /(?:named|called)\s+([A-Z][a-z]{2,})/gi,
-    // "my friend/neighbor X" with explicit name following
-    /my\s+(?:friend|neighbor|colleague)\s+([A-Z][a-z]{2,})/gi,
-    // "X taught me" or "X showed me" - name as subject
-    /([A-Z][a-z]{2,})\s+(?:taught|showed|told)\s+me/gi,
+    /(?:my|our)\s+(?:friend|brother|sister|mother|father|mom|dad|grandmother|grandfather|grandma|grandpa|uncle|aunt|cousin|husband|wife|partner|son|daughter)\s+([A-Z][a-z]+)/gi,
+    /(?:named|called|know|knew|met)\s+([A-Z][a-z]+)/gi,
   ]
   
-  // Combine all text (both user and AI to catch when AI repeats names)
-  const allText = transcript.map(t => t.text).join(' ')
-  
-  // Extract names with strict filtering
-  for (const pattern of namePatterns) {
-    let match
-    pattern.lastIndex = 0 // Reset regex state
-    while ((match = pattern.exec(allText)) !== null) {
-      const name = match[1]?.trim()
-      // Must be 3+ chars, not in exclude list, and look like a proper name
-      if (name && 
-          name.length >= 3 && 
-          !excludeWords.has(name.toLowerCase()) &&
-          /^[A-Z][a-z]+$/.test(name)) {
-        people.add(name)
+  const placePatterns = [
+    /(?:in|at|from|to|visited)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/gi,
+    /(?:the|our)\s+(?:city|town|village|country|state)\s+(?:of\s+)?([A-Z][a-z]+)/gi,
+  ]
+
+  for (const item of transcript) {
+    const text = item.text
+    
+    for (const pattern of namePatterns) {
+      let match
+      while ((match = pattern.exec(text)) !== null) {
+        if (match[1] && match[1].length > 2) {
+          people.add(match[1])
+        }
+      }
+    }
+    
+    for (const pattern of placePatterns) {
+      let match
+      while ((match = pattern.exec(text)) !== null) {
+        if (match[1] && match[1].length > 2) {
+          places.add(match[1])
+        }
       }
     }
   }
-  
+
   return {
     people: Array.from(people),
-    places: Array.from(places)
+    places: Array.from(places),
   }
 }
