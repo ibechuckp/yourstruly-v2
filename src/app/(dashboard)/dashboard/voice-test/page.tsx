@@ -192,7 +192,7 @@ Respond naturally as a caring friend would. Keep your responses conversational a
                                 mode.id === 'engagement' ? 'engagement' : 'freeform'}
                     topic={mode.title}
                     personaName={mode.id === 'interview' ? 'life-story' : 'journalist'}
-                    voice="coral"
+                    voice="NATF1"
                     maxQuestions={5}
                     maxDurationSeconds={300}
                     onComplete={(result) => {
