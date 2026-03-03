@@ -294,19 +294,9 @@ export function useCategories({
 
         const data = await response.json();
         
-        if (provider === 'all' && data.categories) {
-          // Flatten categories from all providers and add flower categories
-          const allCategories = data.categories.flatMap((c: { provider: string; categories: { id: string; name: string }[] }) =>
-            c.categories.map((cat: { id: string; name: string }) => ({ ...cat, provider: c.provider }))
-          );
-          // Add flower categories
-          setCategories([
-            ...FLOWER_CATEGORIES.map(c => ({ ...c, provider: 'flowers' })),
-            ...allCategories,
-          ]);
-        } else {
-          setCategories(data.categories || []);
-        }
+        // API now returns flat array of categories with provider field
+        const categories = data.categories || [];
+        setCategories(categories);
       } catch (err) {
         // On error, use static categories
         if (provider === 'flowers' || provider === 'all') {
