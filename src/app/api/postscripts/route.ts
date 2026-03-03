@@ -19,7 +19,9 @@ export async function GET(request: NextRequest) {
       *,
       recipient:contacts!recipient_contact_id(id, full_name, relationship_type, avatar_url),
       circle:circles!circle_id(id, name),
-      attachments:postscript_attachments(id, file_url, file_type)
+      attachments:postscript_attachments(id, file_url, file_type),
+      memories:postscript_memory_attachments(id, memory_id, memory_title, memory_date, memory_image_url),
+      wisdom:postscript_wisdom_attachments(id, wisdom_id, wisdom_title, wisdom_category)
     `)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
@@ -70,6 +72,8 @@ export async function POST(request: NextRequest) {
     gift_budget,
     status = 'draft',
     attachments = [],
+    memories = [],
+    wisdom = [],
     skip_credit_check = false // For admin/system use
   } = body
 
@@ -164,6 +168,45 @@ export async function POST(request: NextRequest) {
 
     if (attError) {
       console.error('Error adding attachments:', attError)
+    }
+  }
+
+  // Add memory attachments if provided
+  if (memories.length > 0) {
+    const memoryAttachmentRecords = memories.map((mem: any) => ({
+      postscript_id: postscript.id,
+      user_id: user.id,
+      memory_id: mem.id,
+      memory_title: mem.title,
+      memory_date: mem.date,
+      memory_image_url: mem.imageUrl
+    }))
+
+    const { error: memError } = await supabase
+      .from('postscript_memory_attachments')
+      .insert(memoryAttachmentRecords)
+
+    if (memError) {
+      console.error('Error adding memory attachments:', memError)
+    }
+  }
+
+  // Add wisdom attachments if provided
+  if (wisdom.length > 0) {
+    const wisdomAttachmentRecords = wisdom.map((wis: any) => ({
+      postscript_id: postscript.id,
+      user_id: user.id,
+      wisdom_id: wis.id,
+      wisdom_title: wis.title,
+      wisdom_category: wis.category
+    }))
+
+    const { error: wisError } = await supabase
+      .from('postscript_wisdom_attachments')
+      .insert(wisdomAttachmentRecords)
+
+    if (wisError) {
+      console.error('Error adding wisdom attachments:', wisError)
     }
   }
 

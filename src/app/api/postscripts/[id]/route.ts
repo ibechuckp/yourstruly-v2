@@ -43,7 +43,9 @@ export async function GET(
     .select(`
       *,
       recipient:contacts!recipient_contact_id(id, full_name, relationship_type, avatar_url),
-      attachments:postscript_attachments(*)
+      attachments:postscript_attachments(*),
+      memories:postscript_memory_attachments(id, memory_id, memory_title, memory_date, memory_image_url),
+      wisdom:postscript_wisdom_attachments(id, wisdom_id, wisdom_title, wisdom_category)
     `)
     .eq('id', id)
     .eq('user_id', user.id)
@@ -106,7 +108,9 @@ export async function PUT(
     gift_details,
     gift_budget,
     status,
-    attachments
+    attachments,
+    memories,
+    wisdom
   } = body
 
   // Update postscript
@@ -164,6 +168,55 @@ export async function PUT(
       await supabase
         .from('postscript_attachments')
         .insert(attachmentRecords)
+    }
+  }
+
+  // Handle memory attachments if provided
+  if (memories !== undefined) {
+    // Delete existing memory attachments
+    await supabase
+      .from('postscript_memory_attachments')
+      .delete()
+      .eq('postscript_id', id)
+
+    // Add new memory attachments
+    if (memories.length > 0) {
+      const memoryRecords = memories.map((mem: any) => ({
+        postscript_id: id,
+        user_id: user.id,
+        memory_id: mem.id,
+        memory_title: mem.title,
+        memory_date: mem.date,
+        memory_image_url: mem.imageUrl
+      }))
+
+      await supabase
+        .from('postscript_memory_attachments')
+        .insert(memoryRecords)
+    }
+  }
+
+  // Handle wisdom attachments if provided
+  if (wisdom !== undefined) {
+    // Delete existing wisdom attachments
+    await supabase
+      .from('postscript_wisdom_attachments')
+      .delete()
+      .eq('postscript_id', id)
+
+    // Add new wisdom attachments
+    if (wisdom.length > 0) {
+      const wisdomRecords = wisdom.map((wis: any) => ({
+        postscript_id: id,
+        user_id: user.id,
+        wisdom_id: wis.id,
+        wisdom_title: wis.title,
+        wisdom_category: wis.category
+      }))
+
+      await supabase
+        .from('postscript_wisdom_attachments')
+        .insert(wisdomRecords)
     }
   }
 
