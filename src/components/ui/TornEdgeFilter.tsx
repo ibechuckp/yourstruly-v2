@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import TornEdge from './TornEdge'
 
 interface TornEdgeFilterProps {
   options: string[]
@@ -12,7 +11,7 @@ interface TornEdgeFilterProps {
 }
 
 /**
- * Filter buttons with torn paper edge selector
+ * Filter buttons with clean styling (no torn edges)
  * Matches YoursTruly navigation hover styling with text animation
  */
 export default function TornEdgeFilter({
@@ -36,11 +35,6 @@ export default function TornEdgeFilter({
             className={`torn-filter-btn ${isActive ? 'torn-filter-btn-active' : ''}`}
           >
             <span className="torn-filter-text">{option}</span>
-            {isActive && (
-              <div className="torn-filter-edge">
-                <TornEdge variant="d" position="bottom" color="#406A56" height={6} />
-              </div>
-            )}
           </button>
         )
       })}
@@ -87,38 +81,17 @@ export default function TornEdgeFilter({
           animation: text-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        .torn-filter-edge {
-          position: absolute;
-          bottom: 2px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 80%;
-          opacity: 0;
-          animation: edge-appear 0.3s ease forwards;
-        }
-
         @keyframes text-bounce {
           0% { transform: translateY(0); }
           50% { transform: translateY(-4px); }
           100% { transform: translateY(0); }
-        }
-
-        @keyframes edge-appear {
-          0% { 
-            opacity: 0; 
-            transform: translateX(-50%) scaleX(0.5);
-          }
-          100% { 
-            opacity: 1; 
-            transform: translateX(-50%) scaleX(1);
-          }
         }
       `}</style>
     </div>
   )
 }
 
-// Alternative: Pill-style with torn edge background on selection
+// Alternative: Pill-style filter buttons (no torn edge)
 export function TornEdgeFilterPill({
   options,
   value,
@@ -152,22 +125,6 @@ export function TornEdgeFilterPill({
             `}>
               {option}
             </span>
-            
-            {/* Torn edge accent under active pill */}
-            {isActive && (
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-1.5 overflow-hidden">
-                <svg 
-                  viewBox="0 0 100 8" 
-                  preserveAspectRatio="none"
-                  className="w-full h-full"
-                >
-                  <path 
-                    d="M0,0 L3,6 L8,2 L12,7 L17,1 L22,5 L27,2 L33,7 L38,1 L43,6 L48,2 L53,8 L58,1 L63,5 L68,2 L74,7 L79,1 L84,6 L89,2 L95,7 L100,0 L100,8 L0,8 Z" 
-                    fill="white"
-                  />
-                </svg>
-              </div>
-            )}
           </button>
         )
       })}

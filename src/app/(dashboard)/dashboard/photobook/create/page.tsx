@@ -864,11 +864,27 @@ function ArrangeStep({
   }, [pages])
   
   const addPage = (layoutId: string = 'full-photo') => {
+    const template = getTemplateById(layoutId)
+    // Initialize text slots with the last used text style for consistency
+    const initialSlots: SlotData[] = []
+    if (template) {
+      template.slots.forEach(slot => {
+        if (slot.type === 'text') {
+          initialSlots.push({
+            slotId: slot.id,
+            type: 'text',
+            textStyle: { ...lastTextStyle },
+            text: ''
+          })
+        }
+      })
+    }
+    
     const newPage: PageData = {
       id: `page-${Date.now()}`,
       pageNumber: pages.length + 1,
       layoutId,
-      slots: []
+      slots: initialSlots
     }
     const newPages = [...pages, newPage]
     setPages(newPages)
@@ -896,7 +912,7 @@ function ArrangeStep({
       
       // Get existing photo slots to preserve content
       const existingPhotoSlots = p.slots.filter(s => s.type === 'photo' && s.fileUrl)
-      const existingTextSlots = p.slots.filter(s => s.type === 'text' && s.text)
+      const existingTextSlots = p.slots.filter(s => s.type === 'text')
       const existingQrSlots = p.slots.filter(s => s.type === 'qr')
       
       // Get new template's slots
@@ -917,7 +933,7 @@ function ArrangeStep({
         }
       })
       
-      // Map text to new slots
+      // Map text to new slots - preserve both content AND style
       newTextSlots.forEach((newSlot, i) => {
         if (existingTextSlots[i]) {
           mappedSlots.push({
