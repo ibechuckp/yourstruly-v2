@@ -156,10 +156,11 @@ export function useSubscription(): UseSubscriptionReturn {
     }
 
     // 2. Calculate from memory_media (actual uploaded files)
+    // Note: The query below uses proper join syntax to filter by user_id
     const { data: mediaData } = await supabase
       .from('memory_media')
-      .select('file_size, file_type, memory_id')
-      .eq('memory_id', supabase.from('memories').select('id').eq('user_id', userId))
+      .select('file_size, file_type, memory_id, memories!inner(user_id)')
+      .eq('memories.user_id', userId)
     
     // Alternative: Direct query for user's media
     const { data: userMedia } = await supabase

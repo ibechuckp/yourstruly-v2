@@ -161,8 +161,8 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
 
     // Load tagged photos (face tags)
     const { data: tagsData } = await supabase
-      .from('face_tags')
-      .select('memory_media_id, memory_media(id, file_url, memory_id, memory:memories(title))')
+      .from('memory_face_tags')
+      .select('media_id, memory_media(id, file_url, memory_id, memory:memories(title))')
       .eq('contact_id', id)
       .limit(20)
 
