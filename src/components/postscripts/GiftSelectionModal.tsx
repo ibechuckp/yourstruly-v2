@@ -88,6 +88,18 @@ const TIMING_OPTIONS = [
   }
 ]
 
+// Gift categories with icons and descriptions
+const GIFT_CATEGORIES = [
+  { key: 'all', label: 'All Gifts', icon: Gift, description: 'Browse all available gifts' },
+  { key: 'flowers', label: 'Flowers', icon: '💐', description: 'Fresh bouquets and arrangements' },
+  { key: 'plants', label: 'Plants', icon: '🪴', description: 'Living plants and succulents' },
+  { key: 'gourmet', label: 'Gourmet', icon: '🍫', description: 'Chocolates, snacks, and treats' },
+  { key: 'home', label: 'Home', icon: '🏠', description: 'Cozy home decor and accessories' },
+  { key: 'photo_gifts', label: 'Photo Gifts', icon: '📸', description: 'Personalized photo items' },
+  { key: 'jewelry', label: 'Jewelry', icon: '💎', description: 'Elegant jewelry pieces' },
+  { key: 'experiences', label: 'Experiences', icon: '🎁', description: 'Memorable experiences' },
+]
+
 // Mock products for demo - in production, these would come from the marketplace API
 const MOCK_PRODUCTS: GiftProduct[] = [
   {
@@ -308,31 +320,42 @@ export function GiftSelectionModal({
                 />
               </div>
 
-              {/* Categories */}
+              {/* Categories - Enhanced with icons */}
               <div className="flex gap-2 overflow-x-auto pb-2">
-                <button
-                  onClick={() => setSelectedCategory(null)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all
-                    ${!selectedCategory 
-                      ? 'bg-[#C35F33] text-white' 
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                >
-                  All Gifts
-                </button>
-                {categories.map(cat => (
+                {GIFT_CATEGORIES.map(cat => {
+                  const isSelected = (cat.key === 'all' && !selectedCategory) || selectedCategory === cat.key
+                  const Icon = typeof cat.icon === 'function' ? cat.icon : null
+                  return (
+                    <button
+                      key={cat.key}
+                      onClick={() => setSelectedCategory(cat.key === 'all' ? null : cat.key)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-2
+                        ${isSelected 
+                          ? 'bg-[#C35F33] text-white shadow-md' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      title={cat.description}
+                    >
+                      {Icon ? <Icon size={14} /> : <span>{cat.icon}</span>}
+                      {cat.label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Results Count */}
+              <div className="flex items-center justify-between text-sm">
+                <p className="text-gray-500">
+                  {filteredProducts.length} gift{filteredProducts.length !== 1 ? 's' : ''} found
+                </p>
+                {searchQuery && (
                   <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat || null)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all capitalize
-                      ${selectedCategory === cat 
-                        ? 'bg-[#C35F33] text-white' 
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
+                    onClick={() => setSearchQuery('')}
+                    className="text-[#C35F33] hover:underline"
                   >
-                    {cat?.replace('_', ' ')}
+                    Clear search
                   </button>
-                ))}
+                )}
               </div>
 
               {/* Products Grid */}

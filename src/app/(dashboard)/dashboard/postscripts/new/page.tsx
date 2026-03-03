@@ -6,11 +6,12 @@ import { useRouter } from 'next/navigation'
 import { 
   ChevronLeft, ChevronRight, User, Users, Calendar, Gift,
   MessageSquare, Send, Check, X, Search, Mail, Phone, ImagePlus, Trash2,
-  Mic
+  Mic, Brain, Sparkles
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/home.css'
 import { EVENT_OPTIONS } from '@/lib/postscripts/events'
+import { AttachmentSelectorModal, type SelectedAttachment } from '@/components/postscripts'
 
 interface Contact {
   id: string
@@ -66,6 +67,9 @@ interface FormData {
   attachments: Attachment[]
   // Gift
   gift: SelectedGift | null
+  // Memory & Wisdom Attachments
+  memories: SelectedAttachment[]
+  wisdom: SelectedAttachment[]
 }
 
 // EVENT_OPTIONS imported from @/lib/postscripts/events
@@ -106,10 +110,14 @@ export default function NewPostScriptPage() {
     audio_url: '',
     audio_blob: null,
     attachments: [],
-    gift: null
+    gift: null,
+    memories: [],
+    wisdom: []
   })
   
   const [showGiftModal, setShowGiftModal] = useState(false)
+  const [showMemoryModal, setShowMemoryModal] = useState(false)
+  const [showWisdomModal, setShowWisdomModal] = useState(false)
   
   // Audio recording state
   const [isRecording, setIsRecording] = useState(false)
@@ -373,6 +381,8 @@ export default function NewPostScriptPage() {
           audio_url: audioUrl,
           attachments: uploadedAttachments,
           gift: form.gift,
+          memories: form.memories.map(m => ({ id: m.id, title: m.title })),
+          wisdom: form.wisdom.map(w => ({ id: w.id, title: w.title })),
           status
         })
       })
@@ -723,7 +733,7 @@ export default function NewPostScriptPage() {
             />
           </div>
 
-          {/* Photo Attachments & Gift - Equal Size Tiles */}
+          {/* Attachments Grid - 2x2 */}
           <div className="grid grid-cols-2 gap-4">
             {/* Photos Tile */}
             <div className="h-36">
@@ -780,7 +790,7 @@ export default function NewPostScriptPage() {
               )}
             </div>
 
-            {/* Gift Tile - Same Height */}
+            {/* Gift Tile */}
             <div className="h-36">
               <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
                 <Gift size={14} className="text-[#D9C61A]" />
@@ -817,6 +827,84 @@ export default function NewPostScriptPage() {
                 >
                   <Gift size={28} className="text-gray-400 mb-1" />
                   <span className="text-sm text-gray-400">Browse Gifts</span>
+                </button>
+              )}
+            </div>
+
+            {/* Memories Tile */}
+            <div className="h-36">
+              <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                <Sparkles size={14} className="text-[#406A56]" />
+                Attach Memories <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              
+              {form.memories.length > 0 ? (
+                <div className="relative h-[calc(100%-28px)] rounded-xl overflow-hidden bg-gradient-to-br from-[#406A56]/10 to-[#8DACAB]/10 border border-[#406A56]/20 p-3">
+                  <div className="flex flex-col h-full justify-center">
+                    <p className="font-medium text-gray-900 text-sm">{form.memories.length} memor{form.memories.length === 1 ? 'y' : 'ies'} attached</p>
+                    <p className="text-xs text-gray-500 line-clamp-1">{form.memories.map(m => m.title).join(', ')}</p>
+                    <button
+                      onClick={() => setShowMemoryModal(true)}
+                      className="mt-2 text-xs text-[#406A56] hover:underline"
+                    >
+                      Edit selection
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setForm({ ...form, memories: [] })}
+                    className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+                  >
+                    <X size={10} className="text-white" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowMemoryModal(true)}
+                  className="w-full h-[calc(100%-28px)] rounded-xl border-2 border-dashed border-gray-300 
+                           hover:border-[#406A56] hover:bg-[#406A56]/5 
+                           flex flex-col items-center justify-center cursor-pointer transition-all"
+                >
+                  <Sparkles size={28} className="text-gray-400 mb-1" />
+                  <span className="text-sm text-gray-400">Add Memories</span>
+                </button>
+              )}
+            </div>
+
+            {/* Wisdom Tile */}
+            <div className="h-36">
+              <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                <Brain size={14} className="text-[#8DACAB]" />
+                Attach Wisdom <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              
+              {form.wisdom.length > 0 ? (
+                <div className="relative h-[calc(100%-28px)] rounded-xl overflow-hidden bg-gradient-to-br from-[#8DACAB]/10 to-[#D9C61A]/10 border border-[#8DACAB]/20 p-3">
+                  <div className="flex flex-col h-full justify-center">
+                    <p className="font-medium text-gray-900 text-sm">{form.wisdom.length} wisdom entr{form.wisdom.length === 1 ? 'y' : 'ies'} attached</p>
+                    <p className="text-xs text-gray-500 line-clamp-1">{form.wisdom.map(w => w.title).join(', ')}</p>
+                    <button
+                      onClick={() => setShowWisdomModal(true)}
+                      className="mt-2 text-xs text-[#8DACAB] hover:underline"
+                    >
+                      Edit selection
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setForm({ ...form, wisdom: [] })}
+                    className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+                  >
+                    <X size={10} className="text-white" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowWisdomModal(true)}
+                  className="w-full h-[calc(100%-28px)] rounded-xl border-2 border-dashed border-gray-300 
+                           hover:border-[#8DACAB] hover:bg-[#8DACAB]/5 
+                           flex flex-col items-center justify-center cursor-pointer transition-all"
+                >
+                  <Brain size={28} className="text-gray-400 mb-1" />
+                  <span className="text-sm text-gray-400">Add Wisdom</span>
                 </button>
               )}
             </div>
@@ -957,6 +1045,36 @@ export default function NewPostScriptPage() {
               </div>
             </div>
           )}
+
+          {/* Attached Memories */}
+          {form.memories.length > 0 && (
+            <div className="p-4">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Memories Attached</p>
+              <div className="flex flex-wrap gap-2">
+                {form.memories.map(m => (
+                  <div key={m.id} className="flex items-center gap-2 bg-[#406A56]/5 border border-[#406A56]/20 rounded-lg px-3 py-2">
+                    <Sparkles size={14} className="text-[#406A56]" />
+                    <span className="text-sm text-gray-700">{m.title}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Attached Wisdom */}
+          {form.wisdom.length > 0 && (
+            <div className="p-4">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Wisdom Attached</p>
+              <div className="flex flex-wrap gap-2">
+                {form.wisdom.map(w => (
+                  <div key={w.id} className="flex items-center gap-2 bg-[#8DACAB]/5 border border-[#8DACAB]/20 rounded-lg px-3 py-2">
+                    <Brain size={14} className="text-[#8DACAB]" />
+                    <span className="text-sm text-gray-700">{w.title}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -979,6 +1097,26 @@ export default function NewPostScriptPage() {
 
   return (
     <div className="pb-8 relative pb-32">
+      {/* Memory Attachment Modal */}
+      <AttachmentSelectorModal
+        isOpen={showMemoryModal}
+        onClose={() => setShowMemoryModal(false)}
+        onSelect={(attachments) => setForm({ ...form, memories: attachments })}
+        type="memory"
+        preselectedIds={form.memories.map(m => m.id)}
+        allowMultiple={true}
+      />
+
+      {/* Wisdom Attachment Modal */}
+      <AttachmentSelectorModal
+        isOpen={showWisdomModal}
+        onClose={() => setShowWisdomModal(false)}
+        onSelect={(attachments) => setForm({ ...form, wisdom: attachments })}
+        type="wisdom"
+        preselectedIds={form.wisdom.map(w => w.id)}
+        allowMultiple={true}
+      />
+
       {/* Gift Selection Modal */}
       {showGiftModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
