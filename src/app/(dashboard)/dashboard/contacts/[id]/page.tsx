@@ -2,31 +2,71 @@
 
 import { useState, useEffect, use } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { 
+import {
   ChevronLeft, User, Mail, Phone, MapPin, Calendar,
   Video, Image as ImageIcon, Gift, Edit2, Trash2,
-  Heart, Mic, MessageSquare, Plus, Camera, Upload
+  Heart, Mic, MessageSquare, Plus, Camera, Upload, X
 } from 'lucide-react'
 import Link from 'next/link'
 import '@/styles/home.css'
+import '@/styles/page-styles.css'
 
 interface Contact {
   id: string
   full_name: string
-  nickname: string
-  email: string
-  phone: string
+  nickname?: string
+  email?: string
+  phone?: string
   relationship_type: string
-  relationship_details: string
-  date_of_birth: string
-  address: string
-  city: string
-  state: string
-  country: string
-  zipcode: string
-  notes: string
+  relationship_details?: string
+  date_of_birth?: string
+  address?: string
+  city?: string
+  state?: string
+  country?: string
+  zipcode?: string
+  notes?: string
   profile_photo_url?: string
 }
+
+const RELATIONSHIP_OPTIONS = [
+  { category: 'Family', options: [
+    { id: 'mother', label: 'Mother' },
+    { id: 'father', label: 'Father' },
+    { id: 'spouse', label: 'Spouse' },
+    { id: 'partner', label: 'Partner' },
+    { id: 'son', label: 'Son' },
+    { id: 'daughter', label: 'Daughter' },
+    { id: 'brother', label: 'Brother' },
+    { id: 'sister', label: 'Sister' },
+    { id: 'grandmother', label: 'Grandmother' },
+    { id: 'grandfather', label: 'Grandfather' },
+    { id: 'grandson', label: 'Grandson' },
+    { id: 'granddaughter', label: 'Granddaughter' },
+    { id: 'aunt', label: 'Aunt' },
+    { id: 'uncle', label: 'Uncle' },
+    { id: 'cousin', label: 'Cousin' },
+    { id: 'niece', label: 'Niece' },
+    { id: 'nephew', label: 'Nephew' },
+    { id: 'in_law', label: 'In-Law' },
+  ]},
+  { category: 'Friends', options: [
+    { id: 'best_friend', label: 'Best Friend' },
+    { id: 'close_friend', label: 'Close Friend' },
+    { id: 'friend', label: 'Friend' },
+    { id: 'childhood_friend', label: 'Childhood Friend' },
+  ]},
+  { category: 'Professional', options: [
+    { id: 'colleague', label: 'Colleague' },
+    { id: 'boss', label: 'Boss' },
+    { id: 'mentor', label: 'Mentor' },
+    { id: 'business_partner', label: 'Business Partner' },
+  ]},
+  { category: 'Other', options: [
+    { id: 'neighbor', label: 'Neighbor' },
+    { id: 'other', label: 'Other' },
+  ]},
+]
 
 interface TaggedMedia {
   id: string
@@ -58,6 +98,7 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
   const [postscripts, setPostscripts] = useState<PostScript[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const supabase = createClient()
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -268,12 +309,12 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
             </div>
 
             <div className="flex items-center gap-2">
-              <Link
-                href={`/dashboard/contacts?edit=${id}`}
+              <button
+                onClick={() => setShowEditModal(true)}
                 className="p-2.5 bg-white/80 backdrop-blur-sm text-gray-500 hover:text-[#406A56] rounded-xl transition-all border border-gray-200"
               >
                 <Edit2 size={18} />
-              </Link>
+              </button>
               <button
                 onClick={handleDelete}
                 className="p-2.5 bg-white/80 backdrop-blur-sm text-gray-500 hover:text-red-500 rounded-xl transition-all border border-gray-200"
@@ -466,6 +507,138 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
         </main>
+      </div>
+
+      {/* Edit Contact Modal */}
+      {showEditModal && contact && (
+        <ContactModal
+          contact={contact}
+          onClose={() => setShowEditModal(false)}
+          onSave={(updatedContact) => {
+            setShowEditModal(false)
+            setContact(updatedContact)
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+// ============================================
+// CONTACT MODAL
+// ============================================
+function ContactModal({ contact, onClose, onSave }: { contact: Contact; onClose: () => void; onSave: (updatedContact: Contact) => void }) {
+  const [form, setForm] = useState({
+    full_name: contact.full_name || '',
+    nickname: contact.nickname || '',
+    email: contact.email || '',
+    phone: contact.phone || '',
+    relationship_type: contact.relationship_type || '',
+    relationship_details: contact.relationship_details || '',
+    date_of_birth: contact.date_of_birth || '',
+    address: contact.address || '',
+    city: contact.city || '',
+    state: contact.state || '',
+    country: contact.country || '',
+    zipcode: contact.zipcode || '',
+    notes: contact.notes || '',
+  })
+  const [saving, setSaving] = useState(false)
+  const supabase = createClient()
+
+  const handleSave = async () => {
+    if (!form.full_name || !form.relationship_type) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const payload = {
+      full_name: form.full_name,
+      relationship_type: form.relationship_type,
+      nickname: form.nickname || null,
+      email: form.email || null,
+      phone: form.phone || null,
+      relationship_details: form.relationship_details || null,
+      date_of_birth: form.date_of_birth || null,
+      address: form.address || null,
+      city: form.city || null,
+      state: form.state || null,
+      country: form.country || null,
+      zipcode: form.zipcode || null,
+      notes: form.notes || null,
+    }
+
+    const { data, error } = await supabase.from('contacts').update(payload).eq('id', contact.id).select().single()
+    setSaving(false)
+    if (!error && data) {
+      onSave(data as Contact)
+    }
+  }
+
+  return (
+    <div className="modal-overlay-page">
+      <div className="modal-content-page">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-[#2d2d2d]">Edit Contact</h2>
+          <button onClick={onClose} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg" aria-label="Close"><X size={20} /></button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-[#666] mb-1.5">Full Name *</label>
+            <input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} className="form-input" placeholder="John Doe" />
+          </div>
+          <div>
+            <label className="block text-sm text-[#666] mb-1.5">Relationship *</label>
+            <select value={form.relationship_type} onChange={e => setForm({ ...form, relationship_type: e.target.value })} className="form-select">
+              <option value="">Select...</option>
+              {RELATIONSHIP_OPTIONS.map(group => (
+                <optgroup key={group.category} label={group.category}>
+                  {group.options.map(opt => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-[#666] mb-1.5">Nickname</label>
+              <input value={form.nickname} onChange={e => setForm({ ...form, nickname: e.target.value })} className="form-input" />
+            </div>
+            <div>
+              <label className="block text-sm text-[#666] mb-1.5">Birthday</label>
+              <input type="date" value={form.date_of_birth} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="form-input" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-[#666] mb-1.5">Email</label>
+              <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="form-input" placeholder="email@example.com" />
+            </div>
+            <div>
+              <label className="block text-sm text-[#666] mb-1.5">Phone</label>
+              <input type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="form-input" placeholder="(555) 123-4567" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm text-[#666] mb-1.5">Address (for gift delivery)</label>
+            <input value={form.address || ''} onChange={e => setForm({ ...form, address: e.target.value })} className="form-input mb-3" placeholder="123 Main Street, Apt 4" />
+            <div className="grid grid-cols-4 gap-3">
+              <input value={form.city || ''} onChange={e => setForm({ ...form, city: e.target.value })} className="form-input" placeholder="City" />
+              <input value={form.state || ''} onChange={e => setForm({ ...form, state: e.target.value })} className="form-input" placeholder="State" />
+              <input value={form.zipcode || ''} onChange={e => setForm({ ...form, zipcode: e.target.value })} className="form-input" placeholder="Zip" />
+              <input value={form.country || ''} onChange={e => setForm({ ...form, country: e.target.value })} className="form-input" placeholder="Country" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm text-[#666] mb-1.5">Notes</label>
+            <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="form-textarea" rows={2} />
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[#406A56]/10">
+          <button onClick={onClose} className="btn-secondary">Cancel</button>
+          <button onClick={handleSave} disabled={saving || !form.full_name || !form.relationship_type} className="btn-primary">
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
       </div>
     </div>
   )
