@@ -438,80 +438,82 @@ export default function ContactsPage() {
           )}
         </section>
 
-        {/* Pets Section */}
-        <section>
-          <div className="section-header">
-            <div className="section-title">
-              <div className="section-title-icon bg-[#C35F33]/10">
-                <Heart size={18} className="text-[#C35F33]" />
+        {/* Pets Section - Only show in "All" category view */}
+        {!selectedCategory && (
+          <section>
+            <div className="section-header">
+              <div className="section-title">
+                <div className="section-title-icon bg-[#C35F33]/10">
+                  <Heart size={18} className="text-[#C35F33]" />
+                </div>
+                <div>
+                  <span className="text-[#2d2d2d]">Pets</span>
+                  <span className="text-[#406A56]/60 text-sm font-normal ml-2">({pets.length})</span>
+                </div>
               </div>
-              <div>
-                <span className="text-[#2d2d2d]">Pets</span>
-                <span className="text-[#406A56]/60 text-sm font-normal ml-2">({pets.length})</span>
-              </div>
-            </div>
-            <button
-              onClick={() => { setEditingPet(null); setShowPetModal(true) }}
-              className="btn-accent"
-            >
-              <Plus size={16} />
-              Add Pet
-            </button>
-          </div>
-
-          {pets.length === 0 ? (
-            <div className="empty-state">
-              <p className="empty-state-text mb-4">No pets yet</p>
               <button
                 onClick={() => { setEditingPet(null); setShowPetModal(true) }}
                 className="btn-accent"
               >
-                Add Your First Pet
+                <Plus size={16} />
+                Add Pet
               </button>
             </div>
-          ) : (
-            <div className="cards-grid">
-              {pets.map(pet => (
-                <div 
-                  key={pet.id} 
-                  className={`bubble-tile glass-card group cursor-pointer ${pet.is_deceased ? 'opacity-70' : ''}`}
-                  onClick={() => window.location.href = `/dashboard/pets/${pet.id}`}
+
+            {pets.length === 0 ? (
+              <div className="empty-state">
+                <p className="empty-state-text mb-4">No pets yet</p>
+                <button
+                  onClick={() => { setEditingPet(null); setShowPetModal(true) }}
+                  className="btn-accent"
                 >
-                  <div className="bubble-content">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#C35F33] to-[#D87A55] flex items-center justify-center text-white font-semibold">
-                          {pet.name.charAt(0)}
+                  Add Your First Pet
+                </button>
+              </div>
+            ) : (
+              <div className="cards-grid">
+                {pets.map(pet => (
+                  <div
+                    key={pet.id}
+                    className={`bubble-tile glass-card group cursor-pointer ${pet.is_deceased ? 'opacity-70' : ''}`}
+                    onClick={() => window.location.href = `/dashboard/pets/${pet.id}`}
+                  >
+                    <div className="bubble-content">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#C35F33] to-[#D87A55] flex items-center justify-center text-white font-semibold">
+                            {pet.name.charAt(0)}
+                          </div>
+                          <div>
+                            <h3 className="text-[#2d2d2d] font-semibold">{pet.name}</h3>
+                            <p className="text-[#C35F33] text-sm">{pet.species}{pet.breed ? ` - ${pet.breed}` : ''}</p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="text-[#2d2d2d] font-semibold">{pet.name}</h3>
-                          <p className="text-[#C35F33] text-sm">{pet.species}{pet.breed ? ` - ${pet.breed}` : ''}</p>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                          <button onClick={() => { setEditingPet(pet); setShowPetModal(true) }} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-colors">
+                            <Edit2 size={14} />
+                          </button>
+                          <button onClick={() => handleDeletePet(pet.id)} className="p-2 text-[#406A56]/50 hover:text-[#C35F33] hover:bg-[#C35F33]/10 rounded-lg transition-colors">
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </div>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => { setEditingPet(pet); setShowPetModal(true) }} className="p-2 text-[#406A56]/50 hover:text-[#406A56] hover:bg-[#406A56]/10 rounded-lg transition-colors">
-                          <Edit2 size={14} />
-                        </button>
-                        <button onClick={() => handleDeletePet(pet.id)} className="p-2 text-[#406A56]/50 hover:text-[#C35F33] hover:bg-[#C35F33]/10 rounded-lg transition-colors">
-                          <Trash2 size={14} />
-                        </button>
+                      <div className="space-y-1.5 text-sm">
+                        {pet.color && <p className="text-[#666]">Color: {pet.color}</p>}
+                        {pet.personality && <p className="text-[#666] line-clamp-1">{pet.personality}</p>}
+                        {pet.is_deceased && (
+                          <p className="text-[#888] italic">
+                            🌈 Rainbow Bridge {pet.date_of_passing ? `· ${format(parseISO(pet.date_of_passing), 'MMM d, yyyy')}` : ''}
+                          </p>
+                        )}
                       </div>
-                    </div>
-                    <div className="space-y-1.5 text-sm">
-                      {pet.color && <p className="text-[#666]">Color: {pet.color}</p>}
-                      {pet.personality && <p className="text-[#666] line-clamp-1">{pet.personality}</p>}
-                      {pet.is_deceased && (
-                        <p className="text-[#888] italic">
-                          🌈 Rainbow Bridge {pet.date_of_passing ? `· ${format(parseISO(pet.date_of_passing), 'MMM d, yyyy')}` : ''}
-                        </p>
-                      )}
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
       {/* Contact Modal */}
