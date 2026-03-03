@@ -27,7 +27,6 @@ export function CookiebotScript() {
     document.head.appendChild(script)
     
     return () => {
-      // Cleanup on unmount (unlikely in layout but good practice)
       const existingScript = document.getElementById('Cookiebot')
       if (existingScript) {
         existingScript.remove()
