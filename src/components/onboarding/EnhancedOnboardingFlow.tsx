@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { PillSelector } from './PillSelector';
 import { HeartfeltQuestion } from './HeartfeltQuestion';
+import { OnboardingStepExplanation } from './OnboardingStepExplanation';
 
 // ============================================
 // TYPES
@@ -178,7 +179,20 @@ export function EnhancedOnboardingFlow({ onComplete }: EnhancedOnboardingFlowPro
         </div>
       )}
 
-      <div className="relative z-10 w-full max-w-lg">
+      {/* Main Content - Split Layout for Desktop */}
+      <div className="relative z-10 w-full max-w-5xl flex flex-col lg:flex-row lg:items-start lg:gap-8 xl:gap-12">
+        {/* Explanation Panel (Desktop: Left, Mobile: Top) */}
+        {step !== 'welcome' && step !== 'celebration' && (
+          <>
+            {/* Mobile: Top */}
+            <OnboardingStepExplanation step={step} showForMobile={true} />
+            {/* Desktop: Left */}
+            <OnboardingStepExplanation step={step} showForMobile={false} />
+          </>
+        )}
+
+        {/* Form Panel */}
+        <div className="w-full lg:flex-1 max-w-lg mx-auto lg:mx-0">
         <AnimatePresence mode="wait">
           {step === 'welcome' && (
             <WelcomeStep key="welcome" onContinue={() => setStep('name')} />
@@ -350,6 +364,7 @@ export function EnhancedOnboardingFlow({ onComplete }: EnhancedOnboardingFlowPro
             />
           )}
         </AnimatePresence>
+        </div>
       </div>
     </div>
   );
