@@ -182,21 +182,17 @@ export function VoiceVideoChat({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // Format transcript for memory
-      const fullTranscript = transcript.map(t => 
-        `${t.role === 'user' ? 'User' : 'AI'}: ${t.text}`
-      ).join('\n\n')
-
-      // Call the memory creation API
+      // Call the memory creation API with transcript array
       const response = await fetch('/api/voice/memory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          transcript: fullTranscript,
+          transcript, // Pass the array directly, not formatted string
           sessionType,
           topic,
           contactId,
           durationSeconds: sessionDuration,
+          questionCount,
         }),
       })
 
