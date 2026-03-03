@@ -3,8 +3,7 @@ import { Geist, Geist_Mono, Caveat, Playfair_Display, Patrick_Hand, Inter_Tight,
 import "./globals.css";
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { SkipToMain } from "@/components/ui/AccessibleIcon";
-
-const isProduction = process.env.NODE_ENV === 'production';
+import { CookiebotScript } from "@/components/ui/CookiebotScript";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -68,21 +67,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        {/* Cookiebot GDPR Cookie Consent - production only (doesn't work on localhost) */}
-        {isProduction && (
-          <script
-            id="Cookiebot"
-            src="https://consent.cookiebot.com/uc.js"
-            data-cbid="4c3722ae-6bc8-454a-9330-fdad835a58cc"
-            data-blockingmode="auto"
-            type="text/javascript"
-          />
-        )}
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${interTight.variable} ${caveat.variable} ${patrickHand.variable} ${playfair.variable} ${dancingScript.variable} ${crimsonText.variable} antialiased`}
       >
+        <CookiebotScript />
         <SkipToMain />
         {children}
       </body>
