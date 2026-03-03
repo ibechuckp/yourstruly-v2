@@ -66,7 +66,7 @@ export async function POST(
   if (fileType === 'image') {
     try {
       const exif = await exifr.parse(buffer, {
-        pick: ['DateTimeOriginal', 'CreateDate', 'GPSLatitude', 'GPSLongitude', 'Make', 'Model'],
+        pick: ['DateTimeOriginal', 'CreateDate', 'GPSLatitude', 'GPSLatitudeRef', 'GPSLongitude', 'GPSLongitudeRef', 'Make', 'Model'],
         gps: true,
       })
       if (exif) {

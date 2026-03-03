@@ -35,7 +35,7 @@ export default function GalleryUpload({ onUploadComplete }: GalleryUploadProps) 
       if (!file.type.startsWith('image/')) return {}
       const exif = await exifr.parse(file, {
         gps: true,
-        pick: ['DateTimeOriginal', 'CreateDate', 'latitude', 'longitude']
+        pick: ['DateTimeOriginal', 'CreateDate', 'GPSLatitude', 'GPSLatitudeRef', 'GPSLongitude', 'GPSLongitudeRef']
       })
       if (!exif) return {}
       return {
