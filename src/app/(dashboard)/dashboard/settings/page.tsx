@@ -76,11 +76,8 @@ export default function SettingsPage() {
     router.push('/login')
   }
 
-  const handleDeleteAccount = async () => {
-    if (!confirm('Are you sure you want to delete your account? This cannot be undone.')) return
-    if (!confirm('This will permanently delete all your memories, contacts, and data. Type "DELETE" to confirm.')) return
-
-    alert('Account deletion requested. Please contact support to complete this process.')
+  const handleDeleteAccount = () => {
+    router.push('/dashboard/settings/delete-account')
   }
 
   const handleGenerateEmbeddings = async () => {
