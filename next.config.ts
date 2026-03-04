@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone', // Required for Docker deployment
+  // Native modules that can't be bundled - must run on server only
+  serverExternalPackages: ['canvas', '@vladmandic/face-api'],
   images: {
     remotePatterns: [
       {

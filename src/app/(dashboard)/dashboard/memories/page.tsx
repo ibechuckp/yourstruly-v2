@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Image as ImageIcon, Calendar, MapPin, Sparkles, Grid, List, Globe, ChevronLeft, Search, X, Clock, Users, Share2, BookOpen, Album, User, Mic, Map } from 'lucide-react'
+import { Plus, Image as ImageIcon, Grid, List, Globe, ChevronLeft, Search, X, Clock, Users, Share2, BookOpen, Album, Mic, Map, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import CreateMemoryModal from '@/components/memories/CreateMemoryModal'
 import MemoryCard from '@/components/memories/MemoryCard'
@@ -18,13 +18,11 @@ import { TimelineBrowse } from '@/components/memories/TimelineBrowse'
 import VirtualizedMemoryGrid, { VirtualizedSimpleGrid } from '@/components/memories/VirtualizedMemoryGrid'
 import MilestonePrompt from '@/components/photobook/MilestonePrompt'
 import MemoryStats from '@/components/memories/MemoryStats'
-import MoodFilterChips from '@/components/memories/MoodFilterChips'
 import EmotionalJourney from '@/components/memories/EmotionalJourney'
 import { TimelineScrubber } from '@/components/memories/TimelineScrubber'
-import { MoodType, MOOD_DEFINITIONS } from '@/lib/ai/moodAnalysis'
+import { MoodType } from '@/lib/ai/moodAnalysis'
 import '@/styles/page-styles.css'
 import '@/styles/scrapbook.css'
-import { getCategoryIcon } from '@/lib/dashboard/icons'
 
 interface Memory {
   id: string
@@ -81,10 +79,8 @@ export default function MemoriesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(null)
-  const [moodCounts, setMoodCounts] = useState<Record<string, number>>({})
   const [searchQuery, setSearchQuery] = useState('')
   const [dateFilter, setDateFilter] = useState<{ start: string; end: string }>({ start: '', end: '' })
-  const [showFilters, setShowFilters] = useState(false)
   const [userId, setUserId] = useState<string | undefined>()
   const [browseMode, setBrowseMode] = useState<BrowseMode>('all')
   const [isGlobeMode, setIsGlobeMode] = useState(false) // Toggle between Map and Globe in map view
@@ -132,18 +128,6 @@ export default function MemoriesPage() {
     const { data } = await query
     setMemories(data || [])
     setFilteredMemories(data || [])
-    
-    // Count moods for filter chips (only if not filtered by mood)
-    if (!selectedMood) {
-      const counts: Record<string, number> = {}
-      for (const m of data || []) {
-        if (m.mood) {
-          counts[m.mood] = (counts[m.mood] || 0) + 1
-        }
-      }
-      setMoodCounts(counts)
-    }
-    
     setLoading(false)
   }, [selectedCategory, selectedMood, dateFilter, supabase])
 
@@ -338,27 +322,6 @@ export default function MemoriesPage() {
     }
   }, [filteredMemories])
 
-  const categories = [
-    { id: 'all', label: 'All' },
-    { id: 'travel', label: 'Travel' },
-    { id: 'family', label: 'Family' },
-    { id: 'celebration', label: 'Celebrations' },
-    { id: 'nature', label: 'Nature' },
-    { id: 'food', label: 'Food' },
-    { id: 'everyday', label: 'Everyday' },
-  ]
-
-  // Group memories by year/month for timeline
-  const groupedMemories = filteredMemories.reduce((acc, memory) => {
-    const date = memory.memory_date ? new Date(memory.memory_date) : new Date()
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-    if (!acc[key]) acc[key] = []
-    acc[key].push(memory)
-    return acc
-  }, {} as Record<string, Memory[]>)
-
-  const sortedGroups = Object.keys(groupedMemories).sort().reverse()
-
   const clearFilters = () => {
     setSearchQuery('')
     setSelectedCategory(null)
@@ -538,112 +501,94 @@ export default function MemoriesPage() {
             </button>
           </div>
 
-          {/* Browse Mode Toggle - only show for "My Memories" tab */}
+          {/* Simplified Filter Bar - Three dropdowns in a row */}
           {tabMode === 'mine' && (
-            <div className="flex items-center gap-2 mt-4">
-              <span className="text-sm text-[#406A56]/60 mr-2">Browse by:</span>
-              <div className="flex items-center glass-card-page p-1">
-                <button
-                  onClick={() => setBrowseMode('all')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    browseMode === 'all' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'
-                  }`}
-                >
-                  <Grid size={14} />
-                  All
-                </button>
-                <button
-                  onClick={() => setBrowseMode('people')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    browseMode === 'people' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'
-                  }`}
-                >
-                  <User size={14} />
-                  People
-                </button>
-                <button
-                  onClick={() => setBrowseMode('places')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    browseMode === 'places' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'
-                  }`}
-                >
-                  <MapPin size={14} />
-                  Places
-                </button>
-                <button
-                  onClick={() => setBrowseMode('map')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    browseMode === 'map' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'
-                  }`}
-                >
-                  <Map size={14} />
-                  Map
-                </button>
-                <button
-                  onClick={() => setBrowseMode('timeline')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    browseMode === 'timeline' ? 'bg-[#406A56] text-white' : 'text-[#406A56]/60 hover:text-[#406A56]'
-                  }`}
-                >
-                  <Clock size={14} />
-                  Timeline
-                </button>
+            <div className="mt-4 space-y-3">
+              {/* Three Filter Dropdowns */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                {/* Browse By Dropdown */}
+                <div className="relative flex-1 sm:flex-none sm:min-w-[140px]">
+                  <select
+                    value={browseMode}
+                    onChange={(e) => setBrowseMode(e.target.value as BrowseMode)}
+                    className="w-full appearance-none bg-white/90 backdrop-blur-sm border border-[#406A56]/20 rounded-xl px-4 py-2.5 pr-10 text-sm font-medium text-[#406A56] focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56]/40 cursor-pointer hover:bg-white transition-all"
+                    aria-label="Browse by"
+                  >
+                    <option value="all">All Memories</option>
+                    <option value="people">People</option>
+                    <option value="places">Places</option>
+                    <option value="timeline">Timeline</option>
+                    <option value="map">Map</option>
+                  </select>
+                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#406A56]/50 pointer-events-none" />
+                </div>
+
+                {/* Mood Dropdown */}
+                <div className="relative flex-1 sm:flex-none sm:min-w-[140px]">
+                  <select
+                    value={selectedMood || ''}
+                    onChange={(e) => handleMoodSelect(e.target.value as MoodType | null || null)}
+                    className="w-full appearance-none bg-white/90 backdrop-blur-sm border border-[#406A56]/20 rounded-xl px-4 py-2.5 pr-10 text-sm font-medium text-[#406A56] focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56]/40 cursor-pointer hover:bg-white transition-all"
+                    aria-label="Filter by mood"
+                  >
+                    <option value="">All Moods</option>
+                    <option value="joyful">Joyful</option>
+                    <option value="proud">Proud</option>
+                    <option value="grateful">Grateful</option>
+                    <option value="peaceful">Peaceful</option>
+                    <option value="nostalgic">Nostalgic</option>
+                    <option value="loving">Loving</option>
+                    <option value="hopeful">Hopeful</option>
+                    <option value="playful">Playful</option>
+                    <option value="bittersweet">Bittersweet</option>
+                    <option value="melancholy">Melancholy</option>
+                    <option value="reflective">Reflective</option>
+                  </select>
+                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#406A56]/50 pointer-events-none" />
+                </div>
+
+                {/* Category Dropdown */}
+                <div className="relative flex-1 sm:flex-none sm:min-w-[140px]">
+                  <select
+                    value={selectedCategory || ''}
+                    onChange={(e) => setSelectedCategory(e.target.value || null)}
+                    className="w-full appearance-none bg-white/90 backdrop-blur-sm border border-[#406A56]/20 rounded-xl px-4 py-2.5 pr-10 text-sm font-medium text-[#406A56] focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56]/40 cursor-pointer hover:bg-white transition-all"
+                    aria-label="Filter by category"
+                  >
+                    <option value="">All Categories</option>
+                    <option value="travel">Travel</option>
+                    <option value="family">Family</option>
+                    <option value="celebration">Celebrations</option>
+                    <option value="nature">Nature</option>
+                    <option value="food">Food</option>
+                    <option value="everyday">Everyday</option>
+                  </select>
+                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#406A56]/50 pointer-events-none" />
+                </div>
+
+                {/* Date Filter */}
+                <div className="relative flex-1 sm:flex-none sm:min-w-[140px]">
+                  <input
+                    type="date"
+                    value={dateFilter.start}
+                    onChange={(e) => setDateFilter({ ...dateFilter, start: e.target.value })}
+                    className="w-full bg-white/90 backdrop-blur-sm border border-[#406A56]/20 rounded-xl px-4 py-2.5 text-sm font-medium text-[#406A56] focus:outline-none focus:ring-2 focus:ring-[#406A56]/30 focus:border-[#406A56]/40 cursor-pointer hover:bg-white transition-all"
+                    aria-label="Filter by date"
+                  />
+                </div>
+
+                {/* Clear Filters Button */}
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium text-[#C35F33] hover:text-white hover:bg-[#C35F33] rounded-xl border border-[#C35F33]/30 hover:border-transparent transition-all"
+                  >
+                    <X size={14} />
+                    Clear
+                  </button>
+                )}
               </div>
             </div>
-          )}
-
-          {/* Filters Row - only show for "My Memories" tab and "All" browse mode */}
-          {tabMode === 'mine' && browseMode === 'all' && (
-          <div className="space-y-3 mt-4">
-            {/* Mood Filter Chips */}
-            <div className="pb-1">
-              <MoodFilterChips
-                selectedMood={selectedMood}
-                onMoodSelect={handleMoodSelect}
-                moodCounts={moodCounts}
-              />
-            </div>
-            
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              {/* Category Filters */}
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id === 'all' ? null : cat.id)}
-                  className={`filter-btn ${(cat.id === 'all' && !selectedCategory) || selectedCategory === cat.id ? 'filter-btn-active' : ''}`}
-                >
-                  {cat.label}
-                </button>
-              ))}
-
-              {/* Date Filter */}
-              <div className="flex items-center gap-2 ml-2">
-                <input
-                  type="date"
-                  value={dateFilter.start}
-                  onChange={(e) => setDateFilter({ ...dateFilter, start: e.target.value })}
-                  className="form-input text-sm py-2"
-                />
-                <span className="text-[#406A56]/60">to</span>
-                <input
-                  type="date"
-                  value={dateFilter.end}
-                  onChange={(e) => setDateFilter({ ...dateFilter, end: e.target.value })}
-                  className="form-input text-sm py-2"
-                />
-              </div>
-
-              {/* Clear Filters */}
-              {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="text-[#C35F33] hover:text-[#a84d28] text-sm whitespace-nowrap font-medium"
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
-          </div>
           )}
         </header>
 

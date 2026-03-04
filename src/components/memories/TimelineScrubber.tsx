@@ -3,14 +3,13 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-interface Memory {
+interface MemoryLike {
   id: string
   memory_date: string
-  [key: string]: unknown
 }
 
 interface TimelineScrubberProps {
-  memories: Memory[]
+  memories: MemoryLike[]
   onJumpTo: (date: Date) => void
   currentScrollDate?: Date | null
 }
