@@ -81,8 +81,12 @@ export default function SignupPage() {
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-[#2d2d2d] mb-1 tracking-wider">YOURS</h1>
-          <p className="text-2xl text-[#406A56] font-script italic -mt-1" style={{ fontFamily: 'Georgia, serif' }}>Truly</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img 
+            src="/images/logo-yours.png" 
+            alt="YoursTruly" 
+            className="h-20 w-auto mx-auto mb-2"
+          />
           <p className="text-[#406A56]/70 mt-2">Start documenting your legacy today.</p>
         </div>
 

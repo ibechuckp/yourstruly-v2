@@ -39,8 +39,12 @@ export default function ForgotPasswordPage() {
         
         <div className="relative z-10 w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-[#2d2d2d] mb-1 tracking-wider">YOURS</h1>
-            <p className="text-2xl text-[#406A56] font-script italic -mt-1" style={{ fontFamily: 'Georgia, serif' }}>Truly</p>
+            <!-- eslint-disable-next-line @next/next/no-img-element -->
+          <img 
+            src="/images/logo-yours.png" 
+            alt="YoursTruly" 
+            className="h-20 w-auto mx-auto mb-2"
+          />
           </div>
 
           <div className="bg-white/90 backdrop-blur-xl p-8 rounded-2xl shadow-xl border border-white/50 text-center">
@@ -75,8 +79,12 @@ export default function ForgotPasswordPage() {
       
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-[#2d2d2d] mb-1 tracking-wider">YOURS</h1>
-          <p className="text-2xl text-[#406A56] font-script italic -mt-1" style={{ fontFamily: 'Georgia, serif' }}>Truly</p>
+          <!-- eslint-disable-next-line @next/next/no-img-element -->
+          <img 
+            src="/images/logo-yours.png" 
+            alt="YoursTruly" 
+            className="h-20 w-auto mx-auto mb-2"
+          />
         </div>
 
         <div className="bg-white/90 backdrop-blur-xl p-8 rounded-2xl shadow-xl border border-white/50">

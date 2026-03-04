@@ -114,7 +114,7 @@ export default function TopNav({ user, profile }: TopNavProps) {
             <Link href="/dashboard" className="mr-4 flex-shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
-                src="/images/logo-yours.svg" 
+                src="/images/logo-yours.png" 
                 alt="YoursTruly" 
                 className="h-7 w-auto"
               />

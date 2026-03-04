@@ -58,6 +58,22 @@ const crimsonText = Crimson_Text({
 export const metadata: Metadata = {
   title: "YoursTruly - Document Your Life",
   description: "A life platform for documenting the past, planning the future, and staying connected across generations.",
+  openGraph: {
+    title: "YoursTruly - Document Your Life",
+    description: "A life platform for documenting the past, planning the future, and staying connected across generations.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "YoursTruly - Document Your Life",
+    description: "A life platform for documenting the past, planning the future, and staying connected across generations.",
+    images: ["/og-image.png"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({

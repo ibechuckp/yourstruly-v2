@@ -62,9 +62,13 @@ export default function Sidebar({ user, profile }: SidebarProps) {
   return (
     <aside className="fixed left-0 top-0 h-screen w-56 bg-gray-950/95 backdrop-blur-xl flex flex-col z-50">
       {/* Logo */}
-      <div className="p-5 border-b border-white/10">
-        <h1 className="text-xl font-bold text-white tracking-wide">YoursTruly</h1>
-        <p className="text-xs text-white/50 mt-0.5">Document your legacy</p>
+      <div className="p-4 border-b border-white/10">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img 
+          src="/images/logo-yours.png" 
+          alt="YoursTruly" 
+          className="h-10 w-auto brightness-0 invert"
+        />
       </div>
 
       {/* User Info */}
