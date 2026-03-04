@@ -13,6 +13,27 @@ import * as Goody from '@/lib/marketplace/providers/goody'
 // Goody Gift of Choice product ID
 const GOODY_FLEX_GIFT_PRODUCT_ID = 'b54200a5-b7a9-4812-bab3-d65bb81c3c16'
 
+// Type for postscript with contacts
+interface PostscriptWithContact {
+  id: string
+  title: string | null
+  recipient_name: string | null
+  recipient_email: string | null
+  recipient_phone: string | null
+  recipient_contact_id: string | null
+  contacts: {
+    id: string
+    full_name: string | null
+    email: string | null
+    phone: string | null
+  } | {
+    id: string
+    full_name: string | null
+    email: string | null
+    phone: string | null
+  }[] | null
+}
+
 // Lazy-init Supabase admin client
 let _supabaseAdmin: ReturnType<typeof createClient> | null = null
 function getSupabaseAdmin() {
@@ -65,7 +86,7 @@ export async function POST(
       )
     `)
     .eq('id', postscriptId)
-    .single()
+    .single() as unknown as { data: PostscriptWithContact | null, error: Error | null }
 
   if (postscriptError || !postscript) {
     return NextResponse.json({ error: 'PostScript not found' }, { status: 404 })
