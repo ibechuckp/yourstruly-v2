@@ -180,7 +180,7 @@ export async function POST(
           email: recipientEmail || undefined,
         }],
         cartItems,
-        message: gift.gift_type === 'choice'
+        message: gift.gift_type === 'choice' && gift.flex_gift_amount
           ? `You've received a special gift! Choose anything you'd like up to $${Math.round(gift.flex_gift_amount / 100)}.`
           : `You've received a special gift!`,
         swap: gift.gift_type === 'choice' ? 'multiple' : 'single',
