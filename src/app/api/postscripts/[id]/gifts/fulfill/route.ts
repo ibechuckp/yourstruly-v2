@@ -169,7 +169,7 @@ export async function POST(
         recipients: [{
           first_name: firstName,
           last_name: lastName,
-          email: recipientEmail,
+          email: recipientEmail || undefined,
         }],
         cartItems,
         message: gift.gift_type === 'choice'
