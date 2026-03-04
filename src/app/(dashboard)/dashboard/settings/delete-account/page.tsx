@@ -98,7 +98,7 @@ export default function DeleteAccountPage() {
       supabase.from('contacts').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
       supabase.from('postscripts').select('id, title, status, scheduled_date, recipients').eq('user_id', user.id),
       supabase.from('media_items').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
-      supabase.from('circles').select('id', { count: 'exact', head: true }).eq('owner_id', user.id),
+      supabase.from('circles').select('id', { count: 'exact', head: true }).eq('created_by', user.id),
       supabase.from('knowledge_entries').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
       supabase.from('interview_sessions').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
       supabase.from('postscript_credits').select('*').eq('user_id', user.id).single(),

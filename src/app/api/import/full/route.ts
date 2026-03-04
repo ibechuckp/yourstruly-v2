@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
     await importTable('pets', backupData.pets)
     await importTable('knowledge_entries', backupData.wisdom)
     await importTable('postscripts', backupData.postscripts)
-    await importTable('circles', backupData.circles, 'owner_id')
+    await importTable('circles', backupData.circles, 'created_by')
     await importTable('media_items', backupData.media_items)
     await importTable('memory_albums', backupData.albums)
     await importTable('smart_albums', backupData.smart_albums)

@@ -464,8 +464,8 @@ export default function SettingsPage() {
       // Import postscripts
       await importTable('postscripts', backup.postscripts)
 
-      // Import circles (owner_id instead of user_id)
-      await importTable('circles', backup.circles, 'owner_id')
+      // Import circles (created_by instead of user_id)
+      await importTable('circles', backup.circles, 'created_by')
 
       // Import media items
       await importTable('media_items', backup.media_items)
