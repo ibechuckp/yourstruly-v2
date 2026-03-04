@@ -26,6 +26,7 @@ export interface Product {
   quantity?: number;
   
   // Product details
+  brand?: string;
   attributes?: ProductAttribute[];
   variants?: ProductVariant[];
   
@@ -140,10 +141,12 @@ export interface ProviderConfig {
 export interface CacheConfig {
   floristone: number; // TTL in seconds
   prodigi: number;
+  goody: number;
 }
 
 // Default cache durations
 export const DEFAULT_CACHE_DURATIONS: CacheConfig = {
   floristone: 60 * 60, // 1 hour
   prodigi: 4 * 60 * 60, // 4 hours
+  goody: 60 * 60, // 1 hour
 };

@@ -26,6 +26,8 @@ export interface GiftProduct {
   allowShipping?: boolean
   allowGifting?: boolean
   tags?: string[]
+  isBestseller?: boolean
+  isNew?: boolean
   variants?: Array<{
     id: string
     name: string

@@ -196,7 +196,7 @@ function normalizeProduct(gProduct: GoodyProduct): Product {
     images: gProduct.images?.map(img => img.url) || [],
     thumbnail: mainImage?.thumbnail_url || mainImage?.url || '',
     provider: 'goody',
-    category: gProduct.categories?.[0]?.name || 'gifts',
+    category: 'home', // Goody products default to home category
     inStock: gProduct.in_stock,
     brand: gProduct.brand?.name,
     providerData: {
@@ -236,8 +236,8 @@ export async function getProducts(
   perPage: number = 50
 ): Promise<PaginatedProducts> {
   // Check cache first
-  const cacheKey = `goody_products_${category || 'all'}_${search || ''}_${page}_${perPage}`;
-  const cached = getMarketplaceCache(cacheKey);
+  const cacheKey = `products_${category || 'all'}_${search || ''}_${page}_${perPage}`;
+  const cached = getMarketplaceCache<PaginatedProducts>('goody', cacheKey);
   if (cached) return cached;
 
   try {
@@ -309,7 +309,7 @@ export async function getProducts(
     };
     
     // Cache for 5 minutes
-    setMarketplaceCache(cacheKey, result, 300000);
+    setMarketplaceCache('goody', cacheKey, result);
     
     return result;
   } catch (error) {

@@ -317,6 +317,20 @@ export async function searchAllProviders(
             20
           );
           break;
+        
+        case 'goody':
+          // Goody uses database-backed products
+          result = await service.getProducts(
+            undefined,
+            query,
+            undefined,
+            1,
+            20
+          );
+          break;
+        
+        default:
+          result = { products: [], total: 0, page: 1, perPage: 20, hasMore: false };
       }
       
       return { provider, products: result.products };

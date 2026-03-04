@@ -170,15 +170,17 @@ export function AttachmentSelectorModal({
 
   // Filter items based on search and category
   const filteredItems = items.filter(item => {
+    const tags = 'tags' in item ? item.tags : undefined
+    const category = 'category' in item ? item.category : undefined
     const matchesSearch = !searchQuery || 
       item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.tags && item.tags.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase())))
+      (tags && tags.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase())))
     
     const matchesCategory = !selectedCategory || 
       item.ai_category === selectedCategory ||
-      item.category === selectedCategory ||
-      (item.tags && item.tags.includes(selectedCategory))
+      category === selectedCategory ||
+      (tags && tags.includes(selectedCategory))
     
     return matchesSearch && matchesCategory
   })
@@ -202,18 +204,19 @@ export function AttachmentSelectorModal({
       .map(item => {
         const isMemory = type === 'memory'
         const memoryItem = item as Memory
+        const wisdomItem = item as WisdomEntry
         
         return {
           id: item.id,
           type,
           title: item.title || (isMemory ? 'Untitled Memory' : 'Untitled Wisdom'),
-          description: item.description || (isMemory ? (item as Memory).ai_summary : '') || '',
+          description: item.description || (isMemory ? memoryItem.ai_summary : '') || '',
           imageUrl: isMemory && memoryItem.memory_media?.length 
             ? memoryItem.memory_media.find(m => m.is_cover)?.file_url || memoryItem.memory_media[0]?.file_url
             : undefined,
-          date: isMemory ? (item as Memory).memory_date : item.created_at,
-          category: item.ai_category || item.category,
-          tags: item.tags || item.ai_labels
+          date: isMemory ? memoryItem.memory_date : wisdomItem.created_at,
+          category: item.ai_category || (isMemory ? undefined : wisdomItem.category),
+          tags: (isMemory ? memoryItem.ai_labels : wisdomItem.tags) || []
         }
       })
     
@@ -299,7 +302,8 @@ export function AttachmentSelectorModal({
               All {type === 'memory' ? 'Memories' : 'Wisdom'}
             </button>
             {categories.map(cat => {
-              const Icon = 'icon' in cat ? cat.icon : Tag
+              const wisdomCat = cat as typeof WISDOM_CATEGORIES[number]
+              const CatIcon = 'icon' in cat ? wisdomCat.icon : null
               return (
                 <button
                   key={cat.key}
@@ -310,7 +314,7 @@ export function AttachmentSelectorModal({
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                 >
-                  {'icon' in cat && React.createElement(Icon, { size: 14 })}
+                  {CatIcon && <CatIcon size={14} />}
                   {cat.label}
                 </button>
               )
@@ -419,10 +423,10 @@ export function AttachmentSelectorModal({
                             {getCategoryLabel(item.ai_category)}
                           </span>
                         )}
-                        {((item as Memory).memory_date || item.created_at) && (
+                        {((item as Memory).memory_date || (item as WisdomEntry).created_at) && (
                           <span className="flex items-center gap-1">
                             <Calendar size={12} />
-                            {new Date((item as Memory).memory_date || item.created_at).toLocaleDateString('en-US', {
+                            {new Date((item as Memory).memory_date || (item as WisdomEntry).created_at).toLocaleDateString('en-US', {
                               month: 'short',
                               day: 'numeric',
                               year: 'numeric'

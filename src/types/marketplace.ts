@@ -13,7 +13,7 @@ export type ProductCategory =
   // Flowers categories
   | 'occasions' | 'birthday' | 'anniversary' | 'sympathy' | 'get-well' | 'congratulations' | 'love-romance' | 'thank-you' | 'new-baby'
   // Gifts categories  
-  | 'sports' | 'toys-kids' | 'pets' | 'electronics' | 'arts-crafts' | 'entertainment' | 'home' | 'fashion' | 'food'
+  | 'sports' | 'toys-kids' | 'pets' | 'electronics' | 'arts-crafts' | 'entertainment' | 'home' | 'fashion' | 'food' | 'wellness' | 'outdoors' | 'luxury' | 'tech' | 'kitchen'
   // Prints categories
   | 'wall-art' | 'canvas' | 'posters' | 'mugs' | 'pillows' | 'blankets' | 'phone-cases' | 'calendars' | 'cards';
 
@@ -24,6 +24,7 @@ export interface Product {
   description: string;
   price: number;
   originalPrice?: number; // For showing discounts
+  currency?: string; // e.g., 'USD'
   provider: ProviderType;
   category: ProductCategory;
   subcategory?: string;

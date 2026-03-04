@@ -9,7 +9,7 @@ export { useCart } from './useCart';
 export { useChat } from './useChat';
 export { useContacts } from './useContacts';
 export { useEngagementPrompts } from './useEngagementPrompts';
-export { useMarketplace } from './useMarketplace';
+export { useMarketplaceProducts, useGiftSuggestions, useCategories } from './useMarketplace';
 export { useNotificationPreferences } from './useNotificationPreferences';
 export { usePersonaPlexVoice } from './usePersonaPlexVoice';
 export { usePostscriptCredits } from './usePostscriptCredits';

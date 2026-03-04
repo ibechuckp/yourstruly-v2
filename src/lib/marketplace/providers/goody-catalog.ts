@@ -21,7 +21,6 @@ import { Product } from '@/types/marketplace';
 export interface GoodyCuratedProduct extends Product {
   goodyProductId: string;
   brandName: string;
-  category: string;
   priceRange: 'under50' | '50to100' | '100to200' | 'over200';
   occasions: string[];
   allowShipping: boolean;

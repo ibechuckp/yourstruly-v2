@@ -11,6 +11,8 @@ export interface AnimatedQuestionProps {
   question: string;
   /** Animate the text appearing (typewriter effect) */
   animate?: boolean;
+  /** Show loading state (animated dots) */
+  isLoading?: boolean;
   /** Show avatar/bot icon */
   showAvatar?: boolean;
   /** Custom avatar element */
@@ -59,6 +61,7 @@ export interface AnimatedQuestionProps {
 export function AnimatedQuestion({
   question,
   animate = true,
+  isLoading = false,
   showAvatar = false,
   avatar,
   enableTTS = false,
@@ -168,9 +171,19 @@ export function AnimatedQuestion({
       
       <div className={`animated-question-content ${centered ? 'text-center' : ''}`}>
         <p className={`${sizeClasses[size]} font-medium text-[#2d2d2d] leading-relaxed font-playfair`}>
-          {displayText}
-          {animate && !typingDone && (
-            <span className="inline-block w-0.5 h-[1em] bg-[#406A56] ml-1 animate-pulse align-middle" />
+          {isLoading ? (
+            <span className="inline-flex items-center gap-1">
+              <span className="inline-block w-2 h-2 bg-[#406A56] rounded-full animate-bounce [animation-delay:-0.3s]" />
+              <span className="inline-block w-2 h-2 bg-[#406A56] rounded-full animate-bounce [animation-delay:-0.15s]" />
+              <span className="inline-block w-2 h-2 bg-[#406A56] rounded-full animate-bounce" />
+            </span>
+          ) : (
+            <>
+              {displayText}
+              {animate && !typingDone && (
+                <span className="inline-block w-0.5 h-[1em] bg-[#406A56] ml-1 animate-pulse align-middle" />
+              )}
+            </>
           )}
         </p>
       </div>

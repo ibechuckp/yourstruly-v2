@@ -207,7 +207,7 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
     })
   }
 
-  const getAge = (dob: string) => {
+  const getAge = (dob: string | null | undefined) => {
     if (!dob) return null
     const birth = new Date(dob)
     const today = new Date()
