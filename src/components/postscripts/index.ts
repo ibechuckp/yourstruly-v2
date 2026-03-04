@@ -11,6 +11,7 @@ export { AttachedGift, AttachedGiftList, GiftPreview } from './AttachedGift'
 
 // Other components
 export { AttachmentSelectorModal } from './AttachmentSelectorModal'
+export type { SelectedAttachment } from './AttachmentSelectorModal'
 export { EnvelopeMessage } from './EnvelopeMessage'
 export { default as PostscriptCreditsCounter } from './PostscriptCreditsCounter'
 export { default as PostscriptTimeline } from './PostscriptTimeline'
