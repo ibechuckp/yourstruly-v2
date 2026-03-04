@@ -25,7 +25,8 @@ export default function SettingsPage() {
   const [generatingEmbeddings, setGeneratingEmbeddings] = useState(false)
   const [embeddingStats, setEmbeddingStats] = useState<{ processed: number; errors: number } | null>(null)
   const [importing, setImporting] = useState(false)
-  const [importPreview, setImportPreview] = useState<{ data: any; counts: Record<string, number> } | null>(null)
+  const [exporting, setExporting] = useState(false)
+  const [importPreview, setImportPreview] = useState<{ data: any; counts: Record<string, number>; isZip?: boolean } | null>(null)
   const [showImportModal, setShowImportModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
@@ -264,13 +265,66 @@ export default function SettingsPage() {
     setTimeout(() => setMessage(''), 5000)
   }
 
+  const handleFullExport = async () => {
+    setExporting(true)
+    setMessage('Preparing full backup with media... This may take several minutes.')
+
+    try {
+      const response = await fetch('/api/export/full', {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Export failed')
+      }
+
+      // Download the ZIP file
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `yourstruly-full-backup-${new Date().toISOString().split('T')[0]}.zip`
+      a.click()
+      URL.revokeObjectURL(url)
+
+      setMessage('Full backup downloaded!')
+    } catch (error) {
+      console.error('Full export error:', error)
+      setMessage('Export failed. Please try again.')
+    } finally {
+      setExporting(false)
+      setTimeout(() => setMessage(''), 5000)
+    }
+  }
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
+    const isZip = file.name.endsWith('.zip') || file.type === 'application/zip'
+
     try {
-      const text = await file.text()
-      const data = JSON.parse(text)
+      let data: any
+
+      if (isZip) {
+        // For ZIP files, we need to extract and read data.json
+        const JSZip = (await import('jszip')).default
+        const zip = await JSZip.loadAsync(file)
+        const dataFile = zip.file('data.json')
+        
+        if (!dataFile) {
+          setMessage('Invalid backup ZIP. Missing data.json file.')
+          return
+        }
+
+        const text = await dataFile.async('text')
+        data = JSON.parse(text)
+        data._zipFile = file // Store reference for import
+      } else {
+        const text = await file.text()
+        data = JSON.parse(text)
+      }
 
       // Validate it's a YoursTruly export
       if (!data._meta?.version && !data.profile) {
@@ -293,11 +347,16 @@ export default function SettingsPage() {
         }
       }
 
-      setImportPreview({ data, counts })
+      // Add media file count for ZIP
+      if (data._meta?.total_media_files) {
+        counts['media_files'] = data._meta.total_media_files
+      }
+
+      setImportPreview({ data, counts, isZip })
       setShowImportModal(true)
     } catch (error) {
       console.error('Parse error:', error)
-      setMessage('Failed to read backup file. Make sure it\'s a valid JSON file.')
+      setMessage('Failed to read backup file. Make sure it\'s a valid JSON or ZIP file.')
     }
 
     // Reset file input
@@ -310,6 +369,47 @@ export default function SettingsPage() {
     if (!importPreview?.data) return
 
     setImporting(true)
+    
+    const backup = importPreview.data
+    const isZipImport = importPreview.isZip && backup._zipFile
+
+    if (isZipImport) {
+      // Use server-side import for ZIP files with media
+      setMessage('Importing your data and uploading media... This may take several minutes.')
+
+      try {
+        const formData = new FormData()
+        formData.append('file', backup._zipFile)
+
+        const response = await fetch('/api/import/full', {
+          method: 'POST',
+          body: formData,
+        })
+
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Import failed')
+        }
+
+        setMessage(
+          `Import complete! Restored ${result.imported} items, uploaded ${result.uploadedFiles} files.` +
+          (result.errors > 0 ? ` (${result.errors} items skipped)` : '') +
+          (result.uploadErrors > 0 ? ` (${result.uploadErrors} files failed)` : '')
+        )
+      } catch (error) {
+        console.error('Import error:', error)
+        setMessage('Import failed. Some data may have been partially restored.')
+      } finally {
+        setImporting(false)
+        setShowImportModal(false)
+        setImportPreview(null)
+        setTimeout(() => setMessage(''), 10000)
+      }
+      return
+    }
+
+    // JSON-only import (client-side)
     setMessage('Importing your data... This may take a moment.')
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -319,7 +419,6 @@ export default function SettingsPage() {
       return
     }
 
-    const backup = importPreview.data
     let imported = 0
     let errors = 0
 
@@ -547,26 +646,49 @@ export default function SettingsPage() {
                 className="w-full flex items-center justify-center gap-2 py-3 bg-[#406A56]/5 hover:bg-[#406A56]/10 text-[#406A56] rounded-xl transition-colors font-medium"
               >
                 <Download size={18} />
-                Export All Data
+                Export Data (JSON)
               </button>
               
               <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-[#8DACAB]/5 hover:bg-[#8DACAB]/10 text-[#5d8585] rounded-xl transition-colors font-medium"
+                onClick={handleFullExport}
+                disabled={exporting}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-[#406A56] hover:bg-[#355a48] text-white rounded-xl transition-colors font-medium"
               >
-                <Upload size={18} />
-                Import Backup
+                {exporting ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Preparing Download...
+                  </>
+                ) : (
+                  <>
+                    <Download size={18} />
+                    Full Backup (with Media)
+                  </>
+                )}
               </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
               <p className="text-xs text-[#999] text-center">
-                Restore data from a previous YoursTruly export
+                Includes all photos, videos, and files in a ZIP archive
               </p>
+
+              <div className="border-t border-gray-200 pt-3 mt-3">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#8DACAB]/5 hover:bg-[#8DACAB]/10 text-[#5d8585] rounded-xl transition-colors font-medium"
+                >
+                  <Upload size={18} />
+                  Import Backup
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,.zip"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <p className="text-xs text-[#999] text-center mt-2">
+                  Restore from JSON or ZIP backup file
+                </p>
+              </div>
             </div>
           </section>
 
@@ -650,6 +772,11 @@ export default function SettingsPage() {
 
             <p className="text-[#666] mb-4">
               This will restore data from your backup file. Existing data will not be deleted, but duplicates may be created.
+              {importPreview.isZip && (
+                <span className="block mt-2 text-[#406A56] font-medium">
+                  📦 Full backup with media files detected
+                </span>
+              )}
             </p>
 
             {importPreview.data._meta && (
