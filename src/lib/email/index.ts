@@ -5,10 +5,14 @@
  * - Circle invitations
  * - Death claim notifications
  * - Welcome emails
- * - Password resets
+ * - PostScript delivery
+ * 
+ * Templates are loaded from the database (email_templates table)
+ * with fallback to hardcoded templates for safety.
  */
 
 import { Resend } from 'resend';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // Lazy initialization to avoid build-time errors
 let resendInstance: Resend | null = null;
@@ -34,6 +38,14 @@ interface EmailResult {
   success: boolean;
   messageId?: string;
   error?: string;
+}
+
+interface EmailTemplate {
+  id: string;
+  subject: string;
+  html_content: string;
+  text_content: string | null;
+  is_active: boolean;
 }
 
 interface CircleInviteEmailData {
@@ -66,11 +78,92 @@ interface AdminNotificationEmailData {
   content: string;
 }
 
+interface WelcomeEmailData {
+  recipientEmail: string;
+  userName: string;
+}
+
+interface PostscriptDeliveredEmailData {
+  recipientEmail: string;
+  recipientName: string;
+  senderName: string;
+  postscriptId: string;
+  deliveryReason?: string;
+}
+
 // =============================================================================
-// Email Templates
+// Template Loading & Processing
 // =============================================================================
 
-function circleInviteTemplate(data: CircleInviteEmailData): { subject: string; html: string; text: string } {
+/**
+ * Fetch an email template from the database by slug
+ */
+async function getTemplateFromDB(slug: string): Promise<EmailTemplate | null> {
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from('email_templates')
+      .select('id, subject, html_content, text_content, is_active')
+      .eq('id', slug)
+      .eq('is_active', true)
+      .single();
+
+    if (error) {
+      console.warn(`[Email] Template '${slug}' not found in DB:`, error.message);
+      return null;
+    }
+
+    return data;
+  } catch (err) {
+    console.error(`[Email] Error fetching template '${slug}':`, err);
+    return null;
+  }
+}
+
+/**
+ * Replace {{variable}} placeholders in a template string
+ */
+function replaceVariables(template: string, variables: Record<string, string>): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    return variables[key] ?? match;
+  });
+}
+
+/**
+ * Process a template - load from DB and replace variables
+ * Falls back to hardcoded template if DB lookup fails
+ */
+async function processTemplate(
+  slug: string,
+  variables: Record<string, string>,
+  fallback: { subject: string; html: string; text: string }
+): Promise<{ subject: string; html: string; text: string }> {
+  const dbTemplate = await getTemplateFromDB(slug);
+  
+  if (dbTemplate) {
+    console.log(`[Email] Using DB template for '${slug}'`);
+    return {
+      subject: replaceVariables(dbTemplate.subject, variables),
+      html: replaceVariables(dbTemplate.html_content, variables),
+      text: dbTemplate.text_content 
+        ? replaceVariables(dbTemplate.text_content, variables) 
+        : replaceVariables(fallback.text, variables),
+    };
+  }
+  
+  console.log(`[Email] Using fallback template for '${slug}'`);
+  return {
+    subject: replaceVariables(fallback.subject, variables),
+    html: replaceVariables(fallback.html, variables),
+    text: replaceVariables(fallback.text, variables),
+  };
+}
+
+// =============================================================================
+// Fallback Email Templates (for safety)
+// =============================================================================
+
+function circleInviteFallback(data: CircleInviteEmailData): { subject: string; html: string; text: string } {
   const inviteUrl = `${APP_URL}/circles/join?token=${data.inviteToken}`;
   
   return {
@@ -85,11 +178,11 @@ function circleInviteTemplate(data: CircleInviteEmailData): { subject: string; h
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #6366f1; margin: 0;">YoursTruly</h1>
+            <h1 style="color: #406A56; margin: 0;">YoursTruly</h1>
             <p style="color: #666; margin: 5px 0 0 0;">Preserve Your Legacy</p>
           </div>
           
-          <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
+          <div style="background: linear-gradient(135deg, #406A56 0%, #5a8a6a 100%); color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
             <h2 style="margin: 0 0 10px 0;">You're Invited! 🎉</h2>
             <p style="margin: 0; font-size: 18px;">
               <strong>${data.inviterName}</strong> wants you to join their circle
@@ -104,7 +197,7 @@ function circleInviteTemplate(data: CircleInviteEmailData): { subject: string; h
           </div>
           
           <div style="text-align: center; margin-bottom: 30px;">
-            <a href="${inviteUrl}" style="display: inline-block; background: #6366f1; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="${inviteUrl}" style="display: inline-block; background: #406A56; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
               Accept Invitation
             </a>
           </div>
@@ -118,7 +211,7 @@ function circleInviteTemplate(data: CircleInviteEmailData): { subject: string; h
           
           <p style="color: #94a3b8; font-size: 12px; text-align: center;">
             If you didn't expect this invitation, you can safely ignore this email.<br>
-            <a href="${APP_URL}" style="color: #6366f1;">YoursTruly</a> - Preserve your legacy for generations to come.
+            <a href="${APP_URL}" style="color: #406A56;">YoursTruly</a> - Preserve your legacy for generations to come.
           </p>
         </body>
       </html>
@@ -141,7 +234,7 @@ YoursTruly - Preserve your legacy for generations to come.
   };
 }
 
-function deathClaimReceivedTemplate(data: DeathClaimReceivedEmailData): { subject: string; html: string; text: string } {
+function deathClaimReceivedFallback(data: DeathClaimReceivedEmailData): { subject: string; html: string; text: string } {
   return {
     subject: `Death Claim Received - ${data.deceasedName}`,
     html: `
@@ -153,7 +246,7 @@ function deathClaimReceivedTemplate(data: DeathClaimReceivedEmailData): { subjec
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #6366f1; margin: 0;">YoursTruly</h1>
+            <h1 style="color: #406A56; margin: 0;">YoursTruly</h1>
           </div>
           
           <div style="background: #fef3c7; border: 1px solid #f59e0b; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
@@ -196,7 +289,7 @@ function deathClaimReceivedTemplate(data: DeathClaimReceivedEmailData): { subjec
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
           
           <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-            <a href="${APP_URL}" style="color: #6366f1;">YoursTruly</a> - Preserve your legacy for generations to come.
+            <a href="${APP_URL}" style="color: #406A56;">YoursTruly</a> - Preserve your legacy for generations to come.
           </p>
         </body>
       </html>
@@ -220,6 +313,144 @@ If you have any questions, please reply to this email or contact our support tea
 
 With sympathy,
 The YoursTruly Team
+    `.trim()
+  };
+}
+
+function welcomeFallback(data: WelcomeEmailData): { subject: string; html: string; text: string } {
+  const dashboardUrl = `${APP_URL}/dashboard`;
+  
+  return {
+    subject: `Welcome to YoursTruly, ${data.userName}! 🎉`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #406A56; margin: 0;">YoursTruly</h1>
+            <p style="color: #666; margin: 5px 0 0 0;">Preserve Your Legacy</p>
+          </div>
+          
+          <div style="background: linear-gradient(135deg, #406A56 0%, #5a8a6a 100%); color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
+            <h2 style="margin: 0 0 10px 0;">Welcome, ${data.userName}! 🎉</h2>
+            <p style="margin: 0; font-size: 16px;">
+              Your journey to preserve your legacy begins today.
+            </p>
+          </div>
+          
+          <p>We're thrilled to have you join YoursTruly, where your stories, memories, and wisdom will live on for generations.</p>
+          
+          <div style="background: #f8fafc; padding: 24px; border-radius: 8px; margin: 24px 0;">
+            <h3 style="margin: 0 0 16px 0; color: #1e293b;">Get Started</h3>
+            <ul style="margin: 0; padding-left: 20px; color: #475569;">
+              <li style="margin-bottom: 8px;">📸 Upload your first memory</li>
+              <li style="margin-bottom: 8px;">💡 Share a piece of wisdom</li>
+              <li style="margin-bottom: 8px;">👥 Invite family to your circle</li>
+              <li>🎁 Set up a PostScript for loved ones</li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${dashboardUrl}" style="display: inline-block; background: #406A56; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+              Go to Dashboard
+            </a>
+          </div>
+          
+          <p style="color: #64748b; font-size: 14px; text-align: center;">
+            Questions? Just reply to this email - we're here to help.
+          </p>
+          
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+          
+          <p style="color: #94a3b8; font-size: 12px; text-align: center;">
+            <a href="${APP_URL}" style="color: #406A56;">YoursTruly</a> - Preserve your legacy for generations to come.
+          </p>
+        </body>
+      </html>
+    `,
+    text: `
+Welcome to YoursTruly, ${data.userName}!
+
+We're thrilled to have you join us, where your stories, memories, and wisdom will live on for generations.
+
+Get Started:
+- Upload your first memory
+- Share a piece of wisdom
+- Invite family to your circle
+- Set up a PostScript for loved ones
+
+Go to your dashboard: ${dashboardUrl}
+
+Questions? Just reply to this email - we're here to help.
+
+The YoursTruly Team
+    `.trim()
+  };
+}
+
+function postscriptDeliveredFallback(data: PostscriptDeliveredEmailData): { subject: string; html: string; text: string } {
+  const postscriptUrl = `${APP_URL}/postscript/${data.postscriptId}`;
+  
+  return {
+    subject: `A message from ${data.senderName} has arrived 💌`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #406A56; margin: 0;">YoursTruly</h1>
+          </div>
+          
+          <div style="background: linear-gradient(135deg, #C35F33 0%, #e07a4d 100%); color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
+            <h2 style="margin: 0 0 10px 0;">A Message For You 💌</h2>
+            <p style="margin: 0; font-size: 16px;">
+              <strong>${data.senderName}</strong> left you something special
+            </p>
+          </div>
+          
+          <p>Dear ${data.recipientName},</p>
+          
+          <p>
+            ${data.senderName} scheduled this message to arrive today. It may contain words of wisdom, 
+            cherished memories, or heartfelt wishes just for you.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${postscriptUrl}" style="display: inline-block; background: #C35F33; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+              Open Your Message
+            </a>
+          </div>
+          
+          <p style="color: #64748b; font-size: 14px; text-align: center;">
+            This message was scheduled with love through YoursTruly.
+          </p>
+          
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+          
+          <p style="color: #94a3b8; font-size: 12px; text-align: center;">
+            <a href="${APP_URL}" style="color: #406A56;">YoursTruly</a> - Preserve your legacy for generations to come.
+          </p>
+        </body>
+      </html>
+    `,
+    text: `
+A Message from ${data.senderName} Has Arrived
+
+Dear ${data.recipientName},
+
+${data.senderName} scheduled this message to arrive today. It may contain words of wisdom, cherished memories, or heartfelt wishes just for you.
+
+Open your message: ${postscriptUrl}
+
+This message was scheduled with love through YoursTruly.
     `.trim()
   };
 }
@@ -262,7 +493,7 @@ function deathClaimStatusTemplate(data: DeathClaimStatusEmailData): { subject: s
       </p>
       ${data.accessLink ? `
         <div style="text-align: center; margin: 24px 0;">
-          <a href="${data.accessLink}" style="display: inline-block; background: #6366f1; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+          <a href="${data.accessLink}" style="display: inline-block; background: #406A56; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600;">
             Access Memorial Account
           </a>
         </div>
@@ -325,7 +556,7 @@ function deathClaimStatusTemplate(data: DeathClaimStatusEmailData): { subject: s
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #6366f1; margin: 0;">YoursTruly</h1>
+            <h1 style="color: #406A56; margin: 0;">YoursTruly</h1>
           </div>
           
           <div style="background: ${config.bgColor}; border: 1px solid ${config.borderColor}; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
@@ -346,7 +577,7 @@ function deathClaimStatusTemplate(data: DeathClaimStatusEmailData): { subject: s
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
           
           <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-            <a href="${APP_URL}" style="color: #6366f1;">YoursTruly</a> - Preserve your legacy for generations to come.
+            <a href="${APP_URL}" style="color: #406A56;">YoursTruly</a> - Preserve your legacy for generations to come.
           </p>
         </body>
       </html>
@@ -375,7 +606,17 @@ export async function sendCircleInviteEmail(data: CircleInviteEmailData): Promis
       return { success: false, error: 'Email service not configured' };
     }
     
-    const template = circleInviteTemplate(data);
+    const inviteUrl = `${APP_URL}/circles/join?token=${data.inviteToken}`;
+    const fallback = circleInviteFallback(data);
+    
+    const template = await processTemplate('circle_invite', {
+      inviterName: data.inviterName,
+      circleName: data.circleName,
+      inviteUrl,
+      appUrl: APP_URL,
+      recipientName: data.recipientName || 'Friend',
+      recipientEmail: data.recipientEmail,
+    }, fallback);
     
     const { data: result, error } = await resend.emails.send({
       from: FROM_EMAIL,
@@ -405,7 +646,14 @@ export async function sendDeathClaimReceivedEmail(data: DeathClaimReceivedEmailD
       return { success: false, error: 'Email service not configured' };
     }
     
-    const template = deathClaimReceivedTemplate(data);
+    const fallback = deathClaimReceivedFallback(data);
+    
+    const template = await processTemplate('death_claim_received', {
+      claimantName: data.claimantName,
+      deceasedName: data.deceasedName,
+      claimId: data.claimId,
+      appUrl: APP_URL,
+    }, fallback);
     
     const { data: result, error } = await resend.emails.send({
       from: FROM_EMAIL,
@@ -435,6 +683,7 @@ export async function sendDeathClaimStatusEmail(data: DeathClaimStatusEmailData)
       return { success: false, error: 'Email service not configured' };
     }
     
+    // Death claim status uses hardcoded template (complex conditional logic)
     const template = deathClaimStatusTemplate(data);
     
     const { data: result, error } = await resend.emails.send({
@@ -458,6 +707,83 @@ export async function sendDeathClaimStatusEmail(data: DeathClaimStatusEmailData)
   }
 }
 
+export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<EmailResult> {
+  try {
+    const resend = getResend();
+    if (!resend) {
+      return { success: false, error: 'Email service not configured' };
+    }
+    
+    const dashboardUrl = `${APP_URL}/dashboard`;
+    const fallback = welcomeFallback(data);
+    
+    const template = await processTemplate('welcome', {
+      userName: data.userName,
+      userEmail: data.recipientEmail,
+      dashboardUrl,
+      appUrl: APP_URL,
+    }, fallback);
+    
+    const { data: result, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: data.recipientEmail,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+    });
+
+    if (error) {
+      console.error('[Email] Welcome email failed:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('[Email] Welcome email sent:', result?.id);
+    return { success: true, messageId: result?.id };
+  } catch (err) {
+    console.error('[Email] Welcome email error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+  }
+}
+
+export async function sendPostscriptDeliveredEmail(data: PostscriptDeliveredEmailData): Promise<EmailResult> {
+  try {
+    const resend = getResend();
+    if (!resend) {
+      return { success: false, error: 'Email service not configured' };
+    }
+    
+    const postscriptUrl = `${APP_URL}/postscript/${data.postscriptId}`;
+    const fallback = postscriptDeliveredFallback(data);
+    
+    const template = await processTemplate('postscript_delivered', {
+      senderName: data.senderName,
+      recipientName: data.recipientName,
+      postscriptUrl,
+      deliveryReason: data.deliveryReason || 'scheduled delivery',
+      appUrl: APP_URL,
+    }, fallback);
+    
+    const { data: result, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: data.recipientEmail,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+    });
+
+    if (error) {
+      console.error('[Email] PostScript delivery notification failed:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('[Email] PostScript delivery notification sent:', result?.id);
+    return { success: true, messageId: result?.id };
+  } catch (err) {
+    console.error('[Email] PostScript delivery error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+  }
+}
+
 export async function sendAdminNotificationEmail(data: AdminNotificationEmailData): Promise<EmailResult> {
   try {
     const resend = getResend();
@@ -477,7 +803,7 @@ export async function sendAdminNotificationEmail(data: AdminNotificationEmailDat
           </head>
           <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="text-align: center; margin-bottom: 20px;">
-              <h1 style="color: #6366f1; margin: 0;">YoursTruly Admin</h1>
+              <h1 style="color: #406A56; margin: 0;">YoursTruly Admin</h1>
             </div>
             <div style="white-space: pre-wrap;">${data.content}</div>
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
@@ -508,5 +834,7 @@ export type {
   DeathClaimReceivedEmailData,
   DeathClaimStatusEmailData,
   AdminNotificationEmailData,
+  WelcomeEmailData,
+  PostscriptDeliveredEmailData,
   EmailResult,
 };
