@@ -149,13 +149,21 @@ export async function POST(
       
       if (gift.gift_type === 'choice') {
         // Gift of Choice - use flex gift product with variable price
+        if (!gift.flex_gift_amount) {
+          results.push({ giftId: gift.id, success: false, error: 'No amount for Gift of Choice' })
+          continue
+        }
         cartItems.push({
           productId: GOODY_FLEX_GIFT_PRODUCT_ID,
           quantity: gift.quantity || 1,
           variablePrice: gift.flex_gift_amount, // Amount in cents
         })
       } else {
-        // Specific product
+        // Specific product - skip if no product ID
+        if (!gift.product_id) {
+          results.push({ giftId: gift.id, success: false, error: 'No product ID for gift' })
+          continue
+        }
         cartItems.push({
           productId: gift.product_id,
           quantity: gift.quantity || 1,
