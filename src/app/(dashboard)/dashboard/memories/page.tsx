@@ -708,6 +708,16 @@ export default function MemoriesPage() {
           ) : browseMode === 'places' ? (
             /* Places Browse Mode */
             <PlacesBrowse memories={memories} />
+          ) : browseMode === 'map' ? (
+            /* Map Browse Mode - Full interactive map */
+            <MapView 
+              memories={memories}
+              onSelectMemory={(memory) => {
+                // Navigate to memory detail
+                router.push(`/dashboard/memories/${memory.id}`)
+              }}
+              showGlobeToggle={false}
+            />
           ) : browseMode === 'timeline' ? (
             /* Timeline Browse Mode */
             <TimelineBrowse memories={memories} />
@@ -742,9 +752,15 @@ export default function MemoriesPage() {
             </div>
           ) : viewMode === 'scrapbook' ? (
             /* Scrapbook View - Polaroid cards with washi tape */
-            <div className="scrapbook-grid">
+            <div ref={memoriesGridRef} className="scrapbook-grid">
               {filteredMemories.map((memory, index) => (
-                <ScrapbookCard key={memory.id} memory={memory} index={index} />
+                <div 
+                  key={memory.id}
+                  data-memory-id={memory.id}
+                  data-memory-date={memory.memory_date}
+                >
+                  <ScrapbookCard memory={memory} index={index} />
+                </div>
               ))}
             </div>
           ) : viewMode === 'grid' ? (
@@ -752,9 +768,15 @@ export default function MemoriesPage() {
             <VirtualizedSimpleGrid memories={filteredMemories} gap={12} />
           ) : viewMode === 'cards' ? (
             /* Cards View - Photo on top, info below, reactions */
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div ref={memoriesGridRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {filteredMemories.map((memory) => (
-                <MemoryCardClean key={memory.id} memory={memory} showReactions={true} />
+                <div 
+                  key={memory.id}
+                  data-memory-id={memory.id}
+                  data-memory-date={memory.memory_date}
+                >
+                  <MemoryCardClean memory={memory} showReactions={true} />
+                </div>
               ))}
             </div>
           ) : (
@@ -777,8 +799,9 @@ export default function MemoriesPage() {
       {/* Milestone Prompt for Photobook */}
       <MilestonePrompt memoryCount={memories.length} userId={userId} />
 
-      {/* Timeline Scrubber - only show for My Memories tab and All browse mode with dated memories */}
-      {!loading && tabMode === 'mine' && browseMode === 'all' && filteredMemories.length > 0 && (
+      {/* Timeline Scrubber - show for My Memories tab, All browse mode, non-virtualized views */}
+      {!loading && tabMode === 'mine' && browseMode === 'all' && filteredMemories.length > 0 && 
+       (viewMode === 'scrapbook' || viewMode === 'cards') && (
         <TimelineScrubber
           memories={filteredMemories}
           onJumpTo={handleTimelineJump}

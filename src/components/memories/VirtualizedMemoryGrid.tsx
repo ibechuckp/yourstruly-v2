@@ -1,8 +1,8 @@
 'use client'
 
 import { useCallback, useMemo, useRef, memo, useEffect, useState } from 'react'
-import { VariableSizeList as List, ListChildComponentProps } from 'react-window'
-import AutoSizer from 'react-virtualized-auto-sizer'
+import { List, useDynamicRowHeight, useListRef, type RowComponentProps } from 'react-window'
+import { AutoSizer } from 'react-virtualized-auto-sizer'
 import { Calendar } from 'lucide-react'
 import MemoryCard from './MemoryCard'
 
@@ -31,11 +31,9 @@ interface Memory {
 
 interface VirtualizedMemoryGridProps {
   memories: Memory[]
-  columnCount?: number // If not provided, calculated from width
+  columnCount?: number
   gap?: number
   showDateHeaders?: boolean
-  onScrollDateChange?: (date: Date | null) => void
-  scrollToDate?: Date | null
 }
 
 interface RowData {
@@ -49,10 +47,10 @@ interface RowData {
 
 // Breakpoint configuration for responsive columns
 const BREAKPOINTS = [
-  { minWidth: 1280, columns: 5 },  // lg/xl screens
-  { minWidth: 1024, columns: 4 },  // md screens  
-  { minWidth: 768, columns: 3 },   // sm screens
-  { minWidth: 0, columns: 2 },     // xs screens
+  { minWidth: 1280, columns: 5 },
+  { minWidth: 1024, columns: 4 },
+  { minWidth: 768, columns: 3 },
+  { minWidth: 0, columns: 2 },
 ]
 
 const HEADER_HEIGHT = 52
@@ -83,6 +81,42 @@ const MemoryRow = memo(({ memories, itemWidth, gap }: { memories: Memory[]; item
 ))
 MemoryRow.displayName = 'MemoryRow'
 
+// Row component props interface
+interface CustomRowProps {
+  rowData: RowData[]
+  itemWidth: number
+  gap: number
+}
+
+// Row component for react-window v2
+function RowComponent({ index, style, rowData, itemWidth, gap }: RowComponentProps<CustomRowProps>) {
+  const row = rowData[index]
+  
+  if (!row) return null
+
+  if (row.type === 'header') {
+    return (
+      <div style={style}>
+        <DateHeader
+          monthName={row.monthName!}
+          year={row.year!}
+          count={row.count!}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div style={style}>
+      <MemoryRow
+        memories={row.memories!}
+        itemWidth={itemWidth}
+        gap={gap}
+      />
+    </div>
+  )
+}
+
 // Main virtualized grid component
 export default function VirtualizedMemoryGrid({
   memories,
@@ -90,7 +124,7 @@ export default function VirtualizedMemoryGrid({
   gap = GAP,
   showDateHeaders = true,
 }: VirtualizedMemoryGridProps) {
-  const listRef = useRef<List>(null)
+  const listRef = useListRef()
   const [containerWidth, setContainerWidth] = useState(0)
 
   // Calculate columns based on container width
@@ -165,6 +199,7 @@ export default function VirtualizedMemoryGrid({
   // Row height calculator - headers are smaller, memory rows are square + gap
   const getRowHeight = useCallback((index: number) => {
     const row = rowData[index]
+    if (!row) return 0
     if (row.type === 'header') {
       return HEADER_HEIGHT
     }
@@ -172,55 +207,29 @@ export default function VirtualizedMemoryGrid({
     return itemWidth + gap
   }, [rowData, itemWidth, gap])
 
-  // Reset list when row data changes (recalculate heights)
-  useEffect(() => {
-    if (listRef.current) {
-      listRef.current.resetAfterIndex(0)
-    }
-  }, [rowData, itemWidth])
+  // Handle resize
+  const handleResize = useCallback(({ width }: { width: number; height: number }) => {
+    setContainerWidth(width)
+  }, [])
 
-  // Row renderer
-  const Row = useCallback(({ index, style }: ListChildComponentProps) => {
-    const row = rowData[index]
-
-    if (row.type === 'header') {
-      return (
-        <div style={style}>
-          <DateHeader
-            monthName={row.monthName!}
-            year={row.year!}
-            count={row.count!}
-          />
-        </div>
-      )
-    }
-
-    return (
-      <div style={style}>
-        <MemoryRow
-          memories={row.memories!}
-          itemWidth={itemWidth}
-          gap={gap}
-        />
-      </div>
-    )
-  }, [rowData, itemWidth, gap])
+  if (memories.length === 0) {
+    return null
+  }
 
   return (
     <div className="w-full h-[calc(100vh-400px)] min-h-[500px]">
-      <AutoSizer onResize={({ width }) => setContainerWidth(width)}>
+      <AutoSizer onResize={handleResize}>
         {({ height, width }) => (
           <List
-            ref={listRef}
-            height={height}
-            width={width}
-            itemCount={rowData.length}
-            itemSize={getRowHeight}
+            listRef={listRef}
+            style={{ height, width }}
+            rowComponent={RowComponent}
+            rowCount={rowData.length}
+            rowHeight={getRowHeight}
+            rowProps={{ rowData, itemWidth, gap }}
             overscanCount={5}
             className="scrollbar-thin scrollbar-thumb-[#406A56]/20 scrollbar-track-transparent"
-          >
-            {Row}
-          </List>
+          />
         )}
       </AutoSizer>
     </div>
