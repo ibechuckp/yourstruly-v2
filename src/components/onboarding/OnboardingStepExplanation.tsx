@@ -16,7 +16,8 @@ import {
   Lightbulb,
   Compass,
   Shield,
-  Star
+  Star,
+  Camera
 } from 'lucide-react';
 
 // ============================================
@@ -129,6 +130,14 @@ export const STEP_EXPLANATIONS: Record<string, StepExplanation> = {
     valueProposition: "Your answer becomes your first preserved memory, instantly creating value and setting the tone for your ongoing journey.",
     icon: <Lightbulb className="w-8 h-8" />,
     gradient: "from-[#D9C61A] to-[#406A56]",
+  },
+  'image-upload': {
+    title: "Your Photos, Your Stories",
+    subtitle: "Bring Memories to Life",
+    description: "Every photo holds a story waiting to be told. Upload a few of your favorite images and watch as YoursTruly brings them to life—organized, tagged, and ready for the memories they'll become.",
+    valueProposition: "When you land on your dashboard, you'll already have images waiting to be turned into rich, meaningful memories. It's the fastest way to see the magic of what YoursTruly can do.",
+    icon: <Camera className="w-8 h-8" />,
+    gradient: "from-[#C35F33] to-[#D9C61A]",
   },
   celebration: {
     title: "You're All Set",

@@ -293,6 +293,7 @@ export default function CreateMemoryModal({ isOpen, onClose, onCreated }: Create
     setAiSuggestions(null)
     setSelectedContacts(new Set())
     setShowShareSection(false)
+    setFaceDetectionProgress(null)
   }
 
   const handleClose = () => {
@@ -345,9 +346,21 @@ export default function CreateMemoryModal({ isOpen, onClose, onCreated }: Create
                       <Loader2 size={24} className="text-[#406A56] animate-spin" />
                     </div>
                   )}
-                  {file.uploaded && (
+                  {file.detectingFaces && (
+                    <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-1">
+                      <Scan size={20} className="text-[#D9C61A] animate-pulse" />
+                      <span className="text-[10px] text-white">Faces...</span>
+                    </div>
+                  )}
+                  {file.uploaded && !file.detectingFaces && (
                     <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
                       <Check size={24} className="text-green-500" />
+                    </div>
+                  )}
+                  {file.facesDetected !== undefined && file.facesDetected > 0 && (
+                    <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-[#406A56] rounded text-[10px] text-white flex items-center gap-1">
+                      <Users size={10} />
+                      {file.facesDetected}
                     </div>
                   )}
                   {!file.uploading && !file.uploaded && (
@@ -557,10 +570,17 @@ export default function CreateMemoryModal({ isOpen, onClose, onCreated }: Create
               className="flex-1 py-3 bg-[#406A56] hover:bg-[#355a48] disabled:opacity-50 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2"
             >
               {creating ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Creating...
-                </>
+                faceDetectionProgress ? (
+                  <>
+                    <Scan size={18} className="animate-pulse" />
+                    Finding faces ({faceDetectionProgress.current}/{faceDetectionProgress.total})...
+                  </>
+                ) : (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Creating...
+                  </>
+                )
               ) : (
                 <>
                   <Sparkles size={18} />

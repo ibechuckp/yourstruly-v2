@@ -21,6 +21,7 @@ import {
 import { PillSelector } from './PillSelector';
 import { HeartfeltConversation } from './HeartfeltConversation';
 import { OnboardingStepExplanation } from './OnboardingStepExplanation';
+import { ImageUploadStep } from './ImageUploadStep';
 
 // ============================================
 // TYPES
@@ -44,6 +45,7 @@ interface OnboardingData {
   background: string;
   heartfeltAnswer?: string;
   heartfeltConversation?: ConversationMessage[];
+  uploadedImagesCount?: number;
 }
 
 type OnboardingStep = 
