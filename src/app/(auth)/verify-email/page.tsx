@@ -33,7 +33,7 @@ function VerifyEmailContent() {
       
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
-          <!-- eslint-disable-next-line @next/next/no-img-element -->
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img 
             src="/images/logo-yours.png" 
             alt="YoursTruly" 
