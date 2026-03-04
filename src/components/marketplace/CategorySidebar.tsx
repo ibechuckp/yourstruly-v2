@@ -134,7 +134,7 @@ export default function CategorySidebar({
                           <div className="pl-4 space-y-1 mt-1">
                             {categories.map((category) => (
                               <button
-                                key={category.id}
+                                key={`${providerId}-${category.id}`}
                                 onClick={() => onSelectCategory(category.slug)}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                                   selectedCategory === category.slug

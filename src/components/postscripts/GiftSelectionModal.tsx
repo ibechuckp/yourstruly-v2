@@ -314,11 +314,11 @@ export function GiftSelectionModal({
               {/* Categories */}
               {categories.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pb-2">
-                  {categories.map(cat => {
+                  {categories.map((cat, idx) => {
                     const isSelected = selectedCategory === cat.id
                     return (
                       <button
-                        key={cat.id}
+                        key={`cat-${cat.id}-${idx}`}
                         onClick={() => setSelectedCategory(cat.id)}
                         className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-2
                           ${isSelected 
