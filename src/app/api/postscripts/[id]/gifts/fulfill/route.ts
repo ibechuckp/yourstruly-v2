@@ -215,8 +215,8 @@ export async function POST(
       console.error(`Error fulfilling gift ${gift.id}:`, error)
       
       // Update gift with error
-      await supabase
-        .from('postscript_gifts')
+      await (supabase
+        .from('postscript_gifts') as any)
         .update({
           status: 'failed',
           provider_data: {
