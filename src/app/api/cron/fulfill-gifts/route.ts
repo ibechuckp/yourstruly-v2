@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
       `)
       .eq('payment_status', 'paid')
       .eq('status', 'paid')
-      .is('sent_at', null) as { data: PendingGift[] | null, error: typeof fetchError }
+      .is('sent_at', null) as unknown as { data: PendingGift[] | null, error: Error | null }
 
     if (fetchError) {
       console.error('Error fetching pending gifts:', fetchError)
