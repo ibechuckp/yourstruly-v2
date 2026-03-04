@@ -5,6 +5,7 @@ import { List, useListRef, type RowComponentProps } from 'react-window'
 import { AutoSizer } from 'react-virtualized-auto-sizer'
 import { Calendar } from 'lucide-react'
 import MemoryCard from './MemoryCard'
+import { MoodType } from '@/lib/ai/moodAnalysis'
 
 interface Memory {
   id: string
@@ -20,7 +21,7 @@ interface Memory {
   ai_category: string
   ai_labels: string[]
   is_favorite: boolean
-  mood?: string | null
+  mood?: MoodType | null
   memory_media?: {
     id: string
     file_url: string
