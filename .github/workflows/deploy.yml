@@ -49,35 +49,17 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Download current task definition
+      - name: Deploy to ECS
         run: |
-          aws ecs describe-services \
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_SERVICE \
+            --force-new-deployment \
+            --region $AWS_REGION
+
+      - name: Wait for deployment to stabilize
+        run: |
+          aws ecs wait services-stable \
             --cluster $ECS_CLUSTER \
             --services $ECS_SERVICE \
-            --region $AWS_REGION \
-            --query 'services[0].taskDefinition' \
-            --output text | xargs -I {} aws ecs describe-task-definition \
-            --task-definition {} \
-            --region $AWS_REGION \
-            --query 'taskDefinition' \
-            --output json > task-definition.json
-          # Clean fields that can't be used in register-task-definition
-          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
-            task-definition.json > clean-task-definition.json
-          mv clean-task-definition.json task-definition.json
-
-      - name: Update image in task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: task-definition.json
-          container-name: yourstruly
-          image: ${{ steps.build-image.outputs.image }}
-
-      - name: Deploy to ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ env.ECS_SERVICE }}
-          cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
+            --region $AWS_REGION
