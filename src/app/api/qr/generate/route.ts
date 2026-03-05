@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { generateQRCode } from '@/lib/photobook/qr-generator'
 import { NextRequest, NextResponse } from 'next/server'
+
+const getQRGenerator = () => import('@/lib/photobook/qr-generator')
 import { randomBytes } from 'crypto'
 
 /**
@@ -138,7 +139,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate QR code
+    // Generate QR code (dynamic import to avoid loading canvas at startup)
+    const { generateQRCode } = await getQRGenerator()
     const qrResult = await generateQRCode(token, {
       size,
       includeLogo: true,
