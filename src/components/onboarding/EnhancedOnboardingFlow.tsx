@@ -190,6 +190,183 @@ export function EnhancedOnboardingFlow({ onComplete, onSkipAll }: EnhancedOnboar
     onComplete(data);
   }, [data, onComplete]);
 
+  const renderStep = () => {
+    switch (step) {
+      case 'welcome':
+        return <WelcomeStep key="welcome" onContinue={() => setStep('name')} />;
+      case 'name':
+        return (
+          <NameStep
+            key="name"
+            value={data.name}
+            onChange={(name) => updateData({ name })}
+            onBack={() => setStep('welcome')}
+            onContinue={goNext}
+          />
+        );
+      case 'interests':
+        return (
+          <PillStep
+            key="interests"
+            title="What are you interested in?"
+            subtitle="Select or add your interests"
+            icon={<Heart size={28} className="text-[#C35F33]" />}
+            suggestions={INTEREST_SUGGESTIONS}
+            selected={data.interests}
+            onChange={(interests) => updateData({ interests })}
+            onBack={goBack}
+            onContinue={goNext}
+          />
+        );
+      case 'hobbies':
+        return (
+          <PillStep
+            key="hobbies"
+            title="What do you enjoy doing?"
+            subtitle="Your hobbies and pastimes"
+            icon={<Palette size={28} className="text-[#D9C61A]" />}
+            suggestions={HOBBY_SUGGESTIONS}
+            selected={data.hobbies}
+            onChange={(hobbies) => updateData({ hobbies })}
+            onBack={goBack}
+            onContinue={goNext}
+          />
+        );
+      case 'skills':
+        return (
+          <PillStep
+            key="skills"
+            title="What are your strengths?"
+            subtitle="Skills you're proud of"
+            icon={<Briefcase size={28} className="text-[#406A56]" />}
+            suggestions={SKILL_SUGGESTIONS}
+            selected={data.skills}
+            onChange={(skills) => updateData({ skills })}
+            onBack={goBack}
+            onContinue={goNext}
+          />
+        );
+      case 'personality':
+        return (
+          <PillStep
+            key="personality"
+            title="How would you describe yourself?"
+            subtitle="Pick traits that fit you"
+            icon={<Brain size={28} className="text-[#8DACAB]" />}
+            suggestions={PERSONALITY_SUGGESTIONS}
+            selected={data.personalityTraits}
+            onChange={(personalityTraits) => updateData({ personalityTraits })}
+            onBack={goBack}
+            onContinue={goNext}
+          />
+        );
+      case 'life-goals':
+        return (
+          <PillStep
+            key="life-goals"
+            title="What matters most in life?"
+            subtitle="Your aspirations and goals"
+            icon={<Target size={28} className="text-[#C35F33]" />}
+            suggestions={LIFE_GOAL_SUGGESTIONS}
+            selected={data.lifeGoals}
+            onChange={(lifeGoals) => updateData({ lifeGoals })}
+            onBack={goBack}
+            onContinue={goNext}
+          />
+        );
+      case 'religion':
+        return (
+          <SingleSelectStep
+            key="religion"
+            title="Faith & Spirituality"
+            subtitle="This helps personalize your experience"
+            icon={<Sparkles size={28} className="text-[#D9C61A]" />}
+            options={RELIGION_OPTIONS}
+            selected={data.religion}
+            onChange={(religion) => updateData({ religion })}
+            onBack={goBack}
+            onContinue={goNext}
+          />
+        );
+      case 'location':
+        return (
+          <TextInputStep
+            key="location"
+            title="Where do you call home?"
+            subtitle="City, state, or country"
+            icon={<MapPin size={28} className="text-[#406A56]" />}
+            placeholder="e.g., New York, NY"
+            value={data.location}
+            onChange={(location) => updateData({ location })}
+            onBack={goBack}
+            onContinue={goNext}
+          />
+        );
+      case 'favorite-quote':
+        return (
+          <TextInputStep
+            key="favorite-quote"
+            title="A quote you live by?"
+            subtitle="Words that inspire you"
+            icon={<Quote size={28} className="text-[#8DACAB]" />}
+            placeholder="Enter your favorite quote..."
+            value={data.favoriteQuote}
+            onChange={(favoriteQuote) => updateData({ favoriteQuote })}
+            onBack={goBack}
+            onContinue={goNext}
+            multiline
+          />
+        );
+      case 'background':
+        return (
+          <BackgroundStep
+            key="background"
+            value={data.background}
+            onChange={(background) => updateData({ background })}
+            onBack={goBack}
+            onContinue={() => setStep('heartfelt-question')}
+          />
+        );
+      case 'heartfelt-question':
+        return (
+          <motion.div
+            key="heartfelt"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="w-full"
+          >
+            <HeartfeltConversation
+              whyHere={data.background}
+              whatDrives={data.lifeGoals}
+              userName={data.name}
+              onComplete={handleHeartfeltComplete}
+              onSkip={() => setStep('image-upload')}
+            />
+          </motion.div>
+        );
+      case 'image-upload':
+        return (
+          <ImageUploadStep
+            key="image-upload"
+            onBack={() => setStep('heartfelt-question')}
+            onContinue={handleImageUploadComplete}
+            onSkip={() => setStep('celebration')}
+          />
+        );
+      case 'celebration':
+        return (
+          <CelebrationStep
+            key="celebration"
+            userName={data.name}
+            onComplete={handleFinalComplete}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FDF8F3] relative overflow-hidden flex items-center justify-center p-4">
       <div className="home-background" />
@@ -223,177 +400,7 @@ export function EnhancedOnboardingFlow({ onComplete, onSkipAll }: EnhancedOnboar
         {/* Form Panel */}
         <div className="w-full lg:flex-1 max-w-lg mx-auto lg:mx-0">
         <AnimatePresence mode="wait">
-          {step === 'welcome' && (
-            <WelcomeStep key="welcome" onContinue={() => setStep('name')} />
-          )}
-
-          {step === 'name' && (
-            <NameStep
-              key="name"
-              value={data.name}
-              onChange={(name) => updateData({ name })}
-              onBack={() => setStep('welcome')}
-              onContinue={goNext}
-            />
-          )}
-
-          {step === 'interests' && (
-            <PillStep
-              key="interests"
-              title="What are you interested in?"
-              subtitle="Select or add your interests"
-              icon={<Heart size={28} className="text-[#C35F33]" />}
-              suggestions={INTEREST_SUGGESTIONS}
-              selected={data.interests}
-              onChange={(interests) => updateData({ interests })}
-              onBack={goBack}
-              onContinue={goNext}
-            />
-          )}
-
-          {step === 'hobbies' && (
-            <PillStep
-              key="hobbies"
-              title="What do you enjoy doing?"
-              subtitle="Your hobbies and pastimes"
-              icon={<Palette size={28} className="text-[#D9C61A]" />}
-              suggestions={HOBBY_SUGGESTIONS}
-              selected={data.hobbies}
-              onChange={(hobbies) => updateData({ hobbies })}
-              onBack={goBack}
-              onContinue={goNext}
-            />
-          )}
-
-          {step === 'skills' && (
-            <PillStep
-              key="skills"
-              title="What are your strengths?"
-              subtitle="Skills you're proud of"
-              icon={<Briefcase size={28} className="text-[#406A56]" />}
-              suggestions={SKILL_SUGGESTIONS}
-              selected={data.skills}
-              onChange={(skills) => updateData({ skills })}
-              onBack={goBack}
-              onContinue={goNext}
-            />
-          )}
-
-          {step === 'personality' && (
-            <PillStep
-              key="personality"
-              title="How would you describe yourself?"
-              subtitle="Pick traits that fit you"
-              icon={<Brain size={28} className="text-[#8DACAB]" />}
-              suggestions={PERSONALITY_SUGGESTIONS}
-              selected={data.personalityTraits}
-              onChange={(personalityTraits) => updateData({ personalityTraits })}
-              onBack={goBack}
-              onContinue={goNext}
-            />
-          )}
-
-          {step === 'life-goals' && (
-            <PillStep
-              key="life-goals"
-              title="What matters most in life?"
-              subtitle="Your aspirations and goals"
-              icon={<Target size={28} className="text-[#C35F33]" />}
-              suggestions={LIFE_GOAL_SUGGESTIONS}
-              selected={data.lifeGoals}
-              onChange={(lifeGoals) => updateData({ lifeGoals })}
-              onBack={goBack}
-              onContinue={goNext}
-            />
-          )}
-
-          {step === 'religion' && (
-            <SingleSelectStep
-              key="religion"
-              title="Faith & Spirituality"
-              subtitle="This helps personalize your experience"
-              icon={<Sparkles size={28} className="text-[#D9C61A]" />}
-              options={RELIGION_OPTIONS}
-              selected={data.religion}
-              onChange={(religion) => updateData({ religion })}
-              onBack={goBack}
-              onContinue={goNext}
-            />
-          )}
-
-          {step === 'location' && (
-            <TextInputStep
-              key="location"
-              title="Where do you call home?"
-              subtitle="City, state, or country"
-              icon={<MapPin size={28} className="text-[#406A56]" />}
-              placeholder="e.g., New York, NY"
-              value={data.location}
-              onChange={(location) => updateData({ location })}
-              onBack={goBack}
-              onContinue={goNext}
-            />
-          )}
-
-          {step === 'favorite-quote' && (
-            <TextInputStep
-              key="favorite-quote"
-              title="A quote you live by?"
-              subtitle="Words that inspire you"
-              icon={<Quote size={28} className="text-[#8DACAB]" />}
-              placeholder="Enter your favorite quote..."
-              value={data.favoriteQuote}
-              onChange={(favoriteQuote) => updateData({ favoriteQuote })}
-              onBack={goBack}
-              onContinue={goNext}
-              multiline
-            />
-          )}
-
-          {step === 'background' && (
-            <BackgroundStep
-              key="background"
-              value={data.background}
-              onChange={(background) => updateData({ background })}
-              onBack={goBack}
-              onContinue={() => setStep('heartfelt-question')}
-            />
-          )}
-
-          {step === 'heartfelt-question' && (
-            <motion.div
-              key="heartfelt"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="w-full"
-            >
-              <HeartfeltConversation
-                whyHere={data.background}
-                whatDrives={data.lifeGoals}
-                userName={data.name}
-                onComplete={handleHeartfeltComplete}
-                onSkip={() => setStep('image-upload')}
-              />
-            </motion.div>
-          )}
-
-          {step === 'image-upload' && (
-            <ImageUploadStep
-              key="image-upload"
-              onBack={() => setStep('heartfelt-question')}
-              onContinue={handleImageUploadComplete}
-              onSkip={() => setStep('celebration')}
-            />
-          )}
-
-          {step === 'celebration' && (
-            <CelebrationStep
-              key="celebration"
-              userName={data.name}
-              onComplete={handleFinalComplete}
-            />
-          )}
+          {renderStep()}
         </AnimatePresence>
         
         {/* Skip option for testing/development */}
