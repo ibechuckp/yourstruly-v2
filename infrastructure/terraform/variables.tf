@@ -116,6 +116,34 @@ variable "resend_api_key" {
   sensitive   = true
 }
 
+variable "gemini_api_key" {
+  description = "Google Gemini API key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "anthropic_api_key" {
+  description = "Anthropic API key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "telnyx_api_key" {
+  description = "Telnyx API key for voice/SMS"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "telnyx_from_number" {
+  description = "Telnyx phone number"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "personaplex_url" {
   description = "PersonaPlex WebSocket URL"
   type        = string

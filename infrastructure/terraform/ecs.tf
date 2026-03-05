@@ -96,6 +96,10 @@ resource "aws_secretsmanager_secret_version" "app_secrets" {
     STRIPE_SECRET_KEY         = var.stripe_secret_key
     STRIPE_WEBHOOK_SECRET     = var.stripe_webhook_secret
     RESEND_API_KEY            = var.resend_api_key
+    GEMINI_API_KEY            = var.gemini_api_key
+    ANTHROPIC_API_KEY         = var.anthropic_api_key
+    TELNYX_API_KEY            = var.telnyx_api_key
+    TELNYX_FROM_NUMBER        = var.telnyx_from_number
   })
 }
 
