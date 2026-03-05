@@ -112,6 +112,22 @@ export default function OnboardingPage() {
     }
   }, [user, router, supabase]);
 
+  const handleSkipOnboarding = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      await supabase
+        .from('profiles')
+        .update({ onboarding_completed: true })
+        .eq('id', user.id);
+
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Error skipping onboarding:', error);
+      router.push('/dashboard');
+    }
+  }, [user, router, supabase]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FDF8F3] relative overflow-hidden flex items-center justify-center">
@@ -122,22 +138,6 @@ export default function OnboardingPage() {
       </div>
     );
   }
-
-  const handleSkipOnboarding = useCallback(async () => {
-    if (!user) return;
-    
-    try {
-      await supabase
-        .from('profiles')
-        .update({ onboarding_completed: true })
-        .eq('id', user.id);
-      
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Error skipping onboarding:', error);
-      router.push('/dashboard');
-    }
-  }, [user, router, supabase]);
 
   return (
     <EnhancedOnboardingFlow 
