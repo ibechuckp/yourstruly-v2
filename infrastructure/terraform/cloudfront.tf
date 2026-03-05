@@ -30,7 +30,10 @@ resource "aws_cloudfront_distribution" "main" {
       cookies {
         forward = "all"
       }
-      headers = ["Host", "Origin", "Authorization", "Accept", "Accept-Language"]
+      # Forward all headers for SSR/RSC - Next.js needs RSC, Next-Router-State-Tree,
+      # Next-Router-Prefetch, Next-Url headers for client-side navigation.
+      # Since default_ttl=0 (no caching), forwarding all headers has no downside.
+      headers = ["*"]
     }
 
     viewer_protocol_policy = "redirect-to-https"
