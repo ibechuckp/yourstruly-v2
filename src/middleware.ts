@@ -61,18 +61,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect logged in users away from auth pages
-  if (user && (
-    request.nextUrl.pathname === '/login' || 
+  // Redirect logged in users away from auth pages (only if onboarding is done)
+  if (user && onboardingCompleted && (
+    request.nextUrl.pathname === '/login' ||
     request.nextUrl.pathname === '/signup'
   )) {
-    // If they haven't completed onboarding, send them there
-    if (!onboardingCompleted) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/onboarding'
-      return NextResponse.redirect(url)
-    }
-    
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
