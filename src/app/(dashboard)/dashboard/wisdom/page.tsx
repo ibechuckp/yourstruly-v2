@@ -496,10 +496,9 @@ export default function WisdomPage() {
       {/* Engagement Modal */}
       {engagementPrompt && (
         <UnifiedEngagementModal
-          isOpen={true}
           onClose={() => setEngagementPrompt(null)}
           prompt={engagementPrompt}
-          onComplete={() => {
+          onComplete={(result) => {
             setEngagementPrompt(null);
             loadWisdom();
           }}
