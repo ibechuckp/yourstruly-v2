@@ -611,10 +611,18 @@ export default function DashboardPage() {
                 <div className="text-2xl font-bold text-[#406A56]">{stats.contacts}</div>
                 <div className="text-[10px] text-[#406A56]/60 uppercase tracking-wide">People</div>
               </Link>
-              <Link href="/dashboard/postscripts" className="flex-1 hover:opacity-70 transition-opacity">
+              <Link href="/dashboard/postscripts" className="flex-1 hover:opacity-70 transition-opacity border-r border-[#406A56]/10">
                 <div className="text-2xl font-bold text-[#406A56]">{stats.postscripts}</div>
                 <div className="text-[10px] text-[#406A56]/60 uppercase tracking-wide">Messages</div>
               </Link>
+              <div className="flex-1">
+                <div className={`text-2xl font-bold text-[#D9C61A] ${xpAnimating ? 'animate-pulse' : ''}`}>
+                  {totalXp.toLocaleString()}
+                </div>
+                <div className="text-[10px] text-[#D9C61A]/60 uppercase tracking-wide flex items-center justify-center gap-1">
+                  <span>⚡</span> XP
+                </div>
+              </div>
             </div>
 
             {/* Storage Usage - Compact */}
