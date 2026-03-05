@@ -48,8 +48,10 @@ RUN npm run build
 FROM node:20-slim AS runner
 WORKDIR /app
 
-# Install curl for health checks
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
+# Install curl for health checks + native libs needed by canvas/face-api
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libpixman-1-0 \
+    libjpeg62-turbo libgif7 librsvg2-2 \
     && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production

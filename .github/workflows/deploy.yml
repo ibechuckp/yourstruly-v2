@@ -59,6 +59,11 @@ jobs:
 
       - name: Wait for deployment to stabilize
         run: |
+          # Default waiter polls 40 times at 15s = 10 min; retry once for longer deploys
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services $ECS_SERVICE \
+            --region $AWS_REGION || \
           aws ecs wait services-stable \
             --cluster $ECS_CLUSTER \
             --services $ECS_SERVICE \
