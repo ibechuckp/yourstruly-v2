@@ -33,18 +33,13 @@ const getCategoryConfig = (key: string) => {
 
 interface WisdomEntry {
   id: string;
-  title: string;
-  description: string;
-  ai_summary?: string;
+  prompt_text: string;      // The question asked
+  response_text?: string;   // The answer/wisdom
   audio_url?: string;
-  tags: string[];
-  memory_type: string;
-  memory_date?: string;
+  tags?: string[];
   created_at: string;
-  shared_with_count?: number;
-  comment_count?: number;
   category?: string;
-  ai_category?: string;
+  subcategory?: string;
 }
 
 interface WisdomShare {
@@ -137,8 +132,8 @@ export default function WisdomDetailPage() {
     }
 
     const { data, error } = await supabase
-      .from('memories')
-      .select('*')
+      .from('knowledge_entries')
+      .select('id, prompt_text, response_text, audio_url, tags, created_at, category, subcategory')
       .eq('id', params.id)
       .eq('user_id', user.id)
       .single();
@@ -392,7 +387,7 @@ export default function WisdomDetailPage() {
 
   if (!entry) return null;
 
-  const { summary, exchanges } = parseContent(entry.description || '');
+  const { summary, exchanges } = parseContent(entry.response_text || '');
   const displayTags = (entry.tags || []).filter(t => !['conversation', 'wisdom', 'knowledge'].includes(t));
 
   return (
@@ -519,7 +514,7 @@ export default function WisdomDetailPage() {
               <div className="flex items-start gap-4">
                 {/* Category Icon */}
                 {(() => {
-                  const catKey = (entry.category || entry.ai_category || 'life_lessons').toLowerCase().replace(/\s+/g, '_');
+                  const catKey = (entry.category || 'life_lessons').toLowerCase().replace(/\s+/g, '_');
                   const catConfig = getCategoryConfig(catKey);
                   const CatIcon = catConfig.icon;
                   return (
@@ -533,7 +528,7 @@ export default function WisdomDetailPage() {
                 })()}
                 <div className="flex-1">
                   <h1 className="text-2xl font-semibold text-[#2d2d2d] mb-2">
-                    {entry.title}
+                    {entry.prompt_text}
                   </h1>
                   <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
                     <span className="flex items-center gap-1.5">
@@ -551,12 +546,12 @@ export default function WisdomDetailPage() {
                         onClick={() => setShowCategoryPicker(!showCategoryPicker)}
                         className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all hover:scale-105"
                         style={{
-                          backgroundColor: getCategoryConfig((entry.category || entry.ai_category || 'life_lessons').toLowerCase().replace(/\s+/g, '_')).bgColor,
-                          color: getCategoryConfig((entry.category || entry.ai_category || 'life_lessons').toLowerCase().replace(/\s+/g, '_')).color,
+                          backgroundColor: getCategoryConfig((entry.category || entry.category || 'life_lessons').toLowerCase().replace(/\s+/g, '_')).bgColor,
+                          color: getCategoryConfig((entry.category || entry.category || 'life_lessons').toLowerCase().replace(/\s+/g, '_')).color,
                         }}
                       >
                         <Tag size={12} />
-                        {getCategoryConfig((entry.category || entry.ai_category || 'life_lessons').toLowerCase().replace(/\s+/g, '_')).label}
+                        {getCategoryConfig((entry.category || entry.category || 'life_lessons').toLowerCase().replace(/\s+/g, '_')).label}
                         <ChevronDown size={12} className={`transition-transform ${showCategoryPicker ? 'rotate-180' : ''}`} />
                       </button>
                       
@@ -575,7 +570,7 @@ export default function WisdomDetailPage() {
                             </div>
                             {WISDOM_CATEGORIES.map(cat => {
                               const Icon = cat.icon;
-                              const isSelected = (entry.category || entry.ai_category || 'life_lessons').toLowerCase().replace(/\s+/g, '_') === cat.key;
+                              const isSelected = (entry.category || entry.category || 'life_lessons').toLowerCase().replace(/\s+/g, '_') === cat.key;
                               return (
                                 <button
                                   key={cat.key}
@@ -675,38 +670,6 @@ export default function WisdomDetailPage() {
               )}
             </div>
 
-            {/* AI Insights */}
-            {entry.ai_summary && (
-              <div className="p-8 bg-gradient-to-br from-[#4A3552]/5 to-[#D9C61A]/5 border-b border-gray-100">
-                <div className="flex items-center gap-2 mb-4">
-                  <Sparkles size={18} className="text-[#4A3552]" />
-                  <h3 className="text-sm font-semibold text-[#4A3552] uppercase tracking-wide">AI Insights</h3>
-                </div>
-                <div className="prose prose-sm max-w-none text-[#2d2d2d]">
-                  {entry.ai_summary.split('\n').map((line, i) => {
-                    // Parse bullet points with bold headers
-                    const match = line.match(/^-\s*\*\*(.+?)\*\*:\s*(.+)$/);
-                    if (match) {
-                      return (
-                        <div key={i} className="flex items-start gap-3 mb-3">
-                          <div className="w-2 h-2 rounded-full bg-[#D9C61A] mt-2 flex-shrink-0" />
-                          <div>
-                            <span className="font-semibold text-[#4A3552]">{match[1]}:</span>
-                            <span className="text-gray-700 ml-1">{match[2]}</span>
-                          </div>
-                        </div>
-                      );
-                    }
-                    // Regular lines
-                    if (line.trim()) {
-                      return <p key={i} className="text-gray-700 mb-2">{line}</p>;
-                    }
-                    return null;
-                  })}
-                </div>
-              </div>
-            )}
-
             {/* Quick Summary */}
             {summary && (
               <div className="p-8 bg-gradient-to-br from-[#D9C61A]/5 to-transparent">
@@ -786,10 +749,10 @@ export default function WisdomDetailPage() {
             )}
 
             {/* Fallback if no parsed content */}
-            {!summary && exchanges.length === 0 && entry.description && (
+            {!summary && exchanges.length === 0 && entry.response_text && (
               <div className="p-8">
                 <p className="text-[#2d2d2d] leading-relaxed whitespace-pre-wrap">
-                  {entry.description}
+                  {entry.response_text}
                 </p>
               </div>
             )}
@@ -810,15 +773,15 @@ export default function WisdomDetailPage() {
           loadShares(); // Refresh shares when modal closes
         }}
         wisdomId={entry.id}
-        wisdomTitle={entry.title}
+        wisdomTitle={entry.prompt_text}
       />
 
       {/* Share as Card Modal */}
       <WisdomCardModal
         isOpen={showCardModal}
         onClose={() => setShowCardModal(false)}
-        wisdomText={summary || entry.description || ''}
-        wisdomTitle={entry.title}
+        wisdomText={summary || entry.response_text || ''}
+        wisdomTitle={entry.prompt_text}
         userName={userName}
         userPhoto={userPhoto}
       />

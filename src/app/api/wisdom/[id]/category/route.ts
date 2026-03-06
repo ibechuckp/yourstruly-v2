@@ -46,16 +46,15 @@ export async function PATCH(
       }, { status: 400 });
     }
 
-    // Verify ownership and update
+    // Update knowledge_entries table
     const { data: wisdom, error: updateError } = await supabase
-      .from('memories')
+      .from('knowledge_entries')
       .update({ 
-        ai_category: category,  // Column is ai_category, not category
+        category: category,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
       .eq('user_id', user.id)
-      .eq('memory_type', 'wisdom')
       .select()
       .single();
 
@@ -66,17 +65,6 @@ export async function PATCH(
 
     if (!wisdom) {
       return NextResponse.json({ error: 'Wisdom entry not found' }, { status: 404 });
-    }
-
-    // Also update the corresponding knowledge_entry if it exists
-    // (knowledge_entries use enum, but we can still try)
-    try {
-      await supabase
-        .from('knowledge_entries')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('memory_id', id);
-    } catch {
-      // Ignore - knowledge entry may not exist or category enum may differ
     }
 
     return NextResponse.json({ 

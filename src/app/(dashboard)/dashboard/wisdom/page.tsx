@@ -586,45 +586,64 @@ function WisdomCard({
     );
   }
 
-  // Grid view - square cards
+  // Grid view - square cards with torn tape header
   return (
     <Link href={`/dashboard/wisdom/${entry.id}`}>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="p-3 bg-white rounded-xl border border-gray-100 hover:border-gray-200 
-                 hover:shadow-md transition-all cursor-pointer group aspect-square flex flex-col overflow-hidden"
+        className="bg-white rounded-xl border border-gray-100 hover:border-gray-200 
+                 hover:shadow-md transition-all cursor-pointer group aspect-square flex flex-col overflow-hidden relative"
       >
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: `${catInfo.color}15` }}
+        {/* Torn Tape Header with Category */}
+        <div 
+          className="relative px-3 py-2 flex items-center gap-2"
+          style={{ 
+            backgroundColor: `${catInfo.color}15`,
+            borderBottom: `2px solid ${catInfo.color}30`,
+          }}
+        >
+          {/* Torn edge effect */}
+          <svg 
+            className="absolute bottom-0 left-0 right-0 translate-y-full" 
+            viewBox="0 0 100 6" 
+            preserveAspectRatio="none"
+            style={{ height: '6px', width: '100%' }}
           >
-            <Icon size={16} style={{ color: catInfo.color }} />
-          </div>
+            <path 
+              d="M0 0 Q 5 6, 10 0 T 20 0 T 30 0 T 40 0 T 50 0 T 60 0 T 70 0 T 80 0 T 90 0 T 100 0 L 100 6 L 0 6 Z" 
+              fill={`${catInfo.color}15`}
+            />
+          </svg>
+          <Icon size={14} style={{ color: catInfo.color }} />
+          <span className="text-xs font-medium uppercase tracking-wide" style={{ color: catInfo.color }}>
+            {catInfo.label}
+          </span>
           {entry.audio_url && (
             <button
               onClick={(e) => { e.preventDefault(); onAudioPlay(entry.id, entry.audio_url!); }}
-              className="p-1.5 rounded-full bg-[#406A56]/10 text-[#406A56] hover:bg-[#406A56]/20 transition-colors"
+              className="ml-auto p-1 rounded-full hover:bg-white/50 transition-colors"
+              style={{ color: catInfo.color }}
             >
-              {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+              {isPlaying ? <Pause size={12} /> : <Play size={12} />}
             </button>
           )}
         </div>
-        <h3 className="font-medium text-gray-900 group-hover:text-[#4A3552] transition-colors line-clamp-2 mb-2">
-          {entry.prompt_text || 'Untitled'}
-        </h3>
-        <p className="text-sm text-gray-500 line-clamp-3 flex-1">
-          {entry.response_text}
-        </p>
-        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-          <span className="text-xs text-gray-400">
-            {new Date(entry.created_at).toLocaleDateString()}
-          </span>
+        
+        {/* Content */}
+        <div className="p-3 pt-4 flex-1 flex flex-col">
+          <h3 className="font-medium text-gray-900 group-hover:text-[#4A3552] transition-colors line-clamp-2 mb-2 text-sm">
+            {entry.prompt_text || 'Untitled'}
+          </h3>
+          <p className="text-xs text-gray-500 line-clamp-4 flex-1">
+            {entry.response_text}
+          </p>
           {entry.tags && entry.tags.length > 0 && (
-            <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
-              {entry.tags[0]}
-            </span>
+            <div className="mt-2 pt-2 border-t border-gray-50">
+              <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
+                {entry.tags[0]}
+              </span>
+            </div>
           )}
         </div>
       </motion.div>
