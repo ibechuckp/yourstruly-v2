@@ -17,6 +17,7 @@ export default function GalleryGlobe({ media, onSelectMedia, selectedTimeframe }
   const markersRef = useRef<mapboxgl.Marker[]>([])
   const spinEnabledRef = useRef(true)
   const [loaded, setLoaded] = useState(false)
+  const [webglError, setWebglError] = useState(false)
 
   // Filter media by year range
   const filteredMedia = selectedTimeframe?.yearRange
@@ -32,27 +33,48 @@ export default function GalleryGlobe({ media, onSelectMedia, selectedTimeframe }
   useEffect(() => {
     if (!mapContainer.current || map.current) return
 
-    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''
+    // Check WebGL support first
+    const canvas = document.createElement('canvas')
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+    if (!gl) {
+      console.warn('WebGL not supported, showing fallback')
+      setWebglError(true)
+      return
+    }
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
-      projection: 'globe',
-      zoom: 1.5,
-      center: [0, 20],
-      pitch: 0,
-    })
+    try {
+      mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''
 
-    map.current.on('style.load', () => {
-      map.current?.setFog({
-        color: 'rgb(20, 20, 30)',
-        'high-color': 'rgb(40, 40, 60)',
-        'horizon-blend': 0.1,
-        'space-color': 'rgb(10, 10, 15)',
-        'star-intensity': 0.6,
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/dark-v11',
+        projection: 'globe',
+        zoom: 1.5,
+        center: [0, 20],
+        pitch: 0,
       })
-      setLoaded(true)
-    })
+
+      map.current.on('error', (e) => {
+        console.error('Mapbox error:', e)
+        if (e.error?.message?.includes('WebGL')) {
+          setWebglError(true)
+        }
+      })
+
+      map.current.on('style.load', () => {
+        map.current?.setFog({
+          color: 'rgb(20, 20, 30)',
+          'high-color': 'rgb(40, 40, 60)',
+          'horizon-blend': 0.1,
+          'space-color': 'rgb(10, 10, 15)',
+          'star-intensity': 0.6,
+        })
+        setLoaded(true)
+      })
+    } catch (err) {
+      console.error('Failed to initialize map:', err)
+      setWebglError(true)
+    }
 
     // Slow rotation
     const secondsPerRevolution = 240
@@ -255,6 +277,30 @@ export default function GalleryGlobe({ media, onSelectMedia, selectedTimeframe }
   // Stats
   const mediaWithLocation = filteredMedia.filter(m => m.location_lat && m.location_lng)
   const uniqueLocations = new Set(mediaWithLocation.map(m => `${m.location_lat?.toFixed(1)},${m.location_lng?.toFixed(1)}`))
+
+  // Show fallback if WebGL not available
+  if (webglError) {
+    return (
+      <div className="gallery-globe-section flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+        <div className="text-center p-8 max-w-md">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#406A56]/20 flex items-center justify-center">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#406A56]">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-white mb-2">Globe View Unavailable</h3>
+          <p className="text-gray-400 text-sm mb-4">
+            Your browser doesn&apos;t support WebGL, which is needed for the 3D globe.
+            Try using the Timeline view instead, or update your browser.
+          </p>
+          <p className="text-gray-500 text-xs">
+            {filteredMedia.length} photos • {new Set(filteredMedia.filter(m => m.location_lat).map(m => `${m.location_lat?.toFixed(1)}`)).size} locations
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="gallery-globe-section">

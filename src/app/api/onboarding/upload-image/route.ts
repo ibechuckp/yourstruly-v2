@@ -54,26 +54,26 @@ export async function POST(request: NextRequest) {
       .from('memories')
       .getPublicUrl(fileName);
 
-    // Create a memory record for this onboarding photo
-    // Using today's date and a generic title - users can edit later
-    const today = new Date().toISOString().split('T')[0];
-    
-    const { data: memory, error: memoryError } = await supabase
-      .from('memories')
+    // Create media record in gallery (no memory - just standalone gallery item)
+    // This keeps onboarding images in gallery only, not cluttering memories page
+    const { data: media, error: mediaError } = await supabase
+      .from('memory_media')
       .insert({
         user_id: user.id,
-        title: 'Uploaded during onboarding',
-        description: '',
-        memory_date: today,
-        memory_type: 'moment',
-        tags: ['onboarding'], // Use tags instead of non-existent 'source' column
+        file_url: publicUrl,
+        file_key: fileName,
+        file_type: 'image',
+        mime_type: file.type || 'image/jpeg',
+        file_size: file.size,
+        is_cover: false,
+        // No memory_id - this is a standalone gallery item
       })
       .select()
       .single();
 
-    if (memoryError) {
-      console.error('Memory creation error:', memoryError);
-      // Still return success since the image was uploaded
+    if (mediaError) {
+      console.error('Media record error:', mediaError);
+      // Image is in storage but not in DB
       return NextResponse.json({
         success: true,
         fileUrl: publicUrl,
@@ -82,31 +82,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create media record linked to memory
-    const { data: media, error: mediaError } = await supabase
-      .from('memory_media')
-      .insert({
-        memory_id: memory.id,
-        user_id: user.id,
-        file_url: publicUrl,
-        file_key: fileName,
-        file_type: 'image',
-        mime_type: file.type || 'image/jpeg',
-        file_size: file.size,
-        is_cover: true,
-      })
-      .select()
-      .single();
-
-    if (mediaError) {
-      console.error('Media record error:', mediaError);
-    }
-
     return NextResponse.json({
       success: true,
       fileUrl: publicUrl,
-      memoryId: memory.id,
-      mediaId: media?.id || null,
+      memoryId: null,
+      mediaId: media.id,
     });
 
   } catch (error) {

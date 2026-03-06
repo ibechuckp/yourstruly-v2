@@ -69,6 +69,7 @@ export default function MapView({
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
   const [loaded, setLoaded] = useState(false)
+  const [webglError, setWebglError] = useState(false)
   const [selectedCluster, setSelectedCluster] = useState<Memory[] | null>(null)
   const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -119,24 +120,45 @@ export default function MapView({
   useEffect(() => {
     if (!mapContainer.current || map.current) return
 
-    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''
+    // Check WebGL support first
+    const canvas = document.createElement('canvas')
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+    if (!gl) {
+      console.warn('WebGL not supported, showing fallback')
+      setWebglError(true)
+      return
+    }
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: styleUrls[mapStyle],
-      zoom: 2,
-      center: [0, 30],
-      pitch: 0,
-      maxZoom: 18,
-      minZoom: 1,
-    })
+    try {
+      mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''
 
-    // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'bottom-right')
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: styleUrls[mapStyle],
+        zoom: 2,
+        center: [0, 30],
+        pitch: 0,
+        maxZoom: 18,
+        minZoom: 1,
+      })
 
-    // Add touch gestures for mobile
-    map.current.touchZoomRotate.enable()
-    map.current.touchPitch.enable()
+      map.current.on('error', (e) => {
+        console.error('Mapbox error:', e)
+        if (e.error?.message?.includes('WebGL')) {
+          setWebglError(true)
+        }
+      })
+
+      // Add navigation controls
+      map.current.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'bottom-right')
+
+      // Add touch gestures for mobile
+      map.current.touchZoomRotate.enable()
+      map.current.touchPitch.enable()
+    } catch (err) {
+      console.error('Failed to initialize map:', err)
+      setWebglError(true)
+    }
     map.current.dragPan.enable()
 
     map.current.on('load', () => {
@@ -383,6 +405,27 @@ export default function MapView({
   // Clear date filter
   const clearDateFilter = () => {
     setDateFilter({ start: '', end: '' })
+  }
+
+  // Show fallback if WebGL not available
+  if (webglError) {
+    return (
+      <div className="relative w-full h-[calc(100vh-200px)] min-h-[500px] rounded-2xl overflow-hidden shadow-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+        <div className="text-center p-8 max-w-md">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#406A56]/10 flex items-center justify-center">
+            <MapPin size={32} className="text-[#406A56]" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-800 mb-2">Map View Unavailable</h3>
+          <p className="text-gray-600 text-sm mb-4">
+            Your browser doesn&apos;t support WebGL, which is needed for the interactive map.
+            Try updating your browser or using a different device.
+          </p>
+          <p className="text-gray-500 text-xs">
+            {filteredMemories.length} memories with locations
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
