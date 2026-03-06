@@ -18,13 +18,13 @@ import { UnifiedEngagementModal } from '@/components/engagement/UnifiedEngagemen
 
 interface WisdomEntry {
   id: string;
-  title: string;
-  description: string;
+  prompt_text: string;      // The question asked
+  response_text?: string;   // The answer/wisdom
   audio_url?: string;
-  tags: string[];
+  tags?: string[];
   created_at: string;
-  category?: string;
-  ai_category?: string;
+  category: string;
+  subcategory?: string;
 }
 
 type ViewMode = 'grid' | 'list' | 'timeline';
@@ -77,10 +77,10 @@ export default function WisdomPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Query knowledge_entries table (NOT memories with memory_type=wisdom)
+    // Query knowledge_entries table
     const { data, error } = await supabase
       .from('knowledge_entries')
-      .select('id, title, description, audio_url, tags, created_at, category, ai_category')
+      .select('id, prompt_text, response_text, audio_url, tags, created_at, category, subcategory')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -112,7 +112,7 @@ export default function WisdomPage() {
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: entries.length };
     entries.forEach(entry => {
-      const cat = entry.category || entry.ai_category || 'other';
+      const cat = entry.category || 'other';
       counts[cat] = (counts[cat] || 0) + 1;
     });
     return counts;
@@ -124,9 +124,7 @@ export default function WisdomPage() {
 
     // Category filter
     if (selectedCategory !== 'all') {
-      result = result.filter(e => 
-        e.category === selectedCategory || e.ai_category === selectedCategory
-      );
+      result = result.filter(e => e.category === selectedCategory);
     }
 
     // Tag filter
@@ -142,8 +140,8 @@ export default function WisdomPage() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(e =>
-        e.title?.toLowerCase().includes(q) ||
-        e.description?.toLowerCase().includes(q) ||
+        e.prompt_text?.toLowerCase().includes(q) ||
+        e.response_text?.toLowerCase().includes(q) ||
         e.tags?.some(t => t.toLowerCase().includes(q))
       );
     }
@@ -154,7 +152,7 @@ export default function WisdomPage() {
         result.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
         break;
       case 'alphabetical':
-        result.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+        result.sort((a, b) => (a.prompt_text || '').localeCompare(b.prompt_text || ''));
         break;
       default: // newest
         result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -533,7 +531,7 @@ function WisdomCard({
   playingAudio: string | null;
   onAudioPlay: (id: string, url: string) => void;
 }) {
-  const category = entry.category || entry.ai_category || 'other';
+  const category = entry.category || 'other';
   const catInfo = CATEGORIES.find(c => c.key === category) || CATEGORIES[CATEGORIES.length - 1];
   const Icon = catInfo.icon;
   const isPlaying = playingAudio === entry.id;
@@ -555,10 +553,10 @@ function WisdomCard({
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-medium text-gray-900 group-hover:text-[#4A3552] transition-colors truncate">
-              {entry.title || 'Untitled'}
+              {entry.prompt_text || 'Untitled'}
             </h3>
             <p className="text-sm text-gray-500 line-clamp-2 mt-1">
-              {entry.description}
+              {entry.response_text}
             </p>
             {entry.tags && entry.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
@@ -614,10 +612,10 @@ function WisdomCard({
           )}
         </div>
         <h3 className="font-medium text-gray-900 group-hover:text-[#4A3552] transition-colors line-clamp-2 mb-2">
-          {entry.title || 'Untitled'}
+          {entry.prompt_text || 'Untitled'}
         </h3>
         <p className="text-sm text-gray-500 line-clamp-3 flex-1">
-          {entry.description}
+          {entry.response_text}
         </p>
         <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
           <span className="text-xs text-gray-400">
