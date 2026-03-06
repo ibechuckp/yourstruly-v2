@@ -142,7 +142,7 @@ export default function WisdomPage() {
       result = result.filter(e =>
         e.prompt_text?.toLowerCase().includes(q) ||
         e.response_text?.toLowerCase().includes(q) ||
-        e.tags?.some(t => t.toLowerCase().includes(q))
+        (Array.isArray(e.tags) && e.tags.some(t => t?.toLowerCase().includes(q)))
       );
     }
 

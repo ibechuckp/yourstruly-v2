@@ -65,6 +65,10 @@ export function ReviewScreen({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
+  // Custom tags state
+  const [customTags, setCustomTags] = useState<string[]>([]);
+  const [newTagInput, setNewTagInput] = useState('');
+  
   const supabase = createClient();
 
   // Search contacts
@@ -446,13 +450,50 @@ export function ReviewScreen({
         />
       </div>
 
-      {/* Tags suggestion */}
+      {/* Tags section */}
       <div className="review-tags">
-        <span className="review-tags-label">Suggested tags:</span>
+        <span className="review-tags-label">Tags:</span>
         <div className="review-tags-list">
           <span className="review-tag">{typeLabel}</span>
           <span className="review-tag">Voice Memory</span>
-          <span className="review-tag">AI-Assisted</span>
+          {customTags.map((tag, idx) => (
+            <span key={idx} className="review-tag review-tag-custom">
+              {tag}
+              <button 
+                onClick={() => setCustomTags(prev => prev.filter((_, i) => i !== idx))}
+                className="review-tag-remove"
+              >
+                <X size={12} />
+              </button>
+            </span>
+          ))}
+          <div className="review-tag-input-wrapper">
+            <input
+              type="text"
+              placeholder="Add tag..."
+              value={newTagInput}
+              onChange={(e) => setNewTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newTagInput.trim()) {
+                  e.preventDefault();
+                  setCustomTags(prev => [...prev, newTagInput.trim()]);
+                  setNewTagInput('');
+                }
+              }}
+              className="review-tag-input"
+            />
+            {newTagInput.trim() && (
+              <button
+                onClick={() => {
+                  setCustomTags(prev => [...prev, newTagInput.trim()]);
+                  setNewTagInput('');
+                }}
+                className="review-tag-add-btn"
+              >
+                <Plus size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

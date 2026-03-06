@@ -236,7 +236,7 @@ export default function MemoriesPage() {
       m.title?.toLowerCase().includes(query) ||
       m.description?.toLowerCase().includes(query) ||
       m.location_name?.toLowerCase().includes(query) ||
-      m.ai_labels?.some(l => l.toLowerCase().includes(query))
+      (Array.isArray(m.ai_labels) && m.ai_labels.some(l => l?.toLowerCase().includes(query)))
     )
     setFilteredMemories(filtered)
   }, [searchQuery, memories])

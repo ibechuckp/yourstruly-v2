@@ -249,8 +249,8 @@ export default function MemorySelector({
           item.title?.toLowerCase().includes(query) ||
           item.description?.toLowerCase().includes(query) ||
           item.location_name?.toLowerCase().includes(query) ||
-          item.ai_labels?.some(l => l.toLowerCase().includes(query)) ||
-          item.tags?.some(t => t.toLowerCase().includes(query))
+          (Array.isArray(item.ai_labels) && item.ai_labels.some(l => l?.toLowerCase().includes(query))) ||
+          (Array.isArray(item.tags) && item.tags.some(t => t?.toLowerCase().includes(query)))
         if (!matchesSearch) return false
       }
       
