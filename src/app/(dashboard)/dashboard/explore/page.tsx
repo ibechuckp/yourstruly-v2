@@ -9,23 +9,9 @@ import GlassCard, { StatsGlassCard, PhotoGlassCard } from '@/components/ui/Glass
 import VoiceInput, { VoiceInputButton } from '@/components/ui/VoiceInput'
 import '@/styles/page-styles.css'
 
-// Demo data
-const DEMO_CATEGORIES = [
-  { name: 'travel', count: 625, coverUrl: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400' },
-  { name: 'family', count: 342, coverUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400' },
-  { name: 'food', count: 189, coverUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400' },
-  { name: 'celebration', count: 156, coverUrl: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400' },
-  { name: 'pets', count: 98, coverUrl: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400' },
-  { name: 'vacation', count: 234, coverUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400' },
-  { name: 'kids', count: 445, coverUrl: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400' },
-  { name: 'birthday', count: 67, coverUrl: 'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?w=400' },
-]
-
-const DEMO_MEMORIES = [
-  { id: '1', title: 'Summer in Barcelona', date: 'Aug 15, 2025', category: 'travel', imageUrl: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=400' },
-  { id: '2', title: 'Emma\'s 5th Birthday', date: 'Jul 22, 2025', category: 'birthday', imageUrl: 'https://images.unsplash.com/photo-1558636508-e0db3814bd1d?w=400' },
-  { id: '3', title: 'Sunday Brunch', date: 'Jul 14, 2025', category: 'food', imageUrl: 'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=400' },
-]
+// Empty initial data - will be populated from user's actual memories
+const EMPTY_CATEGORIES: { name: string; count: number; coverUrl?: string }[] = []
+const EMPTY_MEMORIES: { id: string; title: string; date: string; category: string; imageUrl?: string }[] = []
 
 export default function ExplorePage() {
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -125,17 +111,23 @@ export default function ExplorePage() {
         {/* Categories with badges */}
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-[#406A56] mb-4">Browse by Category</h2>
-          <CategoryGrid categories={DEMO_CATEGORIES} />
+          {EMPTY_CATEGORIES.length === 0 ? (
+            <p className="text-[#406A56]/60 text-center py-8">Categories will appear as you add memories.</p>
+          ) : (
+            <CategoryGrid categories={EMPTY_CATEGORIES} />
+          )}
         </section>
 
         {/* Recent memories */}
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-[#406A56] mb-4">Recent Memories</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {DEMO_MEMORIES.map((memory) => (
+            {EMPTY_MEMORIES.length === 0 ? (
+              <p className="text-[#406A56]/60 col-span-full text-center py-8">No memories yet. Start creating!</p>
+            ) : EMPTY_MEMORIES.map((memory) => (
               <PhotoGlassCard
                 key={memory.id}
-                imageUrl={memory.imageUrl}
+                imageUrl={memory.imageUrl || ''}
                 title={memory.title}
                 date={memory.date}
                 category={memory.category}
