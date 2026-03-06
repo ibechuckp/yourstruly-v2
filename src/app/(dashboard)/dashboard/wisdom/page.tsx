@@ -586,14 +586,14 @@ function WisdomCard({
     );
   }
 
-  // Grid view - square-ish cards
+  // Grid view - compact cards
   return (
     <Link href={`/dashboard/wisdom/${entry.id}`}>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="p-4 bg-white rounded-xl border border-gray-100 hover:border-gray-200 
-                 hover:shadow-md transition-all cursor-pointer group aspect-[4/3] flex flex-col"
+                 hover:shadow-md transition-all cursor-pointer group min-h-[160px] max-h-[200px] flex flex-col"
       >
         <div className="flex items-start justify-between gap-2 mb-3">
           <div 

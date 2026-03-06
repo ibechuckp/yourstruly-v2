@@ -29,7 +29,7 @@ interface MediaItem {
   }
 }
 
-type LibraryFilter = 'all' | 'unassigned' | 'recent'
+type LibraryFilter = 'all' | 'recent' | 'no-date'
 type LibraryViewMode = 'grid' | 'list'
 
 interface LibraryBrowseProps {
@@ -102,8 +102,8 @@ export function LibraryBrowse({ onSelectMedia }: LibraryBrowseProps) {
 
     // Apply filter
     switch (filter) {
-      case 'unassigned':
-        result = result.filter(m => !m.memory_id)
+      case 'no-date':
+        result = result.filter(m => !m.taken_at)
         break
       case 'recent':
         const thirtyDaysAgo = new Date()
@@ -167,7 +167,7 @@ export function LibraryBrowse({ onSelectMedia }: LibraryBrowseProps) {
   // Stats
   const stats = useMemo(() => ({
     total: media.length,
-    unassigned: media.filter(m => !m.memory_id).length,
+    noDate: media.filter(m => !m.taken_at).length,
     recent: media.filter(m => {
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -201,15 +201,15 @@ export function LibraryBrowse({ onSelectMedia }: LibraryBrowseProps) {
             <span className="ml-1.5 opacity-70">{stats.total}</span>
           </button>
           <button
-            onClick={() => setFilter('unassigned')}
+            onClick={() => setFilter('no-date')}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              filter === 'unassigned'
+              filter === 'no-date'
                 ? 'bg-amber-500 text-white'
                 : 'bg-white/80 text-gray-600 hover:bg-gray-100'
             }`}
           >
-            Unassigned
-            <span className="ml-1.5 opacity-70">{stats.unassigned}</span>
+            No Date
+            <span className="ml-1.5 opacity-70">{stats.noDate}</span>
           </button>
           <button
             onClick={() => setFilter('recent')}
@@ -263,16 +263,16 @@ export function LibraryBrowse({ onSelectMedia }: LibraryBrowseProps) {
         <div className="text-center py-20 bg-white/50 rounded-2xl">
           <ImageIcon size={48} className="mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-medium text-gray-600 mb-2">
-            {filter === 'unassigned' 
-              ? 'No unassigned photos' 
+            {filter === 'no-date' 
+              ? 'All photos have dates' 
               : filter === 'recent'
               ? 'No recent uploads'
               : 'No photos yet'}
           </h3>
           <p className="text-gray-500 text-sm">
-            {filter === 'unassigned'
-              ? 'All your photos are organized into memories!'
-              : 'Upload photos to get started'}
+            {filter === 'no-date'
+              ? 'Great! All your photos have timestamps.'
+              : 'Create memories and add photos to see them here'}
           </p>
         </div>
       )}
@@ -335,10 +335,10 @@ export function LibraryBrowse({ onSelectMedia }: LibraryBrowseProps) {
                       {selectedItems.has(item.id) && <Check size={12} className="text-white" />}
                     </button>
 
-                    {/* Unassigned indicator */}
-                    {!item.memory_id && (
+                    {/* No date indicator */}
+                    {!item.taken_at && (
                       <div className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-amber-500/90 text-white text-[10px] font-medium rounded">
-                        Unassigned
+                        No Date
                       </div>
                     )}
 
@@ -398,9 +398,9 @@ export function LibraryBrowse({ onSelectMedia }: LibraryBrowseProps) {
                     ? new Date(item.taken_at).toLocaleDateString()
                     : new Date(item.created_at).toLocaleDateString()}
                 </p>
-                {!item.memory_id && (
+                {!item.taken_at && (
                   <span className="inline-block mt-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-medium rounded">
-                    Unassigned
+                    No Date
                   </span>
                 )}
               </div>
