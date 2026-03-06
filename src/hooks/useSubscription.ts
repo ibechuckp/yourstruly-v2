@@ -69,6 +69,14 @@ export function useSubscription(): UseSubscriptionReturn {
         `)
         .eq('user_id', user.id)
         .single()
+      
+      // Handle missing table gracefully (406 = table doesn't exist)
+      if (subError?.code === '42P01' || subError?.message?.includes('406')) {
+        console.warn('Subscription tables not configured, using free tier defaults')
+        setSubscription(null)
+        setIsLoading(false)
+        return
+      }
 
       // Fetch seat pricing for cost calculation
       const { data: pricingData } = await supabase

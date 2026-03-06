@@ -142,7 +142,12 @@ export function useEngagementPrompts(count: number = 5): UseEngagementPromptsRet
         .eq('user_id', user.id)
         .single();
 
+      // Handle missing table gracefully (406 = table doesn't exist, 42P01 = relation does not exist)
       if (statsError && statsError.code !== 'PGRST116') {
+        if (statsError.code === '42P01' || statsError.message?.includes('406')) {
+          console.warn('engagement_stats table not configured, using defaults');
+          return;
+        }
         console.error('Stats error:', statsError);
         return;
       }
