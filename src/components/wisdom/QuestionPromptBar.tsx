@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Plus, Sparkles, Lightbulb, Heart, Users, Briefcase, Compass, Utensils, GraduationCap, Mic } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Sparkles, Lightbulb, Heart, Users, Briefcase, Compass, Utensils, GraduationCap, Mic, Shuffle } from 'lucide-react';
 
 export interface WisdomQuestion {
   id: string;
@@ -68,10 +68,9 @@ interface QuestionPromptBarProps {
 }
 
 export function QuestionPromptBar({ onCreateWisdom, onVoiceCapture }: QuestionPromptBarProps) {
-  const [questions, setQuestions] = useState<WisdomQuestion[]>([]);
+  const [allQuestions, setAllQuestions] = useState<WisdomQuestion[]>([]);
+  const [displayedQuestions, setDisplayedQuestions] = useState<WisdomQuestion[]>([]);
   const [loading, setLoading] = useState(true);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
@@ -79,24 +78,11 @@ export function QuestionPromptBar({ onCreateWisdom, onVoiceCapture }: QuestionPr
     loadUnansweredQuestions();
   }, []);
 
-  // Update scroll button states
-  const updateScrollButtons = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
-    }
+  // Shuffle to show different 5 questions
+  const shuffleQuestions = () => {
+    const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
+    setDisplayedQuestions(shuffled.slice(0, 5));
   };
-
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (container) {
-      container.addEventListener('scroll', updateScrollButtons);
-      // Initial check
-      updateScrollButtons();
-      return () => container.removeEventListener('scroll', updateScrollButtons);
-    }
-  }, [questions]);
 
   const loadUnansweredQuestions = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -126,20 +112,11 @@ export function QuestionPromptBar({ onCreateWisdom, onVoiceCapture }: QuestionPr
       q => !answeredQuestionTexts.has(q.question_text)
     );
 
-    // Shuffle and take first 12 for variety
-    const shuffled = unanswered.sort(() => Math.random() - 0.5).slice(0, 12);
-    setQuestions(shuffled);
+    // Store all questions and display first 5
+    const shuffled = unanswered.sort(() => Math.random() - 0.5);
+    setAllQuestions(shuffled);
+    setDisplayedQuestions(shuffled.slice(0, 5));
     setLoading(false);
-  };
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const scrollAmount = 300;
-      scrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
   };
 
   const getCategoryStyle = (category: string) => {
@@ -155,11 +132,11 @@ export function QuestionPromptBar({ onCreateWisdom, onVoiceCapture }: QuestionPr
             <span>Instant Questions</span>
           </div>
         </div>
-        <div className="flex gap-4 overflow-hidden">
-          {[1, 2, 3, 4].map(i => (
+        <div className="flex gap-3 overflow-hidden">
+          {[1, 2, 3, 4, 5].map(i => (
             <div 
               key={i} 
-              className="flex-shrink-0 w-[240px] h-[160px] rounded-t-2xl bg-gray-100 animate-pulse"
+              className="flex-shrink-0 flex-1 min-w-[180px] h-[140px] rounded-xl bg-gray-100 animate-pulse"
             />
           ))}
         </div>
@@ -167,43 +144,32 @@ export function QuestionPromptBar({ onCreateWisdom, onVoiceCapture }: QuestionPr
     );
   }
 
-  if (questions.length === 0) return null;
+  if (displayedQuestions.length === 0) return null;
 
   return (
     <div className="instant-questions-bar mb-6">
-      {/* Header */}
-      <div className="instant-questions-header">
-        <div className="instant-questions-title">
+      {/* Header with shuffle button on left */}
+      <div className="instant-questions-header flex items-center gap-3">
+        {allQuestions.length > 5 && (
+          <button 
+            onClick={shuffleQuestions}
+            className="p-2 rounded-lg bg-white/80 hover:bg-white border border-gray-200 text-gray-500 hover:text-[#406A56] transition-all"
+            title="Shuffle questions"
+          >
+            <Shuffle size={16} />
+          </button>
+        )}
+        <div className="instant-questions-title flex-1">
           <Sparkles size={16} className="text-[#D9C61A]" />
           <span>Instant Questions</span>
           <span className="instant-questions-xp">+100 XP each</span>
         </div>
-        <div className="instant-questions-nav">
-          <button 
-            onClick={() => scroll('left')} 
-            className={`instant-questions-nav-btn ${!canScrollLeft ? 'opacity-30 cursor-not-allowed' : ''}`}
-            disabled={!canScrollLeft}
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <button 
-            onClick={() => scroll('right')} 
-            className={`instant-questions-nav-btn ${!canScrollRight ? 'opacity-30 cursor-not-allowed' : ''}`}
-            disabled={!canScrollRight}
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
       </div>
 
-      {/* Scrollable Cards Container */}
-      <div 
-        className="instant-questions-scroll" 
-        ref={scrollRef}
-      >
-        <div className="instant-questions-cards">
-          <AnimatePresence mode="popLayout">
-            {questions.map((question, index) => {
+      {/* Cards Container - 5 questions in a row */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        <AnimatePresence mode="popLayout">
+          {displayedQuestions.map((question, index) => {
               const style = getCategoryStyle(question.category);
               const Icon = style.icon;
               
@@ -274,7 +240,6 @@ export function QuestionPromptBar({ onCreateWisdom, onVoiceCapture }: QuestionPr
               );
             })}
           </AnimatePresence>
-        </div>
       </div>
     </div>
   );

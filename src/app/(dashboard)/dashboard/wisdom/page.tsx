@@ -476,8 +476,8 @@ export default function WisdomPage() {
             ))}
           </div>
         ) : (
-          /* Grid View */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          /* Grid View - Square tiles */
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {filteredEntries.map(entry => (
               <WisdomCard 
                 key={entry.id} 
@@ -586,14 +586,14 @@ function WisdomCard({
     );
   }
 
-  // Grid view - compact cards
+  // Grid view - square cards
   return (
     <Link href={`/dashboard/wisdom/${entry.id}`}>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="p-4 bg-white rounded-xl border border-gray-100 hover:border-gray-200 
-                 hover:shadow-md transition-all cursor-pointer group min-h-[160px] max-h-[200px] flex flex-col"
+        className="p-3 bg-white rounded-xl border border-gray-100 hover:border-gray-200 
+                 hover:shadow-md transition-all cursor-pointer group aspect-square flex flex-col overflow-hidden"
       >
         <div className="flex items-start justify-between gap-2 mb-3">
           <div 
