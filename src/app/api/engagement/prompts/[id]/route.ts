@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import type { AnswerPromptRequest, AnswerPromptResponse } from '@/types/engagement';
+import { transcribeAudio } from '@/lib/ai/transcription';
 
 // XP rewards configuration (matching TYPE_CONFIG in Bubble.tsx)
 const XP_REWARDS: Record<string, number> = {
@@ -130,6 +131,19 @@ export async function POST(
     if (shouldCreateKnowledge && hasContent) {
       console.log('=== CREATING KNOWLEDGE ENTRY (not memory) ===');
       
+      // Transcribe audio if we have audio but no text
+      let responseText = body.responseText;
+      if (!responseText && body.responseAudioUrl) {
+        console.log('Transcribing audio for knowledge entry...');
+        try {
+          responseText = await transcribeAudio(body.responseAudioUrl);
+          console.log('Transcription successful, length:', responseText?.length);
+        } catch (transcribeError) {
+          console.error('Transcription failed:', transcribeError);
+          // Continue without transcription - audio will still be saved
+        }
+      }
+      
       const tags: string[] = ['wisdom'];
       if (prompt.personalization_context?.interest) tags.push(prompt.personalization_context.interest);
       if (prompt.personalization_context?.skill) tags.push(prompt.personalization_context.skill);
@@ -144,7 +158,7 @@ export async function POST(
           category: category,
           subcategory: prompt.personalization_context?.skill || prompt.personalization_context?.interest,
           prompt_text: prompt.prompt_text,
-          response_text: body.responseText || null,
+          response_text: responseText || null,
           audio_url: body.responseAudioUrl || null,
           related_interest: prompt.personalization_context?.interest || null,
           related_skill: prompt.personalization_context?.skill || null,
@@ -184,6 +198,19 @@ export async function POST(
       }
       if (prompt.category) tags.push(prompt.category);
       
+      // Transcribe audio if we have audio but no text
+      let memoryDescription = body.responseText;
+      if (!memoryDescription && body.responseAudioUrl) {
+        console.log('Transcribing audio for memory...');
+        try {
+          memoryDescription = await transcribeAudio(body.responseAudioUrl);
+          console.log('Memory transcription successful, length:', memoryDescription?.length);
+        } catch (transcribeError) {
+          console.error('Memory transcription failed:', transcribeError);
+          memoryDescription = '🎤 Voice memory recorded';
+        }
+      }
+      
       console.log('Creating memory with tags:', tags);
       
       const { data: newMemory, error: memoryError } = await supabase
@@ -191,7 +218,7 @@ export async function POST(
         .insert({
           user_id: user.id,
           title: prompt.prompt_text?.substring(0, 100) || 'Memory',
-          description: body.responseText || '🎤 Voice memory recorded',
+          description: memoryDescription || '🎤 Voice memory recorded',
           audio_url: body.responseAudioUrl || null,
           memory_date: new Date().toISOString(),
           tags,

@@ -40,26 +40,68 @@ export function VoiceWisdomCapture({
   const topic = question || (category ? `your ${category.replace(/_/g, ' ')}` : undefined)
 
   const handleMemorySaved = useCallback(async (memoryId: string) => {
-    // Update memory type to 'wisdom'
-    const { error } = await supabase
-      .from('memories')
-      .update({ 
-        memory_type: 'wisdom',
-        ai_category: category || null,
-      })
-      .eq('id', memoryId)
+    try {
+      // Get user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        console.error('No user found')
+        return
+      }
 
-    if (error) {
-      console.error('Failed to update memory type:', error)
+      // Get the created memory to extract transcript
+      const { data: memory } = await supabase
+        .from('memories')
+        .select('title, description, ai_labels')
+        .eq('id', memoryId)
+        .single()
+
+      // Update memory type to 'wisdom'
+      await supabase
+        .from('memories')
+        .update({ 
+          memory_type: 'wisdom',
+          ai_category: category || null,
+        })
+        .eq('id', memoryId)
+
+      // Extract audio URL from ai_labels if available
+      const aiLabels = memory?.ai_labels as Record<string, unknown> | null
+      const transcript = aiLabels?.transcript as Array<{ role: string; text: string }> | undefined
+
+      // Create knowledge_entry for the wisdom page
+      const { data: knowledgeEntry, error: keError } = await supabase
+        .from('knowledge_entries')
+        .insert({
+          user_id: user.id,
+          category: category || 'life_lessons',
+          prompt_text: question || memory?.title || 'Voice Wisdom',
+          response_text: memory?.description || '',
+          audio_url: null, // Will be updated if audio is available
+          memory_id: memoryId,
+          tags: category ? [category.replace(/_/g, ' ')] : [],
+        })
+        .select()
+        .single()
+
+      if (keError) {
+        console.error('Failed to create knowledge entry:', keError)
+      }
+
+      setCompleted(true)
+      
+      setTimeout(() => {
+        onSaved?.(knowledgeEntry?.id || memoryId)
+        onClose()
+      }, 1500)
+    } catch (err) {
+      console.error('Error saving wisdom:', err)
+      setCompleted(true)
+      setTimeout(() => {
+        onSaved?.(memoryId)
+        onClose()
+      }, 1500)
     }
-
-    setCompleted(true)
-    
-    setTimeout(() => {
-      onSaved?.(memoryId)
-      onClose()
-    }, 1500)
-  }, [supabase, category, onSaved, onClose])
+  }, [supabase, category, question, onSaved, onClose])
 
   return (
     <motion.div
