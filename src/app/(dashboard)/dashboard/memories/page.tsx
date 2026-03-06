@@ -24,6 +24,7 @@ import { TimelineScrubber } from '@/components/memories/TimelineScrubber'
 import { MoodType } from '@/lib/ai/moodAnalysis'
 import '@/styles/page-styles.css'
 import '@/styles/scrapbook.css'
+import { aiLabelsMatchQuery } from '@/lib/utils/aiLabels'
 
 interface Memory {
   id: string
@@ -236,7 +237,7 @@ export default function MemoriesPage() {
       m.title?.toLowerCase().includes(query) ||
       m.description?.toLowerCase().includes(query) ||
       m.location_name?.toLowerCase().includes(query) ||
-      (Array.isArray(m.ai_labels) && m.ai_labels.some(l => l?.toLowerCase().includes(query)))
+      aiLabelsMatchQuery(m.ai_labels, query)
     )
     setFilteredMemories(filtered)
   }, [searchQuery, memories])

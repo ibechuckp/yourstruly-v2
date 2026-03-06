@@ -254,7 +254,7 @@ export default function PublicMemoryView({ token, data }: PublicMemoryViewProps)
             )}
             
             {/* AI Labels */}
-            {content.ai_labels && content.ai_labels.length > 0 && (
+            {content.ai_labels && Array.isArray(content.ai_labels) && content.ai_labels.length > 0 && (
               <div className="mb-6">
                 <p className="text-white/40 text-xs uppercase tracking-wider mb-2">AI Detected</p>
                 <div className="flex flex-wrap gap-2">
