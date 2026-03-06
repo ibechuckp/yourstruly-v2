@@ -48,8 +48,9 @@ RUN npm run build
 FROM node:20-slim AS runner
 WORKDIR /app
 
-# Install curl for health checks
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
+# Install curl for health checks + canvas runtime deps (face detection)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libjpeg62-turbo libgif7 \
     && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
@@ -68,12 +69,17 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copy canvas native bindings (face detection requires this)
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/canvas ./node_modules/canvas
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/@vladmandic ./node_modules/@vladmandic
+
 USER nextjs
 
 EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+ENV FACE_MODELS_PATH="/app/public/models/face-api"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
