@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
         created_at,
         knowledge:knowledge_entries (
           id,
-          title,
+          prompt_text,
           category
         ),
         owner:profiles!knowledge_shares_owner_id_fkey (
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
         activities.push({
           id: `wisdom_share_${share.id}`,
           type: 'wisdom_shared',
-          title: knowledge.title || 'Wisdom',
+          title: knowledge.prompt_text || 'Wisdom',
           description: `${owner.full_name} shared wisdom with you`,
           timestamp: share.created_at,
           actor: {
@@ -212,7 +212,7 @@ export async function GET(request: NextRequest) {
         ),
         knowledge:knowledge_entries (
           id,
-          title
+          prompt_text
         ),
         shared_by:profiles!circle_content_shared_by_fkey (
           id,
@@ -237,7 +237,7 @@ export async function GET(request: NextRequest) {
         const knowledge = Array.isArray(content.knowledge) ? content.knowledge[0] : content.knowledge
         if (!sharedBy || !circle) continue
         
-        const contentTitle = memory?.title || knowledge?.title || 'Content'
+        const contentTitle = memory?.title || knowledge?.prompt_text || 'Content'
         const contentType = content.content_type === 'memory' ? 'a memory' : 'wisdom'
         
         activities.push({
