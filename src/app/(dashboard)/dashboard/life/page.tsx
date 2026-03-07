@@ -12,6 +12,7 @@ import dynamic from 'next/dynamic'
 import CreateMemoryModal from '@/components/memories/CreateMemoryModal'
 import MemoryCard from '@/components/memories/MemoryCard'
 import MemoryCardClean from '@/components/memories/MemoryCardClean'
+import LifeMemoryCard from '@/components/memories/LifeMemoryCard'
 import { PeopleBrowse } from '@/components/memories/PeopleBrowse'
 import { PlacesBrowse } from '@/components/memories/PlacesBrowse'
 import { TimelineBrowse } from '@/components/memories/TimelineBrowse'
@@ -126,12 +127,12 @@ export default function LifePage() {
     if (!user) return
     const { data } = await supabase
       .from('contacts')
-      .select('id, name, photo_url')
+      .select('id, full_name, profile_photo_url')
       .eq('user_id', user.id)
-      .order('name')
-      .limit(10)
+      .order('full_name')
+      .limit(12)
     if (data) {
-      setContactAvatars(data.map((c: any) => ({ id: c.id, name: c.name, avatar_url: c.photo_url })))
+      setContactAvatars(data.map((c: any) => ({ id: c.id, name: c.full_name, avatar_url: c.profile_photo_url })))
     }
   }, [supabase])
 
@@ -194,7 +195,7 @@ export default function LifePage() {
     setBrowseMode(mode)
   }
 
-  const recentMemories = filteredMemories.slice(0, 8)
+  const recentMemories = filteredMemories.slice(0, 16)
   const favoriteMemories = memories.filter(m => m.is_favorite).slice(0, 6)
 
   return (
@@ -308,9 +309,9 @@ export default function LifePage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
                     {recentMemories.map(m => (
-                      <MemoryCard key={m.id} memory={m} />
+                      <LifeMemoryCard key={m.id} memory={m} />
                     ))}
                   </div>
                 )}
@@ -533,8 +534,8 @@ export default function LifePage() {
                   <p className="empty-state-text">Select a mood above to filter your memories</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {filteredMemories.map(m => <MemoryCard key={m.id} memory={m} />)}
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                  {filteredMemories.map(m => <LifeMemoryCard key={m.id} memory={m} />)}
                 </div>
               )}
             </section>
@@ -576,8 +577,8 @@ export default function LifePage() {
                   </h3>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {filteredMemories.map(m => <MemoryCard key={m.id} memory={m} />)}
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                  {filteredMemories.map(m => <LifeMemoryCard key={m.id} memory={m} />)}
                 </div>
               )}
             </section>
@@ -587,11 +588,19 @@ export default function LifePage() {
               MEDIA / GALLERY VIEW
           ═══════════════════════════════════════════════════ */}
           {browseMode === 'media' && (
-            <LibraryBrowse
-              onSelectMedia={(media) => {
-                if (media.memory_id) router.push(`/dashboard/memories/${media.memory_id}`)
-              }}
-            />
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-[#666]">Photos & videos attached to your memories</p>
+                <Link href="/dashboard/gallery" className="text-sm text-[#406A56] hover:underline font-medium">
+                  Full gallery →
+                </Link>
+              </div>
+              <LibraryBrowse
+                onSelectMedia={(media) => {
+                  if (media.memory_id) router.push(`/dashboard/memories/${media.memory_id}`)
+                }}
+              />
+            </div>
           )}
 
         </main>
