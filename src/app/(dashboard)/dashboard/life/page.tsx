@@ -1,28 +1,26 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   Search, Clock, Users, MapPin, Heart, Grid3x3, ChevronLeft,
-  Plus, Image as ImageIcon, X, Sparkles, BookOpen, Star
+  Plus, Image as ImageIcon, X, Sparkles, BookOpen, Star,
+  Upload, Loader2
 } from 'lucide-react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import CreateMemoryModal from '@/components/memories/CreateMemoryModal'
-import MemoryCard from '@/components/memories/MemoryCard'
-import MemoryCardClean from '@/components/memories/MemoryCardClean'
 import LifeMemoryCard from '@/components/memories/LifeMemoryCard'
 import { PeopleBrowse } from '@/components/memories/PeopleBrowse'
 import { PlacesBrowse } from '@/components/memories/PlacesBrowse'
 import { TimelineBrowse } from '@/components/memories/TimelineBrowse'
-import { LibraryBrowse } from '@/components/memories/LibraryBrowse'
-import EmotionalJourney from '@/components/memories/EmotionalJourney'
+import LifeStoryEngine from '@/components/life/LifeStoryEngine'
 import OnThisDay from '@/components/dashboard/OnThisDay'
-import { MOOD_DEFINITIONS, MoodType } from '@/lib/ai/moodAnalysis'
+import MemoryCardClean from '@/components/memories/MemoryCardClean'
+import { MoodType } from '@/lib/ai/moodAnalysis'
 import '@/styles/page-styles.css'
 
-// Lazy-load heavy map component
 const MapView = dynamic(() => import('@/components/memories/MapView'), { ssr: false })
 
 interface Memory {
@@ -49,47 +47,59 @@ interface Memory {
   }[]
 }
 
+interface MediaItem {
+  id: string
+  file_url: string
+  file_type: string
+  taken_at?: string
+  memory_id?: string
+  memory?: { id: string; title: string }
+}
+
 type BrowseMode = 'home' | 'timeline' | 'people' | 'places' | 'moods' | 'categories' | 'media'
 
 const MOOD_DISPLAY: { mood: MoodType; emoji: string; label: string }[] = [
-  { mood: 'joyful', emoji: '😊', label: 'Happy' },
-  { mood: 'loving', emoji: '❤️', label: 'Love' },
-  { mood: 'grateful', emoji: '🙏', label: 'Grateful' },
-  { mood: 'nostalgic', emoji: '🌅', label: 'Nostalgic' },
-  { mood: 'proud', emoji: '🏆', label: 'Proud' },
-  { mood: 'peaceful', emoji: '🌿', label: 'Peaceful' },
-  { mood: 'reflective', emoji: '🤔', label: 'Reflective' },
+  { mood: 'joyful',      emoji: '😊', label: 'Happy' },
+  { mood: 'loving',      emoji: '❤️', label: 'Love' },
+  { mood: 'grateful',    emoji: '🙏', label: 'Grateful' },
+  { mood: 'nostalgic',   emoji: '🌅', label: 'Nostalgic' },
+  { mood: 'proud',       emoji: '🏆', label: 'Proud' },
+  { mood: 'peaceful',    emoji: '🌿', label: 'Peaceful' },
+  { mood: 'reflective',  emoji: '🤔', label: 'Reflective' },
   { mood: 'bittersweet', emoji: '😢', label: 'Bittersweet' },
 ]
 
 const CATEGORIES = [
-  { value: 'family', label: 'Family', emoji: '👨‍👩‍👧' },
-  { value: 'travel', label: 'Travel', emoji: '✈️' },
-  { value: 'celebration', label: 'Celebrations', emoji: '🎉' },
-  { value: 'career', label: 'Career', emoji: '💼' },
-  { value: 'nature', label: 'Nature', emoji: '🌲' },
-  { value: 'food', label: 'Food', emoji: '🍽️' },
-  { value: 'friends', label: 'Friends', emoji: '🤝' },
-  { value: 'everyday', label: 'Everyday', emoji: '☕' },
+  { value: 'family',      label: 'Family',       emoji: '👨‍👩‍👧' },
+  { value: 'travel',      label: 'Travel',        emoji: '✈️' },
+  { value: 'celebration', label: 'Celebrations',  emoji: '🎉' },
+  { value: 'career',      label: 'Career',        emoji: '💼' },
+  { value: 'nature',      label: 'Nature',        emoji: '🌲' },
+  { value: 'food',        label: 'Food',          emoji: '🍽️' },
+  { value: 'friends',     label: 'Friends',       emoji: '🤝' },
+  { value: 'everyday',    label: 'Everyday',      emoji: '☕' },
 ]
 
 const NAV_TABS: { mode: BrowseMode; label: string; icon: React.ReactNode }[] = [
-  { mode: 'home',       label: 'Home',      icon: <Sparkles size={16} /> },
-  { mode: 'timeline',   label: 'Timeline',  icon: <Clock size={16} /> },
-  { mode: 'people',     label: 'People',    icon: <Users size={16} /> },
-  { mode: 'places',     label: 'Places',    icon: <MapPin size={16} /> },
-  { mode: 'moods',      label: 'Moods',     icon: <Heart size={16} /> },
-  { mode: 'categories', label: 'Categories',icon: <BookOpen size={16} /> },
-  { mode: 'media',      label: 'Gallery',   icon: <Grid3x3 size={16} /> },
+  { mode: 'home',       label: 'Home',       icon: <Sparkles size={15} /> },
+  { mode: 'timeline',   label: 'Timeline',   icon: <Clock size={15} /> },
+  { mode: 'people',     label: 'People',     icon: <Users size={15} /> },
+  { mode: 'places',     label: 'Places',     icon: <MapPin size={15} /> },
+  { mode: 'moods',      label: 'Moods',      icon: <Heart size={15} /> },
+  { mode: 'categories', label: 'Categories', icon: <BookOpen size={15} /> },
+  { mode: 'media',      label: 'Gallery',    icon: <Grid3x3 size={15} /> },
 ]
 
 export default function LifePage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [memories, setMemories] = useState<Memory[]>([])
   const [filteredMemories, setFilteredMemories] = useState<Memory[]>([])
+  const [allMedia, setAllMedia] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [mediaLoading, setMediaLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [userId, setUserId] = useState<string | undefined>()
   const [browseMode, setBrowseMode] = useState<BrowseMode>('home')
   const [searchQuery, setSearchQuery] = useState('')
@@ -100,6 +110,7 @@ export default function LifePage() {
 
   const supabase = createClient()
 
+  // ── Load memories ─────────────────────────────────────────────────────────
   const loadMemories = useCallback(async (mood?: MoodType | null, category?: string | null) => {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -122,6 +133,28 @@ export default function LifePage() {
     setLoading(false)
   }, [supabase])
 
+  // ── Load all media ─────────────────────────────────────────────────────────
+  const loadAllMedia = useCallback(async () => {
+    setMediaLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setMediaLoading(false); return }
+
+    const { data } = await supabase
+      .from('memory_media')
+      .select(`id, file_url, file_type, taken_at, memory_id, memory:memories(id, title)`)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(300)
+
+    const transformed = (data || []).map((item: any) => ({
+      ...item,
+      memory: Array.isArray(item.memory) ? item.memory[0] : item.memory,
+    }))
+    setAllMedia(transformed)
+    setMediaLoading(false)
+  }, [supabase])
+
+  // ── Load contacts ─────────────────────────────────────────────────────────
   const loadContacts = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -139,14 +172,12 @@ export default function LifePage() {
   useEffect(() => {
     loadMemories()
     loadContacts()
-  }, [loadMemories, loadContacts])
+    loadAllMedia()
+  }, [loadMemories, loadContacts, loadAllMedia])
 
-  // Filter by search
+  // ── Search filter ──────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredMemories(memories)
-      return
-    }
+    if (!searchQuery.trim()) { setFilteredMemories(memories); return }
     const q = searchQuery.toLowerCase()
     setFilteredMemories(
       memories.filter(m =>
@@ -157,50 +188,87 @@ export default function LifePage() {
     )
   }, [searchQuery, memories])
 
+  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleMoodFilter = (mood: MoodType) => {
     if (selectedMood === mood) {
-      setSelectedMood(null)
-      setSelectedCategory(null)
-      setBrowseMode('home')
-      loadMemories()
+      setSelectedMood(null); setBrowseMode('home'); loadMemories()
     } else {
-      setSelectedMood(mood)
-      setSelectedCategory(null)
-      setBrowseMode('moods')
-      loadMemories(mood, null)
+      setSelectedMood(mood); setSelectedCategory(null)
+      setBrowseMode('moods'); loadMemories(mood, null)
     }
   }
 
   const handleCategoryFilter = (cat: string) => {
     if (selectedCategory === cat) {
-      setSelectedMood(null)
-      setSelectedCategory(null)
-      setBrowseMode('home')
-      loadMemories()
+      setSelectedCategory(null); setBrowseMode('home'); loadMemories()
     } else {
-      setSelectedCategory(cat)
-      setSelectedMood(null)
-      setBrowseMode('categories')
-      loadMemories(null, cat)
+      setSelectedCategory(cat); setSelectedMood(null)
+      setBrowseMode('categories'); loadMemories(null, cat)
     }
   }
 
   const handleTabChange = (mode: BrowseMode) => {
-    // Reset filters when switching away from moods/categories
     if (mode !== 'moods') setSelectedMood(null)
     if (mode !== 'categories') setSelectedCategory(null)
-    if (mode === 'home' || mode === 'timeline' || mode === 'people' || mode === 'places' || mode === 'media') {
-      loadMemories()
-    }
+    if (['home', 'timeline', 'people', 'places'].includes(mode)) loadMemories()
     setBrowseMode(mode)
   }
 
+  // ── Bulk upload ────────────────────────────────────────────────────────────
+  const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    setUploading(true)
+
+    for (const file of Array.from(files)) {
+      try {
+        const memRes = await fetch('/api/memories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
+            memory_date: new Date().toISOString().split('T')[0],
+            memory_type: 'moment',
+          }),
+        })
+        const { memory } = await memRes.json()
+        if (!memory?.id) continue
+        const fd = new FormData()
+        fd.append('file', file)
+        await fetch(`/api/memories/${memory.id}/media`, { method: 'POST', body: fd })
+      } catch (err) {
+        console.error('Upload error:', err)
+      }
+    }
+
+    setUploading(false)
+    loadMemories()
+    loadAllMedia()
+    // reset input
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  // ── Derived ────────────────────────────────────────────────────────────────
   const recentMemories = filteredMemories.slice(0, 16)
   const favoriteMemories = memories.filter(m => m.is_favorite).slice(0, 6)
+  const imageMedia = allMedia.filter(m => {
+    const ft = m.file_type?.toLowerCase() || ''
+    const url = (m.file_url || '').toLowerCase()
+    return ft.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|heic)$/i.test(url)
+  })
+
+  // Slide items for Life Story Engine
+  const slideItems = imageMedia.slice(0, 100).map(m => ({
+    id: m.id,
+    url: m.file_url,
+    title: m.memory?.title,
+    date: m.taken_at ? new Date(m.taken_at).toLocaleDateString() : undefined,
+  }))
+
+  const MEMORY_GRID = 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2'
 
   return (
     <div className="page-container">
-      {/* Warm gradient background */}
       <div className="page-background">
         <div className="page-blob page-blob-1" />
         <div className="page-blob page-blob-2" />
@@ -208,9 +276,10 @@ export default function LifePage() {
       </div>
 
       <div className="relative z-10">
-        {/* ── Header ────────────────────────────────────── */}
+
+        {/* ── Header ────────────────────────────────────────────────────────── */}
         <header className="mb-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-4">
               <Link href="/dashboard" className="page-header-back">
                 <ChevronLeft size={20} />
@@ -220,18 +289,38 @@ export default function LifePage() {
                 <p className="page-header-subtitle">{memories.length} memories captured</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+
+            <div className="flex items-center gap-2">
+              {/* Add Media (bulk upload) */}
               <button
-                onClick={() => setShowCreateModal(true)}
-                className="btn-primary"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="btn-secondary flex items-center gap-2"
               >
-                <Plus size={18} />
+                {uploading
+                  ? <Loader2 size={16} className="animate-spin" />
+                  : <Upload size={16} />
+                }
+                <span className="hidden sm:inline">{uploading ? 'Uploading…' : 'Add Media'}</span>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                className="hidden"
+                onChange={handleBulkUpload}
+              />
+
+              {/* Add Memory */}
+              <button onClick={() => setShowCreateModal(true)} className="btn-primary flex items-center gap-2">
+                <Plus size={16} />
                 <span className="hidden sm:inline">Add Memory</span>
               </button>
             </div>
           </div>
 
-          {/* ── Search bar ─────────────────────────────── */}
+          {/* Search */}
           <div className="mt-4 relative">
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#406A56]/50 pointer-events-none" />
             <input
@@ -242,16 +331,13 @@ export default function LifePage() {
               className="form-input !pl-11 pr-10 w-full placeholder:text-[#999]"
             />
             {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#406A56]/50 hover:text-[#406A56]"
-              >
+              <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#406A56]/50 hover:text-[#406A56]">
                 <X size={16} />
               </button>
             )}
           </div>
 
-          {/* ── Reminisce By tabs ──────────────────────── */}
+          {/* Reminisce By tabs */}
           <div className="mt-4">
             <p className="text-xs font-semibold text-[#406A56]/60 uppercase tracking-widest mb-2">Reminisce By</p>
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -259,7 +345,7 @@ export default function LifePage() {
                 <button
                   key={tab.mode}
                   onClick={() => handleTabChange(tab.mode)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                     browseMode === tab.mode
                       ? 'bg-[#406A56] text-white shadow-sm'
                       : 'bg-white/80 text-[#406A56] hover:bg-white border border-[#406A56]/20'
@@ -273,14 +359,15 @@ export default function LifePage() {
           </div>
         </header>
 
-        {/* ── Main Content ───────────────────────────────────── */}
+        {/* ── Main Content ──────────────────────────────────────────────────── */}
         <main className="space-y-8">
 
-          {/* ═══════════════════════════════════════════════════
-              HOME VIEW
-          ═══════════════════════════════════════════════════ */}
+          {/* ═══ HOME ═══════════════════════════════════════════════════════ */}
           {browseMode === 'home' && (
             <>
+              {/* Life Story Engine */}
+              <LifeStoryEngine slideItems={slideItems} />
+
               {/* Today in Your Life */}
               <section>
                 <OnThisDay />
@@ -290,10 +377,7 @@ export default function LifePage() {
               <section>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-lg font-semibold text-[#2d2d2d]">Recent Memories</h2>
-                  <button
-                    onClick={() => handleTabChange('timeline')}
-                    className="text-sm text-[#406A56] hover:underline font-medium"
-                  >
+                  <button onClick={() => handleTabChange('timeline')} className="text-sm text-[#406A56] hover:underline font-medium">
                     See timeline →
                   </button>
                 </div>
@@ -309,15 +393,13 @@ export default function LifePage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                    {recentMemories.map(m => (
-                      <LifeMemoryCard key={m.id} memory={m} />
-                    ))}
+                  <div className={MEMORY_GRID}>
+                    {recentMemories.map(m => <LifeMemoryCard key={m.id} memory={m} />)}
                   </div>
                 )}
               </section>
 
-              {/* Favorites row */}
+              {/* Favorites */}
               {favoriteMemories.length > 0 && (
                 <section>
                   <div className="flex items-center gap-2 mb-3">
@@ -326,7 +408,7 @@ export default function LifePage() {
                   </div>
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                     {favoriteMemories.map(m => (
-                      <div key={m.id} className="flex-shrink-0 w-48">
+                      <div key={m.id} className="flex-shrink-0 w-44">
                         <MemoryCardClean memory={m} />
                       </div>
                     ))}
@@ -339,10 +421,7 @@ export default function LifePage() {
                 <section>
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold text-[#2d2d2d]">Your People</h2>
-                    <button
-                      onClick={() => handleTabChange('people')}
-                      className="text-sm text-[#406A56] hover:underline font-medium"
-                    >
+                    <button onClick={() => handleTabChange('people')} className="text-sm text-[#406A56] hover:underline font-medium">
                       Explore →
                     </button>
                   </div>
@@ -353,28 +432,25 @@ export default function LifePage() {
                         href={`/dashboard/contacts/${contact.id}`}
                         className="flex-shrink-0 flex flex-col items-center gap-1.5 group"
                       >
-                        <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-[#406A56]/20 to-[#D9C61A]/20 border-2 border-white shadow-sm group-hover:border-[#406A56] transition-all">
+                        <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-[#406A56]/20 to-[#D9C61A]/20 border-2 border-white shadow-sm group-hover:border-[#406A56] transition-all">
                           {contact.avatar_url ? (
                             <img src={contact.avatar_url} alt={contact.name} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <span className="text-xl font-bold text-[#406A56]/60">
+                              <span className="text-lg font-bold text-[#406A56]/60">
                                 {contact.name.charAt(0).toUpperCase()}
                               </span>
                             </div>
                           )}
                         </div>
-                        <span className="text-xs text-[#406A56]/70 font-medium truncate w-16 text-center">
+                        <span className="text-xs text-[#406A56]/70 font-medium truncate w-14 text-center">
                           {contact.name.split(' ')[0]}
                         </span>
                       </Link>
                     ))}
-                    <button
-                      onClick={() => handleTabChange('people')}
-                      className="flex-shrink-0 flex flex-col items-center gap-1.5"
-                    >
-                      <div className="w-16 h-16 rounded-full border-2 border-dashed border-[#406A56]/30 flex items-center justify-center hover:border-[#406A56] transition-colors">
-                        <Users size={20} className="text-[#406A56]/50" />
+                    <button onClick={() => handleTabChange('people')} className="flex-shrink-0 flex flex-col items-center gap-1.5">
+                      <div className="w-14 h-14 rounded-full border-2 border-dashed border-[#406A56]/30 flex items-center justify-center hover:border-[#406A56] transition-colors">
+                        <Users size={18} className="text-[#406A56]/50" />
                       </div>
                       <span className="text-xs text-[#406A56]/50 font-medium">See all</span>
                     </button>
@@ -382,35 +458,26 @@ export default function LifePage() {
                 </section>
               )}
 
-              {/* Life Map preview */}
+              {/* Life Map */}
               {memories.some(m => m.location_lat && m.location_lng) && (
                 <section>
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold text-[#2d2d2d]">Your Life Map</h2>
-                    <button
-                      onClick={() => handleTabChange('places')}
-                      className="text-sm text-[#406A56] hover:underline font-medium"
-                    >
+                    <button onClick={() => handleTabChange('places')} className="text-sm text-[#406A56] hover:underline font-medium">
                       Explore →
                     </button>
                   </div>
-                  <div className="glass-card-page overflow-hidden" style={{ height: 280 }}>
-                    <MapView
-                      memories={memories}
-                      onSelectMemory={(m) => router.push(`/dashboard/memories/${m.id}`)}
-                    />
+                  <div className="glass-card-page overflow-hidden rounded-2xl" style={{ height: 260 }}>
+                    <MapView memories={memories} onSelectMemory={(m) => router.push(`/dashboard/memories/${m.id}`)} />
                   </div>
                 </section>
               )}
 
-              {/* Your Moods */}
+              {/* Moods */}
               <section>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-lg font-semibold text-[#2d2d2d]">Your Moods</h2>
-                  <button
-                    onClick={() => handleTabChange('moods')}
-                    className="text-sm text-[#406A56] hover:underline font-medium"
-                  >
+                  <button onClick={() => handleTabChange('moods')} className="text-sm text-[#406A56] hover:underline font-medium">
                     Filter →
                   </button>
                 </div>
@@ -422,7 +489,7 @@ export default function LifePage() {
                       <button
                         key={mood}
                         onClick={() => handleMoodFilter(mood)}
-                        className="glass-card-page p-4 text-left hover:shadow-md transition-all group"
+                        className="glass-card-page p-3 text-left hover:shadow-md transition-all"
                       >
                         <div className="text-2xl mb-1">{emoji}</div>
                         <div className="font-semibold text-[#2d2d2d] text-sm">{label}</div>
@@ -432,68 +499,21 @@ export default function LifePage() {
                   })}
                 </div>
               </section>
-
-              {/* Emotional Journey */}
-              <section>
-                <EmotionalJourney userId={userId} />
-              </section>
-
-              {/* Gallery shortcut */}
-              <section>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-semibold text-[#2d2d2d]">Media Library</h2>
-                  <button
-                    onClick={() => handleTabChange('media')}
-                    className="text-sm text-[#406A56] hover:underline font-medium"
-                  >
-                    Open gallery →
-                  </button>
-                </div>
-                <button
-                  onClick={() => handleTabChange('media')}
-                  className="glass-card-page p-6 w-full flex items-center gap-4 hover:shadow-md transition-all group text-left"
-                >
-                  <div className="w-14 h-14 rounded-xl bg-[#406A56]/10 flex items-center justify-center group-hover:bg-[#406A56]/20 transition-colors">
-                    <Grid3x3 size={28} className="text-[#406A56]" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-[#2d2d2d]">Browse all photos & videos</p>
-                    <p className="text-sm text-[#666]">
-                      {memories.reduce((acc, m) => acc + (m.memory_media?.length || 0), 0)} media items across your memories
-                    </p>
-                  </div>
-                </button>
-              </section>
             </>
           )}
 
-          {/* ═══════════════════════════════════════════════════
-              TIMELINE VIEW
-          ═══════════════════════════════════════════════════ */}
-          {browseMode === 'timeline' && (
-            <TimelineBrowse memories={memories} />
-          )}
+          {/* ═══ TIMELINE ════════════════════════════════════════════════════ */}
+          {browseMode === 'timeline' && <TimelineBrowse memories={memories} />}
 
-          {/* ═══════════════════════════════════════════════════
-              PEOPLE VIEW
-          ═══════════════════════════════════════════════════ */}
-          {browseMode === 'people' && (
-            <PeopleBrowse />
-          )}
+          {/* ═══ PEOPLE ══════════════════════════════════════════════════════ */}
+          {browseMode === 'people' && <PeopleBrowse />}
 
-          {/* ═══════════════════════════════════════════════════
-              PLACES VIEW
-          ═══════════════════════════════════════════════════ */}
-          {browseMode === 'places' && (
-            <PlacesBrowse memories={memories} />
-          )}
+          {/* ═══ PLACES ══════════════════════════════════════════════════════ */}
+          {browseMode === 'places' && <PlacesBrowse memories={memories} />}
 
-          {/* ═══════════════════════════════════════════════════
-              MOODS VIEW
-          ═══════════════════════════════════════════════════ */}
+          {/* ═══ MOODS ═══════════════════════════════════════════════════════ */}
           {browseMode === 'moods' && (
             <section>
-              {/* Mood picker chips */}
               <div className="flex flex-wrap gap-3 mb-6">
                 {MOOD_DISPLAY.map(({ mood, emoji, label }) => (
                   <button
@@ -507,9 +527,7 @@ export default function LifePage() {
                   >
                     <span>{emoji}</span>
                     {label}
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      selectedMood === mood ? 'bg-white/20' : 'bg-[#406A56]/10'
-                    }`}>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${selectedMood === mood ? 'bg-white/20' : 'bg-[#406A56]/10'}`}>
                       {memories.filter(m => m.mood === mood).length}
                     </span>
                   </button>
@@ -523,8 +541,6 @@ export default function LifePage() {
                   </button>
                 )}
               </div>
-
-              {/* Memory grid */}
               {loading ? (
                 <div className="loading-container"><div className="loading-text">Loading memories...</div></div>
               ) : filteredMemories.length === 0 ? (
@@ -534,19 +550,16 @@ export default function LifePage() {
                   <p className="empty-state-text">Select a mood above to filter your memories</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                <div className={MEMORY_GRID}>
                   {filteredMemories.map(m => <LifeMemoryCard key={m.id} memory={m} />)}
                 </div>
               )}
             </section>
           )}
 
-          {/* ═══════════════════════════════════════════════════
-              CATEGORIES VIEW
-          ═══════════════════════════════════════════════════ */}
+          {/* ═══ CATEGORIES ══════════════════════════════════════════════════ */}
           {browseMode === 'categories' && (
             <section>
-              {/* Category chips */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                 {CATEGORIES.map(({ value, label, emoji }) => {
                   const count = memories.filter(m => m.ai_category === value).length
@@ -554,9 +567,7 @@ export default function LifePage() {
                     <button
                       key={value}
                       onClick={() => handleCategoryFilter(value)}
-                      className={`glass-card-page p-4 text-left transition-all hover:shadow-md ${
-                        selectedCategory === value ? 'ring-2 ring-[#406A56]' : ''
-                      }`}
+                      className={`glass-card-page p-4 text-left transition-all hover:shadow-md ${selectedCategory === value ? 'ring-2 ring-[#406A56]' : ''}`}
                     >
                       <div className="text-2xl mb-1">{emoji}</div>
                       <div className="font-semibold text-[#2d2d2d] text-sm">{label}</div>
@@ -565,42 +576,96 @@ export default function LifePage() {
                   )
                 })}
               </div>
-
-              {/* Memory grid */}
               {loading ? (
                 <div className="loading-container"><div className="loading-text">Loading memories...</div></div>
               ) : filteredMemories.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-state-icon"><BookOpen size={32} className="text-[#406A56]/50" /></div>
-                  <h3 className="empty-state-title">
-                    {selectedCategory ? 'No memories in this category' : 'Select a category above'}
-                  </h3>
+                  <h3 className="empty-state-title">{selectedCategory ? 'No memories in this category' : 'Select a category above'}</h3>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                <div className={MEMORY_GRID}>
                   {filteredMemories.map(m => <LifeMemoryCard key={m.id} memory={m} />)}
                 </div>
               )}
             </section>
           )}
 
-          {/* ═══════════════════════════════════════════════════
-              MEDIA / GALLERY VIEW
-          ═══════════════════════════════════════════════════ */}
+          {/* ═══ GALLERY / MEDIA ═════════════════════════════════════════════ */}
           {browseMode === 'media' && (
-            <div>
+            <section>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-[#666]">Photos & videos attached to your memories</p>
-                <Link href="/dashboard/gallery" className="text-sm text-[#406A56] hover:underline font-medium">
-                  Full gallery →
-                </Link>
+                <div>
+                  <h2 className="text-lg font-semibold text-[#2d2d2d]">All Media</h2>
+                  <p className="text-sm text-[#666]">{allMedia.length} items across your memories</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="btn-secondary flex items-center gap-1.5 text-sm"
+                  >
+                    {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                    {uploading ? 'Uploading…' : 'Upload'}
+                  </button>
+                  <Link href="/dashboard/gallery" className="text-sm text-[#406A56] hover:underline font-medium">
+                    Full gallery →
+                  </Link>
+                </div>
               </div>
-              <LibraryBrowse
-                onSelectMedia={(media) => {
-                  if (media.memory_id) router.push(`/dashboard/memories/${media.memory_id}`)
-                }}
-              />
-            </div>
+
+              {mediaLoading ? (
+                <div className="loading-container"><div className="loading-text">Loading media...</div></div>
+              ) : allMedia.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon"><ImageIcon size={32} className="text-[#406A56]/50" /></div>
+                  <h3 className="empty-state-title">No media yet</h3>
+                  <p className="empty-state-text">Add photos and videos to your memories</p>
+                  <button onClick={() => fileInputRef.current?.click()} className="btn-primary mx-auto">
+                    <Upload size={16} /> Upload Media
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                  {allMedia.map(item => {
+                    const isImg = item.file_type?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|heic)$/i.test(item.file_url || '')
+                    const isVid = item.file_type?.startsWith('video/') || /\.(mp4|mov|avi|webm)$/i.test(item.file_url || '')
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => item.memory_id && router.push(`/dashboard/memories/${item.memory_id}`)}
+                        className="aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer group relative"
+                      >
+                        {isImg ? (
+                          <img
+                            src={item.file_url}
+                            alt=""
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                          />
+                        ) : isVid ? (
+                          <div className="w-full h-full bg-gradient-to-br from-[#1a1a2e] to-[#0f3460] flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                              <div className="w-0 h-0 border-l-[10px] border-l-white border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent ml-1" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                            <ImageIcon size={20} className="text-gray-400" />
+                          </div>
+                        )}
+                        {/* Memory title on hover */}
+                        {item.memory?.title && (
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1.5">
+                            <p className="text-white text-[9px] leading-tight line-clamp-2">{item.memory.title}</p>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
           )}
 
         </main>
