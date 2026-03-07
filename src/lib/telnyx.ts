@@ -28,16 +28,30 @@ export async function sendSMS(to: string, text: string): Promise<{
     // Normalize phone number (ensure E.164 format)
     const normalizedTo = normalizePhoneNumber(to);
     
-    // @ts-expect-error - Telnyx SDK types may be outdated
-    const message = await telnyx.messages.create({
-      from: TELNYX_FROM_NUMBER,
-      to: normalizedTo,
-      text,
+    // Use REST API directly - SDK .create() method has compatibility issues
+    const response = await fetch('https://api.telnyx.com/v2/messages', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.TELNYX_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: TELNYX_FROM_NUMBER,
+        to: normalizedTo,
+        text,
+      }),
     });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err?.errors?.[0]?.detail || `HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
 
     return {
       success: true,
-      messageId: message.data?.id,
+      messageId: data.data?.id,
     };
   } catch (error) {
     console.error('Telnyx SMS error:', error);

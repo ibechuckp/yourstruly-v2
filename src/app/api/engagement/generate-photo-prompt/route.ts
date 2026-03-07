@@ -58,14 +58,17 @@ export async function POST(request: NextRequest) {
                   parts: [
                     { inlineData: { mimeType, data: imgBase64 } },
                     {
-                      text: `You are helping someone document their life story. Look at this photo and generate ONE warm, personal question that will prompt them to share the story behind it.
+                      text: `You are helping someone document their life story. Look at this photo and generate ONE warm question to prompt them to share the story behind it.
 
-Rules:
-- If people are visible: ask about them (who they are, the relationship)
-- If it's a place/event: ask what they were doing or celebrating
-- If it's an everyday moment: ask what made it worth capturing
-- Be warm and specific to what you see - not generic
-- Address them as "${userName}"
+CRITICAL RULES - never assume:
+- NEVER assume the people in the photo are the user themselves
+- NEVER say "you" when referring to people in the photo unless it's clearly a selfie
+- Always ask WHO people are before asking about their experience
+- If people are visible: ask "Who are the people in this photo?" or "Who is this a photo of?" or "What's the story behind this moment?"
+- If it looks like a wedding: ask "Whose wedding is this?" NOT "How did you feel getting married?"
+- If it's a landscape/place: ask "Where was this taken?" or "What memories do you have of this place?"
+- If it's food/objects: ask "What's the story behind this?"
+- Be warm and curious, like a friend looking at a photo album
 - Keep it under 20 words
 - Output ONLY the question, nothing else`
                     }
