@@ -22,7 +22,7 @@ interface Contact {
 interface Circle {
   id: string
   name: string
-  color: string
+  color?: string  // not in DB schema - kept for UI compatibility
   members: { user_id: string }[]
 }
 
@@ -144,7 +144,7 @@ export default function JournalistPage() {
         .order('category'),
       supabase
         .from('circles')
-        .select('id, name, color, members:circle_members(user_id)')
+        .select('id, name, members:circle_members(user_id)')
         .eq('created_by', user.id)
         .order('name'),
     ])
@@ -706,7 +706,7 @@ export default function JournalistPage() {
                                 >
                                   <div 
                                     className="w-8 h-8 rounded-full flex items-center justify-center"
-                                    style={{ backgroundColor: circle.color + '20', color: circle.color }}
+                                    style={{ backgroundColor: '#406A5620', color: '#406A56' }}
                                   >
                                     <Heart size={16} />
                                   </div>
