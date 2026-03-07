@@ -448,12 +448,13 @@ export function ConversationView({ prompt, expectedXp = 15, onComplete, onClose 
                 </span>
               </div>
 
-              {/* Question display - TTS enabled by default */}
+              {/* Question display - TTS enabled with auto-speak */}
               <AnimatedQuestion
                 question={currentQuestion}
                 animate={true}
                 isLoading={isGeneratingFollowup}
                 enableTTS={true}
+                autoSpeak={true}
                 showAvatar={true}
                 size="lg"
               />

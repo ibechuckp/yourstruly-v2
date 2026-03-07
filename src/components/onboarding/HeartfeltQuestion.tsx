@@ -383,6 +383,7 @@ export function HeartfeltQuestion({ userProfile, onComplete, onSkip }: Heartfelt
                   centered={true}
                   size="lg"
                   enableTTS={true}
+                  autoSpeak={true}
                   onTypingComplete={handleTypingComplete}
                 />
               </div>
