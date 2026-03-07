@@ -88,6 +88,7 @@ export default function WisdomDetailPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
   const exchangesRef = useRef<ParsedExchange[]>([]);
+  const isPlayingRef = useRef(false);  // Immediate ref guard (avoids React state race)
 
   const supabase = createClient();
 
@@ -223,6 +224,7 @@ export default function WisdomDetailPage() {
 
   // Stop all playback
   const stopPlayback = useCallback(() => {
+    isPlayingRef.current = false;  // Set ref immediately — stops any running loop
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -293,15 +295,17 @@ export default function WisdomDetailPage() {
 
   // Play all exchanges in sequence
   const playAllExchanges = useCallback(async () => {
+    if (isPlayingRef.current) return;  // Ref guard — prevents double-play on rapid clicks
     const exchanges = exchangesRef.current;
     if (exchanges.length === 0) return;
 
+    isPlayingRef.current = true;
     setIsPlaying(true);
     
     try {
       for (let i = 0; i < exchanges.length; i++) {
-        // Check if stopped
-        if (!isPlaying && i > 0) break;
+        // Check if stopped (use ref — state is stale inside async closure)
+        if (!isPlayingRef.current) break;
         
         const exchange = exchanges[i];
         setCurrentExchangeIndex(i);
@@ -341,6 +345,7 @@ export default function WisdomDetailPage() {
     } catch (error) {
       console.error('Playback error:', error);
     } finally {
+      isPlayingRef.current = false;
       setIsPlaying(false);
       setCurrentExchangeIndex(-1);
       setPlayingPart(null);

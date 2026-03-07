@@ -172,7 +172,8 @@ export default function MemoryDetailPage({ params }: { params: Promise<{ id: str
   }
 
   const playConversation = async (exchanges: Array<{ question: string; answer: string; audioUrl?: string }>) => {
-    if (isPlayingConversation) {
+    if (playingRef.current) {
+      // Already playing — stop instead (ref is immediate, no state race)
       stopConversationPlayback()
       return
     }
