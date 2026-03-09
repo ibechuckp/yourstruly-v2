@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   X, Play, Pause, SkipBack, SkipForward, 
@@ -472,8 +473,13 @@ export default function SlideshowPlayer({
 
   if (!isOpen) return null
 
+  // Portal target — ensures fixed overlay escapes any transformed ancestor
+  // (e.g. framer-motion animated parents with overflow-hidden)
+  const portalTarget = typeof document !== 'undefined' ? document.body : null
+  if (!portalTarget) return null
+
   if (items.length === 0) {
-    return (
+    return createPortal(
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -487,13 +493,14 @@ export default function SlideshowPlayer({
         >
           Close
         </button>
-      </motion.div>
+      </motion.div>,
+      portalTarget
     )
   }
 
   const currentItem = items[currentIndex]
 
-  return (
+  return createPortal(
     <motion.div
       ref={containerRef}
       initial={{ opacity: 0 }}
@@ -775,7 +782,8 @@ export default function SlideshowPlayer({
           )}
         </div>
       </div>
-    </motion.div>
+    </motion.div>,
+    portalTarget
   )
 }
 
