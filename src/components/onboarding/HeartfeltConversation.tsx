@@ -315,12 +315,7 @@ export function HeartfeltConversation({
                         : 'bg-white border border-gray-100 text-[#2d2d2d] rounded-bl-md shadow-sm'
                     }`}
                   >
-                    {message.role === 'assistant' && (
-                      <div className="flex items-center gap-2 mb-1 text-[#406A56]">
-                        <MessageCircle size={12} />
-                        <span className="text-xs font-medium">YoursTruly</span>
-                      </div>
-                    )}
+                    {/* Clean assistant messages — no label */}
                     <p className={`text-sm leading-relaxed ${
                       message.role === 'assistant' ? 'font-playfair' : ''
                     }`}>

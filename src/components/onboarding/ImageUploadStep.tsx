@@ -11,7 +11,8 @@ import {
   Sparkles,
   Check,
   Loader2,
-  Camera
+  Camera,
+  MapPin
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -22,6 +23,8 @@ interface UploadedImage {
   status: 'pending' | 'uploading' | 'done' | 'error';
   memoryId?: string;
   mediaId?: string;
+  locationName?: string;
+  takenAt?: string;
 }
 
 interface ImageUploadStepProps {
@@ -134,7 +137,14 @@ export function ImageUploadStep({ userId, onBack, onContinue, onSkip }: ImageUpl
             const data = await res.json();
             setImages(prev => prev.map(img => 
               img.id === image.id 
-                ? { ...img, status: 'done', memoryId: data.memoryId, mediaId: data.mediaId } 
+                ? { 
+                    ...img, 
+                    status: 'done', 
+                    memoryId: data.memoryId, 
+                    mediaId: data.mediaId,
+                    locationName: data.metadata?.locationName || undefined,
+                    takenAt: data.metadata?.takenAt || undefined,
+                  } 
                 : img
             ));
             successCount++;
@@ -276,10 +286,18 @@ export function ImageUploadStep({ userId, onBack, onContinue, onSkip }: ImageUpl
                   )}
                   
                   {image.status === 'done' && (
-                    <div className="absolute inset-0 bg-[#406A56]/30 flex items-center justify-center">
-                      <div className="w-6 h-6 rounded-full bg-[#406A56] flex items-center justify-center">
-                        <Check size={14} className="text-white" />
+                    <div className="absolute inset-0 bg-[#406A56]/20 flex flex-col items-center justify-end">
+                      <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#406A56] flex items-center justify-center">
+                        <Check size={10} className="text-white" />
                       </div>
+                      {image.locationName && (
+                        <div className="w-full px-1 pb-1">
+                          <div className="flex items-center gap-0.5 bg-black/60 backdrop-blur-sm rounded px-1.5 py-0.5">
+                            <MapPin size={8} className="text-white flex-shrink-0" />
+                            <span className="text-[9px] text-white truncate">{image.locationName.split(',').slice(0, 2).join(',')}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                   
@@ -309,6 +327,24 @@ export function ImageUploadStep({ userId, onBack, onContinue, onSkip }: ImageUpl
           </div>
         </div>
       )}
+
+      {/* Location Summary */}
+      {(() => {
+        const locations = images
+          .filter(img => img.status === 'done' && img.locationName)
+          .map(img => img.locationName!.split(',').slice(0, 2).join(',').trim());
+        const uniqueLocations = [...new Set(locations)];
+        if (uniqueLocations.length === 0) return null;
+        return (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {uniqueLocations.map((loc, i) => (
+              <span key={i} className="inline-flex items-center gap-1 text-[11px] px-2 py-1 bg-[#406A56]/8 text-[#406A56] rounded-full border border-[#406A56]/15">
+                <MapPin size={10} /> {loc}
+              </span>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* What Happens Next */}
       {images.length > 0 && (

@@ -382,7 +382,7 @@ function MapboxGlobeReveal({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1.0 }}
                 >
-                  {name}'s adventure began on {formattedBirthday}
+                  We look forward to hearing more about this adventure.
                 </motion.h2>
                 <motion.div
                   className="globe-location-row"
