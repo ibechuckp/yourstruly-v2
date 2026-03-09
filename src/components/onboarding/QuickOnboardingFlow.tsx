@@ -340,33 +340,58 @@ function MapboxGlobeReveal({
         )}
       </AnimatePresence>
 
-      {/* Pinned — name card + continue */}
+      {/* Pinned — welcome message + continue */}
       <AnimatePresence>
         {phase === 'pinned' && (
           <motion.div
             className="globe-bottom-panel"
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, type: 'spring', stiffness: 200, damping: 24 }}
+            transition={{ delay: 0.5, type: 'spring', stiffness: 180, damping: 22 }}
           >
-            <div className="globe-name-card">
-              <div className="globe-name-icon">
-                <MapPin size={18} color="#406A56" />
+            {/* Welcome message card */}
+            <div className="globe-welcome-card">
+              {/* Subtle gradient bar at top */}
+              <div className="globe-welcome-bar" />
+
+              <div className="globe-welcome-body">
+                <motion.p
+                  className="globe-welcome-greeting"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  Hi {name} 👋
+                </motion.p>
+                <motion.h2
+                  className="globe-welcome-headline"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.0 }}
+                >
+                  We can't wait to discover your story.
+                </motion.h2>
+                <motion.div
+                  className="globe-location-row"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1.2 }}
+                >
+                  <MapPin size={14} color="#406A56" />
+                  <span>{location}</span>
+                </motion.div>
               </div>
-              <div>
-                <p className="globe-name">{name}</p>
-                <p className="globe-loc">{location}</p>
-              </div>
+
+              <motion.button
+                className="globe-continue-btn"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.5 }}
+                onClick={advance}
+              >
+                Let's begin <ChevronRight size={18} />
+              </motion.button>
             </div>
-            <motion.button
-              className="globe-continue-btn"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.2 }}
-              onClick={advance}
-            >
-              Continue <ChevronRight size={18} />
-            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -443,60 +468,72 @@ function MapboxGlobeReveal({
 
         .globe-bottom-panel {
           position: absolute;
-          bottom: 40px;
-          left: 50%;
-          transform: translateX(-50%);
+          bottom: 0;
+          left: 0;
+          right: 0;
           z-index: 10;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 16px;
-          width: calc(100% - 48px);
-          max-width: 420px;
+          padding: 0 20px 32px;
+          padding-bottom: calc(32px + env(safe-area-inset-bottom));
         }
 
-        .globe-name-card {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          padding: 18px 22px;
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(16px);
-          border-radius: 20px;
-          box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
-          width: 100%;
+        .globe-welcome-card {
+          background: rgba(255, 255, 255, 0.97);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border-radius: 24px 24px 20px 20px;
+          box-shadow:
+            0 -4px 30px rgba(0, 0, 0, 0.15),
+            0 20px 60px rgba(0, 0, 0, 0.25);
+          overflow: hidden;
+          max-width: 480px;
+          margin: 0 auto;
         }
 
-        .globe-name-icon {
-          width: 40px;
-          height: 40px;
-          border-radius: 12px;
-          background: rgba(64, 106, 86, 0.1);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
+        .globe-welcome-bar {
+          height: 4px;
+          background: linear-gradient(90deg, #406A56, #8DACAB, #C35F33);
         }
 
-        .globe-name {
-          font-size: 18px;
+        .globe-welcome-body {
+          padding: 22px 24px 16px;
+        }
+
+        .globe-welcome-greeting {
+          font-size: 14px;
+          font-weight: 600;
+          color: #406A56;
+          margin: 0 0 6px;
+          letter-spacing: 0.1px;
+        }
+
+        .globe-welcome-headline {
+          font-size: 22px;
           font-weight: 700;
           color: #2d2d2d;
-          margin: 0 0 2px;
+          margin: 0 0 12px;
           font-family: var(--font-playfair), Georgia, serif;
+          line-height: 1.25;
+          letter-spacing: -0.3px;
         }
 
-        .globe-loc {
+        .globe-location-row {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+        }
+
+        .globe-location-row span {
           font-size: 13px;
-          color: rgba(45, 45, 45, 0.55);
-          margin: 0;
+          color: rgba(45, 45, 45, 0.5);
         }
 
         .globe-continue-btn {
-          display: inline-flex;
+          display: flex;
           align-items: center;
+          justify-content: center;
           gap: 8px;
-          padding: 15px 32px;
+          padding: 16px 24px;
+          margin: 0 24px 20px;
           background: #406A56;
           border: none;
           border-radius: 16px;
@@ -504,15 +541,14 @@ function MapboxGlobeReveal({
           font-size: 16px;
           font-weight: 600;
           cursor: pointer;
-          box-shadow: 0 6px 24px rgba(64, 106, 86, 0.4);
+          box-shadow: 0 4px 20px rgba(64, 106, 86, 0.35);
           transition: transform 0.2s, box-shadow 0.2s;
-          width: 100%;
-          justify-content: center;
+          width: calc(100% - 48px);
         }
 
         .globe-continue-btn:hover {
           transform: translateY(-2px);
-          box-shadow: 0 10px 32px rgba(64, 106, 86, 0.5);
+          box-shadow: 0 8px 28px rgba(64, 106, 86, 0.45);
         }
 
         /* Custom marker */
@@ -1226,108 +1262,374 @@ function AboutYouStep({
   onBack: () => void;
   onSkip: () => void;
 }) {
-  const interests = ABOUT_YOU_PILLS.filter((p) => p.category === 'interest');
-  const traits = ABOUT_YOU_PILLS.filter((p) => p.category === 'trait');
+  const [customInterestInput, setCustomInterestInput] = useState('');
+  const [customTraitInput, setCustomTraitInput] = useState('');
+  const [customInterests, setCustomInterests] = useState<string[]>([]);
+  const [customTraits, setCustomTraits] = useState<string[]>([]);
+
+  const addCustom = (
+    input: string,
+    setInput: (v: string) => void,
+    customs: string[],
+    setCustoms: (v: string[]) => void
+  ) => {
+    const val = input.trim();
+    if (!val) return;
+    const exists = customs.includes(val) || ABOUT_YOU_PILLS.some((p) => p.label.toLowerCase() === val.toLowerCase());
+    if (!exists) {
+      const updated = [...customs, val];
+      setCustoms(updated);
+    }
+    // Auto-select it
+    onToggle(val);
+    setInput('');
+  };
+
+  const baseInterests = ABOUT_YOU_PILLS.filter((p) => p.category === 'interest');
+  const baseTraits = ABOUT_YOU_PILLS.filter((p) => p.category === 'trait');
+
+  const allInterests = [
+    ...baseInterests,
+    ...customInterests.map((l) => ({ label: l, emoji: '✏️', category: 'interest' as const })),
+  ];
+  const allTraits = [
+    ...baseTraits,
+    ...customTraits.map((l) => ({ label: l, emoji: '✏️', category: 'trait' as const })),
+  ];
 
   return (
-    <div className="step-card">
-      <h2>A little about you</h2>
-      <p className="subtitle">
-        Pick anything that fits — the more you choose, the more personalized your experience.
-      </p>
+    <div className="about-step">
+      <div className="about-header">
+        <h2>A little about you</h2>
+        <p className="subtitle">
+          Pick what fits — or add your own. The more you choose, the more personalized your experience.
+        </p>
+      </div>
 
-      <div className="pill-section">
-        <div className="section-label">✦ Your Interests</div>
-        <div className="pill-grid">
-          {interests.map((p) => (
+      {/* Scrollable pill area */}
+      <div className="pill-scroll-area">
+        {/* Interests section */}
+        <div className="pill-section">
+          <div className="section-header">
+            <span className="section-dot" style={{ background: '#406A56' }} />
+            <span className="section-label">Your Interests</span>
+            <span className="section-count">
+              {allInterests.filter((p) => selected.has(p.label)).length > 0
+                ? `${allInterests.filter((p) => selected.has(p.label)).length} selected`
+                : ''}
+            </span>
+          </div>
+          <div className="pill-grid">
+            {allInterests.map((p) => (
+              <button
+                key={p.label}
+                className={`pill ${selected.has(p.label) ? 'pill-selected' : ''}`}
+                onClick={() => onToggle(p.label)}
+              >
+                <span className="pill-emoji">{p.emoji}</span>
+                {p.label}
+                {selected.has(p.label) && <Check size={11} strokeWidth={3} />}
+              </button>
+            ))}
+          </div>
+          {/* Custom interest input */}
+          <div className="custom-add-row">
+            <input
+              className="custom-input"
+              type="text"
+              value={customInterestInput}
+              onChange={(e) => setCustomInterestInput(e.target.value)}
+              placeholder="Add your own interest…"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter')
+                  addCustom(customInterestInput, setCustomInterestInput, customInterests, setCustomInterests);
+              }}
+            />
             <button
-              key={p.label}
-              className={`pill ${selected.has(p.label) ? 'pill-selected' : ''}`}
-              onClick={() => onToggle(p.label)}
+              className="custom-add-btn"
+              onClick={() =>
+                addCustom(customInterestInput, setCustomInterestInput, customInterests, setCustomInterests)
+              }
+              disabled={!customInterestInput.trim()}
             >
-              <span>{p.emoji}</span>
-              {p.label}
-              {selected.has(p.label) && <Check size={12} />}
+              + Add
             </button>
-          ))}
+          </div>
+        </div>
+
+        {/* Traits section */}
+        <div className="pill-section">
+          <div className="section-header">
+            <span className="section-dot" style={{ background: '#C35F33' }} />
+            <span className="section-label">Who You Are</span>
+            <span className="section-count">
+              {allTraits.filter((p) => selected.has(p.label)).length > 0
+                ? `${allTraits.filter((p) => selected.has(p.label)).length} selected`
+                : ''}
+            </span>
+          </div>
+          <div className="pill-grid">
+            {allTraits.map((p) => (
+              <button
+                key={p.label}
+                className={`pill ${selected.has(p.label) ? 'pill-selected pill-selected-trait' : ''}`}
+                onClick={() => onToggle(p.label)}
+              >
+                <span className="pill-emoji">{p.emoji}</span>
+                {p.label}
+                {selected.has(p.label) && <Check size={11} strokeWidth={3} />}
+              </button>
+            ))}
+          </div>
+          {/* Custom trait input */}
+          <div className="custom-add-row">
+            <input
+              className="custom-input"
+              type="text"
+              value={customTraitInput}
+              onChange={(e) => setCustomTraitInput(e.target.value)}
+              placeholder="Describe yourself…"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter')
+                  addCustom(customTraitInput, setCustomTraitInput, customTraits, setCustomTraits);
+              }}
+            />
+            <button
+              className="custom-add-btn custom-add-btn-trait"
+              onClick={() =>
+                addCustom(customTraitInput, setCustomTraitInput, customTraits, setCustomTraits)
+              }
+              disabled={!customTraitInput.trim()}
+            >
+              + Add
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="pill-section">
-        <div className="section-label">✦ Who You Are</div>
-        <div className="pill-grid">
-          {traits.map((p) => (
-            <button
-              key={p.label}
-              className={`pill ${selected.has(p.label) ? 'pill-selected' : ''}`}
-              onClick={() => onToggle(p.label)}
-            >
-              <span>{p.emoji}</span>
-              {p.label}
-              {selected.has(p.label) && <Check size={12} />}
+      {/* Sticky nav */}
+      <div className="about-nav">
+        <div className="about-nav-inner">
+          <button className="nav-back-btn" onClick={onBack} aria-label="Back">
+            <ChevronLeft size={20} />
+          </button>
+          <div className="nav-right">
+            <button className="nav-continue-btn" onClick={onContinue}>
+              {selected.size > 0 ? `Continue  ·  ${selected.size} selected` : 'Continue'}
+              <ChevronRight size={18} />
             </button>
-          ))}
+            <button className="nav-skip-link" onClick={onSkip}>
+              Skip for now
+            </button>
+          </div>
         </div>
       </div>
-
-      <div className="btn-row action-row">
-        <button className="back-btn" onClick={onBack}>
-          <ChevronLeft size={18} />
-        </button>
-        <button className="primary-btn" onClick={onContinue}>
-          {selected.size > 0
-            ? `Continue (${selected.size} selected)`
-            : 'Continue'}
-          <ChevronRight size={18} />
-        </button>
-      </div>
-      <button className="skip-link" onClick={onSkip}>
-        Skip for now
-      </button>
 
       <style jsx>{`
-        ${SHARED}
-        .step-card {}
-        .section-label {
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 1.4px;
-          text-transform: uppercase;
-          color: #406A56;
-          margin-bottom: 10px;
+        .about-step {
+          display: flex;
+          flex-direction: column;
+          min-height: calc(100vh - 80px);
         }
-        .pill-section { margin-bottom: 24px; }
+        .about-header {
+          padding-bottom: 4px;
+        }
+        ${SHARED}
+        .pill-scroll-area {
+          flex: 1;
+          overflow-y: auto;
+          padding-bottom: 16px;
+        }
+        .section-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+        .section-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
+        .section-label {
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 1.2px;
+          text-transform: uppercase;
+          color: rgba(45, 45, 45, 0.5);
+        }
+        .section-count {
+          font-size: 11px;
+          font-weight: 600;
+          color: #406A56;
+          margin-left: auto;
+        }
+        .pill-section {
+          margin-bottom: 28px;
+        }
         .pill-grid {
           display: flex;
           flex-wrap: wrap;
           gap: 8px;
+          margin-bottom: 12px;
         }
         .pill {
           display: inline-flex;
           align-items: center;
           gap: 5px;
-          padding: 8px 14px;
+          padding: 8px 13px;
           background: white;
-          border: 1.5px solid rgba(64, 106, 86, 0.18);
+          border: 1.5px solid rgba(64, 106, 86, 0.16);
           border-radius: 100px;
-          color: rgba(45, 45, 45, 0.7);
+          color: rgba(45, 45, 45, 0.65);
           font-size: 13px;
           font-weight: 500;
           cursor: pointer;
           transition: all 0.15s ease;
-          box-shadow: 0 1px 4px rgba(64, 106, 86, 0.06);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+          line-height: 1;
         }
+        .pill-emoji { font-size: 14px; line-height: 1; }
         .pill:hover {
           border-color: #406A56;
           color: #406A56;
+          background: rgba(64, 106, 86, 0.03);
         }
         .pill-selected {
-          background: rgba(64, 106, 86, 0.08);
+          background: rgba(64, 106, 86, 0.09);
           border-color: #406A56;
           color: #406A56;
           font-weight: 600;
         }
-        .action-row { margin-top: 24px; margin-bottom: 8px; }
+        .pill-selected-trait {
+          background: rgba(195, 95, 51, 0.08);
+          border-color: #C35F33;
+          color: #C35F33;
+        }
+        /* Custom add row */
+        .custom-add-row {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+        .custom-input {
+          flex: 1;
+          padding: 9px 14px;
+          background: white;
+          border: 1.5px solid rgba(64, 106, 86, 0.16);
+          border-radius: 100px;
+          color: #2d2d2d;
+          font-size: 13px;
+          transition: border-color 0.2s;
+          min-width: 0;
+        }
+        .custom-input::placeholder { color: rgba(45, 45, 45, 0.3); }
+        .custom-input:focus {
+          outline: none;
+          border-color: #406A56;
+          box-shadow: 0 0 0 2px rgba(64, 106, 86, 0.1);
+        }
+        .custom-add-btn {
+          padding: 9px 16px;
+          background: rgba(64, 106, 86, 0.08);
+          border: 1.5px solid rgba(64, 106, 86, 0.2);
+          border-radius: 100px;
+          color: #406A56;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.15s;
+          flex-shrink: 0;
+        }
+        .custom-add-btn:hover:not(:disabled) {
+          background: rgba(64, 106, 86, 0.14);
+          border-color: #406A56;
+        }
+        .custom-add-btn:disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+        }
+        .custom-add-btn-trait {
+          background: rgba(195, 95, 51, 0.07);
+          border-color: rgba(195, 95, 51, 0.2);
+          color: #C35F33;
+        }
+        .custom-add-btn-trait:hover:not(:disabled) {
+          background: rgba(195, 95, 51, 0.13);
+          border-color: #C35F33;
+        }
+        /* Sticky nav */
+        .about-nav {
+          position: sticky;
+          bottom: 0;
+          background: linear-gradient(to bottom, transparent, #fdf8f3 30%);
+          padding-top: 20px;
+          margin-top: auto;
+        }
+        .about-nav-inner {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+        }
+        .nav-back-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 50px;
+          height: 50px;
+          background: white;
+          border: 1.5px solid rgba(64, 106, 86, 0.18);
+          border-radius: 14px;
+          color: rgba(45, 45, 45, 0.55);
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: border-color 0.2s, color 0.2s;
+        }
+        .nav-back-btn:hover {
+          border-color: #406A56;
+          color: #406A56;
+        }
+        .nav-right {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .nav-continue-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          width: 100%;
+          padding: 15px 20px;
+          background: #406A56;
+          border: none;
+          border-radius: 14px;
+          color: white;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          box-shadow: 0 4px 16px rgba(64, 106, 86, 0.28);
+          transition: background 0.2s, transform 0.15s;
+        }
+        .nav-continue-btn:hover {
+          background: #355948;
+          transform: translateY(-1px);
+        }
+        .nav-skip-link {
+          display: block;
+          text-align: center;
+          background: transparent;
+          border: none;
+          color: rgba(45, 45, 45, 0.32);
+          font-size: 12px;
+          cursor: pointer;
+          padding: 4px;
+          transition: color 0.2s;
+        }
+        .nav-skip-link:hover { color: rgba(45, 45, 45, 0.6); }
       `}</style>
     </div>
   );
@@ -1376,13 +1678,16 @@ function ReligionStep({
         <span>Your beliefs are private and never shared.</span>
       </div>
 
-      <div className="btn-row action-row">
-        <button className="back-btn" onClick={onBack}>
-          <ChevronLeft size={18} />
-        </button>
-        <button className="primary-btn" onClick={value ? onContinue : onSkip}>
-          {value ? 'Continue' : 'Skip'} <ChevronRight size={18} />
-        </button>
+      {/* Sticky nav */}
+      <div className="religion-nav">
+        <div className="religion-nav-inner">
+          <button className="nav-back" onClick={onBack} aria-label="Back">
+            <ChevronLeft size={20} />
+          </button>
+          <button className="nav-continue" onClick={value ? onContinue : onSkip}>
+            {value ? 'Continue' : 'Skip for now'} <ChevronRight size={18} />
+          </button>
+        </div>
       </div>
 
       <style jsx>{`
@@ -1426,13 +1731,58 @@ function ReligionStep({
           background: rgba(64, 106, 86, 0.05);
           border: 1px solid rgba(64, 106, 86, 0.1);
           border-radius: 12px;
-          margin-bottom: 4px;
+          margin-bottom: 20px;
         }
         .trust-badge span {
           font-size: 12px;
           color: rgba(64, 106, 86, 0.8);
         }
-        .action-row { margin-top: 20px; }
+        /* sticky nav */
+        .religion-nav {
+          position: sticky;
+          bottom: 0;
+          background: linear-gradient(to bottom, transparent, #fdf8f3 30%);
+          padding-top: 16px;
+          padding-bottom: 4px;
+        }
+        .religion-nav-inner {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        }
+        .nav-back {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 50px;
+          height: 50px;
+          background: white;
+          border: 1.5px solid rgba(64, 106, 86, 0.18);
+          border-radius: 14px;
+          color: rgba(45, 45, 45, 0.55);
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: border-color 0.2s, color 0.2s;
+        }
+        .nav-back:hover { border-color: #406A56; color: #406A56; }
+        .nav-continue {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 15px 20px;
+          background: #406A56;
+          border: none;
+          border-radius: 14px;
+          color: white;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          box-shadow: 0 4px 16px rgba(64, 106, 86, 0.28);
+          transition: background 0.2s, transform 0.15s;
+        }
+        .nav-continue:hover { background: #355948; transform: translateY(-1px); }
       `}</style>
     </div>
   );
