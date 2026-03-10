@@ -137,7 +137,7 @@ These are risks that could cause data loss, downtime, or a security incident tod
 
 ---
 
-### P1 — Important (Next 60 Days)
+### P1 — Important
 
 Infrastructure improvements that reduce risk and unblock scaling.
 

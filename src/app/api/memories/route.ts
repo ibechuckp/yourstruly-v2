@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { analyzeMood } from '@/lib/ai/moodAnalysis'
+import { reverseGeocode } from '@/lib/geo/reverseGeocode'
 
 // GET /api/memories - List memories
 export async function GET(request: NextRequest) {
@@ -74,6 +75,12 @@ export async function POST(request: NextRequest) {
     location_lng,
   } = body
 
+  // Reverse geocode if we have coordinates but no location name
+  let resolvedLocationName = location_name;
+  if (!resolvedLocationName && location_lat && location_lng) {
+    resolvedLocationName = await reverseGeocode(location_lat, location_lng);
+  }
+
   const { data, error } = await supabase
     .from('memories')
     .insert({
@@ -82,7 +89,7 @@ export async function POST(request: NextRequest) {
       description,
       memory_date,
       memory_type,
-      location_name,
+      location_name: resolvedLocationName,
       location_lat,
       location_lng,
     })

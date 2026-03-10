@@ -1,23 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import exifr from 'exifr';
-
-// Reverse geocode GPS coordinates to a readable location name
-async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
-  try {
-    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-    if (!token) return null;
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${token}&types=place,locality,neighborhood&limit=1`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.features?.length > 0) {
-      return data.features[0].place_name || data.features[0].text;
-    }
-  } catch (e) {
-    console.error('Reverse geocode failed:', e);
-  }
-  return null;
-}
+import { reverseGeocode } from '@/lib/geo/reverseGeocode';
 
 export async function POST(request: NextRequest) {
   try {
@@ -169,6 +153,42 @@ export async function POST(request: NextRequest) {
     if (mediaError) {
       console.error('Media record error:', mediaError);
       return NextResponse.json({ success: true, fileUrl: publicUrl, mediaId: null, memoryId: onboardingMemoryId });
+    }
+
+    // =========================================================
+    // 4b. UPDATE PARENT MEMORY WITH EXIF DATA
+    // =========================================================
+    if (takenAt || locationName || (exifLat && exifLng)) {
+      const { data: currentMemory } = await supabase
+        .from('memories')
+        .select('memory_date, location_name, location_lat, location_lng')
+        .eq('id', onboardingMemoryId)
+        .single();
+
+      const memoryUpdates: Record<string, unknown> = {};
+
+      // Update date with EXIF date (prefer photo date over today's date)
+      if (takenAt) {
+        const currentDate = currentMemory?.memory_date;
+        const today = new Date().toISOString().split('T')[0];
+        // Update if memory has no date, today's placeholder, or if photo is older (use earliest date)
+        if (!currentDate || currentDate === today || new Date(takenAt) < new Date(currentDate)) {
+          memoryUpdates.memory_date = takenAt.split('T')[0];
+        }
+      }
+
+      // Update location if memory has none
+      if (!currentMemory?.location_name && locationName) {
+        memoryUpdates.location_name = locationName;
+      }
+      if (!currentMemory?.location_lat && exifLat && exifLng) {
+        memoryUpdates.location_lat = exifLat;
+        memoryUpdates.location_lng = exifLng;
+      }
+
+      if (Object.keys(memoryUpdates).length > 0) {
+        await supabase.from('memories').update(memoryUpdates).eq('id', onboardingMemoryId);
+      }
     }
 
     // =========================================================
