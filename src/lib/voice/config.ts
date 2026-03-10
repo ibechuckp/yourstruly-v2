@@ -17,7 +17,7 @@ export type PersonaPlexVoice =
   | 'VARM0' | 'VARM1' | 'VARM2' | 'VARM3' | 'VARM4'  // Variable male
 
 // Default voice - warm, friendly female
-export const DEFAULT_VOICE: PersonaPlexVoice = 'NATF1'
+export const DEFAULT_VOICE: PersonaPlexVoice = 'NATF3'
 
 // ============================================================================
 // Provider Configuration

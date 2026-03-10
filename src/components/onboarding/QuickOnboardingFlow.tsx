@@ -43,8 +43,7 @@ interface OnboardingData {
 }
 
 type QuickStep =
-  | 'name'
-  | 'location'
+  | 'birth-info'
   | 'globe'
   | 'about-you'
   | 'religion'
@@ -54,8 +53,7 @@ type QuickStep =
   | 'ready';
 
 const ALL_STEPS: QuickStep[] = [
-  'name',
-  'location',
+  'birth-info',
   'globe',
   'about-you',
   'religion',
@@ -65,21 +63,21 @@ const ALL_STEPS: QuickStep[] = [
   'ready',
 ];
 
-// Steps that show the progress bar (no globe/ready)
+// All steps show the progress bar now
 const PROGRESS_STEPS: QuickStep[] = [
-  'name',
-  'location',
+  'birth-info',
+  'globe',
   'about-you',
   'religion',
   'why-here',
   'heartfelt',
   'image-upload',
+  'ready',
 ];
 
 // Map each step to the explanation tile key
 const TILE_KEY: Partial<Record<QuickStep, string>> = {
-  name: 'name',
-  location: 'location',
+  'birth-info': 'location',
   'about-you': 'interests',
   religion: 'religion',
   'why-here': 'background',
@@ -665,17 +663,19 @@ interface QuickOnboardingFlowProps {
   onComplete: (data: OnboardingData) => void;
   onSkipAll?: () => void;
   userId?: string;
+  initialName?: string;
 }
 
 export function QuickOnboardingFlow({
   onComplete,
   onSkipAll,
   userId,
+  initialName,
 }: QuickOnboardingFlowProps) {
-  const [step, setStep] = useState<QuickStep>('name');
+  const [step, setStep] = useState<QuickStep>('birth-info');
   const [direction, setDirection] = useState<1 | -1>(1);
   const [data, setData] = useState<OnboardingData>({
-    name: '',
+    name: initialName || '',
     birthday: '',
     interests: [],
     hobbies: [],
@@ -706,7 +706,7 @@ export function QuickOnboardingFlow({
   const goBack = useCallback(() => {
     setDirection(-1);
     // Skip globe when going backwards from about-you
-    if (step === 'about-you') { setStep('location'); return; }
+    if (step === 'about-you') { setStep('birth-info'); return; }
     const idx = ALL_STEPS.indexOf(step);
     if (idx > 0) setStep(ALL_STEPS[idx - 1]);
   }, [step]);
@@ -722,17 +722,50 @@ export function QuickOnboardingFlow({
   }, [selectedPills, updateData]);
 
   const progressIdx = PROGRESS_STEPS.indexOf(step);
+  const progressPercent = step === 'ready' ? 100 : ((progressIdx + 1) / PROGRESS_STEPS.length) * 100;
   const tileKey = TILE_KEY[step];
 
-  // Full-screen globe step
+  // Full-screen globe step — with progress bar overlay
   if (step === 'globe') {
     return (
-      <MapboxGlobeReveal
-        name={data.name}
-        birthday={data.birthday}
-        location={data.location || 'somewhere beautiful'}
-        onDone={goNext}
-      />
+      <>
+        <div className="globe-progress-overlay">
+          <div className="progress-track">
+            <motion.div
+              className="progress-fill"
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPercent}%` }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+            />
+          </div>
+        </div>
+        <MapboxGlobeReveal
+          name={data.name}
+          birthday={data.birthday}
+          location={data.location || 'somewhere beautiful'}
+          onDone={goNext}
+        />
+        <style jsx>{`
+          .globe-progress-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 200;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(4px);
+          }
+          .progress-track {
+            height: 3px;
+            background: rgba(64, 106, 86, 0.12);
+          }
+          .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #406a56, #8dacab);
+            border-radius: 0 2px 2px 0;
+          }
+        `}</style>
+      </>
     );
   }
 
@@ -748,7 +781,7 @@ export function QuickOnboardingFlow({
           <motion.div
             className="progress-fill"
             initial={{ width: 0 }}
-            animate={{ width: `${((PROGRESS_STEPS.indexOf('about-you') + 1) / PROGRESS_STEPS.length) * 100}%` }}
+            animate={{ width: `${progressPercent}%` }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
           />
         </div>
@@ -804,18 +837,16 @@ export function QuickOnboardingFlow({
       <div className="home-blob home-blob-2" />
 
       {/* Progress bar */}
-      {progressIdx >= 0 && (
-        <div className="progress-track">
-          <motion.div
-            className="progress-fill"
-            initial={{ width: 0 }}
-            animate={{
-              width: `${((progressIdx + 1) / PROGRESS_STEPS.length) * 100}%`,
-            }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-          />
-        </div>
-      )}
+      <div className="progress-track">
+        <motion.div
+          className="progress-fill"
+          initial={{ width: 0 }}
+          animate={{
+            width: `${progressPercent}%`,
+          }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+        />
+      </div>
 
       {/* Body */}
       <div className="yt-onboard-body">
@@ -849,23 +880,14 @@ export function QuickOnboardingFlow({
                 exit="exit"
                 transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
               >
-                {step === 'name' && (
-                  <NameStep
-                    value={data.name}
-                    onChange={(name) => updateData({ name })}
-                    birthday={data.birthday}
-                    onBirthdayChange={(birthday) => updateData({ birthday })}
-                    onContinue={goNext}
-                  />
-                )}
-
-                {step === 'location' && (
-                  <LocationStep
+                {step === 'birth-info' && (
+                  <BirthInfoStep
                     name={data.name}
-                    value={data.location}
-                    onChange={(location) => updateData({ location })}
+                    birthday={data.birthday}
+                    location={data.location}
+                    onBirthdayChange={(birthday) => updateData({ birthday })}
+                    onLocationChange={(location) => updateData({ location })}
                     onContinue={goNext}
-                    onBack={goBack}
                   />
                 )}
 
@@ -1171,123 +1193,110 @@ const SHARED = `
 `;
 
 // ============================================
-// STEP: NAME
+// STEP: BIRTH INFO (Birthday + Birthplace combined)
 // ============================================
 
-function NameStep({
-  value,
-  onChange,
-  birthday,
-  onBirthdayChange,
-  onContinue,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  birthday: string;
-  onBirthdayChange: (v: string) => void;
-  onContinue: () => void;
-}) {
-  return (
-    <div className="step-card">
-      <motion.div
-        className="step-icon"
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ type: 'spring', delay: 0.1 }}
-      >
-        👋
-      </motion.div>
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <h2>What's your name?</h2>
-        <p className="subtitle">
-          Just your first name. It's how everyone will know you here.
-        </p>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35 }}
-      >
-        <input
-          className="yt-input"
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Your first name"
-          autoFocus
-          autoComplete="given-name"
-          onKeyDown={(e) => e.key === 'Enter' && value.trim() && birthday && onContinue()}
-        />
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.45 }}
-      >
-        <h3 className="birthday-label">When's your birthday?</h3>
-        <p className="birthday-subtitle">We'll use this to personalize your story.</p>
-        <input
-          className="yt-input"
-          type="date"
-          value={birthday}
-          onChange={(e) => onBirthdayChange(e.target.value)}
-          autoComplete="bday"
-        />
-        <button
-          className="primary-btn full-width"
-          onClick={onContinue}
-          disabled={!value.trim() || !birthday}
-        >
-          Nice to meet you <ChevronRight size={18} />
-        </button>
-      </motion.div>
-
-      <style jsx>{`
-        ${SHARED}
-        .step-card { text-align: center; }
-        .step-icon { font-size: 40px; margin-bottom: 20px; display: block; }
-        .full-width { width: 100%; }
-        .birthday-label {
-          font-size: 1.1rem;
-          font-weight: 600;
-          color: #2d2d2d;
-          margin-top: 24px;
-          margin-bottom: 4px;
-        }
-        .birthday-subtitle {
-          font-size: 0.85rem;
-          color: rgba(45, 45, 45, 0.55);
-          margin-bottom: 12px;
-        }
-      `}</style>
-    </div>
-  );
-}
-
-// ============================================
-// STEP: LOCATION
-// ============================================
-
-function LocationStep({
+function BirthInfoStep({
   name,
-  value,
-  onChange,
+  birthday,
+  location,
+  onBirthdayChange,
+  onLocationChange,
   onContinue,
-  onBack,
 }: {
   name: string;
-  value: string;
-  onChange: (v: string) => void;
+  birthday: string;
+  location: string;
+  onBirthdayChange: (v: string) => void;
+  onLocationChange: (v: string) => void;
   onContinue: () => void;
-  onBack: () => void;
 }) {
+  // Parse existing birthday (YYYY-MM-DD) into parts
+  const [month, setMonth] = useState(() => {
+    if (birthday) { const m = parseInt(birthday.split('-')[1], 10); return m > 0 ? MONTHS[m - 1] : ''; }
+    return '';
+  });
+  const [day, setDay] = useState(() => {
+    if (birthday) { const d = parseInt(birthday.split('-')[2], 10); return d > 0 ? String(d) : ''; }
+    return '';
+  });
+  const [year, setYear] = useState(() => {
+    if (birthday) { const y = birthday.split('-')[0]; return y !== '0000' ? y : ''; }
+    return '';
+  });
+
+  const dayRef = useRef<HTMLInputElement>(null);
+  const yearRef = useRef<HTMLInputElement>(null);
+
+  // Location autocomplete state
+  const [locationInput, setLocationInput] = useState(location);
+  const [suggestions, setSuggestions] = useState<{ place_name: string; id: string }[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync birthday parts to parent as YYYY-MM-DD
+  useEffect(() => {
+    const mIdx = MONTHS.indexOf(month);
+    if (mIdx >= 0 && day && year && year.length === 4) {
+      const mm = String(mIdx + 1).padStart(2, '0');
+      const dd = String(parseInt(day, 10)).padStart(2, '0');
+      onBirthdayChange(`${year}-${mm}-${dd}`);
+    }
+  }, [month, day, year]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleMonthChange = (val: string) => {
+    setMonth(val);
+    if (val) setTimeout(() => dayRef.current?.focus(), 0);
+  };
+
+  const handleDayChange = (val: string) => {
+    const num = val.replace(/\D/g, '').slice(0, 2);
+    setDay(num);
+    if (num.length === 2) setTimeout(() => yearRef.current?.focus(), 0);
+  };
+
+  const handleYearChange = (val: string) => {
+    setYear(val.replace(/\D/g, '').slice(0, 4));
+  };
+
+  // Mapbox autocomplete
+  const fetchSuggestions = useCallback(async (query: string) => {
+    if (!query || query.length < 2) { setSuggestions([]); return; }
+    try {
+      const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&types=place,locality,region,country&limit=5`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.features) {
+        setSuggestions(data.features.map((f: any) => ({ place_name: f.place_name, id: f.id })));
+        setShowSuggestions(true);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  const handleLocationInput = (val: string) => {
+    setLocationInput(val);
+    onLocationChange(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
+  };
+
+  const selectSuggestion = (placeName: string) => {
+    setLocationInput(placeName);
+    onLocationChange(placeName);
+    setSuggestions([]);
+    setShowSuggestions(false);
+  };
+
+  const hasBirthday = month && day && year && year.length === 4;
+  const hasLocation = locationInput.trim().length > 0;
+  const canProceed = hasBirthday && hasLocation;
+
   return (
     <div className="step-card">
       <motion.div
@@ -1304,45 +1313,195 @@ function LocationStep({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <h2>Where were you born, {name}?</h2>
-        <p className="subtitle">
-          City, state or country — wherever your story began.
-        </p>
+        <h2>Where did your story begin{name ? `, ${name}` : ''}?</h2>
+        <p className="subtitle">Your birthday and birthplace help us personalize your journey.</p>
+      </motion.div>
+
+      {/* Birthday section */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <label className="field-label">Birthday</label>
+        <div className="birthday-row">
+          <select
+            className="bday-select"
+            value={month}
+            onChange={(e) => handleMonthChange(e.target.value)}
+          >
+            <option value="">Month</option>
+            {MONTHS.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+          <input
+            ref={dayRef}
+            className="bday-input bday-day"
+            type="text"
+            inputMode="numeric"
+            placeholder="Day"
+            value={day}
+            onChange={(e) => handleDayChange(e.target.value)}
+          />
+          <input
+            ref={yearRef}
+            className="bday-input bday-year"
+            type="text"
+            inputMode="numeric"
+            placeholder="Year"
+            value={year}
+            onChange={(e) => handleYearChange(e.target.value)}
+          />
+        </div>
+      </motion.div>
+
+      {/* Birthplace section */}
+      <motion.div
+        className="location-section"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        <label className="field-label">Birthplace</label>
+        <div className="location-wrap">
+          <input
+            className="yt-input location-input"
+            type="text"
+            value={locationInput}
+            onChange={(e) => handleLocationInput(e.target.value)}
+            placeholder="e.g. Brooklyn, NY"
+            autoComplete="off"
+            onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+          />
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="suggestions-dropdown">
+              {suggestions.map((s) => (
+                <button
+                  key={s.id}
+                  className="suggestion-item"
+                  onMouseDown={() => selectSuggestion(s.place_name)}
+                >
+                  <MapPin size={14} />
+                  <span>{s.place_name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35 }}
+        transition={{ delay: 0.5 }}
       >
-        <input
-          className="yt-input"
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="e.g. Brooklyn, NY"
-          autoFocus
-          autoComplete="off"
-          onKeyDown={(e) => e.key === 'Enter' && value.trim() && onContinue()}
-        />
-        <div className="btn-row">
-          <button className="back-btn" onClick={onBack}>
-            <ChevronLeft size={18} />
-          </button>
-          <button
-            className="primary-btn"
-            onClick={onContinue}
-            disabled={!value.trim()}
-          >
-            Next <ChevronRight size={16} />
-          </button>
-        </div>
+        <button
+          className="primary-btn full-width"
+          onClick={onContinue}
+          disabled={!canProceed}
+        >
+          Next <ChevronRight size={18} />
+        </button>
       </motion.div>
 
       <style jsx>{`
         ${SHARED}
         .step-card { text-align: center; }
         .step-icon { font-size: 40px; margin-bottom: 20px; display: block; }
+        .full-width { width: 100%; }
+        .field-label {
+          display: block;
+          text-align: left;
+          font-size: 13px;
+          font-weight: 600;
+          color: rgba(45, 45, 45, 0.6);
+          margin-bottom: 8px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .birthday-row {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 20px;
+        }
+        .bday-select {
+          flex: 2;
+          padding: 14px 12px;
+          background: white;
+          border: 1.5px solid rgba(64, 106, 86, 0.18);
+          border-radius: 12px;
+          color: #2d2d2d;
+          font-size: 15px;
+          appearance: none;
+          -webkit-appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 12px center;
+          cursor: pointer;
+          transition: border-color 0.2s;
+        }
+        .bday-select:focus {
+          outline: none;
+          border-color: #406A56;
+          box-shadow: 0 0 0 3px rgba(64, 106, 86, 0.1);
+        }
+        .bday-input {
+          padding: 14px 12px;
+          background: white;
+          border: 1.5px solid rgba(64, 106, 86, 0.18);
+          border-radius: 12px;
+          color: #2d2d2d;
+          font-size: 15px;
+          text-align: center;
+          transition: border-color 0.2s;
+        }
+        .bday-input::placeholder { color: rgba(45, 45, 45, 0.3); }
+        .bday-input:focus {
+          outline: none;
+          border-color: #406A56;
+          box-shadow: 0 0 0 3px rgba(64, 106, 86, 0.1);
+        }
+        .bday-day { flex: 1; }
+        .bday-year { flex: 1.2; }
+        .location-section { margin-bottom: 20px; }
+        .location-wrap { position: relative; }
+        .location-input { margin-bottom: 0; }
+        .suggestions-dropdown {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          margin-top: 4px;
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+          border: 1px solid rgba(64, 106, 86, 0.12);
+          z-index: 20;
+          overflow: hidden;
+        }
+        .suggestion-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          padding: 12px 16px;
+          background: white;
+          border: none;
+          color: #2d2d2d;
+          font-size: 14px;
+          text-align: left;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .suggestion-item:hover {
+          background: rgba(64, 106, 86, 0.08);
+          color: #406A56;
+        }
+        .suggestion-item + .suggestion-item {
+          border-top: 1px solid rgba(64, 106, 86, 0.06);
+        }
       `}</style>
     </div>
   );
@@ -1463,7 +1622,7 @@ function AboutYouStep({
         {/* Traits section */}
         <div className="pill-section">
           <div className="section-header">
-            <span className="section-dot" style={{ background: '#C35F33' }} />
+            <span className="section-dot" style={{ background: '#406A56' }} />
             <span className="section-label">Who You Are</span>
             <span className="section-count">
               {allTraits.filter((p) => selected.has(p.label)).length > 0
@@ -1609,9 +1768,9 @@ function AboutYouStep({
           font-weight: 600;
         }
         .pill-selected-trait {
-          background: rgba(195, 95, 51, 0.08);
-          border-color: #C35F33;
-          color: #C35F33;
+          background: rgba(64, 106, 86, 0.09);
+          border-color: #406A56;
+          color: #406A56;
         }
         /* Custom add row */
         .custom-add-row {
@@ -1658,13 +1817,13 @@ function AboutYouStep({
           cursor: not-allowed;
         }
         .custom-add-btn-trait {
-          background: rgba(195, 95, 51, 0.07);
-          border-color: rgba(195, 95, 51, 0.2);
-          color: #C35F33;
+          background: rgba(64, 106, 86, 0.07);
+          border-color: rgba(64, 106, 86, 0.2);
+          color: #406A56;
         }
         .custom-add-btn-trait:hover:not(:disabled) {
-          background: rgba(195, 95, 51, 0.13);
-          border-color: #C35F33;
+          background: rgba(64, 106, 86, 0.13);
+          border-color: #406A56;
         }
         /* Sticky nav */
         .about-nav {
@@ -1760,41 +1919,60 @@ function ReligionStep({
 }) {
   const [otherText, setOtherText] = useState('');
 
-  // When "Other" is selected and they type, update the value with the custom text
+  // Parse comma-joined string back to array for multi-select
+  const selectedArr = value ? value.split(', ').filter(Boolean) : [];
+
+  const toggleOption = (opt: string) => {
+    let next: string[];
+    if (opt === 'Other') {
+      const hasOther = selectedArr.some(s => s === 'Other' || s.startsWith('Other:'));
+      if (hasOther) {
+        next = selectedArr.filter(s => s !== 'Other' && !s.startsWith('Other:'));
+        setOtherText('');
+      } else {
+        next = [...selectedArr, 'Other'];
+      }
+    } else {
+      if (selectedArr.includes(opt)) {
+        next = selectedArr.filter(s => s !== opt);
+      } else {
+        next = [...selectedArr, opt];
+      }
+    }
+    onChange(next.join(', '));
+  };
+
   const handleOtherChange = (text: string) => {
     setOtherText(text);
+    const withoutOther = selectedArr.filter(s => s !== 'Other' && !s.startsWith('Other:'));
     if (text.trim()) {
-      onChange(`Other: ${text.trim()}`);
+      onChange([...withoutOther, `Other: ${text.trim()}`].join(', '));
     } else {
-      onChange('Other');
+      onChange([...withoutOther, 'Other'].join(', '));
     }
   };
 
-  const isOtherSelected = value === 'Other' || value.startsWith('Other:');
-  const baseValue = isOtherSelected ? 'Other' : value;
+  const isOtherSelected = selectedArr.some(s => s === 'Other' || s.startsWith('Other:'));
+  const isOptionSelected = (opt: string) => {
+    if (opt === 'Other') return isOtherSelected;
+    return selectedArr.includes(opt);
+  };
 
   return (
     <div className="step-card">
       <h2>Faith &amp; belief</h2>
       <p className="subtitle">
-        This helps us personalize how we explore life's deeper moments with you.
+        This helps us personalize how we explore life&apos;s deeper moments with you. Select all that apply.
       </p>
 
       <div className="religion-grid">
         {RELIGION_OPTIONS.map((opt) => (
           <button
             key={opt}
-            className={`religion-btn ${baseValue === opt ? 'religion-selected' : ''}`}
-            onClick={() => {
-              if (opt === 'Other') {
-                onChange('Other');
-              } else {
-                setOtherText('');
-                onChange(opt);
-              }
-            }}
+            className={`religion-btn ${isOptionSelected(opt) ? 'religion-selected' : ''}`}
+            onClick={() => toggleOption(opt)}
           >
-            {baseValue === opt && <Check size={14} />}
+            {isOptionSelected(opt) && <Check size={14} />}
             {opt}
           </button>
         ))}
@@ -2273,7 +2451,7 @@ function ThreeColAboutYou({
           flex-shrink: 0;
         }
         .col-dot-green { background: #406A56; }
-        .col-dot-rust { background: #C35F33; }
+        .col-dot-rust { background: #406A56; }
 
         .col-title {
           font-size: 11px;
@@ -2289,7 +2467,7 @@ function ThreeColAboutYou({
           font-weight: 600;
           color: #406A56;
         }
-        .col-count-rust { color: #C35F33; }
+        .col-count-rust { color: #406A56; }
 
         .pill-grid-3col {
           display: grid;
@@ -2332,9 +2510,9 @@ function ThreeColAboutYou({
         }
 
         .pill3-sel-rust {
-          background: rgba(195, 95, 51, 0.08);
-          border-color: #C35F33;
-          color: #C35F33;
+          background: rgba(64, 106, 86, 0.09);
+          border-color: #406A56;
+          color: #406A56;
         }
 
         .pill3-emoji { font-size: 18px; line-height: 1; }
@@ -2393,12 +2571,12 @@ function ThreeColAboutYou({
         }
 
         .custom-btn-rust {
-          background: rgba(195, 95, 51, 0.07);
-          border: 1.5px solid rgba(195, 95, 51, 0.2);
-          color: #C35F33;
+          background: rgba(64, 106, 86, 0.07);
+          border: 1.5px solid rgba(64, 106, 86, 0.2);
+          color: #406A56;
         }
         .custom-btn-rust:hover:not(:disabled) {
-          background: rgba(195, 95, 51, 0.13);
+          background: rgba(64, 106, 86, 0.13);
         }
 
         /* Nav in col 3 */
@@ -2467,7 +2645,7 @@ function ThreeColAboutYou({
 // ============================================
 
 const WHY_OPTIONS = [
-  { emoji: '👨‍👩‍👧', text: "I'm starting a family and want to capture these precious moments" },
+  { emoji: '🧠', text: "I want to reflect on my life experiences and personal growth" },
   { emoji: '💼', text: "I'm reflecting on my career and the lessons I've learned" },
   { emoji: '❤️', text: "I want to preserve my parents' stories before they're lost" },
   { emoji: '🔄', text: "I'm at a transitional moment and processing big changes" },

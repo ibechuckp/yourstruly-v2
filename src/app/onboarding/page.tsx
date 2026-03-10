@@ -26,6 +26,7 @@ interface OnboardingData {
 export default function OnboardingPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [firstName, setFirstName] = useState('');
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
@@ -44,7 +45,14 @@ export default function OnboardingPage() {
         return;
       }
 
+      // Fetch profile to get full_name
+      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+      const name = profile?.full_name?.split(' ')[0] || user.email?.split('@')[0] || '';
+
+      if (!mounted) return;
+
       setUser(user);
+      setFirstName(name);
       setLoading(false);
     };
 
@@ -142,6 +150,7 @@ export default function OnboardingPage() {
           onComplete={handleOnboardingComplete}
           onSkipAll={handleSkipOnboarding}
           userId={user?.id}
+          initialName={firstName}
         />
       </Suspense>
     </OnboardingErrorBoundary>

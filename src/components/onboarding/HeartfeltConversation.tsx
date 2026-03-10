@@ -4,6 +4,40 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Send, Loader2, ChevronLeft, Sparkles, MessageCircle, Mic, Square, CheckCircle, Volume2, VolumeX } from 'lucide-react';
 
+// Web Speech API type declarations
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message: string;
+}
+
+interface SpeechRecognitionInstance extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+interface SpeechRecognitionConstructor {
+  new(): SpeechRecognitionInstance;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: SpeechRecognitionConstructor;
+    webkitSpeechRecognition: SpeechRecognitionConstructor;
+  }
+}
+
 interface Message {
   role: 'assistant' | 'user';
   content: string;
@@ -33,13 +67,12 @@ export function HeartfeltConversation({
   const [isSending, setIsSending] = useState(false);
   const [canComplete, setCanComplete] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [liveTranscript, setLiveTranscript] = useState('');
   const [showSaveSuggestion, setShowSaveSuggestion] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   // TODO: Replace browser SpeechSynthesis with PersonaPlex voice server (ws://personaplex:8000/api/chat)
   const speakMessage = useCallback((text: string) => {
@@ -136,66 +169,61 @@ export function HeartfeltConversation({
     return `${userName ? userName + ', w' : 'W'}hat's a moment in your life that shaped who you are today—something you'd want the people you love to understand about you?`;
   };
 
-  const startRecording = async () => {
+  const startRecording = () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
+      const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognitionAPI) {
+        alert('Speech recognition is not supported in this browser. Please type your response instead.');
+        return;
+      }
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
+      const recognition = new SpeechRecognitionAPI();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        let interim = '';
+        let final = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            final += event.results[i][0].transcript;
+          } else {
+            interim += event.results[i][0].transcript;
+          }
         }
+        if (final) {
+          setInput(prev => prev + (prev ? ' ' : '') + final);
+        }
+        setLiveTranscript(interim);
       };
 
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        stream.getTracks().forEach(track => track.stop());
-        await transcribeAudio(audioBlob);
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsRecording(false);
+        setLiveTranscript('');
       };
 
-      mediaRecorder.start();
+      recognition.onend = () => {
+        setIsRecording(false);
+        setLiveTranscript('');
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
       setIsRecording(true);
     } catch (error) {
-      console.error('Failed to start recording:', error);
-      alert('Could not access microphone. Please check permissions.');
+      console.error('Failed to start speech recognition:', error);
+      alert('Could not start speech recognition. Please type your response instead.');
     }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+    if (recognitionRef.current && isRecording) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
       setIsRecording(false);
-      setIsTranscribing(true);
-    }
-  };
-
-  const transcribeAudio = async (audioBlob: Blob) => {
-    try {
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
-
-      const response = await fetch('/api/conversation/transcribe', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error('Transcription failed');
-
-      const data = await response.json();
-      // API returns 'transcription', not 'text'
-      const transcribedText = data.transcription || data.text || '';
-      if (transcribedText) {
-        setInput(prev => prev + (prev ? ' ' : '') + transcribedText);
-      } else {
-        console.warn('Empty transcription received');
-      }
-    } catch (error) {
-      console.error('Transcription error:', error);
-      alert('Could not transcribe audio. Please type your response instead.');
-    } finally {
-      setIsTranscribing(false);
+      setLiveTranscript('');
     }
   };
 
@@ -379,33 +407,38 @@ export function HeartfeltConversation({
       {!isLoading && (
         <div className="space-y-3">
           <div className="flex gap-2">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={isTranscribing ? "Transcribing..." : "Share your thoughts..."}
-              className="flex-1 px-4 py-3 rounded-xl bg-white border border-gray-200 
-                       text-[#2d2d2d] placeholder-gray-400 resize-none
-                       focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
-              rows={2}
-              disabled={isSending || isTranscribing}
-            />
+            <div className="flex-1">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Share your thoughts..."
+                className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 
+                         text-[#2d2d2d] placeholder-gray-400 resize-none
+                         focus:outline-none focus:ring-2 focus:ring-[#406A56]/30"
+                rows={2}
+                disabled={isSending}
+              />
+              {isRecording && liveTranscript && (
+                <div className="text-xs text-gray-400 italic px-2 mt-1">
+                  {liveTranscript}...
+                </div>
+              )}
+            </div>
             
             {/* Voice Recording Button */}
             <button
               onClick={isRecording ? stopRecording : startRecording}
-              disabled={isSending || isTranscribing}
+              disabled={isSending}
               className={`px-4 py-3 rounded-xl transition-all self-end ${
                 isRecording 
                   ? 'bg-red-500 text-white animate-pulse hover:bg-red-600' 
-                  : isTranscribing
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
               title={isRecording ? 'Stop recording' : 'Record voice'}
             >
-              {isRecording ? <Square size={20} /> : isTranscribing ? <Loader2 size={20} className="animate-spin" /> : <Mic size={20} />}
+              {isRecording ? <Square size={20} /> : <Mic size={20} />}
             </button>
             
             <button

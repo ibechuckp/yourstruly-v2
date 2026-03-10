@@ -486,7 +486,7 @@ export function usePersonaPlexVoice(options: UsePersonaPlexOptions = {}): UsePer
     serverUrl = DEFAULT_SERVER_URL,
     systemPrompt: baseSystemPrompt = 'You enjoy having a good conversation.',
     initialTopic,
-    voice = 'NATF2',
+    voice = 'NATF3',
     textTemperature = 0.7,
     textTopk = 25,
     audioTemperature = 0.8,
