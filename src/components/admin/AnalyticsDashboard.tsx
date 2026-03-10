@@ -62,36 +62,40 @@ const COLORS = ['#406A56', '#C35F33', '#D9C61A', '#8DACAB', '#4A3552'];
 export default function AnalyticsDashboard({ data, dateRange }: AnalyticsDashboardProps) {
   const [selectedMetric, setSelectedMetric] = useState<'users' | 'engagement' | 'content'>('users');
 
+  // Calculate engagement rate as a meaningful "change" metric
+  const engagementPct = data.engagementRate > 0 ? `${data.engagementRate}% rate` : null;
+  const userRatio = data.totalUsers > 0 ? `${data.totalUsers} total` : null;
+
   const statCards = [
     {
       title: 'Daily Active Users',
       value: data.dau.toLocaleString(),
-      change: '+8.2%',
-      changeType: 'positive' as const,
+      change: userRatio,
+      changeType: 'neutral' as const,
       icon: Activity,
       color: '#406A56',
     },
     {
       title: 'Monthly Active Users',
       value: data.mau.toLocaleString(),
-      change: '+12.5%',
-      changeType: 'positive' as const,
+      change: data.newUsers > 0 ? `+${data.newUsers} new` : null,
+      changeType: data.newUsers > 0 ? 'positive' as const : 'neutral' as const,
       icon: Users,
       color: '#C35F33',
     },
     {
       title: 'Tiles Completed',
       value: data.totalTilesCompleted.toLocaleString(),
-      change: '+15.3%',
-      changeType: 'positive' as const,
+      change: engagementPct,
+      changeType: 'neutral' as const,
       icon: MousePointerClick,
       color: '#D9C61A',
     },
     {
       title: 'Total XP Earned',
       value: data.totalXpEarned.toLocaleString(),
-      change: '+18.7%',
-      changeType: 'positive' as const,
+      change: data.totalMemories > 0 ? `${data.totalMemories} memories` : null,
+      changeType: 'neutral' as const,
       icon: Award,
       color: '#8DACAB',
     },
@@ -125,11 +129,14 @@ export default function AnalyticsDashboard({ data, dateRange }: AnalyticsDashboa
                   <Icon className="w-5 h-5" style={{ color: stat.color }} />
                 </div>
               </div>
-              <div className="flex items-center gap-1 mt-3">
-                <TrendingUp className="w-3 h-3 text-[#406A56]" />
-                <span className="text-xs font-medium text-[#406A56]">{stat.change}</span>
-                <span className="text-xs text-[#2a1f1a]/40 ml-1">vs last period</span>
-              </div>
+              {stat.change && (
+                <div className="flex items-center gap-1 mt-3">
+                  {stat.changeType === 'positive' && <TrendingUp className="w-3 h-3 text-[#406A56]" />}
+                  <span className={`text-xs font-medium ${
+                    stat.changeType === 'positive' ? 'text-[#406A56]' : 'text-[#2a1f1a]/50'
+                  }`}>{stat.change}</span>
+                </div>
+              )}
             </div>
           );
         })}
