@@ -11,9 +11,10 @@ import {
   Sparkles,
   Check,
   Shield,
+  Heart,
 } from 'lucide-react';
 import { OnboardingStepExplanation } from './OnboardingStepExplanation';
-import { HeartfeltConversation } from './HeartfeltConversation';
+import { ConversationEngine } from '@/components/conversation-engine';
 import { ImageUploadStep } from './ImageUploadStep';
 
 // ============================================
@@ -967,26 +968,40 @@ export function QuickOnboardingFlow({
                 )}
 
                 {step === 'heartfelt' && (
-                  <div className="heartfelt-spacer">
-                    <HeartfeltConversation
-                      whyHere={data.background || 'preserve my memories and life story'}
-                      whatDrives={
-                        data.interests.length > 0
-                          ? data.interests
-                          : ['living fully']
-                      }
+                  <div className="glass-card glass-card-strong p-6 max-w-2xl mx-auto">
+                    <div className="text-center mb-4">
+                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#406A56] to-[#8DACAB] mb-3">
+                        <Heart size={20} className="text-white" />
+                      </div>
+                      <h2 className="text-lg font-semibold text-[#2d2d2d] font-playfair">
+                        Let&apos;s Go Deeper
+                      </h2>
+                      <p className="text-gray-500 text-xs mt-1">
+                        Share what&apos;s on your mind — we&apos;ll capture the moments that matter
+                      </p>
+                    </div>
+                    <ConversationEngine
+                      context="onboarding"
                       userName={data.name}
-                      onComplete={(conversation) => {
-                        const lastUser = [...conversation]
-                          .reverse()
-                          .find((m) => m.role === 'user');
+                      userProfile={{
+                        interests: data.interests || [],
+                        religion: data.religion || undefined,
+                        location: data.location || undefined,
+                        whyHere: data.background || undefined,
+                      }}
+                      initialMessage={`${data.name}, what's a moment in your life that really shaped who you are today?`}
+                      onComplete={(state) => {
                         updateData({
-                          heartfeltConversation: conversation,
-                          heartfeltAnswer: lastUser?.content ?? '',
+                          heartfeltAnswer: state.messages
+                            .filter((m) => m.role === 'user')
+                            .map((m) => m.content)
+                            .join('\n\n'),
                         });
                         goNext();
                       }}
                       onSkip={goNext}
+                      showSkip={true}
+                      maxHeight="350px"
                     />
                   </div>
                 )}
