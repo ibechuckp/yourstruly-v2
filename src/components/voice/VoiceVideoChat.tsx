@@ -448,14 +448,35 @@ function extractEntities(transcript: Array<{ role: string; text: string }>): { p
   const people = new Set<string>()
   const places = new Set<string>()
   
-  // Common name patterns and place indicators
+  // Blacklist of common false positives
+  const nameBlacklist = new Set([
+    'my', 'our', 'the', 'this', 'that', 'these', 'those',
+    // Common cities that might appear
+    'raleigh', 'charlotte', 'atlanta', 'boston', 'austin', 'dallas', 'houston',
+    'chicago', 'denver', 'seattle', 'portland', 'miami', 'orlando', 'tampa',
+    'phoenix', 'vegas', 'francisco', 'diego', 'angeles', 'york', 'jersey',
+    // Days/months
+    'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+    'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august',
+    'september', 'october', 'november', 'december',
+    // Common words
+    'office', 'home', 'work', 'school', 'college', 'university', 'hospital',
+  ])
+  
+  // More specific name patterns - only match relationship + name combos
   const namePatterns = [
+    // "my/our friend John", "my brother Mike"
     /(?:my|our)\s+(?:friend|brother|sister|mother|father|mom|dad|grandmother|grandfather|grandma|grandpa|uncle|aunt|cousin|husband|wife|partner|son|daughter)\s+([A-Z][a-z]+)/gi,
-    /(?:named|called|know|knew|met)\s+([A-Z][a-z]+)/gi,
+    // "named John", "called Mary"
+    /(?:named|called)\s+([A-Z][a-z]+)/gi,
+    // "I met/know/knew Sarah"
+    /(?:met|know|knew)\s+([A-Z][a-z]+)/gi,
   ]
   
   const placePatterns = [
+    // "in Atlanta", "at Boston", "from Chicago"
     /(?:in|at|from|to|visited)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/gi,
+    // "the city of Raleigh"
     /(?:the|our)\s+(?:city|town|village|country|state)\s+(?:of\s+)?([A-Z][a-z]+)/gi,
   ]
 
@@ -465,8 +486,10 @@ function extractEntities(transcript: Array<{ role: string; text: string }>): { p
     for (const pattern of namePatterns) {
       let match
       while ((match = pattern.exec(text)) !== null) {
-        if (match[1] && match[1].length > 2) {
-          people.add(match[1])
+        const name = match[1]
+        // Filter out blacklisted words and very short names
+        if (name && name.length > 2 && !nameBlacklist.has(name.toLowerCase())) {
+          people.add(name)
         }
       }
     }
@@ -474,8 +497,10 @@ function extractEntities(transcript: Array<{ role: string; text: string }>): { p
     for (const pattern of placePatterns) {
       let match
       while ((match = pattern.exec(text)) !== null) {
-        if (match[1] && match[1].length > 2) {
-          places.add(match[1])
+        const place = match[1]
+        // Filter out blacklisted words
+        if (place && place.length > 2 && !nameBlacklist.has(place.toLowerCase())) {
+          places.add(place)
         }
       }
     }
