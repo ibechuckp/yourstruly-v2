@@ -148,16 +148,16 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
               aria-label={done ? `Step ${n}, completed` : `Step ${n}${active ? ', current' : ''}`}
               className={`flex size-7 items-center justify-center rounded-full text-xs font-medium transition-all ${
                 done
-                  ? 'bg-[#406A56] text-white'
+                  ? 'bg-[#52325d] text-white'
                   : active
-                  ? 'text-[#406A56] ring-2 ring-[#406A56]'
+                  ? 'text-[#52325d] ring-2 ring-[#52325d]'
                   : 'text-[#a1a1aa] ring-1 ring-[#d4d4d8]'
               }`}
             >
               {done ? <CheckIcon /> : n}
             </div>
             {n < total && (
-              <div className={`h-px w-5 ${n < current ? 'bg-[#406A56]/40' : 'bg-[#d4d4d8]'}`} />
+              <div className={`h-px w-5 ${n < current ? 'bg-[#52325d]/40' : 'bg-[#d4d4d8]'}`} />
             )}
           </div>
         );
@@ -188,7 +188,7 @@ function InfoCard({
           {icon}
         </div>
         <div className="flex flex-col gap-0.5 pt-1">
-          <p className="text-[11px] font-semibold tracking-widest text-[#406A56] uppercase">{category}</p>
+          <p className="text-[11px] font-semibold tracking-widest text-[#52325d] uppercase">{category}</p>
           <h2 className="text-lg leading-snug font-bold text-[#2D2D2D]">{title}</h2>
         </div>
       </div>
@@ -227,8 +227,8 @@ function ToggleChip({
       type="button"
       className={`flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-sm transition-all ${
         selected
-          ? 'border-[#406A56] bg-[#406A56]/10 font-medium text-[#406A56]'
-          : 'border-[#d4d4d8] bg-[#f4f4f5] text-[#2D2D2D]/70 hover:border-[#406A56]/40'
+          ? 'border-[#52325d] bg-[#52325d]/10 font-medium text-[#52325d]'
+          : 'border-[#d4d4d8] bg-[#f4f4f5] text-[#2D2D2D]/70 hover:border-[#52325d]/40'
       }`}
       onClick={onToggle}
     >
@@ -255,15 +255,15 @@ function RadioCard({
       type="button"
       className={`flex w-full items-center gap-3 rounded-[12px] border-2 px-4 py-3 text-left text-sm transition-all ${
         selected
-          ? 'border-[#406A56] bg-[#406A56]/8 text-[#2D2D2D]'
-          : 'border-[#e4e4e7] bg-[#f4f4f5] text-[#2D2D2D]/70 hover:border-[#406A56]/40'
+          ? 'border-[#52325d] bg-[#52325d]/8 text-[#2D2D2D]'
+          : 'border-[#e4e4e7] bg-[#f4f4f5] text-[#2D2D2D]/70 hover:border-[#52325d]/40'
       }`}
       onClick={onSelect}
     >
       <span aria-hidden className="shrink-0 text-lg">{emoji}</span>
       <span className="flex-1">{label}</span>
       {selected && (
-        <span className="ml-auto text-[#406A56]">
+        <span className="ml-auto text-[#52325d]">
           <CheckIcon />
         </span>
       )}
@@ -308,11 +308,11 @@ export function HeroUIOnboarding({ onComplete, onSkip, firstName }: Props) {
   };
 
   return (
-    <div className="flex h-screen min-h-[600px] w-full flex-col overflow-hidden bg-[#FDF8F3]">
+    <div className="flex h-screen min-h-[600px] w-full flex-col overflow-hidden bg-white">
       {/* Animated background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#406A56]/10 to-transparent rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-[#8DACAB]/10 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#52325d]/10 to-transparent rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-[#52325d]/10 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
       {/* Step indicator */}
@@ -441,7 +441,7 @@ function StepYourRoots({
             <div className="flex gap-2">
               <select
                 aria-label="Month"
-                className="flex-1 appearance-none rounded-[12px] border-2 border-[#e4e4e7] bg-[#f4f4f5] px-3 py-2.5 text-sm shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] focus:border-[#406A56] focus:outline-none"
+                className="flex-1 appearance-none rounded-[12px] border-2 border-[#e4e4e7] bg-[#f4f4f5] px-3 py-2.5 text-sm shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] focus:border-[#52325d] focus:outline-none"
                 value={month}
                 onChange={(e) => setMonth(e.target.value)}
               >
@@ -455,7 +455,7 @@ function StepYourRoots({
                 type="number"
                 min="1"
                 max="31"
-                className="w-[80px] rounded-[12px] border-2 border-[#e4e4e7] bg-[#f4f4f5] px-3 py-2.5 text-sm shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] focus:border-[#406A56] focus:outline-none"
+                className="w-[80px] rounded-[12px] border-2 border-[#e4e4e7] bg-[#f4f4f5] px-3 py-2.5 text-sm shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] focus:border-[#52325d] focus:outline-none"
                 placeholder="Day"
                 value={day}
                 onChange={(e) => setDay(e.target.value)}
@@ -465,7 +465,7 @@ function StepYourRoots({
                 type="number"
                 min="1900"
                 max={new Date().getFullYear()}
-                className="w-[90px] rounded-[12px] border-2 border-[#e4e4e7] bg-[#f4f4f5] px-3 py-2.5 text-sm shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] focus:border-[#406A56] focus:outline-none"
+                className="w-[90px] rounded-[12px] border-2 border-[#e4e4e7] bg-[#f4f4f5] px-3 py-2.5 text-sm shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] focus:border-[#52325d] focus:outline-none"
                 placeholder="Year"
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
@@ -478,7 +478,7 @@ function StepYourRoots({
             <label className="text-xs font-semibold tracking-wider text-[#52525b] uppercase">Birthplace</label>
             <input
               type="text"
-              className="w-full rounded-[12px] border-2 border-[#e4e4e7] bg-[#f4f4f5] px-4 py-2.5 text-sm shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] focus:border-[#406A56] focus:outline-none"
+              className="w-full rounded-[12px] border-2 border-[#e4e4e7] bg-[#f4f4f5] px-4 py-2.5 text-sm shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] focus:border-[#52325d] focus:outline-none"
               placeholder="e.g. Brooklyn, NY"
               value={birthplace}
               onChange={(e) => setBirthplace(e.target.value)}
@@ -486,7 +486,7 @@ function StepYourRoots({
           </div>
 
           <button
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-gradient-to-r from-[#406A56] to-[#8DACAB] text-base font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02]"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-[#52325d] text-base font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02]"
             type="button"
             onClick={handleNext}
           >
@@ -567,7 +567,7 @@ function StepPassions({
           {/* Interests */}
           <div className="flex flex-col gap-4 rounded-[20px] bg-gradient-to-b from-white/90 to-white/50 p-6 shadow-[0_8px_40px_rgba(64,106,86,0.08)] backdrop-blur-sm">
             <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-[#406A56]" />
+              <span className="size-2 rounded-full bg-[#52325d]" />
               <p className="text-xs font-semibold tracking-wider text-[#2D2D2D]/60 uppercase">Your Interests</p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -583,14 +583,14 @@ function StepPassions({
             </div>
             <div className="mt-1 flex items-center gap-2">
               <input
-                className="flex-1 rounded-full border-2 border-dashed border-[#d4d4d8] bg-transparent px-3 py-1.5 text-sm text-[#2D2D2D]/50 placeholder:text-[#2D2D2D]/30 focus:border-[#406A56]/40 focus:outline-none"
+                className="flex-1 rounded-full border-2 border-dashed border-[#d4d4d8] bg-transparent px-3 py-1.5 text-sm text-[#2D2D2D]/50 placeholder:text-[#2D2D2D]/30 focus:border-[#52325d]/40 focus:outline-none"
                 placeholder="Add your own..."
                 value={customInterest}
                 onChange={(e) => setCustomInterest(e.target.value)}
               />
               {customInterest && (
                 <button
-                  className="text-xs font-medium text-[#406A56] hover:underline"
+                  className="text-xs font-medium text-[#52325d] hover:underline"
                   type="button"
                   onClick={() => {
                     if (customInterest.trim()) {
@@ -608,7 +608,7 @@ function StepPassions({
           {/* Traits */}
           <div className="flex flex-col gap-4 rounded-[20px] bg-gradient-to-b from-white/90 to-white/50 p-6 shadow-[0_8px_40px_rgba(64,106,86,0.08)] backdrop-blur-sm">
             <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-[#406A56]" />
+              <span className="size-2 rounded-full bg-[#52325d]" />
               <p className="text-xs font-semibold tracking-wider text-[#2D2D2D]/60 uppercase">Who You Are</p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -624,14 +624,14 @@ function StepPassions({
             </div>
             <div className="mt-1 flex items-center gap-2">
               <input
-                className="flex-1 rounded-full border-2 border-dashed border-[#d4d4d8] bg-transparent px-3 py-1.5 text-sm text-[#2D2D2D]/50 placeholder:text-[#2D2D2D]/30 focus:border-[#406A56]/40 focus:outline-none"
+                className="flex-1 rounded-full border-2 border-dashed border-[#d4d4d8] bg-transparent px-3 py-1.5 text-sm text-[#2D2D2D]/50 placeholder:text-[#2D2D2D]/30 focus:border-[#52325d]/40 focus:outline-none"
                 placeholder="Describe yourself..."
                 value={customTrait}
                 onChange={(e) => setCustomTrait(e.target.value)}
               />
               {customTrait && (
                 <button
-                  className="text-xs font-medium text-[#406A56] hover:underline"
+                  className="text-xs font-medium text-[#52325d] hover:underline"
                   type="button"
                   onClick={() => {
                     if (customTrait.trim()) {
@@ -656,7 +656,7 @@ function StepPassions({
               <ChevronLeft size={16} />
             </button>
             <button
-              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[12px] bg-gradient-to-r from-[#406A56] to-[#8DACAB] text-sm font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02]"
+              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[12px] bg-[#52325d] text-sm font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02]"
               type="button"
               onClick={handleNext}
             >
@@ -744,7 +744,7 @@ function StepBeliefs({
               <ChevronLeft size={16} />
             </button>
             <button
-              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[12px] bg-gradient-to-r from-[#406A56] to-[#8DACAB] text-sm font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02]"
+              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[12px] bg-[#52325d] text-sm font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02]"
               type="button"
               onClick={handleNext}
             >
@@ -818,7 +818,7 @@ function StepJourney({
           </div>
 
           <textarea
-            className="w-full rounded-[12px] border-2 border-[#e4e4e7] bg-[#f4f4f5] px-4 py-3 text-sm shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] focus:border-[#406A56] focus:outline-none resize-none"
+            className="w-full rounded-[12px] border-2 border-[#e4e4e7] bg-[#f4f4f5] px-4 py-3 text-sm shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] focus:border-[#52325d] focus:outline-none resize-none"
             placeholder="Share what's on your heart..."
             rows={3}
             value={ownWords}
@@ -834,7 +834,7 @@ function StepJourney({
               <ChevronLeft size={16} />
             </button>
             <button
-              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[12px] bg-gradient-to-r from-[#406A56] to-[#8DACAB] text-sm font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02]"
+              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[12px] bg-[#52325d] text-sm font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02]"
               type="button"
               onClick={handleNext}
             >
@@ -869,7 +869,7 @@ function StepDeeper({
       <div className="flex flex-col items-center">
         <div className="flex w-full max-w-[540px] flex-col gap-6 rounded-[20px] bg-gradient-to-b from-white/90 to-white/50 p-10 shadow-[0_8px_40px_rgba(64,106,86,0.12)] backdrop-blur-sm">
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="flex size-14 items-center justify-center rounded-full bg-[#406A56] text-2xl">💚</div>
+            <div className="flex size-14 items-center justify-center rounded-full bg-[#52325d] text-2xl">💚</div>
             <div className="flex flex-col gap-1.5">
               <h1 className="text-2xl font-medium text-[#2D2D2D]">Let's Go Deeper</h1>
               <p className="text-sm text-[#71717a]">Share what's on your mind — we'll capture the moments that matter</p>
@@ -882,7 +882,7 @@ function StepDeeper({
 
           <div className="flex flex-col gap-2">
             <textarea
-              className="w-full rounded-[12px] border-2 border-[#e4e4e7] bg-[#f4f4f5] px-4 py-3 text-sm shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] focus:border-[#406A56] focus:outline-none resize-none"
+              className="w-full rounded-[12px] border-2 border-[#e4e4e7] bg-[#f4f4f5] px-4 py-3 text-sm shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] focus:border-[#52325d] focus:outline-none resize-none"
               placeholder="Share your thoughts..."
               rows={3}
               value={value}
@@ -891,21 +891,21 @@ function StepDeeper({
             <div className="flex justify-end gap-2">
               <button
                 aria-label="Listen"
-                className="flex size-9 items-center justify-center rounded-[10px] border-2 border-[#e4e4e7] bg-[#f4f4f5] text-[#a1a1aa] transition-colors hover:border-[#406A56]/40"
+                className="flex size-9 items-center justify-center rounded-[10px] border-2 border-[#e4e4e7] bg-[#f4f4f5] text-[#a1a1aa] transition-colors hover:border-[#52325d]/40"
                 type="button"
               >
                 <Volume2 size={16} />
               </button>
               <button
                 aria-label="Dictate"
-                className="flex size-9 items-center justify-center rounded-[10px] border-2 border-[#e4e4e7] bg-[#f4f4f5] text-[#a1a1aa] transition-colors hover:border-[#406A56]/40"
+                className="flex size-9 items-center justify-center rounded-[10px] border-2 border-[#e4e4e7] bg-[#f4f4f5] text-[#a1a1aa] transition-colors hover:border-[#52325d]/40"
                 type="button"
               >
                 <Mic size={16} />
               </button>
               <button
                 aria-label="Send"
-                className="flex size-9 items-center justify-center rounded-[10px] bg-[#406A56] text-white transition-opacity hover:opacity-90"
+                className="flex size-9 items-center justify-center rounded-[10px] bg-[#52325d] text-white transition-opacity hover:opacity-90"
                 type="button"
                 onClick={handleNext}
               >
@@ -940,8 +940,8 @@ function StepComplete({
     <StepLayout>
       <div className="flex flex-col items-center justify-center">
         <div className="flex w-full max-w-[480px] flex-col items-center gap-8 rounded-[20px] bg-gradient-to-b from-white/90 to-white/50 p-12 text-center shadow-[0_8px_40px_rgba(64,106,86,0.12)] backdrop-blur-sm">
-          <div className="relative flex size-20 items-center justify-center rounded-full bg-[#406A56]/10">
-            <div className="flex size-16 items-center justify-center rounded-full bg-[#406A56] text-white shadow-[0_4px_20px_rgba(64,106,86,0.35)]">
+          <div className="relative flex size-20 items-center justify-center rounded-full bg-[#52325d]/10">
+            <div className="flex size-16 items-center justify-center rounded-full bg-[#52325d] text-white shadow-[0_4px_20px_rgba(64,106,86,0.35)]">
               <Check size={28} strokeWidth={2.5} />
             </div>
           </div>
@@ -956,7 +956,7 @@ function StepComplete({
           </div>
 
           <button
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#406A56] to-[#8DACAB] px-8 text-base font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02]"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#52325d] px-8 text-base font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02]"
             type="button"
             onClick={onComplete}
           >

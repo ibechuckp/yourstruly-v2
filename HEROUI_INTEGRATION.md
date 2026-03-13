@@ -61,10 +61,11 @@ shadow-[0_8px_40px_rgba(64,106,86,0.12)]
 rounded-[20px]
 ```
 
-**Gradient Buttons:**
+**Primary Buttons:**
 ```tsx
-bg-gradient-to-r from-[#406A56] to-[#8DACAB]
+bg-[#52325d]
 hover:shadow-xl hover:scale-[1.02]
+text-white
 ```
 
 **Step Indicators:**
@@ -91,15 +92,20 @@ border-[#d4d4d8] bg-[#f4f4f5] text-[#2D2D2D]/70
 
 ---
 
-## Brand Color Mapping
+## Design System Standards
 
-HeroUI → YoursTruly:
+**Using HeroUI Colors As-Is:**
 
-| HeroUI Original | YoursTruly | Usage |
-|-----------------|------------|-------|
-| `#52325d` (purple) | `#406A56` (green) | Primary brand color |
-| `#f4f4f5` (light gray) | `#FDF8F3` (cream) | Background |
-| Glass effects | Kept as-is | Matches existing style |
+HeroUI is the visual design system standard for YoursTruly going forward. All colors, spacing, and design tokens are used exactly as defined in the HeroUI Figma kit.
+
+| Color Token | HeroUI Value | Usage |
+|-------------|--------------|-------|
+| Primary | `#52325d` (purple) | Buttons, active states, brand accents |
+| Surface | `#f4f4f5` (light gray) | Input backgrounds, cards |
+| Border | `#e4e4e7`, `#d4d4d8` | Borders, dividers |
+| Text Muted | `#71717a`, `#a1a1aa` | Secondary text, placeholders |
+| Background | `white` | Main background |
+| Glass effects | HeroUI standard | Backdrop blur, transparency |
 
 ---
 
