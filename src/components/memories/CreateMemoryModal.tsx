@@ -234,7 +234,6 @@ export default function CreateMemoryModal({ isOpen, onClose, onCreated }: Create
       alert('Failed to create memory')
     } finally {
       setCreating(false)
-      setFaceDetectionProgress(null)
     }
   }
 
