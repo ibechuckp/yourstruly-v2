@@ -165,7 +165,8 @@ export async function POST(
               console.log(`[Media Upload] Found ${suggestions.length} face match suggestions`)
             }
           } catch (err) {
-            console.log('[Media Upload] Face search failed (no indexed faces yet):', err.message)
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+            console.log('[Media Upload] Face search failed (no indexed faces yet):', errorMessage)
           }
           
           return {
