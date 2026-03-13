@@ -466,6 +466,8 @@ export default function DashboardPage() {
 
   // Handle shuffle
   const handleShuffle = () => {
+    // Clear category filter when regenerating to get fresh prompts
+    setSelectedChapter(null)
     setTilesKey(prev => prev + 1)
     shuffle()
   }
@@ -709,8 +711,12 @@ export default function DashboardPage() {
               <div className="home-empty-icon">
                 <Sparkles size={32} className="text-[#D9C61A]" />
               </div>
-              <h3>All caught up!</h3>
-              <p>You've answered all your prompts. Generate more to keep capturing memories.</p>
+              <h3>{selectedChapter ? 'No prompts for this chapter yet' : 'All caught up!'}</h3>
+              <p>
+                {selectedChapter 
+                  ? 'Generate new prompts to get questions about this life chapter.' 
+                  : "You've answered all your prompts. Generate more to keep capturing memories."}
+              </p>
               <button onClick={handleShuffle} className="home-refresh-btn">
                 <RefreshCw size={16} />
                 Generate More
