@@ -106,7 +106,7 @@ function OnboardingPageContent() {
         // Handle HeroUI format (simplified)
         const isHeroFormat = 'birthday' in data || 'traits' in data;
         
-        const locationParts = data.location?.split(',').map((s) => s.trim()) || 
+        const locationParts = data.location?.split(',').map((s: string) => s.trim()) || 
                              (data.birthplace ? [data.birthplace] : []);
 
         const updates: any = {
