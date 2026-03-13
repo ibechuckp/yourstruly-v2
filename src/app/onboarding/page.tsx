@@ -96,32 +96,51 @@ function OnboardingPageContent() {
   }, [user, router, supabase]);
 
   const handleOnboardingComplete = useCallback(
-    async (data: OnboardingData) => {
+    async (data: OnboardingData | any) => {
       if (!user) {
         router.push('/dashboard');
         return;
       }
 
       try {
-        const locationParts = data.location?.split(',').map((s) => s.trim()) || [];
+        // Handle HeroUI format (simplified)
+        const isHeroFormat = 'birthday' in data || 'traits' in data;
+        
+        const locationParts = data.location?.split(',').map((s) => s.trim()) || 
+                             (data.birthplace ? [data.birthplace] : []);
+
+        const updates: any = {
+          full_name: data.name,
+          onboarding_completed: true,
+          onboarding_step: 8,
+        };
+
+        // Map HeroUI fields to standard fields
+        if (isHeroFormat) {
+          updates.interests = data.interests || [];
+          updates.personality_traits = data.traits || [];
+          updates.religion = data.beliefs?.[0] || null;
+          updates.background = data.journey || null;
+          if (data.birthplace) {
+            updates.city = data.birthplace;
+          }
+        } else {
+          // Original format
+          updates.interests = data.interests;
+          updates.hobbies = data.hobbies;
+          updates.skills = data.skills;
+          updates.life_goals = data.lifeGoals;
+          updates.personality_traits = data.personalityTraits;
+          updates.religion = data.religion || null;
+          updates.city = locationParts[0] || null;
+          updates.state = locationParts[1] || null;
+          updates.favorite_quote = data.favoriteQuote || null;
+          updates.background = data.background || null;
+        }
 
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({
-            full_name: data.name,
-            interests: data.interests,
-            hobbies: data.hobbies,
-            skills: data.skills,
-            life_goals: data.lifeGoals,
-            personality_traits: data.personalityTraits,
-            religion: data.religion || null,
-            city: locationParts[0] || null,
-            state: locationParts[1] || null,
-            favorite_quote: data.favoriteQuote || null,
-            background: data.background || null,
-            onboarding_completed: true,
-            onboarding_step: 8, // v2 is shorter
-          })
+          .update(updates)
           .eq('id', user.id);
 
         if (profileError) {
@@ -129,11 +148,12 @@ function OnboardingPageContent() {
         }
 
         // Save heartfelt answer as first memory
-        if (data.heartfeltAnswer?.trim()) {
+        const heartfelt = data.heartfeltAnswer || data.heartfelt;
+        if (heartfelt?.trim()) {
           await supabase.from('memories').insert({
             user_id: user.id,
             title: 'My First Reflection',
-            description: data.heartfeltAnswer,
+            description: heartfelt,
             memory_date: new Date().toISOString(),
             tags: ['onboarding', 'reflection', 'first-memory'],
           });
