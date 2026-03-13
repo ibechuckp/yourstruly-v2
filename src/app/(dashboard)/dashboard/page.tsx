@@ -71,16 +71,16 @@ const TILE_POSITIONS = [
 
 // Life chapter categories
 const LIFE_CHAPTERS = [
-  { id: 'childhood', label: 'Childhood', icon: '🧸', color: '#8DACAB' },
-  { id: 'teenage', label: 'Teenage', icon: '🎸', color: '#D9C61A' },
-  { id: 'high_school', label: 'High School', icon: '🎓', color: '#406A56' },
-  { id: 'college', label: 'College', icon: '📚', color: '#C35F33' },
-  { id: 'jobs_career', label: 'Career', icon: '💼', color: '#8DACAB' },
-  { id: 'relationships', label: 'Relationships', icon: '❤️', color: '#D9C61A' },
-  { id: 'travel', label: 'Travel', icon: '✈️', color: '#406A56' },
-  { id: 'spirituality', label: 'Spirituality', icon: '🙏', color: '#C35F33' },
-  { id: 'wisdom_legacy', label: 'Wisdom', icon: '💡', color: '#8DACAB' },
-  { id: 'life_moments', label: 'Life Moments', icon: '⭐', color: '#D9C61A' },
+  { id: 'childhood', label: 'Childhood', color: '#8DACAB' },
+  { id: 'teenage', label: 'Teenage', color: '#D9C61A' },
+  { id: 'high_school', label: 'High School', color: '#406A56' },
+  { id: 'college', label: 'College', color: '#C35F33' },
+  { id: 'jobs_career', label: 'Career', color: '#8DACAB' },
+  { id: 'relationships', label: 'Relationships', color: '#D9C61A' },
+  { id: 'travel', label: 'Travel', color: '#406A56' },
+  { id: 'spirituality', label: 'Spirituality', color: '#C35F33' },
+  { id: 'wisdom_legacy', label: 'Wisdom', color: '#8DACAB' },
+  { id: 'life_moments', label: 'Life Moments', color: '#D9C61A' },
 ]
 
 export default function DashboardPage() {
@@ -752,7 +752,7 @@ export default function DashboardPage() {
                 <button
                   onClick={() => setSelectedChapter(null)}
                   className={`
-                    flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium
+                    px-4 py-2 rounded-full text-sm font-medium
                     transition-all duration-200
                     ${selectedChapter === null
                       ? 'bg-gradient-to-r from-[#406A56] to-[#8DACAB] text-white shadow-lg scale-105'
@@ -760,15 +760,14 @@ export default function DashboardPage() {
                     }
                   `}
                 >
-                  <span>✨</span>
-                  <span>All Chapters</span>
+                  All Chapters
                 </button>
                 {LIFE_CHAPTERS.map((chapter) => (
                   <button
                     key={chapter.id}
                     onClick={() => setSelectedChapter(chapter.id)}
                     className={`
-                      flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium
+                      px-4 py-2 rounded-full text-sm font-medium
                       transition-all duration-200
                       ${selectedChapter === chapter.id
                         ? 'text-white shadow-lg scale-105'
@@ -779,8 +778,7 @@ export default function DashboardPage() {
                       background: `linear-gradient(135deg, ${chapter.color}, ${chapter.color}dd)`
                     } : {}}
                   >
-                    <span>{chapter.icon}</span>
-                    <span>{chapter.label}</span>
+                    {chapter.label}
                   </button>
                 ))}
               </div>

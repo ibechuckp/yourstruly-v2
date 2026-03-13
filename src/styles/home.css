@@ -23,9 +23,9 @@
   --sidebar-width: 280px;
   --sidebar-gap: 48px;
   --content-max-width: 1000px;
-  --tile-width: 300px;
-  --tile-height-short: 240px;
-  --tile-height-tall: 275px;
+  --tile-width: 270px;
+  --tile-height-short: 216px;
+  --tile-height-tall: 248px;
   --tile-gap: 20px;
   --nav-height: 56px;
   --page-padding: 24px;
@@ -374,7 +374,7 @@
 /* Responsive: adjust for smaller screens */
 @media (max-width: 900px) {
   .tiles-grid {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
   }
   
   .bubble-tile {

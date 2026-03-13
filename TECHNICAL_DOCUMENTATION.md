@@ -530,13 +530,15 @@ CREATE POLICY "Users can manage own contacts" ON contacts
 
 ### 4. Engagement System (Gamification)
 
-**What:** Daily prompts to keep users engaged
+**What:** Daily prompts to keep users engaged, organized by life chapters
 
 **Mechanics:**
 - XP for completing prompts (5-20 XP per prompt)
 - Streak tracking (daily active days)
 - Level progression (100 XP per level)
 - Prompt types: photo backstory, memory prompt, contact info, wisdom, etc.
+- **Life Chapter Categories:** Childhood, Teenage, High School, College, Career, Relationships, Travel, Spirituality, Wisdom, Life Moments
+- Interactive category pills allow filtering prompts by life chapter
 
 **Implementation:**
 - Tile-based dashboard (2x2 grid + 1 tall tile)
