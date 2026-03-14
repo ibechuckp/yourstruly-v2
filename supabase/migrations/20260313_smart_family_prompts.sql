@@ -5,6 +5,25 @@
 -- ============================================================================
 
 -- ============================================================================
+-- Add conditional_query column FIRST
+-- ============================================================================
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'prompt_templates' 
+    AND column_name = 'conditional_query'
+  ) THEN
+    ALTER TABLE prompt_templates 
+      ADD COLUMN conditional_query TEXT;
+      
+    COMMENT ON COLUMN prompt_templates.conditional_query IS 'SQL query to check if prompt should be shown. Should return boolean. $1 = user_id';
+  END IF;
+END
+$$;
+
+-- ============================================================================
 -- FAMILY BACKGROUND PROMPTS (always safe to ask)
 -- ============================================================================
 
@@ -124,22 +143,3 @@ ON CONFLICT (id) DO UPDATE SET
   priority_boost = EXCLUDED.priority_boost,
   is_active = EXCLUDED.is_active,
   conditional_query = EXCLUDED.conditional_query;
-
--- ============================================================================
--- Add conditional_query column if it doesn't exist
--- ============================================================================
-
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'prompt_templates' 
-    AND column_name = 'conditional_query'
-  ) THEN
-    ALTER TABLE prompt_templates 
-      ADD COLUMN conditional_query TEXT;
-      
-    COMMENT ON COLUMN prompt_templates.conditional_query IS 'SQL query to check if prompt should be shown. Should return boolean. $1 = user_id';
-  END IF;
-END
-$$;

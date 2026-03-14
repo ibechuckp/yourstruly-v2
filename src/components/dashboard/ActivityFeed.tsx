@@ -16,10 +16,15 @@ import {
   Trophy,
   Zap,
   Camera,
-  Brain
+  Brain,
+  UserPlus,
+  Edit3,
+  Link as LinkIcon,
+  Mail,
 } from 'lucide-react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
+import { colors } from '@/lib/design-tokens'
 
 interface ActivityActor {
   id: string
@@ -45,7 +50,6 @@ interface ActivityItem {
 export interface XPCompletion {
   id: string
   type: string
-  icon: string
   title: string
   xp: number
   photoUrl?: string
@@ -53,19 +57,30 @@ export interface XPCompletion {
   timestamp: string
 }
 
-// Use warm, cohesive colors that match the cream/terra cotta theme
+// Activity icons with semantic color tokens from design system
 const ACTIVITY_ICONS: Record<string, { icon: typeof Heart; color: string; bg: string }> = {
-  memory_shared: { icon: Image, color: 'text-[#C35F33]', bg: 'bg-[#C35F33]/10' },
-  wisdom_shared: { icon: BookOpen, color: 'text-[#4A3552]', bg: 'bg-[#4A3552]/10' },
-  circle_message: { icon: MessageCircle, color: 'text-[#406A56]', bg: 'bg-[#406A56]/10' },
-  circle_invite: { icon: Users, color: 'text-[#8DACAB]', bg: 'bg-[#8DACAB]/15' },
-  circle_content: { icon: Heart, color: 'text-[#C35F33]', bg: 'bg-[#C35F33]/10' },
-  wisdom_comment: { icon: MessageCircle, color: 'text-[#4A3552]', bg: 'bg-[#4A3552]/10' },
-  xp_earned: { icon: Zap, color: 'text-[#406A56]', bg: 'bg-[#406A56]/10' },
-  photo_backstory: { icon: Camera, color: 'text-[#D9C61A]', bg: 'bg-[#D9C61A]/15' },
-  knowledge: { icon: Brain, color: 'text-[#C35F33]', bg: 'bg-[#C35F33]/10' },
-  quick_question: { icon: Users, color: 'text-[#406A56]', bg: 'bg-[#406A56]/10' },
-  missing_info: { icon: Users, color: 'text-[#8DACAB]', bg: 'bg-[#8DACAB]/15' },
+  // Social/Circle activities
+  memory_shared: { icon: Image, color: 'text-[#F31260]', bg: 'bg-[#FEE2E2]' }, // error light
+  wisdom_shared: { icon: BookOpen, color: 'text-[#7828C8]', bg: 'bg-[#F3E8FF]' }, // primary purple
+  circle_message: { icon: MessageCircle, color: 'text-[#006FEE]', bg: 'bg-[#DBEAFE]' }, // info blue
+  circle_invite: { icon: Users, color: 'text-[#17C964]', bg: 'bg-[#D1FAE5]' }, // success green
+  circle_content: { icon: Heart, color: 'text-[#F31260]', bg: 'bg-[#FEE2E2]' }, // error red
+  wisdom_comment: { icon: MessageCircle, color: 'text-[#7828C8]', bg: 'bg-[#F3E8FF]' }, // primary purple
+  xp_earned: { icon: Zap, color: 'text-[#F5A524]', bg: 'bg-[#FEF3C7]' }, // warning yellow
+  
+  // Prompt types (from TYPE_CONFIG)
+  photo_backstory: { icon: Camera, color: 'text-[#78350F]', bg: 'bg-[#FEF3C7]' }, // yellow (photo)
+  tag_person: { icon: Users, color: 'text-[#1E3A8A]', bg: 'bg-[#DBEAFE]' }, // blue (connect)
+  missing_info: { icon: Edit3, color: 'text-[#14532D]', bg: 'bg-[#D1FAE5]' }, // green (contact)
+  quick_question: { icon: UserPlus, color: 'text-[#14532D]', bg: 'bg-[#D1FAE5]' }, // green (contact)
+  contact_info: { icon: UserPlus, color: 'text-[#14532D]', bg: 'bg-[#D1FAE5]' }, // green (contact)
+  memory_prompt: { icon: MessageCircle, color: 'text-[#581C87]', bg: 'bg-[#F3E8FF]' }, // purple (memory)
+  knowledge: { icon: Brain, color: 'text-[#7F1D1D]', bg: 'bg-[#FEE2E2]' }, // red (wisdom)
+  connect_dots: { icon: LinkIcon, color: 'text-[#1E3A8A]', bg: 'bg-[#DBEAFE]' }, // blue (connect)
+  highlight: { icon: Star, color: 'text-[#78350F]', bg: 'bg-[#FEF3C7]' }, // yellow (photo)
+  postscript: { icon: Mail, color: 'text-[#581C87]', bg: 'bg-[#F3E8FF]' }, // purple (memory)
+  favorites_firsts: { icon: Trophy, color: 'text-[#7F1D1D]', bg: 'bg-[#FEE2E2]' }, // red (wisdom)
+  recipes_wisdom: { icon: BookOpen, color: 'text-[#78350F]', bg: 'bg-[#FEF3C7]' }, // yellow (photo)
 }
 
 function formatRelativeTime(timestamp: string): string {
@@ -98,7 +113,7 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
         <div className="flex-shrink-0 mt-0.5">
           <div className={`w-8 h-8 rounded-full ${config.bg} flex items-center justify-center`}>
             {isXPActivity ? (
-              <Sparkles size={14} className="text-[#406A56]" />
+              <Sparkles size={14} className="text-[#F5A524]" />
             ) : (
               <Icon size={14} className={config.color} />
             )}
@@ -110,7 +125,7 @@ function ActivityItemCard({ activity, index }: { activity: ActivityItem; index: 
           {/* XP badge + description row */}
           <div className="flex items-start gap-2">
             {activity.xp && (
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[#406A56] text-white text-[10px] font-semibold flex-shrink-0 mt-0.5">
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[#7828C8] text-white text-[10px] font-semibold flex-shrink-0 mt-0.5">
                 +{activity.xp} XP
               </span>
             )}
@@ -183,35 +198,35 @@ export default function ActivityFeed({ xpCompletions = [] }: ActivityFeedProps) 
   }, [])
 
   return (
-    <div className="bg-[#FDF8F3] rounded-[20px] shadow-sm overflow-hidden border border-white/50 flex flex-col" style={{ maxHeight: '320px' }}>
+    <div className="bg-white rounded-[20px] shadow-sm overflow-hidden border border-gray-100 flex flex-col" style={{ maxHeight: '320px' }}>
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-[#406A56]/10">
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <Bell size={14} className="text-[#406A56]" />
+          <Bell size={14} className="text-[#7828C8]" />
           <h3 className="text-sm font-semibold text-gray-700">Recent Activity</h3>
         </div>
         <button
           onClick={() => fetchActivities(true)}
           disabled={isRefreshing}
-          className="p-1.5 rounded-md hover:bg-[#406A56]/10 transition-colors disabled:opacity-50"
+          className="p-1.5 rounded-md hover:bg-purple-50 transition-colors disabled:opacity-50"
           title="Refresh"
         >
           <RefreshCw 
             size={14} 
-            className={`text-[#406A56] ${isRefreshing ? 'animate-spin' : ''}`}
+            className={`text-[#7828C8] ${isRefreshing ? 'animate-spin' : ''}`}
           />
         </button>
       </div>
 
       {/* Content - Scrollable with styled scrollbar */}
-      <div className="flex-1 overflow-y-auto py-2 px-1 scrollbar-thin scrollbar-thumb-[#406A56]/20 scrollbar-track-transparent hover:scrollbar-thumb-[#406A56]/40">
+      <div className="flex-1 overflow-y-auto py-2 px-1 scrollbar-thin scrollbar-thumb-purple-200 scrollbar-track-transparent hover:scrollbar-thumb-purple-300">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-4 gap-2">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
             >
-              <Sparkles size={14} className="text-[#D9C61A]" />
+              <Sparkles size={14} className="text-[#F5A524]" />
             </motion.div>
             <span className="text-[10px] text-gray-400">Loading...</span>
           </div>
@@ -221,15 +236,15 @@ export default function ActivityFeed({ xpCompletions = [] }: ActivityFeedProps) 
             <span className="text-[10px] text-gray-400">{error}</span>
             <button
               onClick={() => fetchActivities()}
-              className="text-[10px] text-[#406A56] hover:underline"
+              className="text-[10px] text-[#7828C8] hover:underline"
             >
               Try again
             </button>
           </div>
         ) : mergedActivities().length === 0 ? (
           <div className="flex flex-col items-center justify-center py-4 gap-1">
-            <div className="w-8 h-8 rounded-full bg-[#406A56]/5 flex items-center justify-center">
-              <Sparkles size={14} className="text-[#406A56]/40" />
+            <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center">
+              <Sparkles size={14} className="text-purple-300" />
             </div>
             <span className="text-xs text-gray-500">No recent activity</span>
             <span className="text-[10px] text-gray-400 text-center px-2">
@@ -251,10 +266,10 @@ export default function ActivityFeed({ xpCompletions = [] }: ActivityFeedProps) 
 
       {/* Footer - See All - compact */}
       {activities.length > 0 && (
-        <div className="px-3 py-1.5 border-t border-[#406A56]/10 bg-[#406A56]/5">
+        <div className="px-3 py-1.5 border-t border-gray-100 bg-gray-50">
           <Link 
             href="/dashboard/activity"
-            className="flex items-center justify-center gap-1 text-[10px] text-[#406A56] hover:text-[#2d4d3d] transition-colors font-medium"
+            className="flex items-center justify-center gap-1 text-[10px] text-[#7828C8] hover:text-[#6020A0] transition-colors font-medium"
           >
             See all
             <ChevronRight size={10} />

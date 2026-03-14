@@ -20,22 +20,24 @@ import ActivityFeed, { XPCompletion } from '@/components/dashboard/ActivityFeed'
 import OnThisDay from '@/components/dashboard/OnThisDay'
 import { StorageUsageBar } from '@/components/subscription/StorageUsageBar'
 import { useSubscription } from '@/hooks/useSubscription'
+import { getPromptIcon, type PromptType } from '@/lib/prompt-icons'
+import { getPromptTypeColors } from '@/lib/design-tokens'
 // import { PersonalityDashboard } from '@/components/personality/PersonalityDashboard' // TODO: Re-enable when analyzing real data
 
-// Type configs with color scheme
-const TYPE_CONFIG: Record<string, { icon: string; label: string; color: 'yellow' | 'green' | 'red' | 'blue' | 'purple'; xp: number }> = {
-  photo_backstory: { icon: '📸', label: 'Photo Story', color: 'yellow', xp: 15 },
-  tag_person: { icon: '👤', label: 'Tag Person', color: 'blue', xp: 5 },
-  missing_info: { icon: '📝', label: 'Contact', color: 'green', xp: 5 },
-  quick_question: { icon: '👤', label: 'Contact', color: 'green', xp: 5 },
-  contact_info: { icon: '✏️', label: 'Complete Info', color: 'green', xp: 10 },
-  memory_prompt: { icon: '💭', label: 'Memory', color: 'purple', xp: 20 },
-  knowledge: { icon: '🧠', label: 'Wisdom', color: 'red', xp: 15 },
-  connect_dots: { icon: '🔗', label: 'Connect', color: 'blue', xp: 10 },
-  highlight: { icon: '⭐', label: 'Highlight', color: 'yellow', xp: 5 },
-  postscript: { icon: '💌', label: 'Future', color: 'purple', xp: 20 },
-  favorites_firsts: { icon: '🏆', label: 'Favorites', color: 'red', xp: 10 },
-  recipes_wisdom: { icon: '📖', label: 'Recipes', color: 'yellow', xp: 15 },
+// Type configs with semantic design tokens (no emojis, using SVG icons from prompt-icons.tsx)
+const TYPE_CONFIG: Record<string, { type: PromptType; label: string; xp: number; color: 'yellow' | 'green' | 'red' | 'blue' | 'purple' }> = {
+  photo_backstory: { type: 'photo_backstory', label: 'Photo Story', xp: 15, color: 'yellow' },
+  tag_person: { type: 'tag_person', label: 'Tag Person', xp: 5, color: 'blue' },
+  missing_info: { type: 'missing_info', label: 'Contact', xp: 5, color: 'green' },
+  quick_question: { type: 'quick_question', label: 'Contact', xp: 5, color: 'green' },
+  contact_info: { type: 'contact_info', label: 'Complete Info', xp: 10, color: 'green' },
+  memory_prompt: { type: 'memory_prompt', label: 'Memory', xp: 20, color: 'purple' },
+  knowledge: { type: 'knowledge', label: 'Wisdom', xp: 15, color: 'red' },
+  connect_dots: { type: 'connect_dots', label: 'Connect', xp: 10, color: 'blue' },
+  highlight: { type: 'highlight', label: 'Highlight', xp: 5, color: 'yellow' },
+  postscript: { type: 'postscript', label: 'Future', xp: 20, color: 'purple' },
+  favorites_firsts: { type: 'favorites_firsts', label: 'Favorites', xp: 10, color: 'red' },
+  recipes_wisdom: { type: 'recipes_wisdom', label: 'Recipes', xp: 15, color: 'yellow' },
 }
 
 // Prompt types that should use ConversationView (multi-turn voice/text)
@@ -69,18 +71,18 @@ const TILE_POSITIONS = [
   { col: 2, row: 0, tall: true },  // right side, spans full height
 ]
 
-// Life chapter categories
+// Life chapter categories with semantic color tokens
 const LIFE_CHAPTERS = [
-  { id: 'childhood', label: 'Childhood', color: '#8DACAB' },
-  { id: 'teenage', label: 'Teenage', color: '#D9C61A' },
-  { id: 'high_school', label: 'High School', color: '#406A56' },
-  { id: 'college', label: 'College', color: '#C35F33' },
-  { id: 'jobs_career', label: 'Career', color: '#8DACAB' },
-  { id: 'relationships', label: 'Relationships', color: '#D9C61A' },
-  { id: 'travel', label: 'Travel', color: '#406A56' },
-  { id: 'spirituality', label: 'Spirituality', color: '#C35F33' },
-  { id: 'wisdom_legacy', label: 'Wisdom', color: '#8DACAB' },
-  { id: 'life_moments', label: 'Life Moments', color: '#D9C61A' },
+  { id: 'childhood', label: 'Childhood', color: '#60A5FA' },      // blue-400
+  { id: 'teenage', label: 'Teenage', color: '#F5A524' },          // warning
+  { id: 'high_school', label: 'High School', color: '#7828C8' },  // primary-500
+  { id: 'college', label: 'College', color: '#F31260' },          // error
+  { id: 'jobs_career', label: 'Career', color: '#006FEE' },       // info
+  { id: 'relationships', label: 'Relationships', color: '#C084FC' }, // purple-400
+  { id: 'travel', label: 'Travel', color: '#17C964' },            // success
+  { id: 'spirituality', label: 'Spirituality', color: '#9353D3' }, // primary-400
+  { id: 'wisdom_legacy', label: 'Wisdom', color: '#6020A0' },     // primary-600
+  { id: 'life_moments', label: 'Life Moments', color: '#FCD34D' }, // yellow-400
 ]
 
 export default function DashboardPage() {
@@ -129,7 +131,6 @@ export default function DashboardPage() {
   const [completedTiles, setCompletedTiles] = useState<Array<{
     id: string;
     type: string;
-    icon: string;
     title: string;
     xp?: number;
     photoUrl?: string;
@@ -374,7 +375,6 @@ export default function DashboardPage() {
       return [{
         id: engagementPrompt.id,
         type: engagementPrompt.type,
-        icon: config.icon,
         title: engagementPrompt.promptText?.substring(0, 40) || config.label,
         xp: xpGained,
         photoUrl: engagementPrompt.photoUrl,
@@ -433,7 +433,6 @@ export default function DashboardPage() {
         return [{
           id: promptId,
           type: prompt.type,
-          icon: config.icon,
           title: prompt.contactName || config.label,
           xp: config.xp,
           contactName: prompt.contactName,
@@ -684,7 +683,6 @@ export default function DashboardPage() {
               xpCompletions={completedTiles.slice(0, 10).map(tile => ({
                 id: tile.id,
                 type: tile.type,
-                icon: tile.icon,
                 title: tile.title,
                 xp: tile.xp || 0,
                 photoUrl: tile.photoUrl,
