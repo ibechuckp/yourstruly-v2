@@ -288,7 +288,8 @@ export function useEngagementPrompts(count: number = 5, lifeChapter: string | nu
       }
     };
     checkAuthAndFetch();
-  }, [lifeChapter, fetchPrompts]); // Re-fetch when category changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lifeChapter, count]); // Re-fetch when category/count changes
 
   return {
     prompts,
