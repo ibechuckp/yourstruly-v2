@@ -33,6 +33,52 @@ export async function POST(
     return NextResponse.json({ error: 'Memory not found' }, { status: 404 })
   }
 
+  const contentType = request.headers.get('content-type') || ''
+
+  // Handle already-uploaded media (JSON payload)
+  if (contentType.includes('application/json')) {
+    const body = await request.json()
+    
+    // Check if this is count request (no media to insert)
+    const { count } = await supabase
+      .from('memory_media')
+      .select('id', { count: 'exact', head: true })
+      .eq('memory_id', memoryId)
+
+    const isCover = count === 0
+
+    // Create media record from already-uploaded file
+    const { data: media, error: mediaError } = await supabase
+      .from('memory_media')
+      .insert({
+        memory_id: memoryId,
+        user_id: user.id,
+        file_url: body.file_url,
+        file_key: body.file_key,
+        file_type: body.file_type,
+        mime_type: body.mime_type,
+        file_size: body.file_size,
+        width: body.width,
+        height: body.height,
+        is_cover: isCover,
+        exif_lat: body.exif_lat,
+        exif_lng: body.exif_lng,
+        taken_at: body.taken_at,
+        camera_make: body.camera_make,
+        camera_model: body.camera_model,
+      })
+      .select()
+      .single()
+
+    if (mediaError) {
+      console.error('[Media Attach] Error:', mediaError)
+      return NextResponse.json({ error: 'Failed to attach media' }, { status: 500 })
+    }
+
+    return NextResponse.json({ media })
+  }
+
+  // Handle file upload (FormData)
   const formData = await request.formData()
   const file = formData.get('file') as File
   

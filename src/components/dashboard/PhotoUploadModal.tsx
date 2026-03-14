@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Image as ImageIcon, X, Upload, Check, Clock, Loader2, User, Tag } from 'lucide-react'
+import { Image as ImageIcon, X, Upload, Check, Loader2, User, Tag, MapPin, Calendar } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface PhotoUploadModalProps {
@@ -10,10 +10,11 @@ interface PhotoUploadModalProps {
   onClose: () => void
 }
 
-type UploadState = 'select' | 'uploading' | 'tagging' | 'creating'
+type UploadState = 'select' | 'uploading' | 'preview' | 'creating'
 
 interface DetectedFace {
   boundingBox: { x: number; y: number; width: number; height: number }
+  confidence: number
   age?: { low: number; high: number }
   gender?: string
   expression?: string
@@ -28,29 +29,38 @@ interface FaceTag {
   faceIndex: number
   contactId: string
   contactName: string
+  autoTagged?: boolean
+}
+
+interface UploadedPhoto {
+  file: File
+  previewUrl: string
+  s3Url?: string
+  fileKey?: string
+  exifDate?: string
+  exifLocation?: { lat: number; lng: number; name?: string }
+  cameraMake?: string
+  cameraModel?: string
+  faces: DetectedFace[]
+  width?: number
+  height?: number
 }
 
 export default function PhotoUploadModal({ isOpen, onClose }: PhotoUploadModalProps) {
   const [uploadState, setUploadState] = useState<UploadState>('select')
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [uploadedMedia, setUploadedMedia] = useState<{ 
-    id: string
-    memoryId: string
-    faces: DetectedFace[]
-  } | null>(null)
+  const [photo, setPhoto] = useState<UploadedPhoto | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [contacts, setContacts] = useState<Array<{ id: string; full_name: string; avatar_url?: string }>>([])
   const [faceTags, setFaceTags] = useState<FaceTag[]>([])
   const [selectedFaceIndex, setSelectedFaceIndex] = useState<number | null>(null)
-  const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const router = useRouter()
 
-  // Load user contacts
+  // Load contacts for manual tagging
   useEffect(() => {
-    if (uploadState === 'tagging') {
+    if (uploadState === 'preview') {
       loadContacts()
     }
   }, [uploadState])
@@ -78,43 +88,22 @@ export default function PhotoUploadModal({ isOpen, onClose }: PhotoUploadModalPr
     const reader = new FileReader()
     reader.onload = (e) => {
       const url = e.target?.result as string
-      setPreviewUrl(url)
       
       // Get image dimensions
       const img = new Image()
       img.onload = () => {
-        setImageSize({ width: img.width, height: img.height })
+        setPhoto(prev => prev ? { ...prev, width: img.width, height: img.height } : null)
       }
       img.src = url
     }
     reader.readAsDataURL(file)
 
     try {
-      // Create a memory first
-      const memoryRes = await fetch('/api/memories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
-          memory_date: new Date().toISOString().split('T')[0],
-          memory_type: 'moment',
-        }),
-      })
-
-      if (!memoryRes.ok) {
-        throw new Error('Failed to create memory')
-      }
-
-      const { memory } = await memoryRes.json()
-      if (!memory?.id) {
-        throw new Error('No memory ID returned')
-      }
-
-      // Upload the photo with face detection
+      // Upload to temporary storage and analyze
       const formData = new FormData()
       formData.append('file', file)
       
-      const uploadRes = await fetch(`/api/memories/${memory.id}/media`, {
+      const uploadRes = await fetch(`/api/upload`, {
         method: 'POST',
         body: formData,
       })
@@ -123,22 +112,46 @@ export default function PhotoUploadModal({ isOpen, onClose }: PhotoUploadModalPr
         throw new Error('Failed to upload photo')
       }
 
-      const { media, faces } = await uploadRes.json()
+      const result = await uploadRes.json()
       
-      setUploadedMedia({ 
-        id: media?.id, 
-        memoryId: memory.id,
-        faces: faces || []
-      })
-
-      // If faces detected, show tagging UI; otherwise go straight to preview
-      if (faces && faces.length > 0) {
-        setUploadState('tagging')
-      } else {
-        setUploadState('creating')
-        router.push(`/dashboard/memories/${memory.id}`)
-        handleClose()
+      // Parse EXIF data from response
+      const photoData: UploadedPhoto = {
+        file,
+        previewUrl: URL.createObjectURL(file),
+        s3Url: result.url,
+        fileKey: result.path,
+        faces: result.faces || [],
+        exifDate: result.exif?.takenAt,
+        exifLocation: result.exif?.lat && result.exif?.lng ? {
+          lat: result.exif.lat,
+          lng: result.exif.lng,
+          name: result.exif.locationName,
+        } : undefined,
+        cameraMake: result.exif?.cameraMake,
+        cameraModel: result.exif?.cameraModel,
       }
+
+      setPhoto(photoData)
+
+      // Auto-apply face suggestions
+      const autoTags: FaceTag[] = []
+      photoData.faces.forEach((face, index) => {
+        if (face.suggestions && face.suggestions.length > 0) {
+          const topMatch = face.suggestions[0]
+          // Auto-tag if confidence > 85%
+          if (topMatch.similarity >= 85) {
+            autoTags.push({
+              faceIndex: index,
+              contactId: topMatch.contactId,
+              contactName: topMatch.contactName,
+              autoTagged: true,
+            })
+          }
+        }
+      })
+      setFaceTags(autoTags)
+
+      setUploadState('preview')
 
     } catch (err) {
       console.error('Upload error:', err)
@@ -151,9 +164,9 @@ export default function PhotoUploadModal({ isOpen, onClose }: PhotoUploadModalPr
     setFaceTags(prev => {
       const existing = prev.find(t => t.faceIndex === faceIndex)
       if (existing) {
-        return prev.map(t => t.faceIndex === faceIndex ? { faceIndex, contactId, contactName } : t)
+        return prev.map(t => t.faceIndex === faceIndex ? { faceIndex, contactId, contactName, autoTagged: false } : t)
       }
-      return [...prev, { faceIndex, contactId, contactName }]
+      return [...prev, { faceIndex, contactId, contactName, autoTagged: false }]
     })
     setSelectedFaceIndex(null)
   }
@@ -162,18 +175,67 @@ export default function PhotoUploadModal({ isOpen, onClose }: PhotoUploadModalPr
     setFaceTags(prev => prev.filter(t => t.faceIndex !== faceIndex))
   }
 
-  const handleSaveTags = async () => {
-    if (!uploadedMedia) return
+  const handleSave = async () => {
+    if (!photo) return
+
+    setUploadState('creating')
+    setError(null)
 
     try {
-      // Save all face tags
+      // Create memory with actual EXIF data (not today's date!)
+      const memoryRes = await fetch('/api/memories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: photo.file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
+          memory_date: photo.exifDate?.split('T')[0] || null, // null if no EXIF date
+          memory_type: 'moment',
+          location_lat: photo.exifLocation?.lat,
+          location_lng: photo.exifLocation?.lng,
+          location_name: photo.exifLocation?.name,
+        }),
+      })
+
+      if (!memoryRes.ok) {
+        throw new Error('Failed to create memory')
+      }
+
+      const { memory } = await memoryRes.json()
+
+      // Attach the uploaded photo to memory
+      const attachRes = await fetch(`/api/memories/${memory.id}/media`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file_url: photo.s3Url,
+          file_key: photo.fileKey,
+          file_type: 'image',
+          mime_type: photo.file.type,
+          file_size: photo.file.size,
+          width: photo.width,
+          height: photo.height,
+          exif_lat: photo.exifLocation?.lat,
+          exif_lng: photo.exifLocation?.lng,
+          taken_at: photo.exifDate,
+          camera_make: photo.cameraMake,
+          camera_model: photo.cameraModel,
+        }),
+      })
+
+      if (!attachRes.ok) {
+        throw new Error('Failed to attach photo to memory')
+      }
+
+      const { media } = await attachRes.json()
+
+      // Save face tags
       for (const tag of faceTags) {
-        const face = uploadedMedia.faces[tag.faceIndex]
+        const face = photo.faces[tag.faceIndex]
         await fetch('/api/face-tags', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            mediaId: uploadedMedia.id,
+            mediaId: media.id,
             contactId: tag.contactId,
             boundingBox: face.boundingBox,
           }),
@@ -181,262 +243,241 @@ export default function PhotoUploadModal({ isOpen, onClose }: PhotoUploadModalPr
       }
 
       // Navigate to memory editor
-      setUploadState('creating')
-      router.push(`/dashboard/memories/${uploadedMedia.memoryId}`)
+      router.push(`/dashboard/memories/${memory.id}`)
       handleClose()
-    } catch (err) {
-      console.error('Failed to save tags:', err)
-      setError('Failed to save tags')
-    }
-  }
 
-  const handleSkipTagging = () => {
-    if (!uploadedMedia) return
-    setUploadState('creating')
-    router.push(`/dashboard/memories/${uploadedMedia.memoryId}`)
-    handleClose()
+    } catch (err) {
+      console.error('Save error:', err)
+      setError(err instanceof Error ? err.message : 'Failed to save')
+      setUploadState('preview')
+    }
   }
 
   const handleClose = () => {
     setUploadState('select')
-    setPreviewUrl(null)
-    setUploadedMedia(null)
+    setPhoto(null)
     setError(null)
     setFaceTags([])
     setSelectedFaceIndex(null)
-    setImageSize(null)
-    if (fileInputRef.current) fileInputRef.current.value = ''
+    if (photo?.previewUrl) {
+      URL.revokeObjectURL(photo.previewUrl)
+    }
     onClose()
   }
 
-  // Calculate face box position in rendered image
-  const getFaceBoxStyle = (face: DetectedFace) => {
-    if (!imageRef.current) return {}
-    
-    const imgElement = imageRef.current
-    const displayWidth = imgElement.clientWidth
-    const displayHeight = imgElement.clientHeight
-    
-    return {
-      left: `${face.boundingBox.x * displayWidth}px`,
-      top: `${face.boundingBox.y * displayHeight}px`,
-      width: `${face.boundingBox.width * displayWidth}px`,
-      height: `${face.boundingBox.height * displayHeight}px`,
-    }
-  }
+  if (!isOpen) return null
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={handleClose}
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-[#FDF8F3] rounded-2xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-2xl font-semibold text-gray-900">Upload Photo</h2>
+          <button
+            onClick={handleClose}
+            disabled={uploadState === 'creating'}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-[#406A56]">
-                {uploadState === 'tagging' && 'Tag People in Photo'}
-                {uploadState === 'select' && 'Add Photos'}
-                {uploadState === 'uploading' && 'Uploading...'}
-                {uploadState === 'creating' && 'Creating Memory...'}
-              </h3>
-              <button 
-                onClick={handleClose} 
-                className="p-2 hover:bg-[#406A56]/10 rounded-lg transition-colors"
-              >
-                <X size={20} className="text-[#406A56]" />
-              </button>
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+          {uploadState === 'select' && (
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer hover:border-[#406A56] hover:bg-gray-50 transition-all"
+            >
+              <ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+              <p className="text-lg font-medium text-gray-700 mb-2">Click to upload a photo</p>
+              <p className="text-sm text-gray-500">JPG, PNG, or HEIC up to 50MB</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
             </div>
+          )}
 
-            {/* Content based on state */}
-            {uploadState === 'select' && (
-              <>
-                <p className="text-[#406A56]/70 mb-4">Upload a photo to create a new memory</p>
-                
-                {error && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
-                    {error}
-                  </div>
-                )}
-                
-                <div className="border-2 border-dashed border-[#406A56]/30 rounded-xl p-8 text-center hover:border-[#406A56]/50 transition-colors cursor-pointer">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    id="photo-upload-input"
-                    onChange={handleFileSelect}
-                  />
-                  <label htmlFor="photo-upload-input" className="cursor-pointer">
-                    <ImageIcon size={48} className="mx-auto text-[#406A56]/40 mb-3" />
-                    <p className="text-[#406A56] font-medium">Click to upload a photo</p>
-                    <p className="text-sm text-[#406A56]/50 mt-1">JPG, PNG, HEIC supported</p>
-                  </label>
-                </div>
-              </>
-            )}
+          {uploadState === 'uploading' && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="w-12 h-12 animate-spin text-[#406A56] mb-4" />
+              <p className="text-lg font-medium text-gray-700">Analyzing photo...</p>
+              <p className="text-sm text-gray-500 mt-2">Extracting date, location, and detecting faces</p>
+            </div>
+          )}
 
-            {uploadState === 'uploading' && (
-              <div className="py-8 text-center">
-                <Loader2 size={48} className="mx-auto text-[#406A56] animate-spin mb-4" />
-                <p className="text-[#406A56] font-medium">Uploading photo and detecting faces...</p>
-                {previewUrl && (
-                  <div className="mt-4 rounded-xl overflow-hidden max-h-48">
-                    <img src={previewUrl} alt="Preview" className="w-full h-48 object-cover opacity-50" />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {uploadState === 'tagging' && previewUrl && uploadedMedia && (
-              <>
-                <p className="text-[#406A56]/70 mb-4">
-                  {uploadedMedia.faces.length} {uploadedMedia.faces.length === 1 ? 'face' : 'faces'} detected. Click on a face to tag someone.
-                </p>
-
-                {/* Photo with face boxes */}
-                <div className="relative mb-4 rounded-xl overflow-hidden">
-                  <img 
-                    ref={imageRef}
-                    src={previewUrl} 
-                    alt="Uploaded" 
-                    className="w-full h-auto"
-                  />
-                  
-                  {/* Face boxes overlay */}
-                  {uploadedMedia.faces.map((face, index) => {
-                    const isTagged = faceTags.some(t => t.faceIndex === index)
-                    const tag = faceTags.find(t => t.faceIndex === index)
-                    const isSelected = selectedFaceIndex === index
-                    
-                    return (
-                      <div
-                        key={index}
-                        className={`absolute border-4 cursor-pointer transition-all ${
-                          isTagged 
-                            ? 'border-green-500 bg-green-500/10' 
-                            : isSelected
-                            ? 'border-blue-500 bg-blue-500/10'
-                            : 'border-yellow-400 bg-yellow-400/10 hover:border-yellow-500'
-                        }`}
-                        style={getFaceBoxStyle(face)}
-                        onClick={() => setSelectedFaceIndex(isSelected ? null : index)}
-                      >
-                        {isTagged && tag && (
-                          <div className="absolute -bottom-8 left-0 bg-green-500 text-white px-2 py-1 rounded text-xs font-medium whitespace-nowrap">
-                            {tag.contactName}
-                          </div>
-                        )}
-                        {!isTagged && (
-                          <div className="absolute -bottom-8 left-0 bg-yellow-400 text-black px-2 py-1 rounded text-xs font-medium">
-                            Click to tag
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {/* Contact selector (shown when a face is selected) */}
-                {selectedFaceIndex !== null && (
-                  <div className="mb-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
-                    <div className="flex items-center gap-2 mb-3">
-                      <User size={18} className="text-blue-600" />
-                      <p className="font-medium text-blue-900">Who is this?</p>
-                    </div>
-                    
-                    {/* AI Suggestions (if any) */}
-                    {uploadedMedia.faces[selectedFaceIndex].suggestions && 
-                     uploadedMedia.faces[selectedFaceIndex].suggestions!.length > 0 && (
-                      <>
-                        <div className="mb-3 pb-3 border-b border-blue-200">
-                          <p className="text-xs text-blue-600 font-semibold mb-2 uppercase">AI Suggestions</p>
-                          <div className="space-y-2">
-                            {uploadedMedia.faces[selectedFaceIndex].suggestions!.map((suggestion) => (
-                              <button
-                                key={suggestion.contactId}
-                                onClick={() => handleTagFace(selectedFaceIndex, suggestion.contactId, suggestion.contactName)}
-                                className="w-full flex items-center justify-between p-2 bg-white hover:bg-blue-100 rounded-lg transition-colors border border-blue-300"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center">
-                                    <User size={16} className="text-blue-600" />
-                                  </div>
-                                  <span className="text-sm text-blue-900 font-medium">{suggestion.contactName}</span>
-                                </div>
-                                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-                                  {suggestion.similarity}% match
-                                </span>
-                              </button>
-                            ))}
-                          </div>
+          {uploadState === 'preview' && photo && (
+            <div className="space-y-6">
+              {/* Photo Preview */}
+              <div className="relative rounded-xl overflow-hidden bg-gray-100">
+                <img
+                  ref={imageRef}
+                  src={photo.previewUrl}
+                  alt="Preview"
+                  className="w-full h-auto"
+                />
+                {/* Face bounding boxes */}
+                {photo.faces.map((face, index) => {
+                  const tag = faceTags.find(t => t.faceIndex === index)
+                  const isSelected = selectedFaceIndex === index
+                  return (
+                    <div
+                      key={index}
+                      onClick={() => setSelectedFaceIndex(isSelected ? null : index)}
+                      className={`absolute border-2 cursor-pointer transition-all ${
+                        tag
+                          ? tag.autoTagged
+                            ? 'border-green-500 bg-green-500/20'
+                            : 'border-blue-500 bg-blue-500/20'
+                          : isSelected
+                          ? 'border-yellow-500 bg-yellow-500/20'
+                          : 'border-red-500 bg-red-500/20'
+                      }`}
+                      style={{
+                        left: `${face.boundingBox.x * 100}%`,
+                        top: `${face.boundingBox.y * 100}%`,
+                        width: `${face.boundingBox.width * 100}%`,
+                        height: `${face.boundingBox.height * 100}%`,
+                      }}
+                    >
+                      {tag && (
+                        <div className="absolute -top-8 left-0 bg-white px-2 py-1 rounded shadow-lg text-xs font-medium whitespace-nowrap flex items-center gap-1">
+                          {tag.autoTagged && <Check size={12} className="text-green-600" />}
+                          {tag.contactName}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRemoveFaceTag(index)
+                            }}
+                            className="ml-1 text-red-500 hover:text-red-700"
+                          >
+                            <X size={12} />
+                          </button>
                         </div>
-                        <p className="text-xs text-blue-600 font-semibold mb-2 uppercase">All Contacts</p>
-                      </>
-                    )}
-                    
-                    <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                      {contacts.map(contact => (
-                        <button
-                          key={contact.id}
-                          onClick={() => handleTagFace(selectedFaceIndex, contact.id, contact.full_name)}
-                          className="flex items-center gap-2 p-2 hover:bg-blue-100 rounded-lg transition-colors text-left"
-                        >
-                          {contact.avatar_url ? (
-                            <img src={contact.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center">
-                              <User size={16} className="text-blue-600" />
-                            </div>
-                          )}
-                          <span className="text-sm text-blue-900 font-medium">{contact.full_name}</span>
-                        </button>
-                      ))}
+                      )}
                     </div>
-                  </div>
-                )}
-
-                {/* Action buttons */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleSkipTagging}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-[#406A56]/20 text-[#406A56] rounded-xl hover:bg-[#406A56]/5 transition-colors font-medium"
-                  >
-                    <Clock size={18} />
-                    Skip
-                  </button>
-                  <button
-                    onClick={handleSaveTags}
-                    disabled={faceTags.length === 0}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#406A56] text-white rounded-xl hover:bg-[#4a7a64] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Tag size={18} />
-                    Save {faceTags.length > 0 && `(${faceTags.length})`}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {uploadState === 'creating' && (
-              <div className="py-8 text-center">
-                <Loader2 size={48} className="mx-auto text-[#406A56] animate-spin mb-4" />
-                <p className="text-[#406A56] font-medium">Opening memory editor...</p>
+                  )
+                })}
               </div>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+
+              {/* EXIF Metadata */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl">
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} className="text-gray-600" />
+                  <span className="text-sm font-medium text-gray-700">
+                    {photo.exifDate
+                      ? new Date(photo.exifDate).toLocaleDateString()
+                      : <span className="text-gray-400 italic">No date found</span>}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin size={16} className="text-gray-600" />
+                  <span className="text-sm font-medium text-gray-700">
+                    {photo.exifLocation?.name || <span className="text-gray-400 italic">No location found</span>}
+                  </span>
+                </div>
+              </div>
+
+              {/* Face Tagging */}
+              {photo.faces.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <User size={18} />
+                    Tag People ({faceTags.length}/{photo.faces.length})
+                  </h3>
+                  
+                  {selectedFaceIndex !== null && (
+                    <div className="p-4 bg-blue-50 rounded-xl">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Who is this?</p>
+                      {photo.faces[selectedFaceIndex].suggestions && photo.faces[selectedFaceIndex].suggestions!.length > 0 ? (
+                        <div className="space-y-2">
+                          <p className="text-xs text-gray-600 mb-2">Suggestions:</p>
+                          {photo.faces[selectedFaceIndex].suggestions!.map((suggestion) => (
+                            <button
+                              key={suggestion.contactId}
+                              onClick={() => handleTagFace(selectedFaceIndex, suggestion.contactId, suggestion.contactName)}
+                              className="w-full flex items-center justify-between p-3 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors"
+                            >
+                              <span className="font-medium text-gray-900">{suggestion.contactName}</span>
+                              <span className="text-xs text-gray-500">{suggestion.similarity}% match</span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                      <div className="mt-3">
+                        <select
+                          onChange={(e) => {
+                            const contact = contacts.find(c => c.id === e.target.value)
+                            if (contact) {
+                              handleTagFace(selectedFaceIndex, contact.id, contact.full_name)
+                            }
+                          }}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#406A56] focus:border-[#406A56]"
+                        >
+                          <option value="">Or select from contacts...</option>
+                          {contacts.map((contact) => (
+                            <option key={contact.id} value={contact.id}>
+                              {contact.full_name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-gray-500">
+                    {faceTags.filter(t => t.autoTagged).length > 0 && (
+                      <span className="text-green-600">✓ {faceTags.filter(t => t.autoTagged).length} auto-tagged • </span>
+                    )}
+                    Click on untagged faces to identify them
+                  </p>
+                </div>
+              )}
+
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                  {error}
+                </div>
+              )}
+            </div>
+          )}
+
+          {uploadState === 'creating' && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="w-12 h-12 animate-spin text-[#406A56] mb-4" />
+              <p className="text-lg font-medium text-gray-700">Creating memory...</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {uploadState === 'preview' && (
+          <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+            <button
+              onClick={handleClose}
+              className="px-6 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-6 py-2.5 bg-[#406A56] hover:bg-[#355a48] text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+            >
+              <Check size={18} />
+              Save Memory
+            </button>
+          </div>
+        )}
+      </motion.div>
+    </div>
   )
 }
