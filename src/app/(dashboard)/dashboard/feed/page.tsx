@@ -247,12 +247,18 @@ function MasonryTile({
 
           {/* Audio Player (if audio exists) */}
           {activity.audio_url && (
-            <InlineAudioPlayer
-              audioUrl={activity.audio_url}
-              isPlaying={playingAudio === activity.id}
-              onToggle={() => onAudioToggle(activity.id)}
-              accentColor={config.color}
-            />
+            <>
+              {console.log('[FeedCard] Rendering audio player for:', activity.id, 'URL:', activity.audio_url)}
+              <InlineAudioPlayer
+                audioUrl={activity.audio_url}
+                isPlaying={playingAudio === activity.id}
+                onToggle={() => {
+                  console.log('[FeedCard] Audio toggle clicked:', activity.id)
+                  onAudioToggle(activity.id)
+                }}
+                accentColor={config.color}
+              />
+            </>
           )}
 
           {/* Bottom Section: Metadata + CTA */}

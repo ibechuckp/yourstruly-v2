@@ -20,39 +20,70 @@ export function InlineAudioPlayer({
   const [duration, setDuration] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
 
+  // Initialize audio element
+  useEffect(() => {
+    console.log('[InlineAudioPlayer] Initializing audio:', audioUrl)
+    
+    if (!audioUrl) {
+      console.warn('[InlineAudioPlayer] No audio URL provided')
+      return
+    }
+
+    const audio = new Audio(audioUrl)
+    audioRef.current = audio
+    
+    const handleLoadedMetadata = () => {
+      console.log('[InlineAudioPlayer] Metadata loaded, duration:', audio.duration)
+      setDuration(audio.duration || 0)
+    }
+    
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime || 0)
+    }
+    
+    const handleEnded = () => {
+      console.log('[InlineAudioPlayer] Audio ended')
+      onToggle()
+      setCurrentTime(0)
+    }
+
+    const handleError = (e: ErrorEvent) => {
+      console.error('[InlineAudioPlayer] Audio error:', e)
+    }
+
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata)
+    audio.addEventListener('timeupdate', handleTimeUpdate)
+    audio.addEventListener('ended', handleEnded)
+    audio.addEventListener('error', handleError as any)
+
+    return () => {
+      console.log('[InlineAudioPlayer] Cleanup')
+      audio.pause()
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
+      audio.removeEventListener('timeupdate', handleTimeUpdate)
+      audio.removeEventListener('ended', handleEnded)
+      audio.removeEventListener('error', handleError as any)
+      audioRef.current = null
+    }
+  }, [audioUrl, onToggle])
+
+  // Handle play/pause
   useEffect(() => {
     if (!audioRef.current) {
-      audioRef.current = new Audio(audioUrl)
-      
-      audioRef.current.addEventListener('loadedmetadata', () => {
-        setDuration(audioRef.current?.duration || 0)
-      })
-      
-      audioRef.current.addEventListener('timeupdate', () => {
-        setCurrentTime(audioRef.current?.currentTime || 0)
-      })
-      
-      audioRef.current.addEventListener('ended', () => {
-        onToggle()
-        setCurrentTime(0)
-      })
+      console.log('[InlineAudioPlayer] No audio ref available')
+      return
     }
 
     if (isPlaying) {
-      audioRef.current.play()
+      console.log('[InlineAudioPlayer] Playing audio')
+      audioRef.current.play().catch(err => {
+        console.error('[InlineAudioPlayer] Play failed:', err)
+      })
     } else {
+      console.log('[InlineAudioPlayer] Pausing audio')
       audioRef.current.pause()
     }
-
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause()
-        audioRef.current.removeEventListener('loadedmetadata', () => {})
-        audioRef.current.removeEventListener('timeupdate', () => {})
-        audioRef.current.removeEventListener('ended', () => {})
-      }
-    }
-  }, [isPlaying, audioUrl, onToggle])
+  }, [isPlaying])
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
@@ -111,7 +142,6 @@ export function InlineAudioPlayer({
       <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flex: 1, height: '36px' }}>
         {[...Array(20)].map((_, i) => {
           const baseHeight = 8 + (Math.sin(i * 0.5) * 12)
-          const animationDelay = `${i * 0.05}s`
           
           return (
             <div
@@ -121,8 +151,11 @@ export function InlineAudioPlayer({
                 height: `${baseHeight}px`,
                 background: i / 20 < progress / 100 ? accentColor : 'rgba(255,255,255,0.3)',
                 borderRadius: '2px',
-                animation: isPlaying ? 'waveform-pulse 1s ease-in-out infinite' : 'none',
-                animationDelay,
+                animationName: isPlaying ? 'waveform-pulse' : 'none',
+                animationDuration: '1s',
+                animationTimingFunction: 'ease-in-out',
+                animationIterationCount: 'infinite',
+                animationDelay: `${i * 0.05}s`,
                 transition: 'background 0.3s, height 0.3s',
               }}
             />
